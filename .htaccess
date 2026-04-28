@@ -1,0 +1,76 @@
+
+<IfModule mod_headers.c>
+  <FilesMatch "\.(js)$">
+    Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+    Header set Pragma "no-cache"
+    Header set Expires "0"
+  </FilesMatch>
+</IfModule>
+# protéger le fichier db.php
+<FilesMatch "\.(html|php)$">
+  Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+</FilesMatch>
+
+<files db.php>
+order allow,deny
+deny from all
+</files>
+
+
+
+
+#rediriger vers page de connexion
+DirectoryIndex index.php
+
+#protéger les dossiers
+Options -Indexes
+
+#page d'acceuil
+RewriteEngine on
+#RewriteRule ^acceuil$ index.php [L]
+
+#redirection HTTP vers HTTPS
+#RewriteCond %{SERVER_PORT} 80
+#RewriteCond %{HTTPS} off
+#RewriteRule .* https://%{HTTP_HOST}%{REQUEST_URI} [R=301,L]
+
+#RewriteRule . maintenance.php [L]
+
+RewriteRule ^acceuil$ index.php [L]
+
+#authentification
+RewriteRule ^page-de-connexion$ login.php [L]
+RewriteRule ^jquery-login$ login-user.js [L]
+RewriteRule ^page-de-connexion-controller$ loginController.php [L]
+RewriteRule ^quitter$ logout.php [L]
+
+#autres pages
+RewriteRule ^404$ 404.php [L]
+RewriteRule ^500$ 500.php [L]
+RewriteRule ^erreur$ erreur.php [L]
+RewriteRule ^erreur-de-connexion$ 100.php [L]
+RewriteRule ^maintenance$ maintenance.php [L]
+
+RewriteRule ^fichier_introuvable$ fichierIntrouvable.php [L]
+
+#rediriger vers la page 404
+ErrorDocument 404 /personnel/404
+ErrorDocument 500 /personnel/500
+#ErrorDocument erreur /personnel/erreur
+
+
+
+#auth
+RewriteRule ^auth-controller$ auth/controllers/authController.php [L]
+RewriteRule ^signup$ auth/register.php [L]
+RewriteRule ^scripts.bundle.1.js$ auth/js/register.js [L]
+
+RewriteRule ^signin$ auth/login.php [L]
+RewriteRule ^scripts.bundle.2.js$ auth/js/login.js [L]
+
+
+RewriteRule ^activate-account$ auth/activate.php [L]
+
+RewriteRule ^signout$ auth/logout.php [L]
+
+
