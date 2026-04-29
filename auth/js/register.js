@@ -96,134 +96,119 @@ function showAlert(message, type = "error", redirect = null, resetForm = false, 
 
 
 
-// partie form button
 
-
-var KTPasswordResetNewPassword = function () {
-    var e, t, r, o, s = function () {
-        return 80 <= o.getScore()
-    };
-    return {
-        init: function () {
-            e = document.querySelector("#formSignUp"),
-                t = document.querySelector("#formSignUp_submit"),
-                o = KTPasswordMeter.getInstance(e.querySelector('[data-kt-password-meter="true"]')),
-                r = FormValidation.formValidation(e, {
-                    fields: {
-                        email: {
-                            validators: {
-                                emailAddress: {
-                                    message: 'Veuillez respecter le format de l\'email : test@uahb.sn.'
-                                },
-                                notEmpty: {
-                                    message: 'Le mail est un champ obligatoire. Veuillez le résigner.'
-                                },
-                                callback: {
-                                    message: "L’adresse e-mail doit se terminer par @uahb.sn",
-                                    callback: function (input) {
-                                        const value = input.value.toLowerCase().trim();
-
-                                        if (value === "") return false;
-
-                                        return value.endsWith("@uahb.sn");
-                                    }
-                                }
-                            }
-                        },
-                        matricule: {
-                            validators: {
-                                notEmpty: {
-                                    message: 'Le matricule est un champ obligatoire. Veuillez le résigner.'
-                                },
-                                stringLength: {
-                                    min: 6,
-                                    max: 7,
-                                    message: 'Veuillez saisir le bon matricule composé de 7 chiffres..'
-                                },
-                            }
-                        },
-                        password: {
-                            validators: {
-                                notEmpty: {
-                                    message: "Le nouveau mot de passe est un champ obligatoire. Veuillez le résigner."
-                                },
-                               // callback: {
-                                 //   message: "Veuillez entrer un mot de passe valide",
-                                  //  callback: function (e) {
-                                    //    if (e.value.length > 0) return s()
-                                   // }
-                                //}
-
-                                callback: {
-                                    message: "Mot de passe trop faible. Utilisez au moins 8 caractères, une majuscule, un chiffre et un symbole.",
-                                    callback: function (input) {
-                                        const value = input.value;
-
-                                        const score = strength(value);
-
-                                        // ❌ Refuser si < Bon
-                                        return score >= 3;
-                                    }
-                                }
-                            }
-                        },
-                        "confirm-password": {
-                            validators: {
-                                notEmpty: {
-                                    message: "Le mot de passe de confirmation est obligatoire. Veuilez le renseigner."
-                                },
-                                identical: {
-                                    compare: function () {
-                                        return e.querySelector('[name="password"]').value
-                                    },
-                                    message: "Le nouveau mot de passe et le mot de passe de confirmation ne correspondent pas."
-                                }
-                            }
-                        }
-
-                        ,
-                        cgu: {
-                            validators: {
-
-                                notEmpty: {
-                                    message: 'Les CGU sont obligatoires. Veuillez cocher la case.'
-                                }
-                            }
-                        },
+const formSignUp = document.getElementById('formSignUp');
+var validator = FormValidation.formValidation(
+    formSignUp,
+    {
+        fields: {
+            email: {
+                validators: {
+                    emailAddress: {
+                        message: 'Veuillez respecter le format de l\'email : test@uahb.sn.'
                     },
-                    plugins: {
-                        trigger: new FormValidation.plugins.Trigger({
-                            event: {
-                                password: !1
-                            }
-                        }),
-                        bootstrap: new FormValidation.plugins.Bootstrap5({
-                            rowSelector: ".ff",
-                            eleInvalidClass: "",
-                            eleValidClass: ""
-                        })
+                    notEmpty: {
+                        message: 'Le mail est un champ obligatoire. Veuillez le résigner.'
+                    },
+                    callback: {
+                        message: "L’adresse e-mail doit se terminer par @uahb.sn",
+                        callback: function (input) {
+                            const value = input.value.toLowerCase().trim();
+
+                            if (value === "") return false;
+
+                            return value.endsWith("@uahb.sn");
+                        }
                     }
-                }),
-                t.addEventListener("click", (function (s) {
-                    s.preventDefault(),
-                        r.revalidateField("password"),
-                        r.validate().then((function (r) {
-                            if (r == "Valid") {
-                                t.setAttribute('data-kt-indicator', 'on');
-                                t.disabled = true;
-                                setTimeout(function () {
+                }
+            },
+            matricule: {
+                validators: {
+                    notEmpty: {
+                        message: 'Le matricule est un champ obligatoire. Veuillez le résigner.'
+                    },
+                    stringLength: {
+                        min: 6,
+                        max: 7,
+                        message: 'Veuillez saisir le bon matricule composé de 7 chiffres..'
+                    },
+                }
+            },
+            password: {
+                validators: {
+                    notEmpty: {
+                        message: "Le nouveau mot de passe est un champ obligatoire. Veuillez le résigner."
+                    },
+                    // callback: {
+                    //   message: "Veuillez entrer un mot de passe valide",
+                    //  callback: function (e) {
+                    //    if (e.value.length > 0) return s()
+                    // }
+                    //}
 
-                                    var form_data = $("#formSignUp").serialize();
+                    callback: {
+                        message: "Mot de passe trop faible. Utilisez au moins 8 caractères, une majuscule, un chiffre et un symbole.",
+                        callback: function (input) {
+                            const value = input.value;
 
-                                    alert(form_data);
-                                    alert("papa");
+                            const score = strength(value);
 
-                                    $.ajax({
-                                        type: 'post',
-                                        url: '/personnel/auth-controller',
-                                        data: form_data,
-                                        success: function (resp) {
-                                            alert(resp);
+                            // ❌ Refuser si < Bon
+                            return score >= 3;
+                        }
+                    }
+                }
+            },
+            "confirm-password": {
+                validators: {
+                    notEmpty: {
+                        message: "Le mot de passe de confirmation est obligatoire. Veuilez le renseigner."
+                    },
+                    identical: {
+                        compare: function () {
+                            return e.querySelector('[name="password"]').value
+                        },
+                        message: "Le nouveau mot de passe et le mot de passe de confirmation ne correspondent pas."
+                    }
+                }
+            }
+
+            ,
+            cgu: {
+                validators: {
+
+                    notEmpty: {
+                        message: 'Les CGU sont obligatoires. Veuillez cocher la case.'
+                    }
+                }
+            },
+        },
+
+        plugins: {
+            trigger: new FormValidation.plugins.Trigger(),
+            bootstrap: new FormValidation.plugins.Bootstrap5({
+                rowSelector: '.ff'
+            })
+        }
+    }
+);
+
+const t = document.getElementById('formSignUp_submit');
+t.addEventListener('click', function (e) {
+    e.preventDefault();
+    if (validator) {
+        validator.validate().then(function (status) {
+            if (status == 'Valid') {
+                t.setAttribute('data-kt-indicator', 'on');
+                t.disabled = true;
+                setTimeout(function () {
+                    var form_data = $("#formSignUp").serialize();
+                    $.ajax({
+                        type: 'post',
+                        url: '/personnel/auth-controller',
+                        data: form_data,
+                        success: function (resp) {
+                            alert(resp);
 
 // if (resp == "erreurConnexion") {
 //                                                 Swal.fire({
@@ -394,55 +379,48 @@ var KTPasswordResetNewPassword = function () {
 //                                             }
 
 
-                                            if (resp == "erreurConnexion") {
-                                                showAlert("Erreur de connexion. Veuillez réessayer ultérieurement.", "error", null, false, t);
+                            if (resp == "erreurConnexion") {
+                                showAlert("Erreur de connexion. Veuillez réessayer ultérieurement.", "error", null, false, t);
 
-                                            } else if (resp === "champsObligatoire") {
-                                                showAlert("Les champs marqués d'un astérisque (*) sont obligatoires.", "error", null, false, t);
+                            } else if (resp === "champsObligatoire") {
+                                showAlert("Les champs marqués d'un astérisque (*) sont obligatoires.", "error", null, false, t);
 
-                                            } else if (resp == "dejaCompte") {
-                                                showAlert("Vous avez déjà un compte. Veuillez vous connecter.", "error", "/personnel/page-de-connexion", true, t);
+                            } else if (resp == "dejaCompte") {
+                                showAlert("Vous avez déjà un compte. Veuillez vous connecter.", "error", "/personnel/page-de-connexion", true, t);
 
-                                            } else if (resp == "matriculeExistsPas") {
-                                                showAlert("Ce matricule n'existe pas.", "error", null, false, t);
+                            } else if (resp == "matriculeExistsPas") {
+                                showAlert("Ce matricule n'existe pas.", "error", null, false, t);
 
-                                            } else if (resp == "pasContrat") {
-                                                showAlert("Aucun contrat n’a été trouvé. Veuillez vous rapprocher du DRH.", "error", null, true, t);
+                            } else if (resp == "pasContrat") {
+                                showAlert("Aucun contrat n’a été trouvé. Veuillez vous rapprocher du DRH.", "error", null, true, t);
 
-                                            } else if (resp == "finContrat") {
-                                                showAlert("Votre contrat arrive à échéance. Veuillez contacter le DRH.", "error", null, true, t);
+                            } else if (resp == "finContrat") {
+                                showAlert("Votre contrat arrive à échéance. Veuillez contacter le DRH.", "error", null, true, t);
 
-                                            } else if (resp == "erreurMail") {
-                                                showAlert("L’adresse e-mail n’est pas valide ou une erreur est survenue lors de l’envoi du mail.", "error", null, true, t);
+                            } else if (resp == "erreurMail") {
+                                showAlert("L’adresse e-mail n’est pas valide ou une erreur est survenue lors de l’envoi du mail.", "error", null, true, t);
 
-                                            } else if (resp == "pasCorrespondantPWD") {
-                                                showAlert("Les mots de passe ne correspondent pas.", "error", null, false, t);
+                            } else if (resp == "pasCorrespondantPWD") {
+                                showAlert("Les mots de passe ne correspondent pas.", "error", null, false, t);
 
-                                            } else if (resp == "pasCorrespondantEmail") {
-                                                showAlert("L’adresse e-mail saisie est incorrecte.", "error", null, false, t);
+                            } else if (resp == "pasCorrespondantEmail") {
+                                showAlert("L’adresse e-mail saisie est incorrecte.", "error", null, false, t);
 
-                                            } else if (resp == "succès") {
-                                                showAlert("Compte créé avec succès !", "success", "/personnel/activate-account", false, t);
+                            } else if (resp.substr(0, 6) == "succès") {
+                                showAlert("Compte créé avec succès !", "success", "/personnel/activate-account/"+resp.substr(6), false, t);
 
-                                            } else {
-                                                showAlert("Une erreur est survenue. Veuillez réessayer ultérieurement.", "error", null, true, t);
-                                            }
-
-
-                                        }
-                                    })
-
-
-                                }, 2000);
+                            } else {
+                                showAlert("Une erreur est survenue. Veuillez réessayer ultérieurement.", "error", null, true, t);
                             }
-                        }))
-                })),
-                e.querySelector('input[name="password"]').addEventListener("input", (function () {
-                    this.value.length > 0 && r.updateFieldStatus("password", "NotValidated")
-                }))
-        }
+
+
+                        }
+                    })
+                }, 2000);
+            }
+        });
     }
-}();
-KTUtil.onDOMContentLoaded((function () {
-    KTPasswordResetNewPassword.init()
-}));
+});
+
+
+

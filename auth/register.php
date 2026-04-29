@@ -231,7 +231,7 @@
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/js/scripts.bundle.js"></script>
 
-<script src="/personnel/scripts.bundle.1.js"></script>
+<script src="/personnel/scripts.bundle.3.js"></script>
 </body>
 
 </html>
