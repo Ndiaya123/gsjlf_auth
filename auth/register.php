@@ -68,7 +68,7 @@
                 <span class="pp-tag-txt">Nouveau compte</span>
             </div>
             <div class="pp-rule" style="animation-delay:.2s"></div>
-            <h2 class="pp-h" style="animation-delay:.15s">Rejoignez la<br /><em>communauté GSJLF</em></h2>
+            <h2 class="pp-h" style="animation-delay:.15s">Rejoignez la<br /><em>Communauté GSJLF</em></h2>
             <p class="pp-p" style="animation-delay:.25s">Créez votre compte en quelques étapes et accédez à tous vos
                 services numériques.</p>
             <div class="pp-pills" style="animation-delay:.35s">
@@ -231,7 +231,7 @@
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/js/scripts.bundle.js"></script>
 
-<script src="/personnel/scripts.bundle.3.js"></script>
+<script src="/personnel/scripts.bundle.1.js"></script>
 </body>
 
 </html>

@@ -208,205 +208,37 @@ t.addEventListener('click', function (e) {
                         url: '/personnel/auth-controller',
                         data: form_data,
                         success: function (resp) {
+
                             alert(resp);
 
-// if (resp == "erreurConnexion") {
-//                                                 Swal.fire({
-//                                                     text: "Erreur de connexion. Veuillez réessayer ultérieurement.",
-//                                                     icon: "info",
-//                                                     buttonsStyling: false,
-//                                                     confirmButtonText: "quitter",
-//                                                     customClass: {
-//                                                         confirmButton: "btn btn-danger"
-//                                                     }
-//                                                 }).then((value) => {
-//                                                     $("#formSignUp")[0].reset();
-//                                                     t.removeAttribute('data-kt-indicator');
-//                                                     t.disabled = false;
-//                                                 });
-
-//                                             } else if (resp === "champsObligatoire") {
-//                                                 Swal.fire({
-//                                                     text: "Les champs marqués d'un astérisque (*) sont obligatoires",
-//                                                     icon: "error",
-//                                                     buttonsStyling: false,
-//                                                     confirmButtonText: "quitter",
-//                                                     customClass: {
-//                                                         confirmButton: "btn btn-danger"
-//                                                     }
-//                                                 }).then((value) => {
-//                                                     t.removeAttribute('data-kt-indicator');
-//                                                     t.disabled = false;
-//                                                 });
-
-//                                             }else if (resp == "dejaCompte") {
-//                                                 Swal.fire({
-//                                                     text: "Vous avez déjà un compte.Veuillez-vous connecter",
-//                                                     icon: "info",
-//                                                     buttonsStyling: false,
-//                                                     confirmButtonText: "quitter",
-//                                                     customClass: {
-//                                                         confirmButton: "btn btn-danger"
-//                                                     }
-//                                                 }).then((value) => {
-//                                                     $("#formSignUp")[0].reset();
-//                                                     t.removeAttribute('data-kt-indicator');
-//                                                     t.disabled = false;
-//                                                     window.location.href = "/personnel/page-de-connexion";
-//                                                 });
-
-//                                             } else if (resp == "matriculeExistsPas") {
-//                                                 Swal.fire({
-//                                                     text: "Ce matricule n'existe pas.",
-//                                                     icon: "error",
-//                                                     buttonsStyling: false,
-//                                                     confirmButtonText: "quitter",
-//                                                     customClass: {
-//                                                         confirmButton: "btn btn-primary"
-//                                                     }
-//                                                 }).then((value) => {
-//                                                     t.removeAttribute('data-kt-indicator');
-//                                                     t.disabled = false;
-//                                                 });
-
-//                                             } else if (resp == "pasContrat") {
-//                                                 Swal.fire({
-//                                                     text: "Aucun contrat n’a été trouvé. Veuillez vous rapprocher du DRH.",
-//                                                     icon: "error",
-//                                                     buttonsStyling: false,
-//                                                     confirmButtonText: "quitter",
-//                                                     customClass: {
-//                                                         confirmButton: "btn btn-primary"
-//                                                     }
-//                                                 }).then((value) => {
-//                                                     $("#formSignUp")[0].reset();
-//                                                     t.removeAttribute('data-kt-indicator');
-//                                                     t.disabled = false;
-//                                                 });
-
-//                                             }else if (resp == "finContrat") {
-//                                                 Swal.fire({
-//                                                     text: "Votre contrat arrive à échéance. Veuillez contacter le DRH.",
-//                                                     icon: "error",
-//                                                     buttonsStyling: false,
-//                                                     confirmButtonText: "quitter",
-//                                                     customClass: {
-//                                                         confirmButton: "btn btn-primary"
-//                                                     }
-//                                                 }).then((value) => {
-//                                                     $("#formSignUp")[0].reset();
-//                                                     t.removeAttribute('data-kt-indicator');
-//                                                     t.disabled = false;
-//                                                 });
-
-//                                             } else if (resp == "erreurMail") {
-//                                                 Swal.fire({
-//                                                     text: "L’adresse e-mail n’est pas valide ou une erreur est survenue lors de l’envoi du mail.",
-//                                                     icon: "error",
-//                                                     buttonsStyling: false,
-//                                                     confirmButtonText: "quitter",
-//                                                     customClass: {
-//                                                         confirmButton: "btn btn-primary"
-//                                                     }
-//                                                 }).then((value) => {
-//                                                     $("#formSignUp")[0].reset();
-//                                                     t.removeAttribute('data-kt-indicator');
-//                                                     t.disabled = false;
-//                                                 });
-
-//                                             } else if (resp == "pasCorrespondantPWD") {
-//                                                 Swal.fire({
-//                                                     text: "Le nouveau mot de passe et le mot de passe de confirmation ne correspondent pas.",
-//                                                     icon: "error",
-//                                                     buttonsStyling: false,
-//                                                     confirmButtonText: "quitter",
-//                                                     customClass: {
-//                                                         confirmButton: "btn btn-primary"
-//                                                     }
-//                                                 }).then((value) => {
-//                                                     t.removeAttribute('data-kt-indicator');
-//                                                     t.disabled = false;
-//                                                 });
-
-//                                             } else if (resp == "pasCorrespondantEmail") {
-//                                                 Swal.fire({
-//                                                     text: "L’adresse e-mail saisie est incorrecte. Merci de la vérifier.",
-//                                                     icon: "error",
-//                                                     buttonsStyling: false,
-//                                                     confirmButtonText: "quitter",
-//                                                     customClass: {
-//                                                         confirmButton: "btn btn-primary"
-//                                                     }
-//                                                 }).then((value) => {
-//                                                     t.removeAttribute('data-kt-indicator');
-//                                                     t.disabled = false;
-//                                                 });
-
-//                                             }
-//                                             else if (resp == "succès") {
-
-//                                                 window.location = "/personnel/activate-account";
-//                                             }
-//                                             else if (resp == "erreur") {
-//                                                 Swal.fire({
-//                                                     text: "Une erreure est survenue lors du traitement.Veuillez réessayer ultérieurement.",
-//                                                     icon: "error",
-//                                                     buttonsStyling: false,
-//                                                     confirmButtonText: "quitter",
-//                                                     customClass: {
-//                                                         confirmButton: "btn btn-primary"
-//                                                     }
-//                                                 }).then((value) => {
-//                                                     $("#formSignUp")[0].reset();
-//                                                     t.removeAttribute('data-kt-indicator');
-//                                                     t.disabled = false;
-//                                                 });
-
-//                                             } else {
-//                                                 Swal.fire({
-//                                                     text: "Une erreure est survenue. Veuillez réessayer ultérieurement.",
-//                                                     icon: "error",
-//                                                     buttonsStyling: false,
-//                                                     confirmButtonText: "quitter",
-//                                                     customClass: {
-//                                                         confirmButton: "btn btn-primary"
-//                                                     }
-//                                                 }).then((value) => {
-//                                                     t.removeAttribute('data-kt-indicator');
-//                                                     t.disabled = false;
-//                                                 });
-
-//                                             }
-
-
-                            if (resp == "erreurConnexion") {
+                            if (resp === "erreurConnexion") {
                                 showAlert("Erreur de connexion. Veuillez réessayer ultérieurement.", "error", null, false, t);
 
                             } else if (resp === "champsObligatoire") {
                                 showAlert("Les champs marqués d'un astérisque (*) sont obligatoires.", "error", null, false, t);
 
-                            } else if (resp == "dejaCompte") {
-                                showAlert("Vous avez déjà un compte. Veuillez vous connecter.", "error", "/personnel/page-de-connexion", true, t);
+                            } else if (resp === "dejaCompte") {
+                                showAlert("Vous avez déjà un compte. Veuillez vous connecter.", "error", "/personnel/signIn", true, t);
 
-                            } else if (resp == "matriculeExistsPas") {
+                            } else if (resp === "matriculeExistsPas") {
                                 showAlert("Ce matricule n'existe pas.", "error", null, false, t);
 
-                            } else if (resp == "pasContrat") {
+                            } else if (resp === "pasContrat") {
                                 showAlert("Aucun contrat n’a été trouvé. Veuillez vous rapprocher du DRH.", "error", null, true, t);
 
-                            } else if (resp == "finContrat") {
+                            } else if (resp === "finContrat") {
                                 showAlert("Votre contrat arrive à échéance. Veuillez contacter le DRH.", "error", null, true, t);
 
-                            } else if (resp == "erreurMail") {
+                            } else if (resp === "erreurMail") {
                                 showAlert("L’adresse e-mail n’est pas valide ou une erreur est survenue lors de l’envoi du mail.", "error", null, true, t);
 
-                            } else if (resp == "pasCorrespondantPWD") {
+                            } else if (resp === "pasCorrespondantPWD") {
                                 showAlert("Les mots de passe ne correspondent pas.", "error", null, false, t);
 
-                            } else if (resp == "pasCorrespondantEmail") {
+                            } else if (resp === "pasCorrespondantEmail") {
                                 showAlert("L’adresse e-mail saisie est incorrecte.", "error", null, false, t);
 
-                            } else if (resp.substr(0, 6) == "succès") {
+                            } else if (resp.substr(0, 6) === "succès") {
                                 showAlert("Compte créé avec succès !", "success", "/personnel/activate-account/"+resp.substr(6), false, t);
 
                             } else {

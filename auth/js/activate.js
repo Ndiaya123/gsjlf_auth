@@ -106,42 +106,26 @@ function activate()
     const code5 = document.getElementById("code5").value;
     const code6 = document.getElementById("code6").value;
 
+    const matricule = document.getElementById('matricule').value;
     const code = code1+""+code2+""+code3+""+code4+""+code5+""+code6;
 
     const t = document.getElementById('btnActivate');
-
     t.setAttribute('data-kt-indicator', 'on');
     t.disabled = true;
+
+
+    alert("activer compte");
 
     $.ajax({
         type: 'post',
         url: '/personnel/auth-controller',
-        data: {option : 4,matricule : matricule,code : code},
+        data: { option: 4, matricule: matricule, code: code },
+        dataType: 'text',
         success: function (resp) {
-            alert(resp);
-            document.getElementById("btnActivate").disabled = false;
-
-
-
-            if (resp == "erreurConnexion") {
-                showAlert("Erreur de connexion. Veuillez réessayer ultérieurement.", "error", null, true, t);
-
-            } else if (resp === "champsObligatoire") {
-                showAlert("Les champs marqués d'un astérisque (*) sont obligatoires.", "error", null, false, t);
-
-            } else if (resp == "erreurMail") {
-                showAlert("L’adresse e-mail n’est pas valide ou une erreur est survenue lors de l’envoi du mail.", "error", null, true, t);
-
-            } else if (resp.substr(0, 6) == "succès") {
-                showAlert("Compte créé avec succès !", "success", "/personnel/activate-account/"+resp.substr(6), false, t);
-
-            } else {
-                showAlert("Une erreur est survenue. Veuillez réessayer ultérieurement.", "error", null, true, t);
-            }
-
+            console.log("RESP:", resp);
 
         }
-    })
+    });
 
 
 

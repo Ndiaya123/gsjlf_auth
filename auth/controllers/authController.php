@@ -14,11 +14,8 @@ require_once('../../includes/phpMailer/PHPMailer.php');
 require_once('../../includes/phpMailer/SMTP.php');
 require_once('../../includes/phpMailer/Exception.php');
 
-class authController extends BD
+class papa extends BD
 {
-
-
-
 
 
     function tokenencrypt($data)
@@ -77,14 +74,10 @@ class authController extends BD
     }
 
 
-
-
-
-    function genererCode6Chiffres() {
+    function genererCode6Chiffres()
+    {
         return str_pad(random_int(0, 999999), 6, '0', STR_PAD_LEFT);
     }
-
-
 
 
     function dateFranc($date)
@@ -124,12 +117,14 @@ class authController extends BD
             return false; // ou false selon ton choix de sécurité
         }
     }
+
+
 }
 
 
-$bd  = new BD();
-$bd  = $bd ->connect();
-$authController = new authController();
+$bd = new BD();
+$bd = $bd->connect();
+$authController = new papa();
 date_default_timezone_set('Africa/Dakar');
 
 
@@ -140,6 +135,7 @@ function valid_donnees($donnees)
     $donnees = htmlspecialchars($donnees);
     return $donnees;
 }
+
 $option = (!empty($_POST['option'])) ? $_POST['option'] : '';
 
 
@@ -147,47 +143,45 @@ switch ($option) {
     case 1:
 
 
-
         if (!empty($_POST['matricule']) && !empty($_POST['email']) && !empty($_POST['password']) && !empty($_POST['confirm-password']) && !empty($_POST['cgu'])) {
 
             try {
-                $bd ->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $bd ->beginTransaction();
+                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bd->beginTransaction();
 
 
-            date_default_timezone_set('Africa/Dakar');
-            $date_jour =  date('d/m/Y H:i:s');
+                date_default_timezone_set('Africa/Dakar');
+                $date_jour = date('Y-m-d');
 
-            $matricule = valid_donnees($_POST['matricule']);
-            $email = valid_donnees($_POST['email']);
-            $password = valid_donnees($_POST['password']);
-            $confirmPassword = valid_donnees($_POST['confirm-password']);
-            $cgu = 1;
+                $matricule = valid_donnees($_POST['matricule']);
+                $email = valid_donnees($_POST['email']);
+                $password = valid_donnees($_POST['password']);
+                $confirmPassword = valid_donnees($_POST['confirm-password']);
+                $cgu = 1;
 
-            if($password != $confirmPassword){
+                if ($password != $confirmPassword) {
 
-                echo "pasCorrespondantPWD";
-                die;
+                    echo "pasCorrespondantPWD";
+                    die;
 
-            }
+                }
 
 
-            $data = [
-                'matricule' => $matricule
-            ];
-
-            $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
-            $stmt = $bd ->prepare($sql);
-            $stmt->execute($data);
-            $result = $stmt->fetch(PDO::FETCH_OBJ);
-
-            if(!$result)
-            {
-
-                $data_perso = [
-                    'matricule' =>  $matricule
+                $data = [
+                    'matricule' => $matricule
                 ];
-                $sql_perso = "SELECT 
+
+                $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
+                $stmt = $bd->prepare($sql);
+                $stmt->execute($data);
+                $result = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if (!$result) {
+
+                    $data_perso = [
+                        'matricule' => $matricule
+                    ];
+                    $sql_perso = "SELECT 
     p.identifiant,
     p.idEtatCivil,
     ec.prenom,
@@ -199,212 +193,206 @@ INNER JOIN etatCivil ec
 LEFT JOIN compteGmail cg 
     ON p.idCompteGmail = cg.id
 WHERE p.matricule = :matricule;";
-                $stmt_perso = $bd ->prepare($sql_perso);
-                $stmt_perso->execute($data_perso);
-                $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
+                    $stmt_perso = $bd->prepare($sql_perso);
+                    $stmt_perso->execute($data_perso);
+                    $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
 
-                if($result_perso) {
+                    if ($result_perso) {
 
-                    if($email != $result_perso->email)
-                    {
-echo "pasCorrespondantEmail";
-die;
-                    }
+                        if ($email != $result_perso->email) {
+                            echo "pasCorrespondantEmail";
+                            die;
+                        }
 
-                    $identifiant = $result_perso->identifiant;
-                    $idEtatCivil = $result_perso->idEtatCivil;
-                    $prenom = ucwords($result_perso->prenom);
-                    $nom = $authController->fctRetirerAccents(mb_strtoupper($result_perso->nom));
-
-
-                    $data_perso_contrat = [
-                        'matricule' =>  $matricule,
-                        'idTypeStatutContrat' => 1,
-
-                    ];
-                    $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
-                    $stmt_perso_contrat = $bd ->prepare($sql_perso_contrat);
-                    $stmt_perso_contrat->execute($data_perso_contrat);
-                    $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
-
-                    if($result_perso_contrat) {
-
-                        $debutContrat = $result_perso_contrat->dateDebutContrat;
-                        $finContrat = $result_perso_contrat->dateFinContrat;
-
-                        if($finContrat < $date_jour) {
+                        $identifiant = $result_perso->identifiant;
+                        $idEtatCivil = $result_perso->idEtatCivil;
+                        $prenom = ucwords($result_perso->prenom);
+                        $nom = $authController->fctRetirerAccents(mb_strtoupper($result_perso->nom));
 
 
-                            $dateCreation = new DateTime();
-                            $dateCreation = $dateCreation->format('Y-m-d H:i:s');
-                            $password = password_hash(valid_donnees($_POST['password']), PASSWORD_DEFAULT, ['cost' => 5]);
+                        $data_perso_contrat = [
+                            'matricule' => $matricule,
+                            'idTypeStatutContrat' => 1,
+
+                        ];
+                        $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
+                        $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+                        $stmt_perso_contrat->execute($data_perso_contrat);
+                        $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
+
+                        if ($result_perso_contrat) {
+
+                            $debutContrat = $result_perso_contrat->dateDebutContrat;
+                            $finContrat = $result_perso_contrat->dateFinContrat;
 
 
-                            $codeActivation = $authController->genererCode6Chiffres();
-                            $codeActivation_encrypt= $authController->tokenencrypt($codeActivation);
-
-                            $dataCandidat = [
-                                'identifiant' => $identifiant,
-                                'matricule' =>  valid_donnees($_POST['matricule']),
-                                'email' => strtolower(valid_donnees($_POST['email'])),
-                                'password' =>  $password,
-                                'cgu' =>$cgu,
-                                'dateCreation' => $dateCreation,
-                                'statutUtilisateur' => 0,
-                                'statutActivation' => 0,
-                                'codeActivation' => $codeActivation_encrypt,
-                                'dateEnvoiCodeValidation' => $dateCreation,
-                                'idEtatCivil' => $idEtatCivil
-                            ];
-                            $sql = "INSERT INTO utilisateurs(identifiant,matricule,email,password,cgu,dateCreation,statutUtilisateur,statutActivation,codeActivation,dateEnvoiCodeValidation,idEtatCivil) VALUES(:identifiant,:matricule,:email,:password,:cgu,:dateCreation,:statutUtilisateur,:statutActivation,:codeActivation,:dateEnvoiCodeValidation,:idEtatCivil)";
-                            $stmt = $bd ->prepare($sql);
-                            $tmpStmt = $stmt->execute($dataCandidat);
-
-                            if ($tmpStmt == 1) {
+                            if ($authController->comparerDate($finContrat)) {
 
 
-                                $table = "utilisateurs";
-                                $motif = "Création de compte";
-                                $dateEnregistrement = new DateTime();
-                                $dateEnregistrement = $dateEnregistrement->format('Y-m-d H:i:s');
-                                $dataHistorique = [
-                                    'identifiant' =>$identifiant,
-                                    'matricule' => $matricule,
-                                    'tableHistorique' => $table,
-                                    'motif' => $motif,
-                                    'idEtatCivil' => $idEtatCivil,
-                                    'dateEnregistremenent' => $dateEnregistrement,
+                                $dateCreation = new DateTime();
+                                $dateCreation = $dateCreation->format('Y-m-d H:i:s');
+                                $password = password_hash(valid_donnees($_POST['password']), PASSWORD_DEFAULT, ['cost' => 5]);
+
+
+                                $codeActivation = $authController->genererCode6Chiffres();
+                                $codeActivation_encrypt = $authController->tokenencrypt($codeActivation);
+
+                                $dataCandidat = [
+                                    'identifiant' => $identifiant,
+                                    'matricule' => valid_donnees($_POST['matricule']),
+                                    'email' => strtolower(valid_donnees($_POST['email'])),
+                                    'password' => $password,
+                                    'cgu' => $cgu,
+                                    'dateCreation' => $dateCreation,
+                                    'statutUtilisateur' => 0,
+                                    'statutActivation' => 0,
+                                    'codeActivation' => $codeActivation_encrypt,
+                                    'dateEnvoiCodeValidation' => $dateCreation,
+                                    'idEtatCivil' => $idEtatCivil
                                 ];
-                                $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
-                                $stmtHistorique = $bd ->prepare($sqlHistorique);
-                                $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
+                                $sql = "INSERT INTO utilisateurs(identifiant,matricule,email,password,cgu,dateCreation,statutUtilisateur,statutActivation,codeActivation,dateEnvoiCodeValidation,idEtatCivil) VALUES(:identifiant,:matricule,:email,:password,:cgu,:dateCreation,:statutUtilisateur,:statutActivation,:codeActivation,:dateEnvoiCodeValidation,:idEtatCivil)";
+                                $stmt = $bd->prepare($sql);
+                                $tmpStmt = $stmt->execute($dataCandidat);
 
-                                if ($tmpStmtHistorique == 1) {
+                                if ($tmpStmt == 1) {
 
-                                    $message = "<html>
-<head>
-  <title>Code d'activation – Demande d'admission en ligne</title>
-  <style>
-p{
-font-size: 16px;
-font-family: Roboto, Arial, sans-serif;
-color: #202124;
-background-color: #ffffff;
-}
-ul, li{
-font-size: 16px;
-font-family: Roboto, Arial, sans-serif;
-color: #202124;
-background-color: #ffffff;
-}
-.code {
-text-align: center;
-font-size: 32px;
-font-weight: bold;
-letter-spacing: 6px;
-color: #28A745;
-margin: 20px 0;
-}
-  </style>
-</head>
-<body>
 
-  <p>Bonjour " . $prenom . " " . $nom . ",</p>
+                                    $table = "utilisateurs";
+                                    $motif = "Création de compte";
+                                    $dateEnregistrement = new DateTime();
+                                    $dateEnregistrement = $dateEnregistrement->format('Y-m-d H:i:s');
+                                    $dataHistorique = [
+                                        'identifiant' => $identifiant,
+                                        'matricule' => $matricule,
+                                        'tableHistorique' => $table,
+                                        'motif' => $motif,
+                                        'idEtatCivil' => $idEtatCivil,
+                                        'dateEnregistremenent' => $dateEnregistrement,
+                                    ];
+                                    $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
+                                    $stmtHistorique = $bd->prepare($sqlHistorique);
+                                    $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 
-  <p>Vous venez de créer votre compte sur l’ENT du <strong>Groupe Scolaire Jean de la Fontaine (GSJLF)</strong>.</p>
 
-  <p>Pour activer votre compte, veuillez utiliser le code d’activation ci-dessous :</p>
+                                    if ($tmpStmtHistorique == 1) {
 
-  <div class='code'>$codeActivation</div>
+                                        $link = "/personnel/activate-account/" . $authController->tokenencrypt($matricule);
+                                        $message = "<html>
+                                        <head>
+                                          <title>Code d'activation – Demande d'admission en ligne</title>
+                                          <style>
+                                        p{
+                                        font-size: 16px;
+                                        font-family: Roboto, Arial, sans-serif;
+                                        color: #202124;
+                                        background-color: #ffffff;
+                                        }
+                                        ul, li{
+                                        font-size: 16px;
+                                        font-family: Roboto, Arial, sans-serif;
+                                        color: #202124;
+                                        background-color: #ffffff;
+                                        }
+                                        .code {
+                                        text-align: center;
+                                        font-size: 32px;
+                                        font-weight: bold;
+                                        letter-spacing: 6px;
+                                        color: #28A745;
+                                        margin: 20px 0;
+                                        }
+                                          </style>
+                                        </head>
+                                        <body>
+                                        
+                                          <p>Bonjour " . $prenom . " " . $nom . ",</p>
+                                        
+                                          <p>Vous venez de créer votre compte sur l’ENT du <strong>Groupe Scolaire Jean de la Fontaine (GSJLF)</strong>.</p>
+                                        
+                                          <p>Pour activer votre compte, veuillez utiliser le code d’activation ci-dessous :</p>
+                                        
+                                          <div class='code'>$codeActivation</div>
+                                        
+                                          <p>Ce code vous sera demandé afin de confirmer votre identité et finaliser l’activation de votre compte.</p>
+                                        <p>Veuillez utiliser le lien suivant pour accéder à la page d’activation : <a href='$link'>Activer mon compte</a></p>
+                                          <p><strong>Important :</strong> ce code est valable pour une durée limitée. Pour des raisons de sécurité, ne le partagez avec personne.</p>
+                                        
+                                          <p>Une fois votre compte activé, vous pourrez :</p>
+                                          <ul>
+                                            <li>Accéder à votre espace de travail</li>
+                                            <li>Consulter vos informations professionnelles</li>
+                                            <li>Utiliser les services internes de l’établissement</li>
+                                          </ul>
+                                        <p>
+                                        Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet email ou contacter immédiatement le service informatique à :
+                                        <a href=\"mailto:criat@uahb.sn\">criat@uahb.sn</a>.
+                                        </p>
+                                          <p>Cordialement,<br>
+                                          Le service d'informatique<br>
+                                          Groupe Scolaire Jean de la Fontaine</p>
+                                        
+                                        </body>
+                                        </html>";
+                                        // Envoyer l'e-mail
+                                        $emailSent = $authController->sendEmail($email, $prenom, "Activez votre compte maintenant !", $message);
 
-  <p>Ce code vous sera demandé afin de confirmer votre identité et finaliser l’activation de votre compte.</p>
+                                        if (!$emailSent) {
+                                            $bd->rollBack();
 
-  <p><strong>Important :</strong> ce code est valable pour une durée limitée. Pour des raisons de sécurité, ne le partagez avec personne.</p>
+                                            echo "erreurMail";
+                                            die;
+                                        } else {
 
-  <p>Une fois votre compte activé, vous pourrez :</p>
-  <ul>
-    <li>Accéder à votre espace de travail</li>
-    <li>Consulter vos informations professionnelles</li>
-    <li>Utiliser les services internes de l’établissement</li>
-  </ul>
-<p>
-Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet email ou contacter immédiatement le service informatique à :
-<a href=\"mailto:criat@uahb.sn\">criat@uahb.sn</a>.
-</p>
-  <p>Cordialement,<br>
-  Le service d'informatique<br>
-  Groupe Scolaire Jean de la Fontaine</p>
+                                            $bd->commit();
+                                            echo "succès" . $authController->tokenencrypt($matricule);
+                                            die;
 
-</body>
-</html>";
-                                    // Envoyer l'e-mail
-                                    $emailSent = $authController->sendEmail($email, $prenom, "Activez votre compte maintenant !", $message);
+                                        }
 
-                                    if (!$emailSent) {
-                                        $bd ->rollBack();
-
-                                        echo"erreurMail";
-                                        die;
                                     } else {
-
-                                        $bd ->commit();
-                                        echo "succès".$authController->tokenencrypt($matricule);
+                                        $bd->rollBack();
+                                        echo "erreur";
                                         die;
-
                                     }
 
+
                                 } else {
-                                    $bd ->rollBack();
                                     echo "erreur";
                                     die;
                                 }
 
 
-
                             } else {
-                                echo "erreur";
+
+                                echo "finContrat";
                                 die;
+
                             }
 
 
-                        }else
-                        {
-
-                            echo "finContrat";
+                        } else {
+                            echo "pasContrat";
                             die;
-
                         }
 
 
-
-                    }else
-                    {
-                        echo "pasContrat";
+                    } else {
+                        echo "matriculeExistsPas";
                         die;
+
                     }
 
-
-                }else
-                {
-                    echo "matriculeExistsPas";
+                } else {
+                    echo "dejaCompte";
                     die;
 
                 }
 
-                }else
-            {
-                echo "dejaCompte";
-                die;
-
-            }
-
             } catch (Exception $e) {
-                $bd ->rollBack();
-                echo "erreur".$e;
+                $bd->rollBack();
+                echo "erreur";
                 die;
             }
-
-
 
 
         } else {
@@ -415,142 +403,206 @@ Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet emai
 
     case 2:
 
+
+        if (!empty($_POST['email']) && !empty($_POST['password'])) {
+
+            try {
+                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bd->beginTransaction();
+
+
+                date_default_timezone_set('Africa/Dakar');
+
+                $email = valid_donnees($_POST['email']);
+                $password = valid_donnees($_POST['password']);
+
+
+                $data = [
+                    'email' => $email
+                ];
+
+                $sql = "SELECT * FROM utilisateurs WHERE email=:email";
+                $stmt = $bd->prepare($sql);
+                $stmt->execute($data);
+                $result = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if ($result) {
+
+
+                    if ($result->statutActivation == 1) {
+
+                        if (password_verify(valid_donnees($password), $result->password) == 1) {
+
+
+                            echo "succès";
+                            die;
+
+                        } else {
+                            echo "pasCompte";
+                            die;
+
+                        }
+
+
+                    } else {
+                        echo "compteInactive";
+                        die;
+                    }
+
+                } else {
+                    echo "pasCompte";
+                    die;
+
+                }
+
+            } catch (Exception $e) {
+                $bd->rollBack();
+                echo "erreur" . $e;
+                die;
+            }
+
+
+        } else {
+            echo "champsObligatoire";
+            die;
+        }
+        break;
     case 3:
-       if(!empty($_POST['matricule']))
-       {
+        if (!empty($_POST['matricule'])) {
 
-           echo "erreur";
-           die;
 
-           date_default_timezone_set('Africa/Dakar');
 
-           $matricule = valid_donnees($_POST['matricule']);
-           $date_jour =  date('d/m/Y H:i:s');
-           $data = [
-               'matricule' => $matricule
-           ];
+            try {
+                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bd->beginTransaction();
 
-           $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
-           $stmt = $bd ->prepare($sql);
-           $stmt->execute($data);
-           $result = $stmt->fetch(PDO::FETCH_OBJ);
 
-           if($result)
-           {
 
-               $email = $result->email;
-               $jourCreation = dateFranc($result->dateCreation);
-               $tempsExpire = "24 h";
+                date_default_timezone_set('Africa/Dakar');
 
-               if($result->statutActivation == 1)
-               {
+                $matricule = valid_donnees($_POST['matricule']);
+                $date_jour = date('d/m/Y H:i:s');
+                $data = [
+                    'matricule' => $matricule
+                ];
 
-                   $statut = 1;
+                $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
+                $stmt = $bd->prepare($sql);
+                $stmt->execute($data);
+                $result = $stmt->fetch(PDO::FETCH_OBJ);
 
-               }else
-               {
+                if ($result) {
 
-                   if(comparerDate($result->dateEnvoiCodeValidation))
-                   {
-                       echo "erreur";
-                       die;
-                 }else
-                   {
+                    $email = $result->email;
+                    $jourCreation = dateFranc($result->dateCreation);
+                    $tempsExpire = "24 h";
+
+                    if ($result->statutActivation == 1) {
+
+                        $statut = 1;
+
+                    } else {
+
+                        if (comparerDate($result->dateEnvoiCodeValidation)) {
+                            echo "erreur";
+                            die;
+                        } else {
 //                       renvoyer code
 
-                       $data_perso = [
-                           'matricule' =>  $matricule
-                       ];
-                       $sql_perso = "SELECT 
-    p.identifiant,
-    p.idEtatCivil,
-    ec.prenom,
-    ec.nom,
-    cg.email
-FROM personnels p
-INNER JOIN etatCivil ec 
-    ON p.idEtatCivil = ec.id
-LEFT JOIN compteGmail cg 
-    ON p.idCompteGmail = cg.id
-WHERE p.matricule = :matricule;";
-                       $stmt_perso = $bd ->prepare($sql_perso);
-                       $stmt_perso->execute($data_perso);
-                       $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
+                            $data_perso = [
+                                'matricule' => $matricule
+                            ];
+                            $sql_perso = "SELECT 
+                                    p.identifiant,
+                                    p.idEtatCivil,
+                                    ec.prenom,
+                                    ec.nom,
+                                    cg.email
+                                FROM personnels p
+                                INNER JOIN etatCivil ec 
+                                    ON p.idEtatCivil = ec.id
+                                LEFT JOIN compteGmail cg 
+                                    ON p.idCompteGmail = cg.id
+                                WHERE p.matricule = :matricule;";
+                            $stmt_perso = $bd->prepare($sql_perso);
+                            $stmt_perso->execute($data_perso);
+                            $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
 
-                       if($result_perso) {
-
-
-
-                           $identifiant = $result_perso->identifiant;
-                           $idEtatCivil = $result_perso->idEtatCivil;
-                           $prenom = ucwords($result_perso->prenom);
-                           $nom = $authController->fctRetirerAccents(mb_strtoupper($result_perso->nom));
+                            if ($result_perso) {
 
 
-                           $data_perso_contrat = [
-                               'matricule' =>  $matricule,
-                               'idTypeStatutContrat' => 1,
-
-                           ];
-                           $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
-                           $stmt_perso_contrat = $bd ->prepare($sql_perso_contrat);
-                           $stmt_perso_contrat->execute($data_perso_contrat);
-                           $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
-
-                           if($result_perso_contrat) {
-
-                               $debutContrat = $result_perso_contrat->dateDebutContrat;
-                               $finContrat = $result_perso_contrat->dateFinContrat;
-
-                               if($finContrat < $date_jour) {
+                                $identifiant = $result_perso->identifiant;
+                                $idEtatCivil = $result_perso->idEtatCivil;
+                                $prenom = ucwords($result_perso->prenom);
+                                $nom = $authController->fctRetirerAccents(mb_strtoupper($result_perso->nom));
 
 
-                                   $dateCreation = new DateTime();
-                                   $dateCreation = $dateCreation->format('Y-m-d H:i:s');
-                                   $password = password_hash(valid_donnees($_POST['password']), PASSWORD_DEFAULT, ['cost' => 5]);
+                                $data_perso_contrat = [
+                                    'matricule' => $matricule,
+                                    'idTypeStatutContrat' => 1,
 
-                                   $codeActivation = $authController->genererCode6Chiffres();
-                                   $codeActivation_encrypt= $authController->tokenencrypt($codeActivation);
+                                ];
+                                $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
+                                $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+                                $stmt_perso_contrat->execute($data_perso_contrat);
+                                $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
 
-                                   $dataCandidat = [
-                                       'matricule' => valid_donnees($_POST['matricule']),
-                                       'statutActivation' => 0,
-                                       'codeActivation' => $codeActivation_encrypt,
-                                       'dateEnvoiCodeValidation' => $dateCreation,
-                                   ];
+                                if ($result_perso_contrat) {
 
-                                   $sql = "UPDATE utilisateurs 
-        SET
-            statutActivation = :statutActivation,
-            codeActivation = :codeActivation,
-            dateEnvoiCodeValidation = :dateEnvoiCodeValidation
-        WHERE matricule = :matricule";
+                                    $debutContrat = $result_perso_contrat->dateDebutContrat;
+                                    $finContrat = $result_perso_contrat->dateFinContrat;
 
-                                   $stmt = $bd->prepare($sql);
-                                   $tmpStmt = $stmt->execute($dataCandidat);
-
-                                   if ($tmpStmt == 1) {
+                                    if ($authController->comparerDate($finContrat)) {
 
 
-                                       $table = "utilisateurs";
-                                       $motif = "Renvoyer un nouveau code d'activation";
-                                       $dateEnregistrement = new DateTime();
-                                       $dateEnregistrement = $dateEnregistrement->format('Y-m-d H:i:s');
-                                       $dataHistorique = [
-                                           'identifiant' =>$identifiant,
-                                           'matricule' => $matricule,
-                                           'tableHistorique' => $table,
-                                           'motif' => $motif,
-                                           'idEtatCivil' => $idEtatCivil,
-                                           'dateEnregistremenent' => $dateEnregistrement,
-                                       ];
-                                       $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
-                                       $stmtHistorique = $bd ->prepare($sqlHistorique);
-                                       $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
+                                        $dateCreation = new DateTime();
+                                        $dateCreation = $dateCreation->format('Y-m-d H:i:s');
+                                        $password = password_hash(valid_donnees($_POST['password']), PASSWORD_DEFAULT, ['cost' => 5]);
 
-                                       if ($tmpStmtHistorique == 1) {
+                                        $codeActivation = $authController->genererCode6Chiffres();
+                                        $codeActivation_encrypt = $authController->tokenencrypt($codeActivation);
 
-                                           $message = "<html>
+                                        $dataCandidat = [
+                                            'matricule' => valid_donnees($_POST['matricule']),
+                                            'statutActivation' => 0,
+                                            'codeActivation' => $codeActivation_encrypt,
+                                            'dateEnvoiCodeValidation' => $dateCreation,
+                                        ];
+
+                                        $sql = "UPDATE utilisateurs 
+                                                    SET
+                                                        statutActivation = :statutActivation,
+                                                        codeActivation = :codeActivation,
+                                                        dateEnvoiCodeValidation = :dateEnvoiCodeValidation
+                                                    WHERE matricule = :matricule";
+
+                                        $stmt = $bd->prepare($sql);
+                                        $tmpStmt = $stmt->execute($dataCandidat);
+
+                                        if ($tmpStmt == 1) {
+
+
+                                            $table = "utilisateurs";
+                                            $motif = "Renvoyer un nouveau code d'activation";
+                                            $dateEnregistrement = new DateTime();
+                                            $dateEnregistrement = $dateEnregistrement->format('Y-m-d H:i:s');
+                                            $dataHistorique = [
+                                                'identifiant' => $identifiant,
+                                                'matricule' => $matricule,
+                                                'tableHistorique' => $table,
+                                                'motif' => $motif,
+                                                'idEtatCivil' => $idEtatCivil,
+                                                'dateEnregistremenent' => $dateEnregistrement,
+                                            ];
+                                            $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
+                                            $stmtHistorique = $bd->prepare($sqlHistorique);
+                                            $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
+
+                                            if ($tmpStmtHistorique == 1) {
+
+                                                $link = "/personnel/activate-account/" . $authController->tokenencrypt($matricule);
+
+                                                $message = "<html>
 <head>
   <title>Code d'activation – Demande d'admission en ligne</title>
   <style>
@@ -587,6 +639,7 @@ margin: 20px 0;
   <div class='code'>$codeActivation</div>
 
   <p>Ce code vous sera demandé afin de confirmer votre identité et finaliser l’activation de votre compte.</p>
+                                        <p>Veuillez utiliser le lien suivant pour accéder à la page d’activation : <a href='$link'>Activer mon compte</a></p>
 
   <p><strong>Important :</strong> ce code est valable pour une durée limitée. Pour des raisons de sécurité, ne le partagez avec personne.</p>
 
@@ -606,117 +659,526 @@ Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet emai
 
 </body>
 </html>";
-                                           // Envoyer l'e-mail
-                                           $emailSent = $authController->sendEmail($email, $prenom, "Activez votre compte maintenant !", $message);
+                                                // Envoyer l'e-mail
+                                                $emailSent = $authController->sendEmail($email, $prenom, "Activez votre compte maintenant !", $message);
 
-                                           if (!$emailSent) {
-                                               $bd ->rollBack();
+                                                if (!$emailSent) {
+                                                    $bd->rollBack();
 
-                                               echo"erreurMail";
-                                               die;
-                                           } else {
+                                                    echo "erreurMail";
+                                                    die;
+                                                } else {
 
-                                               $bd ->commit();
-                                               echo "succès".$authController->tokenencrypt($matricule);
-                                               die;
+                                                    $bd->commit();
+                                                    echo "succès" . $authController->tokenencrypt($matricule);
+                                                    die;
 
-                                           }
+                                                }
 
-                                       } else {
-                                           $bd ->rollBack();
-                                           echo "erreur";
-                                           die;
-                                       }
-
-
-
-                                   } else {
-                                       echo "erreur";
-                                       die;
-                                   }
+                                            } else {
+                                                $bd->rollBack();
+                                                echo "erreur";
+                                                die;
+                                            }
 
 
-                               }else
-                               {
-
-                                   echo "erreur";
-                                   die;
-
-                               }
+                                        } else {
+                                            echo "erreur";
+                                            die;
+                                        }
 
 
+                                    } else {
 
-                           }else
-                           {
-                               echo "pasContrat";
-                               die;
-                           }
+                                        echo "erreur";
+                                        die;
+
+                                    }
 
 
-                       }else
-                       {
-                           echo "erreur";
-                           die;
+                                } else {
+                                    echo "pasContrat";
+                                    die;
+                                }
 
-                       }
+
+                            } else {
+                                echo "erreur";
+                                die;
+
+                            }
 //                       fin renvoyer code
 
-                   }
+                        }
 
-               }
+                    }
 
 //            $statut = 0;
-           }else
-           {
-               echo "erreur";
-               die;
-           }
+                } else {
+                    echo "erreur";
+                    die;
+                }
 
-       }else
-       {
-           echo "erreur";
-           die;
-       }
-       break;
-    case 4 :
-
-        if(!empty($_POST['matricule']) && !empty($_POST['code']))
-        {
-
-
-            date_default_timezone_set('Africa/Dakar');
-
-            $matricule = valid_donnees($_POST['matricule']);
-            $date_jour =  date('d/m/Y H:i:s');
-            $data = [
-                'matricule' => $matricule
-            ];
-
-            $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
-            $stmt = $bd ->prepare($sql);
-            $stmt->execute($data);
-            $result = $stmt->fetch(PDO::FETCH_OBJ);
-
-            if($result) {
-
-
-
-
-            }else
-            {
-                echo "erreur";
+            }catch (Exception $e) {
+                $bd->rollBack();
+                echo "erreur" . $e;
                 die;
             }
 
 
-            }else
-        {
+        } else {
             echo "erreur";
             die;
         }
+        break;
+    case 4 :
+
+
+        if (!empty($_POST['matricule']) && !empty($_POST['code'])) {
+
+
+
+            try {
+                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bd->beginTransaction();
+
+
+
+                date_default_timezone_set('Africa/Dakar');
+
+                $matricule = valid_donnees($_POST['matricule']);
+                $code = valid_donnees($_POST['code']);
+
+                $date_jour = date('d/m/Y H:i:s');
+                $data = [
+                    'matricule' => $matricule
+                ];
+
+                $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
+                $stmt = $bd->prepare($sql);
+                $stmt->execute($data);
+                $result = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if ($result) {
+
+
+                    if ($result->statutActivation != 1) {
+
+                        $data_perso = [
+                            'matricule' => $matricule
+                        ];
+                        $sql_perso = "SELECT 
+    p.identifiant,
+    p.idEtatCivil,
+    ec.prenom,
+    ec.nom,
+    cg.email
+FROM personnels p
+INNER JOIN etatCivil ec 
+    ON p.idEtatCivil = ec.id
+LEFT JOIN compteGmail cg 
+    ON p.idCompteGmail = cg.id
+WHERE p.matricule = :matricule;";
+                        $stmt_perso = $bd->prepare($sql_perso);
+                        $stmt_perso->execute($data_perso);
+                        $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
+
+                        if ($result_perso) {
+
+
+                            $identifiant = $result_perso->identifiant;
+                            $idEtatCivil = $result_perso->idEtatCivil;
+                            $prenom = ucwords($result_perso->prenom);
+                            $nom = $authController->fctRetirerAccents(mb_strtoupper($result_perso->nom));
+
+
+                            $data_perso_contrat = [
+                                'matricule' => $matricule,
+                                'idTypeStatutContrat' => 1,
+
+                            ];
+                            $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
+                            $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+                            $stmt_perso_contrat->execute($data_perso_contrat);
+                            $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
+
+                            if ($result_perso_contrat) {
+
+                                $debutContrat = $result_perso_contrat->dateDebutContrat;
+                                $finContrat = $result_perso_contrat->dateFinContrat;
+
+
+                                if ($authController->comparerDate($finContrat)) {
+
+
+                                    if ($result->codeActivation == $authController->tokenencrypt($code)) {
+
+                                        $dateCreation = new DateTime();
+                                        $dateCreation = $dateCreation->format('Y-m-d H:i:s');
+
+                                        $codeActivation = $authController->genererCode6Chiffres();
+                                        $codeActivation_encrypt = $authController->tokenencrypt($codeActivation);
+
+                                        $dataCandidat = [
+                                            'matricule' => valid_donnees($_POST['matricule']),
+                                            'statutActivation' => 1,
+                                            'dateActivation' => $dateCreation,
+                                        ];
+
+                                        $sql = "UPDATE utilisateurs 
+        SET
+            statutActivation = :statutActivation,
+            dateActivation = :dateActivation
+        WHERE matricule = :matricule";
+
+                                        $stmt = $bd->prepare($sql);
+                                        $tmpStmt = $stmt->execute($dataCandidat);
+
+                                        if ($tmpStmt == 1) {
+
+
+                                            $table = "utilisateurs";
+                                            $motif = "Activation du compte";
+                                            $dateEnregistrement = new DateTime();
+                                            $dateEnregistrement = $dateEnregistrement->format('Y-m-d H:i:s');
+                                            $dataHistorique = [
+                                                'identifiant' => $identifiant,
+                                                'matricule' => $matricule,
+                                                'tableHistorique' => $table,
+                                                'motif' => $motif,
+                                                'idEtatCivil' => $idEtatCivil,
+                                                'dateEnregistremenent' => $dateEnregistrement,
+                                            ];
+                                            $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
+                                            $stmtHistorique = $bd->prepare($sqlHistorique);
+                                            $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
+
+                                            if ($tmpStmtHistorique == 1) {
+
+                                                $bd->commit();
+                                                echo "succès";
+                                                die;
+
+                                            } else {
+                                                $bd->rollBack();
+                                                echo "erreur";
+                                                die;
+                                            }
+
+
+                                        } else {
+                                            echo "erreur";
+                                            die;
+                                        }
+
+
+                                    } else {
+                                        echo "codeIncorrect";
+                                        die;
+                                    }
+
+
+                                } else {
+
+                                    echo "finContrat";
+                                    die;
+
+                                }
+
+
+                            } else {
+                                echo "pasContrat";
+                                die;
+                            }
+
+
+                        } else {
+                            echo "matriculeExistsPas";
+                            die;
+
+                        }
+
+                    } else {
+                        echo "dejaActive";
+                        die;
+                    }
+
+
+                } else {
+                    echo "erreur";
+                    die;
+                }
+
+
+
+            }catch (Exception $e) {
+                $bd->rollBack();
+                echo "erreur";
+                die;
+            }
+
+        } else {
+            echo "erreur";
+            die;
+        }
+        break;
+    case 5 :
+
+
+        if (!empty($_POST['matricule']) && !empty($_POST['email'])) {
+
+            try {
+                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bd->beginTransaction();
+
+
+                date_default_timezone_set('Africa/Dakar');
+
+                $email = valid_donnees($_POST['email']);
+                $matricule = valid_donnees($_POST['matricule']);
+
+
+                $data = [
+                    'email' => $email
+                ];
+
+                $sql = "SELECT * FROM utilisateurs WHERE email=:email";
+                $stmt = $bd->prepare($sql);
+                $stmt->execute($data);
+                $result = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if ($result) {
+
+
+                    if ($result->statutActivation == 1) {
+
+                        $data_perso = [
+                            'matricule' => $matricule
+                        ];
+                        $sql_perso = "SELECT 
+                                    p.identifiant,
+                                    p.idEtatCivil,
+                                    ec.prenom,
+                                    ec.nom,
+                                    cg.email
+                                FROM personnels p
+                                INNER JOIN etatCivil ec 
+                                    ON p.idEtatCivil = ec.id
+                                LEFT JOIN compteGmail cg 
+                                    ON p.idCompteGmail = cg.id
+                                WHERE p.matricule = :matricule;";
+                        $stmt_perso = $bd->prepare($sql_perso);
+                        $stmt_perso->execute($data_perso);
+                        $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
+
+                        if ($result_perso) {
+
+
+                            $identifiant = $result_perso->identifiant;
+                            $idEtatCivil = $result_perso->idEtatCivil;
+                            $prenom = ucwords($result_perso->prenom);
+                            $nom = $authController->fctRetirerAccents(mb_strtoupper($result_perso->nom));
+
+
+                            $data_perso_contrat = [
+                                'matricule' => $matricule,
+                                'idTypeStatutContrat' => 1,
+
+                            ];
+                            $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
+                            $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+                            $stmt_perso_contrat->execute($data_perso_contrat);
+                            $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
+
+                            if ($result_perso_contrat) {
+
+                                $debutContrat = $result_perso_contrat->dateDebutContrat;
+                                $finContrat = $result_perso_contrat->dateFinContrat;
+
+                                if ($authController->comparerDate($finContrat)) {
+
+
+                                    $dateCreation = new DateTime();
+                                    $dateCreation = $dateCreation->format('Y-m-d H:i:s');
+                                    $password = password_hash(valid_donnees($_POST['password']), PASSWORD_DEFAULT, ['cost' => 5]);
+
+                                    $codeActivation = $authController->genererCode6Chiffres();
+                                    $codeActivation_encrypt = $authController->tokenencrypt($codeActivation);
+
+                                    $dataCandidat = [
+                                        'matricule' => valid_donnees($_POST['matricule']),
+                                        'statutActivation' => 0,
+                                        'codeActivation' => $codeActivation_encrypt,
+                                        'dateEnvoiCodeValidation' => $dateCreation,
+                                    ];
+
+                                    $sql = "UPDATE utilisateurs 
+                                                    SET
+                                                        statutActivation = :statutActivation,
+                                                        codeActivation = :codeActivation,
+                                                        dateEnvoiCodeValidation = :dateEnvoiCodeValidation
+                                                    WHERE matricule = :matricule";
+
+                                    $stmt = $bd->prepare($sql);
+                                    $tmpStmt = $stmt->execute($dataCandidat);
+
+                                    if ($tmpStmt == 1) {
+
+
+                                        $table = "utilisateurs";
+                                        $motif = "Renvoyer un nouveau code d'activation";
+                                        $dateEnregistrement = new DateTime();
+                                        $dateEnregistrement = $dateEnregistrement->format('Y-m-d H:i:s');
+                                        $dataHistorique = [
+                                            'identifiant' => $identifiant,
+                                            'matricule' => $matricule,
+                                            'tableHistorique' => $table,
+                                            'motif' => $motif,
+                                            'idEtatCivil' => $idEtatCivil,
+                                            'dateEnregistremenent' => $dateEnregistrement,
+                                        ];
+                                        $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
+                                        $stmtHistorique = $bd->prepare($sqlHistorique);
+                                        $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
+
+                                        if ($tmpStmtHistorique == 1) {
+
+                                            $link = "/personnel/activate-account/" . $authController->tokenencrypt($matricule);
+
+                                            $message = "<html>
+<head>
+  <title>Code d'activation – Demande d'admission en ligne</title>
+  <style>
+p{
+font-size: 16px;
+font-family: Roboto, Arial, sans-serif;
+color: #202124;
+background-color: #ffffff;
+}
+ul, li{
+font-size: 16px;
+font-family: Roboto, Arial, sans-serif;
+color: #202124;
+background-color: #ffffff;
+}
+.code {
+text-align: center;
+font-size: 32px;
+font-weight: bold;
+letter-spacing: 6px;
+color: #28A745;
+margin: 20px 0;
+}
+  </style>
+</head>
+<body>
+
+  <p>Bonjour " . $prenom . " " . $nom . ",</p>
+
+  <p>Vous venez de créer votre compte sur l’ENT du <strong>Groupe Scolaire Jean de la Fontaine (GSJLF)</strong>.</p>
+
+  <p>Pour activer votre compte, veuillez utiliser le code d’activation ci-dessous :</p>
+
+  <div class='code'>$codeActivation</div>
+
+  <p>Ce code vous sera demandé afin de confirmer votre identité et finaliser l’activation de votre compte.</p>
+                                        <p>Veuillez utiliser le lien suivant pour accéder à la page d’activation : <a href='$link'>Activer mon compte</a></p>
+
+  <p><strong>Important :</strong> ce code est valable pour une durée limitée. Pour des raisons de sécurité, ne le partagez avec personne.</p>
+
+  <p>Une fois votre compte activé, vous pourrez :</p>
+  <ul>
+    <li>Accéder à votre espace de travail</li>
+    <li>Consulter vos informations professionnelles</li>
+    <li>Utiliser les services internes de l’établissement</li>
+  </ul>
+<p>
+Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet email ou contacter immédiatement le service informatique à :
+<a href=\"mailto:criat@uahb.sn\">criat@uahb.sn</a>.
+</p>
+  <p>Cordialement,<br>
+  Le service d'informatique<br>
+  Groupe Scolaire Jean de la Fontaine</p>
+
+</body>
+</html>";
+                                            // Envoyer l'e-mail
+                                            $emailSent = $authController->sendEmail($email, $prenom, "Activez votre compte maintenant !", $message);
+
+                                            if (!$emailSent) {
+                                                $bd->rollBack();
+
+                                                echo "erreurMail";
+                                                die;
+                                            } else {
+
+                                                $bd->commit();
+                                                echo "succès" . $authController->tokenencrypt($matricule);
+                                                die;
+
+                                            }
+
+                                        } else {
+                                            $bd->rollBack();
+                                            echo "erreur";
+                                            die;
+                                        }
+
+
+                                    } else {
+                                        echo "erreur";
+                                        die;
+                                    }
+
+
+                                } else {
+
+                                    echo "erreur";
+                                    die;
+
+                                }
+
+
+                            } else {
+                                echo "pasContrat";
+                                die;
+                            }
+
+
+                        } else {
+                            echo "erreur";
+                            die;
+
+                        }
+
+                    } else {
+                        echo "compteInactive";
+                        die;
+                    }
+
+                } else {
+                    echo "pasCompte";
+                    die;
+
+                }
+
+            } catch (Exception $e) {
+                $bd->rollBack();
+                echo "erreur" . $e;
+                die;
+            }
+
+
+        } else {
+            echo "champsObligatoire";
+            die;
+        }
+        break;
 
 
     default :
         echo "erreur";
         die;
+
+
 }

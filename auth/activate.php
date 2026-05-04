@@ -8,6 +8,17 @@ try {
     date_default_timezone_set('Africa/Dakar');
 
 
+    function tokendecrypt($data)
+    {
+        $secretKey = 'U@hbENTDRI@TCRI@T2022';
+        $secretIv = 'www.ent.uahb.sn';
+        $encryptMethod = "AES-256-CBC";
+        $key = hash('sha256', $secretKey);
+        $iv = substr(hash('sha256', $secretIv), 0, 16);
+        $result = openssl_decrypt(base64_decode($data), $encryptMethod, $key, 0, $iv);
+        return $result;
+    }
+
     function dateFranc($date)
     {
         try {
@@ -52,7 +63,7 @@ try {
         $now = new DateTime();
         $date_jour = $now->format('Y-m-d H:i:s');
 
-        $matricule = $_GET['mat'];
+        $matricule = tokendecrypt($_GET['mat']);
 
         $data = [
                 'matricule' => $matricule
@@ -89,7 +100,6 @@ try {
 
             }
 
-//            $statut = 0;
         }else
         {
             $matricule = null;
@@ -112,8 +122,6 @@ try {
 
 
     }
-
-    $statut = 3;
 
 
 }catch (Exception $e) {
@@ -349,18 +357,18 @@ try {
                         <p class="fh-sub">Code envoyé à <strong><?= $email ?></strong>. Entrez le code ci-dessous.</p>
                     </div>
                     <div class="info-grid">
-                        <div class="ig-box"><div class="ig-lbl">Compte créé</div><div class="ig-val"><?= $jourCreation ?></div></div>
+                        <div class="ig-box"><div class="ig-lbl">Compte créé</div><div class="ig-val text-center" ><?= $jourCreation ?></div></div>
                         <div class="ig-box"><div class="ig-lbl">Expiration</div><div class="ig-val"><?= $tempsExpire ?></div></div>
                     </div>
                     <div class="ff">
                         <label>Code de vérification à 6 chiffres</label>
                         <div class="otp-row">
-                            <input type="text" name="code1" maxlength="1" class="otp-cell" autofocus/>
-                            <input type="text" name="code2" maxlength="1" class="otp-cell"/>
-                            <input type="text" name="code3" maxlength="1" class="otp-cell"/>
-                            <input type="text" name="code4" maxlength="1" class="otp-cell"/>
-                            <input type="text" name="code5" maxlength="1" class="otp-cell"/>
-                            <input type="text" name="code6" maxlength="1" class="otp-cell"/>
+                            <input type="text" name="code1" id="code1" maxlength="1" class="otp-cell" autofocus/>
+                            <input type="text" name="code2" id="code2" maxlength="1" class="otp-cell"/>
+                            <input type="text" name="code3" id="code3" maxlength="1" class="otp-cell"/>
+                            <input type="text" name="code4" id="code4" maxlength="1" class="otp-cell"/>
+                            <input type="text" name="code5" id="code5" maxlength="1" class="otp-cell"/>
+                            <input type="text" name="code6" id="code6" maxlength="1" class="otp-cell"/>
                         </div>
                     </div>
 <!--                    <button class="btn-main" onclick="activate()">-->
@@ -383,6 +391,49 @@ try {
 
                     </button>
                     <div class="resend">Code non reçu ? <button  id="btnResetActivation1" onclick="resetActivation()">Renvoyer le code</button></div>
+                </div>
+
+            <?php }else
+
+            { ?>
+
+
+                <div id="se" style="text-align:center">
+                    <!--                <div class="err-ring">-->
+                    <!--                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">-->
+                    <!--                        <circle cx="12" cy="12" r="10"/>-->
+                    <!--                        <line x1="15" y1="9" x2="9" y2="15"/>-->
+                    <!--                        <line x1="9" y1="9" x2="15" y2="15"/>-->
+                    <!--                    </svg>-->
+                    <!--                </div>-->
+                    <!--                <div class="state-tag tag-err"><span class="tag-dot"></span> Une erreur</div>-->
+                    <!--                <h2 class="fh-title" style="margin-bottom:8px">Code <em>incorrect</em></h2>-->
+                    <!--                <p class="fh-sub" style="margin-bottom:20px;text-align:center">-->
+                    <!--                    Le code saisi est invalide ou a expiré.-->
+                    <!--                </p>-->
+
+                    <!-- Message d'erreur détaillé — modifiable selon le type d'erreur -->
+                    <div class="err-alert" id="errAlertBox">
+                        <svg class="err-alert-ico" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round">
+                            <path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/>
+                            <line x1="12" y1="9" x2="12" y2="13"/>
+                            <line x1="12" y1="17" x2="12.01" y2="17"/>
+                        </svg>
+                        <div>
+                            <div class="err-alert-title" id="errTitle">Erreur</div>
+                            <div class="err-alert-msg" id="errMsg">
+                                Une erreur s’est produite. Veuillez réessayer ou contacter le service informatique à l’adresse <strong><em>criat@uahb.sn</em></strong>.</div>
+                        </div>
+                    </div>
+
+
+
+
+                    <div class="f-foot">
+                        <span class="ep"><span class="ep-dot epg"></span>UAHB</span>
+                        <span class="ep"><span class="ep-dot epb"></span>GSJLF</span>
+                        <span class="ep"><span class="ep-dot epc"></span>CTD</span>
+                    </div>
                 </div>
 
             <?php }
