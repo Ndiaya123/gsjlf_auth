@@ -1,45 +1,42 @@
 
-document.getElementById("annee_en_cours1").textContent = new Date().getFullYear();
-
-const SLIDES=[
-    {logo:'/personnel/ressources/dist_assets/media/logos/logo_uahb.png',name:'UAHB',desc:'Université Amadou Hampâté Bâ'},
-    {logo:'/personnel/ressources/dist_assets/media/logos/logo_cmjlf.png',name:'CMJLF',desc:'Collège Moderne Jean de la Fontaine'},
-    {logo:'/personnel/ressources/dist_assets/media/logos/logo_ctd.png',name:'CTD',desc:'Collège Technique de Dakar'}
-];
-let cur=0,timer=null;
-const slides=document.querySelectorAll('.slide');
-const dotsEl=document.getElementById('slide-dots');
-SLIDES.forEach((_,i)=>{const d=document.createElement('div');d.className='slide-dot'+(i===0?' active':'');d.style.width=i===0?'28px':'8px';d.addEventListener('click',()=>goSlide(i));dotsEl.appendChild(d);});
-function getDots(){return dotsEl.querySelectorAll('.slide-dot')}
-function goSlide(n,restart=true){
-    slides[cur].classList.remove('active');getDots()[cur].classList.remove('active');getDots()[cur].style.width='8px';
-    cur=(n+SLIDES.length)%SLIDES.length;
-    slides[cur].classList.add('active');getDots()[cur].classList.add('active');getDots()[cur].style.width='28px';
-    const el=document.getElementById('ent-logo'),en=document.getElementById('ent-name'),ed=document.getElementById('ent-desc');
-    [el,en,ed].forEach(x=>{x.style.transition='opacity .3s';x.style.opacity='0';});
-    setTimeout(()=>{el.src=SLIDES[cur].logo;en.textContent=SLIDES[cur].name;ed.textContent=SLIDES[cur].desc;[el,en,ed].forEach(x=>x.style.opacity='1');},300);
-    if(restart){clearInterval(timer);timer=setInterval(()=>goSlide(cur+1,false),5000);}
+function togglePwd(btn,id){
+    const i=document.getElementById(id);const show=i.type==='password';i.type=show?'text':'password';
+    btn.innerHTML=show
+        ?'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
+        :'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
 }
-timer=setInterval(()=>goSlide(cur+1,false),5000);
-function togglePw(){const f=document.getElementById('pw-field'),i=document.getElementById('eye-icon');f.type=f.type==='password'?'text':'password';i.textContent=f.type==='password'?'visibility':'visibility_off';}
-function handleSignin(){
-    const btn=document.getElementById('submit-btn');
-    btn.innerHTML='<span class="material-symbols-outlined" style="font-size:18px;animation:spin 1s linear infinite">progress_activity</span> ' +
-        'Connexion…';btn.disabled=true;
-        setTimeout(()=>{document.getElementById('main-form').style.display='none';
-
-            document.getElementById('success-state').style.display='flex';},1500);
+function strength(v){
+    const sb=document.getElementById('sb'),st=document.getElementById('st');
+    if(!sb)return;let s=0;
+    if(v.length>=8)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;
+    sb.className='sbar'+(s?' s'+s:'');
+    st.textContent=v.length?['','Faible','Moyen','Bon','Excellent'][s]:'';
 }
-
+function otpSetIn(){
+    document.querySelectorAll('.otp-cell').forEach((inp,i,arr)=>{
+        inp.addEventListener('input',()=>{
+            inp.value=inp.value.replace(/\D/,'');
+            inp.classList.toggle('filled',!!inp.value);
+            if(inp.value&&arr[i+1])arr[i+1].focus();
+        });
+        inp.addEventListener('keydown',e=>{
+            if(e.key==='Backspace'&&!inp.value&&arr[i-1]){arr[i-1].focus();arr[i-1].value='';arr[i-1].classList.remove('filled')}
+        });
+    });
+}
+function goStep(n){
+    document.querySelectorAll('.panel').forEach(p=>p.classList.remove('active'));
+    const p=document.getElementById('p'+n);if(p)p.classList.add('active');
+    document.querySelectorAll('.sd').forEach((d,i)=>{
+        d.className='sd';
+        if(i+1<n)d.classList.add('done');
+        else if(i+1===n)d.classList.add('active');
+    });
+    if(n===2){const e=document.getElementById('ei'),s=document.getElementById('esh');if(e&&s)s.textContent=e.value||'votre email'}
+}
+document.addEventListener('DOMContentLoaded',otpSetIn);
 function showAlert(message, type = "error", redirect = null, resetForm = false, btn = null) {
 
-
-    const normalContent = `
-        <span class="material-symbols-outlined" style="font-size:18px">
-            login
-        </span>
-        Se connecter
-    `;
     Swal.fire({
         text: message,
         icon: type,
@@ -69,10 +66,7 @@ function showAlert(message, type = "error", redirect = null, resetForm = false, 
 
         // ✅ corriger ici
         if (btn) {
-          //  btn.removeAttribute('data-kt-indicator');
-          //  btn.disabled = false;
-
-            btn.innerHTML = normalContent;
+            btn.removeAttribute('data-kt-indicator');
             btn.disabled = false;
         }
 
@@ -120,7 +114,7 @@ var validator = FormValidation.formValidation(
         plugins: {
             trigger: new FormValidation.plugins.Trigger(),
             bootstrap: new FormValidation.plugins.Bootstrap5({
-                rowSelector: '.field'
+                rowSelector: '.ff'
             })
         }
     }
@@ -131,27 +125,9 @@ t.addEventListener('click', function (e) {
     e.preventDefault();
     if (validator) {
         validator.validate().then(function (status) {
-
-            alert("connexion");
             if (status == 'Valid') {
-               // t.setAttribute('data-kt-indicator', 'on');
-               // t.disabled = true;
-
-             //   const btn=document.getElementById('submit-btn');
-               // t.innerHTML='<span class="material-symbols-outlined" style="font-size:18px;animation:spin 1s linear infinite">progress_activity</span> ' +
-                    //'Connexion…';t.disabled=true;
-
-
-                t.innerHTML = `
-            <span class="material-symbols-outlined"
-                  style="font-size:18px;animation:spin 1s linear infinite">
-                progress_activity
-            </span>
-            Connexion…
-        `;
-
+                t.setAttribute('data-kt-indicator', 'on');
                 t.disabled = true;
-
                 setTimeout(function () {
                     var form_data = $("#formSignIn").serialize();
 
@@ -182,28 +158,9 @@ t.addEventListener('click', function (e) {
 
                                 showAlert("Le compte n’est pas encore activé. Veuillez cliquer sur le lien envoyé par mail pour l’activer.", "error", null, true, t);
 
-                            }else if (resp === "bloquer") {
-
-                                showAlert("Le compte est bloqué. Veuillez contacter le service informatique.b", "error", null, true, t);
-
                             } else if (resp.substr(0, 6) === "succès") {
 
-                                setTimeout(() => {
-
-                                    // cacher le formulaire
-                                    document.getElementById('main-form').style.display = 'none';
-
-                                    // afficher succès
-                                    document.getElementById('success-state').style.display = 'flex';
-
-                                    // attendre 2 secondes avant redirection
-                                    setTimeout(() => {
-
-                                        window.location.href = "/personnel/accueil";
-
-                                    }, 2000);
-
-                                }, 500);
+                                window.location.href = "/personnel/acceuil";
 
                             } else {
                                 showAlert("Une erreur est survenue. Veuillez réessayer ultérieurement.", "error", null, true, t);

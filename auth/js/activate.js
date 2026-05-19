@@ -14,6 +14,11 @@ function otpSetup(){
 
 function showAlert(message, type = "error", redirect = null, reload = false, btn = null) {
 
+
+    const normalContent = `
+       <span class="material-symbols-outlined" style="font-size:13px;vertical-align:middle">refresh</span> Renvoyer le lien
+    `;
+
     Swal.fire({
         text: message,
         icon: type,
@@ -42,7 +47,8 @@ function showAlert(message, type = "error", redirect = null, reload = false, btn
 
         // ✅ corriger ici
         if (btn) {
-            btn.removeAttribute('data-kt-indicator');
+
+            btn.innerHTML = normalContent;
             btn.disabled = false;
         }
 
@@ -55,22 +61,21 @@ function showAlert(message, type = "error", redirect = null, reload = false, btn
 
 function resetActivation()
 {
-    document.getElementById("btnActivate").disabled = true;
    const  matricule = document.getElementById("matricule").value;
-
 
     const t = document.getElementById('btnResetActivation');
 
-    t.setAttribute('data-kt-indicator', 'on');
-    t.disabled = true;
+    t.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;animation:spin 1s linear infinite">progress_activity</span> En cours …';
+    t.disabled  = true;
 
     $.ajax({
         type: 'post',
         url: '/personnel/auth-controller',
         data: {option : 3,matricule : matricule},
         success: function (resp) {
-            alert(resp);
-            document.getElementById("btnActivate").disabled = false;
+
+
+
 
 
 
@@ -84,7 +89,8 @@ function resetActivation()
                 showAlert("L’adresse e-mail n’est pas valide ou une erreur est survenue lors de l’envoi du mail.", "error", null, true, t);
 
             } else if (resp.substr(0, 6) == "succès") {
-                showAlert("Compte créé avec succès !", "success", "/personnel/activate-account/"+resp.substr(6), false, t);
+
+                showAlert("Lien renvoyé avec succès !", "success", "/personnel/activate-account/"+resp.substr(6), false, t);
 
             } else {
                 showAlert("Une erreur est survenue. Veuillez réessayer ultérieurement.", "error", null, true, t);
@@ -93,40 +99,5 @@ function resetActivation()
 
         }
     })
-
-}
-
-function activate()
-{
-
-    const code1 = document.getElementById("code1").value;
-    const code2 = document.getElementById("code2").value;
-    const code3 = document.getElementById("code3").value;
-    const code4 = document.getElementById("code4").value;
-    const code5 = document.getElementById("code5").value;
-    const code6 = document.getElementById("code6").value;
-
-    const matricule = document.getElementById('matricule').value;
-    const code = code1+""+code2+""+code3+""+code4+""+code5+""+code6;
-
-    const t = document.getElementById('btnActivate');
-    t.setAttribute('data-kt-indicator', 'on');
-    t.disabled = true;
-
-
-    alert("activer compte");
-
-    $.ajax({
-        type: 'post',
-        url: '/personnel/auth-controller',
-        data: { option: 4, matricule: matricule, code: code },
-        dataType: 'text',
-        success: function (resp) {
-            console.log("RESP:", resp);
-
-        }
-    });
-
-
 
 }

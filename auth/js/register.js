@@ -1,59 +1,135 @@
-function togglePwd(btn, id) {
-    const i = document.getElementById(id); const show = i.type === 'password'; i.type = show ? 'text' : 'password';
-    btn.innerHTML = show
-        ? '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>'
-        : '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+/* ══════════════════════════════════════════
+   DIAPORAMA
+══════════════════════════════════════════ */
+const SLIDES = [
+    { img:'/personnel/ressources/dist_assets/media/misc/uahb-mobile.jpg',  logo:'/personnel/ressources/dist_assets/media/logos/logo_uahb.png',  name:'UAHB',  desc:'Université Amadou Hampâté Bâ' },
+    { img:'/personnel/ressources/dist_assets/media/misc/cmjlf-mobile.jpg', logo:'/personnel/ressources/dist_assets/media/logos/logo_cmjlf.png', name:'CMJLF', desc:'Collège Moderne Jean de la Fontaine' },
+    { img:'/personnel/ressources/dist_assets/media/misc/ctd-mobile.jpg',   logo:'/personnel/ressources/dist_assets/media/logos/logo_ctd.png',   name:'CTD',   desc:'Collège Technique de Dakar' },
+];
+
+let current = 0;
+let timer   = null;
+const DELAY = 5000; // 5 secondes par slide
+
+/* Créer les dots */
+const dotsEl = document.getElementById('slide-dots');
+SLIDES.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'slide-dot' + (i === 0 ? ' active' : '');
+    d.style.width = i === 0 ? '28px' : '8px';
+    d.addEventListener('click', () => goSlide(i));
+    dotsEl.appendChild(d);
+});
+
+function getDots() { return dotsEl.querySelectorAll('.slide-dot'); }
+
+function goSlide(n, restart=true) {
+    /* fade out current */
+    document.getElementById('slide-' + current).classList.remove('active');
+    getDots()[current].classList.remove('active');
+    getDots()[current].style.width = '8px';
+
+    current = (n + SLIDES.length) % SLIDES.length;
+
+    /* fade in next */
+    document.getElementById('slide-' + current).classList.add('active');
+    const dots = getDots();
+    dots[current].classList.add('active');
+    dots[current].style.width = '28px';
+
+    /* update entity info with fade */
+    const entLogo = document.getElementById('ent-logo');
+    const entName = document.getElementById('ent-name');
+    const entDesc = document.getElementById('ent-desc');
+    [entLogo, entName, entDesc].forEach(el => {
+        el.style.transition = 'opacity .3s';
+        el.style.opacity = '0';
+    });
+    setTimeout(() => {
+        entLogo.src = SLIDES[current].logo;
+        entName.textContent = SLIDES[current].name;
+        entDesc.textContent = SLIDES[current].desc;
+        [entLogo, entName, entDesc].forEach(el => { el.style.opacity = '1'; });
+    }, 300);
+
+    if(restart) { clearInterval(timer); timer = setInterval(nextSlide, DELAY); }
 }
-function strength(v) {
-    const sb = document.getElementById('sb'),
-        st = document.getElementById('st');
 
-    if (!sb) return 0;
+function nextSlide() { goSlide(current + 1, false); }
 
+/* Démarrer le timer */
+timer = setInterval(nextSlide, DELAY);
+
+/* ══════════════════════════════════════════
+   FORMULAIRE
+══════════════════════════════════════════ */
+function togglePw(fid, iid) {
+    const f = document.getElementById(fid);
+    const i = document.getElementById(iid);
+    f.type = f.type === 'password' ? 'text' : 'password';
+    i.textContent = f.type === 'password' ? 'visibility' : 'visibility_off';
+}
+
+function checkStrength(v) {
     let s = 0;
+    if(v.length >= 8) s++;
+    if(/[A-Z]/.test(v)) s++;
+    if(/[0-9]/.test(v)) s++;
+    if(/[^A-Za-z0-9]/.test(v)) s++;
+    const pct  = [0, 25, 50, 75, 100][s];
+    const col  = ['', '#e53935', '#ff9800', '#fbc02d', '#2e7d32'][s];
+    const lbl  = ['—', 'Trop court', 'Faible', 'Moyen', 'Fort'][s];
+    document.getElementById('sfill').style.cssText = `width:${pct}%;background:${col}`;
+    document.getElementById('slabel').textContent  = lbl;
+    checkMatch();
 
-    if (v.length >= 8) s++;
-    if (/[A-Z]/.test(v)) s++;
-    if (/[0-9]/.test(v)) s++;
-    if (/[^A-Za-z0-9]/.test(v)) s++;
+    return s;
+}
 
-    sb.className = 'sbar' + (s ? ' s' + s : '');
-    st.textContent = v.length ? ['', 'Faible', 'Moyen', 'Bon', 'Excellent'][s] : '';
+function checkMatch() {
+    const p1  = document.getElementById('f-pw').value;
+    const p2  = document.getElementById('f-pw2').value;
+    const err = document.getElementById('match-err');
+    const f2  = document.getElementById('f-pw2');
+    const bad = p2.length > 0 && p1 !== p2;
+    err.classList.toggle('show', bad);
+    f2.style.borderColor = bad ? '#e53935' : '';
+    f2.style.boxShadow   = bad ? '0 0 0 4px rgba(229,57,53,.1)' : '';
+}
 
-    return s; // ✅ IMPORTANT
+function handleSignup() {
+    const mat   = document.getElementById('f-mat').value.trim();
+    const email = document.getElementById('f-email').value.trim();
+    const pw    = document.getElementById('f-pw').value;
+    const pw2   = document.getElementById('f-pw2').value;
+
+    if(!mat)       { document.getElementById('f-mat').focus();   return; }
+    if(!email)     { document.getElementById('f-email').focus(); return; }
+    if(!pw)        { document.getElementById('f-pw').focus();    return; }
+    if(pw !== pw2) { checkMatch(); document.getElementById('f-pw2').focus(); return; }
+
+    const btn = document.getElementById('submit-btn');
+    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;animation:spin 1s linear infinite">progress_activity</span> Création…';
+    btn.disabled  = true;
+
+    setTimeout(() => {
+        document.getElementById('signup-form').style.display  = 'none';
+        document.getElementById('success-state').style.display = 'flex';
+    }, 1500);
 }
-function otpSetup() {
-    document.querySelectorAll('.otp-cell').forEach((inp, i, arr) => {
-        inp.addEventListener('input', () => {
-            inp.value = inp.value.replace(/\D/, '');
-            inp.classList.toggle('filled', !!inp.value);
-            if (inp.value && arr[i + 1]) arr[i + 1].focus();
-        });
-        inp.addEventListener('keydown', e => {
-            if (e.key === 'Backspace' && !inp.value && arr[i - 1]) { arr[i - 1].focus(); arr[i - 1].value = ''; arr[i - 1].classList.remove('filled') }
-        });
-    });
-}
-function goStep(n) {
-    document.querySelectorAll('.panel').forEach(p => p.classList.remove('active'));
-    const p = document.getElementById('p' + n); if (p) p.classList.add('active');
-    document.querySelectorAll('.sd').forEach((d, i) => {
-        d.className = 'sd';
-        if (i + 1 < n) d.classList.add('done');
-        else if (i + 1 === n) d.classList.add('active');
-    });
-    if (n === 2) { const e = document.getElementById('ei'), s = document.getElementById('esh'); if (e && s) s.textContent = e.value || 'votre email' }
-}
-function activate() {
-    document.getElementById('sp').style.display = 'none';
-    const s = document.getElementById('ss'); s.style.display = 'block';
-    s.style.animation = 'fadeUp .5s var(--ease) both';
-}
-document.addEventListener('DOMContentLoaded', otpSetup);
+
+
+
 
 
 
 function showAlert(message, type = "error", redirect = null, resetForm = false, btn = null) {
+
+
+    const normalContent = `
+        <span class="material-symbols-outlined" style="font-size:18px">person_add</span>
+                    Créer mon compte
+    `;
 
     Swal.fire({
         text: message,
@@ -84,7 +160,12 @@ function showAlert(message, type = "error", redirect = null, resetForm = false, 
 
         // ✅ corriger ici
         if (btn) {
-            btn.removeAttribute('data-kt-indicator');
+
+
+           // btn.removeAttribute('data-kt-indicator');
+           // btn.disabled = false;
+
+            btn.innerHTML = normalContent;
             btn.disabled = false;
         }
 
@@ -151,7 +232,7 @@ var validator = FormValidation.formValidation(
                         callback: function (input) {
                             const value = input.value;
 
-                            const score = strength(value);
+                            const score = checkStrength(value);
 
                             // ❌ Refuser si < Bon
                             return score >= 3;
@@ -187,7 +268,7 @@ var validator = FormValidation.formValidation(
         plugins: {
             trigger: new FormValidation.plugins.Trigger(),
             bootstrap: new FormValidation.plugins.Bootstrap5({
-                rowSelector: '.ff'
+                rowSelector: '.field'
             })
         }
     }
@@ -199,8 +280,12 @@ t.addEventListener('click', function (e) {
     if (validator) {
         validator.validate().then(function (status) {
             if (status == 'Valid') {
-                t.setAttribute('data-kt-indicator', 'on');
-                t.disabled = true;
+              //  t.setAttribute('data-kt-indicator', 'on');
+               // t.disabled = true;
+
+                t.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;animation:spin 1s linear infinite">progress_activity</span> Création…';
+                t.disabled  = true;
+
                 setTimeout(function () {
                     var form_data = $("#formSignUp").serialize();
                     $.ajax({
@@ -239,7 +324,24 @@ t.addEventListener('click', function (e) {
                                 showAlert("L’adresse e-mail saisie est incorrecte.", "error", null, false, t);
 
                             } else if (resp.substr(0, 6) === "succès") {
-                                showAlert("Compte créé avec succès !", "success", "/personnel/activate-account/"+resp.substr(6), false, t);
+                               // showAlert("Compte créé avec succès !", "success", "/personnel/activate-account/"+resp.substr(6), false, t);
+
+                                setTimeout(() => {
+
+                                    // cacher le formulaire
+                                    document.getElementById('signup-form').style.display = 'none';
+
+                                    // afficher succès
+                                    document.getElementById('success-state').style.display = 'flex';
+
+                                    // attendre 2 secondes avant redirection
+                                   // setTimeout(() => {
+
+                                      //  window.location.href = "/personnel/accueil";
+
+                                  //  }, 5000);
+
+                                }, 500);
 
                             } else {
                                 showAlert("Une erreur est survenue. Veuillez réessayer ultérieurement.", "error", null, true, t);

@@ -82,7 +82,7 @@ RewriteRule ^scripts.bundle.1.js$ auth/js/register.js [L]
 RewriteRule ^signin$ auth/login.php [L]
 RewriteRule ^scripts.bundle.2.js$ auth/js/login.js [L]
 
-RewriteRule ^activate-account/(.*)$ auth/activate.php?mat=$1 [L]
+RewriteRule ^activate-account/(.*)/(.*)$ auth/activate.php?mat=$1&code=$2 [L]
 RewriteRule ^scripts.bundle.3.js$ auth/js/activate.js [L]
 
 RewriteRule ^reset-password$ auth/reset.php [L]
