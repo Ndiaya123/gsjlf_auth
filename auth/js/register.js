@@ -268,7 +268,7 @@ var validator = FormValidation.formValidation(
         plugins: {
             trigger: new FormValidation.plugins.Trigger(),
             bootstrap: new FormValidation.plugins.Bootstrap5({
-                rowSelector: '.field'
+                rowSelector: '.ps_field'
             })
         }
     }
@@ -323,7 +323,7 @@ t.addEventListener('click', function (e) {
                             } else if (resp === "pasCorrespondantEmail") {
                                 showAlert("L’adresse e-mail saisie est incorrecte.", "error", null, false, t);
 
-                            } else if (resp.substr(0, 6) === "succès") {
+                            } else if (resp === "succès") {
                                // showAlert("Compte créé avec succès !", "success", "/personnel/activate-account/"+resp.substr(6), false, t);
 
                                 setTimeout(() => {
@@ -332,7 +332,7 @@ t.addEventListener('click', function (e) {
                                     document.getElementById('signup-form').style.display = 'none';
 
                                     // afficher succès
-                                    document.getElementById('success-state').style.display = 'flex';
+                                    document.getElementById('success-state').style.display = 'block';
 
                                     // attendre 2 secondes avant redirection
                                    // setTimeout(() => {

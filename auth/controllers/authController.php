@@ -29,6 +29,62 @@ class papa extends BD
         return $result = base64_encode($result);
     }
 
+
+    function decode($s)
+    {
+        if (version_compare(PHP_VERSION, '8.1.999', 'le')) {
+            return utf8_decode($s);
+        }
+
+
+        if (function_exists('mb_convert_encoding')) {
+            return mb_convert_encoding($s, 'ISO-8859-1', 'UTF-8');
+        }
+
+
+        if (class_exists('UConverter')) {
+            return UConverter::transcode($s, 'ISO-8859-1', 'UTF8');
+        }
+
+
+        if (function_exists('iconv')) {
+            return iconv('UTF-8', 'ISO-8859-1', $s);
+        }
+
+
+        $s = (string)$s;
+        $len = \strlen($s);
+
+
+        for ($i = 0, $j = 0; $i < $len; ++$i, ++$j) {
+            switch ($s[$i] & "\xF0") {
+                case "\xC0":
+                case "\xD0":
+                    $c = (\ord($s[$i] & "\x1F") << 6) | \ord($s[++$i] & "\x3F");
+                    $s[$j] = $c < 256 ? \chr($c) : '?';
+                    break;
+
+
+                case "\xF0":
+                    ++$i;
+
+
+                case "\xE0":
+                    $s[$j] = '?';
+                    $i += 2;
+                    break;
+
+
+                default:
+                    $s[$j] = $s[$i];
+            }
+        }
+
+
+        return substr($s, 0, $j);
+    }
+
+
     function fctRetirerAccents($varMaChaine)
     {
         $search = array('À', 'Á', 'Â', 'Ã', 'Ä', 'Å', 'Ç', 'È', 'É', 'Ê', 'Ë', 'Ì', 'Í', 'Î', 'Ï', 'Ò', 'Ó', 'Ô', 'Õ', 'Ö', 'Ù', 'Ú', 'Û', 'Ü', 'Ý', 'à', 'á', 'â', 'ã', 'ä', 'å', 'ç', 'è', 'é', 'ê', 'ë', 'ì', 'í', 'î', 'ï', 'ð', 'ò', 'ó', 'ô', 'õ', 'ö', 'ù', 'ú', 'û', 'ü', 'ý', 'ÿ');
@@ -105,6 +161,24 @@ class papa extends BD
             $dateParam = new DateTime($date);
             $dateParam->modify('+24 hours');
 
+            $nowPlus24h = new DateTime();
+
+            if ($dateParam > $nowPlus24h) {
+                return true;
+            }
+
+            return false;
+
+        } catch (Exception $e) {
+            return false; // ou false selon ton choix de sécurité
+        }
+    }
+
+
+    function comparerDateContrat($date)
+    {
+        try {
+            $dateParam = new DateTime($date);
             $nowPlus24h = new DateTime();
 
             if ($dateParam > $nowPlus24h) {
@@ -1169,8 +1243,678 @@ Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet emai
     case 6:
 
 
+        if (!empty($_POST['matricule']) && !empty($_POST['email'])) {
+
+            try {
+                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bd->beginTransaction();
+
+
+                date_default_timezone_set('Africa/Dakar');
+
+                $email = valid_donnees($_POST['email']);
+                $matricule = valid_donnees($_POST['matricule']);
+
+
+                $data = [
+                    'email' => $email,
+                    'matricule' => $matricule
+                ];
+
+                $sql = "SELECT * FROM utilisateurs WHERE email=:email AND matricule=:matricule";
+                $stmt = $bd->prepare($sql);
+                $stmt->execute($data);
+                $result = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if ($result) {
+
+
+                    if ($result->statutActivation == 1) {
+
+                        if ($result->statutUtilisateur == 0) {
+
+
+
+                            $data_perso = [
+                                'matricule' => $matricule
+                            ];
+                            $sql_perso = "SELECT 
+                                    p.identifiant,
+                                    p.idEtatCivil,
+                                    ec.prenom,
+                                    ec.nom,
+                                    cg.email
+                                FROM personnels p
+                                INNER JOIN etatCivil ec 
+                                    ON p.idEtatCivil = ec.id
+                                LEFT JOIN compteGmail cg 
+                                    ON p.idCompteGmail = cg.id
+                                WHERE p.matricule = :matricule;";
+                            $stmt_perso = $bd->prepare($sql_perso);
+                            $stmt_perso->execute($data_perso);
+                            $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
+
+                            if ($result_perso) {
+
+
+                                $identifiant = $result_perso->identifiant;
+                                $idEtatCivil = $result_perso->idEtatCivil;
+                                $prenom = ucwords($result_perso->prenom);
+                                $nom = $authController->fctRetirerAccents(mb_strtoupper($result_perso->nom));
+
+
+                                $data_perso_contrat = [
+                                    'matricule' => $matricule,
+                                    'idTypeStatutContrat' => 1,
+
+                                ];
+                                $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
+                                $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+                                $stmt_perso_contrat->execute($data_perso_contrat);
+                                $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
+
+                                if ($result_perso_contrat) {
+
+                                    $debutContrat = $result_perso_contrat->dateDebutContrat;
+                                    $finContrat = $result_perso_contrat->dateFinContrat;
+
+                                    if ($authController->comparerDateContrat($finContrat)) {
+
+
+                                        $dateCreation = new DateTime();
+                                        $dateCreation = $dateCreation->format('Y-m-d H:i:s');
+
+                                        $codeActivation = $authController->genererCode6Chiffres();
+                                        $codeActivation_encrypt = $authController->tokenencrypt($codeActivation);
+
+                                        $dataCandidat = [
+                                            'matricule' => $matricule,
+                                            'statut1' => 0,
+                                            'statut2' => 1
+
+                                        ];
+
+                                        $sql = "UPDATE auth_reset_password 
+                                                    SET
+                                                        statut = :statut1
+                                                    WHERE matricule = :matricule AND statut=:statut2";
+
+                                        $stmt = $bd->prepare($sql);
+                                        $tmpStmt = $stmt->execute($dataCandidat);
+
+                                        if($tmpStmt)
+                                        {
+
+                                            $dateEnregistrement = new DateTime();
+                                            $dateEnregistrement = $dateEnregistrement->format('Y-m-d H:i:s');
+
+                                            $data_reset = [
+                                                'matricule' => $matricule,
+                                                'codeReset' => $codeActivation_encrypt,
+                                                'statut' => 1,
+                                                'dateEnregistrement' => $dateEnregistrement,
+                                            ];
+                                            $sql_reset = "INSERT INTO auth_reset_password(matricule,codeReset,statut,dateEnregistrement) VALUES (:matricule,:codeReset,:statut,:dateEnregistrement)";
+                                            $stmt_reset  = $bd->prepare($sql_reset);
+                                            $tmpStmt_reset  = $stmt_reset ->execute($data_reset);
+
+                                            if ($tmpStmt_reset == 1) {
+
+
+                                                $table = "auth_reset_password";
+                                                $motif = "Demande de modification du mot de passe";
+                                                $dateEnregistrement = new DateTime();
+                                                $dateEnregistrement = $dateEnregistrement->format('Y-m-d H:i:s');
+                                                $dataHistorique = [
+                                                    'identifiant' => $identifiant,
+                                                    'matricule' => $matricule,
+                                                    'tableHistorique' => $table,
+                                                    'motif' => $motif,
+                                                    'idEtatCivil' => $idEtatCivil,
+                                                    'dateEnregistremenent' => $dateEnregistrement,
+                                                ];
+                                                $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
+                                                $stmtHistorique = $bd->prepare($sqlHistorique);
+                                                $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
+
+                                                if ($tmpStmtHistorique == 1) {
+
+                                                    $resetLink = "http://localhost/personnel/change-password/" . $authController->tokenencrypt($matricule)."/".$codeActivation_encrypt;
+
+                                                    $message = "<html>
+<head>
+  <title>Réinitialisation de mot de passe – ENT GSJLF</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      font-family: Roboto, Arial, sans-serif;
+    }
+    .wrapper {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .header {
+      background-color: #113B26;
+      padding: 32px 40px;
+      text-align: center;
+    }
+    .header h1 {
+      color: #f0cc6a;
+      font-size: 22px;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .header p {
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+      margin: 6px 0 0;
+    }
+    .body {
+      padding: 36px 40px;
+    }
+    .body p {
+      font-size: 15px;
+      color: #202124;
+      line-height: 1.7;
+      margin: 0 0 16px;
+    }
+    .cta-wrap {
+      text-align: center;
+      margin: 32px 0;
+    }
+    .cta-btn {
+      display: inline-block;
+      background-color: #113B26;
+      color: #ffffff !important;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 14px 36px;
+      border-radius: 10px;
+      letter-spacing: 0.3px;
+    }
+    .expiry-box {
+      background-color: #fff8e1;
+      border-left: 4px solid #f0cc6a;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin: 24px 0;
+    }
+    .expiry-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #5c3e08;
+      font-weight: 600;
+    }
+    .link-fallback {
+      background-color: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 20px 0;
+      word-break: break-all;
+    }
+    .link-fallback p {
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: #888;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .link-fallback a {
+      font-size: 13px;
+      color: #113B26;
+      text-decoration: none;
+    }
+    .warning-box {
+      background-color: #fff3f3;
+      border-left: 4px solid #e53935;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin: 24px 0;
+    }
+    .warning-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #b71c1c;
+      font-weight: 600;
+    }
+    .footer {
+      background-color: #f4f4f4;
+      padding: 24px 40px;
+      text-align: center;
+      border-top: 1px solid #e0e0e0;
+    }
+    .footer p {
+      font-size: 12px;
+      color: #888;
+      margin: 4px 0;
+      line-height: 1.6;
+    }
+    .footer a {
+      color: #113B26;
+      text-decoration: none;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <div class='wrapper'>
+
+    <!-- EN-TÊTE -->
+    <div class='header'>
+      <h1>🔐 Réinitialisation de mot de passe</h1>
+      <p>Groupe Scolaire Jean de la Fontaine — ENT</p>
+    </div>
+
+    <!-- CORPS -->
+    <div class='body'>
+
+      <p>Bonjour <strong>" . $prenom . " " . $nom . "</strong>,</p>
+
+      <p>Nous avons reçu une demande de réinitialisation du mot de passe associé à votre compte ENT du <strong>Groupe Scolaire Jean de la Fontaine (GSJLF)</strong>.</p>
+
+      <p>Cliquez sur le bouton ci-dessous pour définir un nouveau mot de passe :</p>
+
+      <div class='cta-wrap'>
+        <a href='".$resetLink."' class='cta-btn'>Réinitialiser mon mot de passe</a>
+      </div>
+
+      <div class='expiry-box'>
+        <p>⏱ Ce lien est valable <strong>24 heures</strong> à compter de la réception de cet email. Passé ce délai, vous devrez effectuer une nouvelle demande.</p>
+      </div>
+
+      <p>Si le bouton ne fonctionne pas, copiez et collez le lien suivant dans votre navigateur :</p>
+
+      <div class='link-fallback'>
+        <p>Lien de réinitialisation</p>
+        <a href='".$resetLink."'>$resetLink</a>
+      </div>
+
+      <div class='warning-box'>
+        <p>⚠ Si vous n'êtes pas à l'origine de cette demande, ignorez cet email. Votre mot de passe restera inchangé. En cas de doute, contactez immédiatement le service informatique.</p>
+      </div>
+
+      <p>Cordialement,<br>
+      <strong>Le service informatique</strong><br>
+      Groupe Scolaire Jean de la Fontaine</p>
+
+    </div>
+
+    <!-- PIED DE PAGE -->
+    <div class='footer'>
+      <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
+      <p>Pour toute assistance : <a href='mailto:criat@uahb.sn'>criat@uahb.sn</a></p>
+      <p>© 2026 Groupe Scolaire Jean de la Fontaine</p>
+    </div>
+
+  </div>
+
+</body>
+</html>";
+                                                    // Envoyer l'e-mail
+                                                    $emailSent = $authController->sendEmail($email, $prenom, $authController->decode("Réinitialisez votre mot de passe !"), $message);
+
+                                                    if (!$emailSent) {
+                                                        $bd->rollBack();
+
+                                                        echo "erreurMail";
+                                                        die;
+                                                    } else {
+
+                                                        $bd->commit();
+                                                        echo "succès" . $authController->tokenencrypt($matricule);
+                                                        die;
+
+                                                    }
+
+                                                } else {
+                                                    $bd->rollBack();
+                                                    echo "erreur";
+                                                    die;
+                                                }
+
+
+                                            } else {
+                                                echo "erreur";
+                                                die;
+                                            }
+
+                                        }else
+                                        {
+                                            $bd->rollBack();
+                                            echo "erreur";
+                                            die;
+                                        }
+
+
+
+
+
+
+
+                                    } else {
+
+                                        echo "erreur";
+                                        die;
+
+                                    }
+
+
+                                } else {
+                                    echo "pasContrat";
+                                    die;
+                                }
+
+
+                            } else {
+                                echo "erreur";
+                                die;
+
+                            }
+
+                        }else
+                        {
+
+                            echo "bloquer";
+                            die;
+                        }
+
+
+                    } else {
+                        echo "compteInactive";
+                        die;
+                    }
+
+                } else {
+                    echo "pasCompte";
+                    die;
+
+                }
+
+            } catch (Exception $e) {
+                $bd->rollBack();
+                echo "erreur" . $e;
+                die;
+            }
+
+
+        } else {
+            echo "champsObligatoire";
+            die;
+        }
+        break;
+
+    case 7 :
+
+        if (!empty($_POST['matricule']) && !empty($_POST['code']) && !empty($_POST['password']) && !empty($_POST['confirm-password'])) {
+
+            try {
+                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bd->beginTransaction();
+
+
+                date_default_timezone_set('Africa/Dakar');
+                $date_jour = date('Y-m-d');
+
+                $matricule = valid_donnees($_POST['matricule']);
+                $code = valid_donnees($_POST['code']);
+                $password = valid_donnees($_POST['password']);
+                $confirmPassword = valid_donnees($_POST['confirm-password']);
+
+                if ($password != $confirmPassword) {
+
+                    echo "pasCorrespondantPWD";
+                    die;
+
+                }
+
+                $password = password_hash(valid_donnees($_POST['password']), PASSWORD_DEFAULT, ['cost' => 5]);
+
+
+
+                $data = [
+                    'matricule' => $matricule
+                ];
+
+                $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
+                $stmt = $bd->prepare($sql);
+                $stmt->execute($data);
+                $result = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if ($result) {
+
+
+
+                    $data_reset_code = [
+                        'matricule' => $matricule,
+                        'statut' => 1
+                    ];
+
+                    $sql_reset_code = "SELECT * FROM auth_reset_password WHERE matricule=:matricule AND statut=:statut";
+                    $stmt_reset_code = $bd ->prepare($sql_reset_code);
+                    $stmt_reset_code->execute($data_reset_code);
+                    $result_reset_code = $stmt_reset_code->fetch(PDO::FETCH_OBJ);
+
+
+                    if($result_reset_code)
+                    {
+
+                        if($result_reset_code->codeReset == $code)
+                        {
+
+                            if ($result->statutActivation == 1) {
+
+                                if ($result->statutUtilisateur == 0) {
+
+                                    $data_perso = [
+                                        'matricule' => $matricule
+                                    ];
+                                    $sql_perso = "SELECT 
+                                    p.identifiant,
+                                    p.idEtatCivil,
+                                    ec.prenom,
+                                    ec.nom,
+                                    cg.email
+                                FROM personnels p
+                                INNER JOIN etatCivil ec 
+                                    ON p.idEtatCivil = ec.id
+                                LEFT JOIN compteGmail cg 
+                                    ON p.idCompteGmail = cg.id
+                                WHERE p.matricule = :matricule;";
+                                    $stmt_perso = $bd->prepare($sql_perso);
+                                    $stmt_perso->execute($data_perso);
+                                    $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
+
+                                    if ($result_perso) {
+
+
+                                        $identifiant = $result_perso->identifiant;
+                                        $idEtatCivil = $result_perso->idEtatCivil;
+
+
+                                        $data_perso_contrat = [
+                                            'matricule' => $matricule,
+                                            'idTypeStatutContrat' => 1,
+
+                                        ];
+                                        $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
+                                        $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+                                        $stmt_perso_contrat->execute($data_perso_contrat);
+                                        $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
+
+                                        if ($result_perso_contrat) {
+
+                                            $debutContrat = $result_perso_contrat->dateDebutContrat;
+                                            $finContrat = $result_perso_contrat->dateFinContrat;
+
+                                            if ($authController->comparerDateContrat($finContrat)) {
+
+
+
+                                                $data_reset_up =
+                                                    [
+                                                        'matricule' => $matricule,
+                                                        'statut1' => 0,
+                                                        'statut2' => 1
+                                                    ];
+                                                $sql_reset_up = "UPDATE auth_reset_password 
+                                                    SET
+                                                        statut = :statut1
+                                                    WHERE matricule = :matricule AND statut=:statut2";
+
+                                                $stmt_reset_up = $bd->prepare($sql_reset_up);
+                                                $tmpStmt_reset_up = $stmt_reset_up->execute($data_reset_up);
+
+                                                if($tmpStmt_reset_up)
+                                                {
+
+                                                    $data_utilisateur= [
+                                                        'matricule' => $matricule,
+                                                        'password' => $password
+
+                                                    ];
+
+                                                    $sql_utilisateur = "UPDATE utilisateurs 
+                                                        SET
+                                                            password = :password
+                                                        WHERE matricule = :matricule";
+
+                                                    $stmt_utilisateur = $bd->prepare($sql_utilisateur);
+                                                    $tmpStmt_utilisateur = $stmt_utilisateur->execute($data_utilisateur);
+
+                                                    if($tmpStmt_utilisateur)
+                                                    {
+
+                                                        $table = "auth_reset_password,utilisateurs";
+                                                        $motif = "Mot de passe modifié";
+                                                        $dateEnregistrement = new DateTime();
+                                                        $dateEnregistrement = $dateEnregistrement->format('Y-m-d H:i:s');
+                                                        $dataHistorique = [
+                                                            'identifiant' => $identifiant,
+                                                            'matricule' => $matricule,
+                                                            'tableHistorique' => $table,
+                                                            'motif' => $motif,
+                                                            'idEtatCivil' => $idEtatCivil,
+                                                            'dateEnregistremenent' => $dateEnregistrement,
+                                                        ];
+                                                        $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
+                                                        $stmtHistorique = $bd->prepare($sqlHistorique);
+                                                        $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
+
+                                                        if ($tmpStmtHistorique == 1) {
+
+
+                                                            $bd->commit();
+                                                            echo "succès";
+                                                            die;
+
+
+                                                        }else
+                                                        {
+                                                            $bd->rollBack();
+                                                            echo "erreur7";
+                                                            die;
+                                                        }
+
+                                                    }else
+                                                    {
+                                                        $bd->rollBack();
+                                                        echo "erreur6";
+                                                        die;
+                                                    }
+
+
+                                                }else
+                                                {
+                                                    $bd->rollBack();
+                                                    echo "erreur5";
+                                                    die;
+                                                }
+
+
+                                            } else {
+
+                                                echo "erreur4";
+                                                die;
+
+                                            }
+
+
+                                        } else {
+                                            echo "pasContrat";
+                                            die;
+                                        }
+
+
+                                    } else {
+                                        echo "erreur3";
+                                        die;
+
+                                    }
+
+                                }else
+                                {
+                                    echo "bloquer";
+                                    die;
+                                }
+
+
+                            } else {
+                                $bd->rollBack();
+                                echo "compteInactive";
+                                die;
+                            }
+
+
+                        }else
+                        {
+                            echo "erreur";
+                            die;
+                        }
+
+
+                    }else
+                    {
+                        $bd->rollBack();
+                        echo "erreur";
+                        die;
+                    }
+
+
+
+                } else {
+                    $bd->rollBack();
+                    echo "pasCompte";
+                    die;
+
+                }
+
+            } catch (Exception $e) {
+                $bd->rollBack();
+                echo "erreur2".$e;
+                die;
+            }
+
+
+        } else {
+            echo "champsObligatoire";
+            die;
+        }
+        break;
+
+
     default :
-        echo "erreur";
+        echo "erreur1";
         die;
 
 
