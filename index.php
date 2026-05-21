@@ -48,18 +48,17 @@
     <div class="hero-content">
         <div class="hero-kicker">
             <span class="material-symbols-outlined" style="font-size:13px">verified</span>
-            Plateforme ENT Officielle · <span id="annee_en_cours1"> </span>
+            Plateforme ENT Officielle · <span id="annee_en_cours1"> </span> - Groupe Scolaire Jean de la Fontaine — Dakar, Sénégal
         </div>
 
         <h1 class="hero-title">
             L'espace numérique<br>
             <span class="line2">de votre communauté</span>
-            <span class="line3">Groupe Scolaire Jean de la Fontaine — Dakar, Sénégal</span>
+            <span class="line3"> Trois institutions, un seul accès</span>
         </h1>
 
         <p class="hero-desc">
-            Accédez à vos cours, notes, emplois du temps et outils collaboratifs.
-            Un seul espace sécurisé pour tous les membres du groupe scolaire.
+            L'Environnement Numérique de Travail du Groupe Scolaire Jean de la Fontaine réunit les outils pédagogiques et administratifs de l'UAHB, du GSJLF et du CTD sur une plateforme unifiée.
         </p>
 
         <div class="hero-actions">
@@ -79,12 +78,12 @@
                 <div class="hstat-lbl">Établissements</div>
             </div>
             <div class="hero-stat">
-                <div class="hstat-num">500+</div>
+                <div class="hstat-num">20+</div>
                 <div class="hstat-lbl">Membres actifs</div>
             </div>
             <div class="hero-stat">
                 <div class="hstat-num">100%</div>
-                <div class="hstat-lbl">Sécurisé SSL</div>
+                <div class="hstat-lbl">Sécurisé</div>
             </div>
             <div class="hero-stat">
                 <div class="hstat-num">24/7</div>
@@ -245,7 +244,7 @@
                 <div class="num-lbl">Établissements actifs</div>
             </div>
             <div class="num-card reveal delay-2">
-                <div class="num-big">100+</div>
+                <div class="num-big">20+</div>
                 <div class="num-lbl">Membres inscrits</div>
             </div>
             <div class="num-card reveal delay-3">
@@ -339,20 +338,20 @@
                 <a href="/personnel/signin"><span class="material-symbols-outlined" style="font-size:14px">login</span>Connexion</a>
                 <a href="/personnel/signup"><span class="material-symbols-outlined" style="font-size:14px">person_add</span>Inscription</a>
 <!--                <a href="activate.html"><span class="material-symbols-outlined" style="font-size:14px">verified</span>Activation</a>-->
-                <a href="/personnel/change-password"><span class="material-symbols-outlined" style="font-size:14px">lock_reset</span>Mot de passe</a>
+                <a href="/personnel/reset-password"><span class="material-symbols-outlined" style="font-size:14px">lock_reset</span>Mot de passe</a>
             </div>
             <div class="ft-col">
                 <h4>Contact</h4>
-                <a href="#"><span class="material-symbols-outlined" style="font-size:14px">mail</span>criat@uahb.sn</a>
-                <a href="#"><span class="material-symbols-outlined" style="font-size:14px">support_agent</span>Support technique</a>
-                <a href="#"><span class="material-symbols-outlined" style="font-size:14px">help</span>Aide & FAQ</a>
+                <a href="javascript:void(0)"><span class="material-symbols-outlined" style="font-size:14px">mail</span>criat@uahb.sn</a>
+                <a href="javascript:void(0)"><span class="material-symbols-outlined" style="font-size:14px">support_agent</span>Support technique</a>
+                <a href="javascript:void(0)"><span class="material-symbols-outlined" style="font-size:14px">help</span>Aide & FAQ</a>
             </div>
         </div>
         <div class="ft-bottom">
-            <p>© <span id="annee_en_cours2"> </span> Groupe Scolaire Jean de la Fontaine — Tous droits réservés. Dakar, Sénégal.</p>
+            <p>© <span id="annee_en_cours2"> </span> CRIAT — Tous droits réservés. Dakar, Sénégal.</p>
             <div class="ft-badge">
                 <span class="material-symbols-outlined" style="font-size:13px">verified_user</span>
-                Plateforme ENT · Version 2.0
+                Plateforme ENT
             </div>
         </div>
     </div>

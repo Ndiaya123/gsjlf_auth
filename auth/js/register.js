@@ -1,6 +1,9 @@
 /* ══════════════════════════════════════════
    DIAPORAMA
 ══════════════════════════════════════════ */
+document.getElementById("annee_en_cours1").textContent = new Date().getFullYear();
+
+
 const SLIDES = [
     { img:'/personnel/ressources/dist_assets/media/misc/uahb-mobile.jpg',  logo:'/personnel/ressources/dist_assets/media/logos/logo_uahb.png',  name:'UAHB',  desc:'Université Amadou Hampâté Bâ' },
     { img:'/personnel/ressources/dist_assets/media/misc/cmjlf-mobile.jpg', logo:'/personnel/ressources/dist_assets/media/logos/logo_cmjlf.png', name:'CMJLF', desc:'Collège Moderne Jean de la Fontaine' },
@@ -9,35 +12,31 @@ const SLIDES = [
 
 let current = 0;
 let timer   = null;
-const DELAY = 5000; // 5 secondes par slide
+const DELAY = 5000;
 
-/* Créer les dots */
 const dotsEl = document.getElementById('slide-dots');
 SLIDES.forEach((_, i) => {
     const d = document.createElement('div');
-    d.className = 'slide-dot' + (i === 0 ? ' active' : '');
+    d.className = 'ps_slide-dot' + (i === 0 ? ' ps_active' : '');
     d.style.width = i === 0 ? '28px' : '8px';
     d.addEventListener('click', () => goSlide(i));
     dotsEl.appendChild(d);
 });
 
-function getDots() { return dotsEl.querySelectorAll('.slide-dot'); }
+function getDots() { return dotsEl.querySelectorAll('.ps_slide-dot'); }
 
 function goSlide(n, restart=true) {
-    /* fade out current */
-    document.getElementById('slide-' + current).classList.remove('active');
-    getDots()[current].classList.remove('active');
+    document.getElementById('slide-' + current).classList.remove('ps_active');
+    getDots()[current].classList.remove('ps_active');
     getDots()[current].style.width = '8px';
 
     current = (n + SLIDES.length) % SLIDES.length;
 
-    /* fade in next */
-    document.getElementById('slide-' + current).classList.add('active');
+    document.getElementById('slide-' + current).classList.add('ps_active');
     const dots = getDots();
-    dots[current].classList.add('active');
+    dots[current].classList.add('ps_active');
     dots[current].style.width = '28px';
 
-    /* update entity info with fade */
     const entLogo = document.getElementById('ent-logo');
     const entName = document.getElementById('ent-name');
     const entDesc = document.getElementById('ent-desc');
@@ -52,16 +51,14 @@ function goSlide(n, restart=true) {
         [entLogo, entName, entDesc].forEach(el => { el.style.opacity = '1'; });
     }, 300);
 
-    if(restart) { clearInterval(timer); timer = setInterval(nextSlide, DELAY); }
+    if (restart) { clearInterval(timer); timer = setInterval(nextSlide, DELAY); }
 }
 
 function nextSlide() { goSlide(current + 1, false); }
-
-/* Démarrer le timer */
 timer = setInterval(nextSlide, DELAY);
 
 /* ══════════════════════════════════════════
-   FORMULAIRE
+   FORMULAIRE — utilitaires
 ══════════════════════════════════════════ */
 function togglePw(fid, iid) {
     const f = document.getElementById(fid);
@@ -72,131 +69,101 @@ function togglePw(fid, iid) {
 
 function checkStrength(v) {
     let s = 0;
-    if(v.length >= 8) s++;
-    if(/[A-Z]/.test(v)) s++;
-    if(/[0-9]/.test(v)) s++;
-    if(/[^A-Za-z0-9]/.test(v)) s++;
-    const pct  = [0, 25, 50, 75, 100][s];
-    const col  = ['', '#e53935', '#ff9800', '#fbc02d', '#2e7d32'][s];
-    const lbl  = ['—', 'Trop court', 'Faible', 'Moyen', 'Fort'][s];
+    if (v.length >= 8)          s++;
+    if (/[A-Z]/.test(v))        s++;
+    if (/[0-9]/.test(v))        s++;
+    if (/[^A-Za-z0-9]/.test(v)) s++;
+    const pct = [0, 25, 50, 75, 100][s];
+    const col = ['', '#e53935', '#ff9800', '#fbc02d', '#2e7d32'][s];
+    const lbl = ['—', 'Trop court', 'Faible', 'Moyen', 'Fort'][s];
     document.getElementById('sfill').style.cssText = `width:${pct}%;background:${col}`;
     document.getElementById('slabel').textContent  = lbl;
     checkMatch();
-
     return s;
 }
 
+function resetStrength() {
+    document.getElementById('sfill').style.width = '0%';
+    document.getElementById('sfill').style.background = '';
+    document.getElementById('slabel').textContent = '—';
+}
 function checkMatch() {
     const p1  = document.getElementById('f-pw').value;
     const p2  = document.getElementById('f-pw2').value;
     const err = document.getElementById('match-err');
     const f2  = document.getElementById('f-pw2');
     const bad = p2.length > 0 && p1 !== p2;
-    err.classList.toggle('show', bad);
+    err.classList.toggle('ps_show', bad);
     f2.style.borderColor = bad ? '#e53935' : '';
     f2.style.boxShadow   = bad ? '0 0 0 4px rgba(229,57,53,.1)' : '';
 }
 
-function handleSignup() {
-    const mat   = document.getElementById('f-mat').value.trim();
-    const email = document.getElementById('f-email').value.trim();
-    const pw    = document.getElementById('f-pw').value;
-    const pw2   = document.getElementById('f-pw2').value;
-
-    if(!mat)       { document.getElementById('f-mat').focus();   return; }
-    if(!email)     { document.getElementById('f-email').focus(); return; }
-    if(!pw)        { document.getElementById('f-pw').focus();    return; }
-    if(pw !== pw2) { checkMatch(); document.getElementById('f-pw2').focus(); return; }
-
-    const btn = document.getElementById('submit-btn');
-    btn.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;animation:spin 1s linear infinite">progress_activity</span> Création…';
-    btn.disabled  = true;
-
-    setTimeout(() => {
-        document.getElementById('signup-form').style.display  = 'none';
-        document.getElementById('success-state').style.display = 'flex';
-    }, 1500);
-}
-
-
-
-
-
-
-function showAlert(message, type = "error", redirect = null, resetForm = false, btn = null) {
-
-
-    const normalContent = `
-        <span class="material-symbols-outlined" style="font-size:18px">person_add</span>
-                    Créer mon compte
-    `;
+/* ══════════════════════════════════════════
+   SWEETALERT2
+══════════════════════════════════════════ */
+function showAlert(title,message, type = "error", redirect = null, resetForm = false, btn = null,nomBtn = "OK") {
+    const normalContent = `<span class="material-symbols-outlined" style="font-size:18px">person_add</span> Créer mon compte`;
 
     Swal.fire({
+        title : title,
         text: message,
         icon: type,
         timer: 4000,
         timerProgressBar: true,
-        confirmButtonText: "OK",
+        confirmButtonText: nomBtn,
         buttonsStyling: false,
-        customClass: {
-            confirmButton: "btn"
-        },
+        customClass: { confirmButton: "btn" },
         didOpen: () => {
             const confirmBtn = Swal.getConfirmButton();
+            const colors = {
+                success: "#113B26",
+                warning: "#ffc107",
+                error: "#dc3545",
+                info: "#0d6efd",
+                question: "#6c757d"
+            };
+            confirmBtn.style.backgroundColor =
+                colors[type] || "#0d6efd";
 
-            if (type === "success") {
-                confirmBtn.style.backgroundColor = "#113B26";
-                confirmBtn.style.color = "#fff";
-            } else {
-                confirmBtn.style.backgroundColor = "#dc3545";
-                confirmBtn.style.color = "#fff";
-            }
+           // confirmBtn.style.backgroundColor = type === "success" ? "#113B26" : "#dc3545";
+            confirmBtn.style.color = "#fff";
         }
     }).then(() => {
-
-        if (resetForm) {
-            $("#formSignUp")[0].reset();
+        if (resetForm)
+        {
+            document.getElementById('formSignUp').reset();
+            resetStrength();
         }
-
-        // ✅ corriger ici
-        if (btn) {
-
-
-           // btn.removeAttribute('data-kt-indicator');
-           // btn.disabled = false;
-
-            btn.innerHTML = normalContent;
-            btn.disabled = false;
-        }
-
-        if (redirect) {
-            window.location.href = redirect;
-        }
+        if (btn) { btn.innerHTML = normalContent; btn.disabled = false; }
+        if (redirect) window.location.href = redirect;
     });
 }
 
-
-
-
+/* ══════════════════════════════════════════
+   VALIDATION FormValidation
+══════════════════════════════════════════ */
 const formSignUp = document.getElementById('formSignUp');
+
 var validator = FormValidation.formValidation(
     formSignUp,
     {
         fields: {
             email: {
                 validators: {
-                    emailAddress: {
-                        message: 'Veuillez respecter le format de l\'email : test@uahb.sn.'
-                    },
                     notEmpty: {
-                        message: 'Le mail est un champ obligatoire. Veuillez le résigner.'
+                        message: 'Le mail est obligatoire. Veuillez le renseigner.'
+                    },
+                    emailAddress: {
+                        message: "Format invalide. Exemple : prenom.nom@uahb.sn."
                     },
                     callback: {
-                        message: "L’adresse e-mail doit se terminer par @uahb.sn",
+                        message: "L'adresse e-mail doit se terminer par @uahb.sn",
                         callback: function (input) {
                             const value = input.value.toLowerCase().trim();
 
-                            if (value === "") return false;
+                            if (value === "") {
+                                return false;
+                            }
 
                             return value.endsWith("@uahb.sn");
                         }
@@ -206,155 +173,100 @@ var validator = FormValidation.formValidation(
             matricule: {
                 validators: {
                     notEmpty: {
-                        message: 'Le matricule est un champ obligatoire. Veuillez le résigner.'
+                        message: 'Le matricule est obligatoire. Veuillez le renseigner.'
                     },
                     stringLength: {
                         min: 6,
                         max: 7,
-                        message: 'Veuillez saisir le bon matricule composé de 7 chiffres..'
+                        message: 'Le matricule doit contenir 6 ou 7 chiffres.'
                     },
+                    regexp: {
+                        regexp: /^[0-9]+$/,
+                        message: 'Le matricule doit contenir uniquement des chiffres.'
+                    }
                 }
             },
             password: {
                 validators: {
-                    notEmpty: {
-                        message: "Le nouveau mot de passe est un champ obligatoire. Veuillez le résigner."
-                    },
-                    // callback: {
-                    //   message: "Veuillez entrer un mot de passe valide",
-                    //  callback: function (e) {
-                    //    if (e.value.length > 0) return s()
-                    // }
-                    //}
-
+                    notEmpty: { message: "Le mot de passe est obligatoire. Veuillez le renseigner." },
                     callback: {
-                        message: "Mot de passe trop faible. Utilisez au moins 8 caractères, une majuscule, un chiffre et un symbole.",
+                        message: "Mot de passe trop faible. Minimum : 8 caractères, une majuscule, un chiffre et un symbole.",
                         callback: function (input) {
-                            const value = input.value;
-
-                            const score = checkStrength(value);
-
-                            // ❌ Refuser si < Bon
-                            return score >= 3;
+                            return checkStrength(input.value) >= 3; // Moyen ou Fort
                         }
                     }
                 }
             },
             "confirm-password": {
                 validators: {
-                    notEmpty: {
-                        message: "Le mot de passe de confirmation est obligatoire. Veuilez le renseigner."
-                    },
+                    notEmpty: { message: "La confirmation du mot de passe est obligatoire." },
                     identical: {
+                        /* CORRECTION BUG : utiliser formSignUp.querySelector (pas 'e' inexistant) */
                         compare: function () {
-                            return e.querySelector('[name="password"]').value
+                            return formSignUp.querySelector('[name="password"]').value;
                         },
-                        message: "Le nouveau mot de passe et le mot de passe de confirmation ne correspondent pas."
+                        message: "Les mots de passe ne correspondent pas."
                     }
                 }
             }
-
-            ,
-            cgu: {
-                validators: {
-
-                    notEmpty: {
-                        message: 'Les CGU sont obligatoires. Veuillez cocher la case.'
-                    }
-                }
-            },
         },
-
         plugins: {
-            trigger: new FormValidation.plugins.Trigger(),
-            bootstrap: new FormValidation.plugins.Bootstrap5({
-                rowSelector: '.ps_field'
-            })
+            trigger:   new FormValidation.plugins.Trigger(),
+            bootstrap: new FormValidation.plugins.Bootstrap5({ rowSelector: '.ps_field' })
         }
     }
 );
 
+/* ══════════════════════════════════════════
+   SOUMISSION
+══════════════════════════════════════════ */
 const t = document.getElementById('formSignUp_submit');
+
 t.addEventListener('click', function (e) {
     e.preventDefault();
-    if (validator) {
-        validator.validate().then(function (status) {
-            if (status == 'Valid') {
-              //  t.setAttribute('data-kt-indicator', 'on');
-               // t.disabled = true;
+    if (!validator) return;
 
-                t.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;animation:spin 1s linear infinite">progress_activity</span> Création…';
-                t.disabled  = true;
+    validator.validate().then(function (status) {
+        if (status !== 'Valid') return;
 
-                setTimeout(function () {
-                    var form_data = $("#formSignUp").serialize();
-                    $.ajax({
-                        type: 'post',
-                        url: '/personnel/auth-controller',
-                        data: form_data,
-                        success: function (resp) {
+        t.innerHTML = '<span class="material-symbols-outlined" style="font-size:18px;animation:ps_spin 1s linear infinite">progress_activity</span> Création…';
+        t.disabled  = true;
 
-                            alert(resp);
+        setTimeout(function () {
+            $.ajax({
+                type: 'post',
+                url:  '/personnel/auth-controller',
+                data: $("#formSignUp").serialize(),
+                success: function (resp) {
+                    if      (resp === "erreurConnexion")    showAlert("Erreur de connexion","Erreur de connexion. Veuillez réessayer ultérieurement.", "error", null, false, t,"OK");
+                    else if (resp === "champsObligatoire")  showAlert("Champs obligatoires","Tous les champs obligatoires doivent être remplis.", "error", null, false, t,"OK");
+                    else if (resp === "dejaCompte")         showAlert("Compte existant","Vous avez déjà un compte. Veuillez vous connecter.", "warning", "/personnel/signin", true, t,"Se connecter");
+                    else if (resp === "matriculeExistsPas") showAlert("Matricule introuvable","Ce matricule n'existe pas dans notre système.", "error", null, false, t,"OK");
+                    else if (resp === "emailInvalide") showAlert("E-mail incorrect","Veuillez renseigner une adresse e-mail valide se terminant par @uahb.sn.", "error", null, false, t,"OK");
+                    else if (resp === "passwordCourt") showAlert("Mot de passe trop court","Le mot de passe doit contenir au moins 8 caractères.", "error", null, false, t,"OK");
+                    else if (resp === "pasContrat")         showAlert("Aucun contrat","Aucun contrat trouvé. Veuillez contacter le DRH.", "error", null, true, t,"OK");
+                    else if (resp === "finContrat")         showAlert("Contrat expiré","Votre contrat arrive à échéance. Veuillez contacter le DRH.", "error", null, true, t,"OK");
+                    else if (resp === "erreurMail")         showAlert("Erreur d’envoi","Erreur lors de l'envoi de l'email de confirmation. Veuillez réessayer ultérieurement.", "error", null, true, t,"OK");
+                    else if (resp === "pasCorrespondantPWD")   showAlert("Mots de passe différents","Les mots de passe ne correspondent pas.", "error", null, false, t,"OK");
+                    else if (resp === "pasCorrespondantEmail") showAlert("E-mail incorrect","L'adresse e-mail saisie est incorrecte.", "error", null, false, t,"OK");
+                    else if (resp === "succès") {
+                        /* Afficher l'email dans la phase 2 */
+                        const emailVal = document.getElementById('email1').value;
+                        const emailDisplay = document.getElementById('email-display');
+                        if (emailDisplay) emailDisplay.textContent = emailVal;
 
-                            if (resp === "erreurConnexion") {
-                                showAlert("Erreur de connexion. Veuillez réessayer ultérieurement.", "error", null, false, t);
-
-                            } else if (resp === "champsObligatoire") {
-                                showAlert("Les champs marqués d'un astérisque (*) sont obligatoires.", "error", null, false, t);
-
-                            } else if (resp === "dejaCompte") {
-                                showAlert("Vous avez déjà un compte. Veuillez vous connecter.", "error", "/personnel/signIn", true, t);
-
-                            } else if (resp === "matriculeExistsPas") {
-                                showAlert("Ce matricule n'existe pas.", "error", null, false, t);
-
-                            } else if (resp === "pasContrat") {
-                                showAlert("Aucun contrat n’a été trouvé. Veuillez vous rapprocher du DRH.", "error", null, true, t);
-
-                            } else if (resp === "finContrat") {
-                                showAlert("Votre contrat arrive à échéance. Veuillez contacter le DRH.", "error", null, true, t);
-
-                            } else if (resp === "erreurMail") {
-                                showAlert("L’adresse e-mail n’est pas valide ou une erreur est survenue lors de l’envoi du mail.", "error", null, true, t);
-
-                            } else if (resp === "pasCorrespondantPWD") {
-                                showAlert("Les mots de passe ne correspondent pas.", "error", null, false, t);
-
-                            } else if (resp === "pasCorrespondantEmail") {
-                                showAlert("L’adresse e-mail saisie est incorrecte.", "error", null, false, t);
-
-                            } else if (resp === "succès") {
-                               // showAlert("Compte créé avec succès !", "success", "/personnel/activate-account/"+resp.substr(6), false, t);
-
-                                setTimeout(() => {
-
-                                    // cacher le formulaire
-                                    document.getElementById('signup-form').style.display = 'none';
-
-                                    // afficher succès
-                                    document.getElementById('success-state').style.display = 'block';
-
-                                    // attendre 2 secondes avant redirection
-                                   // setTimeout(() => {
-
-                                      //  window.location.href = "/personnel/accueil";
-
-                                  //  }, 5000);
-
-                                }, 500);
-
-                            } else {
-                                showAlert("Une erreur est survenue. Veuillez réessayer ultérieurement.", "error", null, true, t);
-                            }
-
-
-                        }
-                    })
-                }, 2000);
-            }
-        });
-    }
+                        setTimeout(() => {
+                            document.getElementById('phase1').style.display = 'none';
+                            document.getElementById('phase2').style.display = 'block';
+                        }, 500);
+                    } else {
+                        showAlert( "Erreur inattendue","Une erreur inattendue est survenue. Veuillez réessayer.", "error", null, true, t);
+                    }
+                },
+                error: function () {
+                    showAlert("Erreur réseau", "Vérifiez votre connexion et réessayez.", "error", null, false, t);
+                }
+            });
+        }, 2000);
+    });
 });
-
-
-

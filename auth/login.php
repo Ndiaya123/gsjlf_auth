@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-    <title>GSJLF — Connexion ENT</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>ENT — GSJLF</title>
+    <link rel="shortcut icon" href="/personnel/ressources/dist_assets/media/logos/logo_gsjlf.png" />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap"
           rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
@@ -42,7 +43,7 @@
                         <div class="ps_sb-stat-lbl">Entités</div>
                     </div>
                     <div class="ps_sb-stat">
-                        <div class="ps_sb-stat-num">500+</div>
+                        <div class="ps_sb-stat-num">20+</div>
                         <div class="ps_sb-stat-lbl">Membres</div>
                     </div>
                     <div class="ps_sb-stat">
@@ -75,15 +76,15 @@
                 <!-- Sélecteur entité -->
                 <div class="ps_entity-row">
                     <div class="ps_entity-opt ps_uahb">
-                        <input type="radio" id="e-uahb" name="entity" value="uahb">
+                        <input type="radio" id="e-uahb" name="entity" value="uahb" disabled>
                         <label for="e-uahb"><img src="/personnel/ressources/dist_assets/media/logos/logo_uahb.png" alt="UAHB">UAHB<small>Université</small></label>
                     </div>
                     <div class="ps_entity-opt ps_cmjlf">
-                        <input type="radio" id="e-cmjlf" name="entity" value="cmjlf">
+                        <input type="radio" id="e-cmjlf" name="entity" value="cmjlf" disabled>
                         <label for="e-cmjlf"><img src="/personnel/ressources/dist_assets/media/logos/logo_cmjlf.png" alt="CMJLF">CMJLF<small>Collège</small></label>
                     </div>
                     <div class="ps_entity-opt ps_ctd">
-                        <input type="radio" id="e-ctd" name="entity" value="ctd">
+                        <input type="radio" id="e-ctd" name="entity" value="ctd" disabled>
                         <label for="e-ctd"><img src="/personnel/ressources/dist_assets/media/logos/logo_ctd.png" alt="CTD">CTD<small>Technique</small></label>
                     </div>
                 </div>

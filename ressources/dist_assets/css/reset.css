@@ -2,8 +2,10 @@
 *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
 body{font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;color:var(--dark);overflow-x:hidden;background:radial-gradient(ellipse 70% 60% at 0% 0%,rgba(17,59,38,.1),transparent),radial-gradient(ellipse 50% 50% at 100% 10%,rgba(134,76,32,.08),transparent),#fdf8ef}
 
+/* ═══ LAYOUT ═══ */
 .ps_page-shell{min-height:100vh;display:grid;grid-template-columns:1.1fr .9fr}
 
+/* ═══ SIDEBAR ═══ */
 .ps_sidebar{position:sticky;top:0;height:100vh;overflow:hidden;display:flex;flex-direction:column}
 
 .ps_slide{position:absolute;inset:0;z-index:0;background-size:cover;background-position:center;opacity:0;transition:opacity 1.2s ease}
@@ -48,9 +50,25 @@ body{font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;color:var(--dar
 
 @keyframes ps_sbUp{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
 
-.ps_main-wrap{display:flex;align-items:center;justify-content:center;padding:44px 36px}
+/* ═══ MAIN — SCROLLABLE ═══ */
+.ps_main-wrap{
+    height:100vh;
+    overflow-y:auto;
+    overflow-x:hidden;
+    display:flex;
+    align-items:flex-start;
+    justify-content:center;
+    padding:44px 36px;
+}
 
-.ps_auth-card{width:100%;max-width:480px;background:rgba(255,255,255,.93);backdrop-filter:blur(32px);border:1px solid rgba(255,255,255,.95);border-radius:32px;padding:38px;box-shadow:var(--shadow);animation:ps_cardIn .5s cubic-bezier(.22,1,.36,1) both}
+/* ═══ CARD ═══ */
+.ps_auth-card{
+    width:100%;max-width:480px;
+    background:rgba(255,255,255,.93);backdrop-filter:blur(32px);
+    border:1px solid rgba(255,255,255,.95);border-radius:32px;padding:38px;
+    box-shadow:var(--shadow);animation:ps_cardIn .5s cubic-bezier(.22,1,.36,1) both;
+    margin:auto 0;
+}
 @keyframes ps_cardIn{from{opacity:0;transform:translateY(28px) scale(.98)}to{opacity:1;transform:translateY(0) scale(1)}}
 
 .ps_back-link{display:inline-flex;align-items:center;gap:7px;font-size:12px;font-weight:800;color:var(--muted);text-decoration:none;margin-bottom:26px;padding:7px 14px;border-radius:999px;border:1px solid var(--border);background:white;transition:.2s}
@@ -108,7 +126,6 @@ body{font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;color:var(--dar
 .ps_alt-line::before,.ps_alt-line::after{content:"";flex:1;height:1px;background:var(--border)}
 
 .ps_switch-note{text-align:center;font-size:13px;font-weight:700;color:var(--muted)}
-
 .ps_link-btn{border:0;background:transparent;color:var(--cmjlf);font-family:inherit;font-weight:800;cursor:pointer;font-size:13px;text-decoration:none}
 .ps_link-btn:hover{text-decoration:underline}
 
@@ -121,182 +138,93 @@ body{font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;color:var(--dar
 .ps_success-banner h3{font-family:'Playfair Display',serif;font-size:24px;font-weight:900;margin-bottom:9px}
 .ps_success-banner p{font-size:13px;line-height:1.75;color:var(--muted);font-weight:600;max-width:300px}
 
+/* Bannières erreur & avertissement */
+.ps_error-banner{display:flex;flex-direction:column;align-items:center;padding:36px 16px;text-align:center}
+.ps_error-icon{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#dc3545,#b02a37);display:grid;place-items:center;color:white;margin-bottom:20px;box-shadow:0 16px 34px rgba(220,53,69,.22);animation:ps_popIn .5s cubic-bezier(.34,1.56,.64,1) both}
+
+.ps_warning-icon{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,#ffc107,#e0a800);display:grid;place-items:center;color:white;margin-bottom:20px;box-shadow:0 16px 34px rgba(255,193,7,.22);animation:ps_popIn .5s cubic-bezier(.34,1.56,.64,1) both}
+
+.ps_warning-btn{width:100%;height:52px;border:0;border-radius:16px;cursor:pointer;font-family:'Plus Jakarta Sans',sans-serif;font-weight:800;font-size:14px;color:white;background:linear-gradient(135deg,#fbc02d,#f57f17);box-shadow:0 14px 32px rgba(245,127,23,.22);transition:transform .25s,box-shadow .25s;display:flex;align-items:center;justify-content:center;gap:9px;position:relative;overflow:hidden}
+.ps_warning-btn::before{content:"";position:absolute;inset:0;background:linear-gradient(135deg,rgba(255,255,255,.12),transparent);opacity:0;transition:.25s}
+.ps_warning-btn:hover{transform:translateY(-2px);box-shadow:0 20px 42px rgba(245,127,23,.28)}
+.ps_warning-btn:hover::before{opacity:1}
+.ps_warning-btn:disabled{opacity:.7;cursor:not-allowed;transform:none}
+
+/* Validation messages */
+.fv-plugins-message-container.invalid-feedback,
+.fv-plugins-message-container.valid-feedback{
+    display:flex;align-items:center;gap:5px;
+    font-size:11px;font-weight:700;color:#e53935;
+}
+
+/* Bouton SweetAlert2 */
+.btn{padding:12px 24px;border:none;border-radius:12px;font-size:14px;font-weight:700;cursor:pointer;color:white}
+
 @keyframes ps_spin{to{transform:rotate(360deg)}}
 
-@media(max-width:980px){.ps_page-shell{grid-template-columns:1fr}.ps_sidebar{display:none}.ps_main-wrap{padding:22px 16px}.ps_auth-card{padding:26px 22px;border-radius:24px}}
+/* ═══ RESPONSIVE ═══ */
+@media(max-width:980px){
+    .ps_page-shell{grid-template-columns:1fr}
+    .ps_sidebar{display:none}
+    .ps_main-wrap{height:auto;min-height:100vh;overflow-y:visible;align-items:flex-start;padding:22px 16px}
+    .ps_auth-card{padding:26px 22px;border-radius:24px;margin:0}
+}
 
 /* =============================================
    ISOLATION — surcharge style.bundle.css
-   Préfixe ps_ garantit la priorité sur les
-   règles globales du framework
    ============================================= */
-
-/* Reset boîte sur tous les enfants directs */
 .ps_page-shell *,
 .ps_page-shell *::before,
-.ps_page-shell *::after {
-    box-sizing: border-box !important;
-}
+.ps_page-shell *::after{box-sizing:border-box !important}
 
-/* Grille principale — empêche tout overflow */
-.ps_page-shell {
-    display: grid !important;
-    grid-template-columns: 1.1fr .9fr !important;
-    min-height: 100vh !important;
-    width: 100% !important;
-    overflow: hidden !important;
+.ps_page-shell{
+    display:grid !important;
+    grid-template-columns:1.1fr .9fr !important;
+    min-height:100vh !important;
+    width:100% !important;
+    overflow:visible !important; /* PAS hidden — scroll obligatoire */
 }
+.ps_sidebar{
+    position:sticky !important;top:0 !important;height:100vh !important;
+    overflow:hidden !important;max-width:100% !important;padding:0 !important;margin:0 !important;
+}
+.ps_sb-inner{padding:32px !important;margin:0 !important;width:100% !important}
 
-/* Sidebar — bloque le débordement */
-.ps_sidebar {
-    position: sticky !important;
-    top: 0 !important;
-    height: 100vh !important;
-    overflow: hidden !important;
-    max-width: 100% !important;
-    padding: 0 !important;
-    margin: 0 !important;
+/* COLONNE DROITE scrollable */
+.ps_main-wrap{
+    height:100vh !important;
+    overflow-y:auto !important;
+    overflow-x:hidden !important;
+    display:flex !important;
+    align-items:flex-start !important;
+    justify-content:center !important;
+    padding:44px 36px !important;
+    min-width:0 !important;
 }
-
-/* Annule tout padding/margin injecté par le framework sur sb-inner */
-.ps_sb-inner {
-    padding: 32px !important;
-    margin: 0 !important;
-    width: 100% !important;
+.ps_auth-card{
+    width:100% !important;max-width:480px !important;
+    margin:auto 0 !important;padding:38px !important;flex-shrink:0 !important;
 }
-
-/* Carte principale — largeur fixe, pas d'overflow */
-.ps_auth-card {
-    width: 100% !important;
-    max-width: 480px !important;
-    margin: 0 auto !important;
-    overflow: visible !important;
-    padding: 38px !important;
+.ps_slide{position:absolute !important;inset:0 !important;margin:0 !important;padding:0 !important;border:none !important}
+.ps_input-wrap input{
+    width:100% !important;height:50px !important;padding:0 14px 0 42px !important;margin:0 !important;
+    border-radius:14px !important;border:1.5px solid var(--border) !important;
+    background:white !important;box-shadow:none !important;
+    font-size:13px !important;font-weight:700 !important;color:var(--dark) !important;
 }
-
-/* Zone main — centre le contenu proprement */
-.ps_main-wrap {
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 44px 36px !important;
-    overflow: auto !important;
-    min-width: 0 !important;
-}
-
-/* Inputs — annule les styles du framework */
-.ps_input-wrap input {
-    width: 100% !important;
-    height: 50px !important;
-    padding: 0 14px 0 42px !important;
-    margin: 0 !important;
-    border-radius: 14px !important;
-    border: 1.5px solid var(--border) !important;
-    background: white !important;
-    box-shadow: none !important;
-    font-size: 13px !important;
-    font-weight: 700 !important;
-    color: var(--dark) !important;
-}
-.ps_input-wrap input:focus {
-    border-color: var(--green) !important;
-    box-shadow: 0 0 0 4px rgba(17,59,38,.08) !important;
-    outline: none !important;
-}
-
-/* Bouton submit — annule .btn du framework */
-.ps_submit-btn {
-    width: 100% !important;
-    height: 52px !important;
-    display: flex !important;
-    align-items: center !important;
-    justify-content: center !important;
-    padding: 0 !important;
-    margin-bottom: 10px !important;
-    border: 0 !important;
-    border-radius: 16px !important;
-    background: linear-gradient(135deg, var(--green), var(--green-mid)) !important;
-    color: white !important;
-    font-size: 14px !important;
-    font-weight: 800 !important;
-    box-shadow: 0 14px 32px rgba(17,59,38,.22) !important;
-}
-
-/* Slides — position absolue nécessaire */
-.ps_slide {
-    position: absolute !important;
-    inset: 0 !important;
-    margin: 0 !important;
-    padding: 0 !important;
-    border: none !important;
+.ps_input-wrap input:focus{border-color:var(--green) !important;box-shadow:0 0 0 4px rgba(17,59,38,.08) !important;outline:none !important}
+.ps_submit-btn{
+    width:100% !important;height:52px !important;display:flex !important;
+    align-items:center !important;justify-content:center !important;
+    padding:0 !important;margin-bottom:10px !important;border:0 !important;border-radius:16px !important;
+    background:linear-gradient(135deg,var(--green),var(--green-mid)) !important;
+    color:white !important;font-size:14px !important;font-weight:800 !important;
+    box-shadow:0 14px 32px rgba(17,59,38,.22) !important;
 }
 
 @media(max-width:980px){
-    .ps_page-shell {
-        grid-template-columns: 1fr !important;
-    }
-    .ps_sidebar {
-        display: none !important;
-    }
-    .ps_main-wrap {
-        padding: 22px 16px !important;
-    }
-    .ps_auth-card {
-        padding: 26px 22px !important;
-        border-radius: 24px !important;
-    }
-}
-
-
-
-.ps_error-icon{width:72px;height:72px;border-radius:50%;    background:linear-gradient(135deg,#dc3545,#b02a37);display:grid;place-items:center;color:white;margin-bottom:20px;box-shadow:0 16px 34px rgba(17,59,38,.22);animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both}
-.ps_error-banner{display:flex;flex-direction:column;align-items:center;padding:36px 16px;text-align:center}
-
-
-.ps_warning-icon{width:72px;height:72px;border-radius:50%; background: linear-gradient(135deg, #ffc107, #e0a800);display:grid;place-items:center;color:white;margin-bottom:20px;box-shadow:0 16px 34px rgba(17,59,38,.22);animation:popIn .5s cubic-bezier(.34,1.56,.64,1) both}
-
-
-.ps_warning-btn{
-    width:100%;
-    height:52px;
-    border:0;
-    border-radius:16px;
-    cursor:pointer;
-    font-family:'Plus Jakarta Sans',sans-serif;
-    font-weight:800;
-    font-size:14px;
-    color:white;
-    background:linear-gradient(135deg,#fbc02d,#f57f17);
-    box-shadow:0 14px 32px rgba(245,127,23,.22);
-    transition:transform .25s,box-shadow .25s;
-    display:flex;
-    align-items:center;
-    justify-content:center;
-    gap:9px;
-    position:relative;
-    overflow:hidden;
-}
-
-.ps_warning-btn::before{
-    content:"";
-    position:absolute;
-    inset:0;
-    background:linear-gradient(135deg,rgba(255,255,255,.12),transparent);
-    opacity:0;
-    transition:.25s
-}
-
-.ps_warning-btn:hover{
-    transform:translateY(-2px);
-    box-shadow:0 20px 42px rgba(245,127,23,.28)
-}
-
-.ps_warning-btn:hover::before{
-    opacity:1
-}
-
-.ps_warning-btn:disabled{
-    opacity:.7;
-    cursor:not-allowed;
-    transform:none
+    .ps_page-shell{grid-template-columns:1fr !important;overflow:visible !important}
+    .ps_sidebar{display:none !important}
+    .ps_main-wrap{height:auto !important;min-height:100vh !important;overflow-y:visible !important;padding:22px 16px !important;align-items:flex-start !important}
+    .ps_auth-card{padding:26px 22px !important;border-radius:24px !important;margin:0 !important}
 }

@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-    <title>GSJLF — Réinitialisation mot de passe</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>ENT — GSJLF</title>
+    <link rel="shortcut icon" href="/personnel/ressources/dist_assets/media/logos/logo_gsjlf.png" />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
     <link href="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
@@ -31,9 +32,9 @@
                 <h2 class="ps_sb-headline">Réinitialisez<br>votre <span>mot de passe.</span></h2>
                 <p class="ps_sb-desc">Recevez un lien sécurisé pour créer un nouveau mot de passe et retrouver l'accès à votre espace ENT.</p>
                 <div class="ps_sb-stats">
-                    <div class="ps_sb-stat"><div class="ps_sb-stat-num">10min</div><div class="ps_sb-stat-lbl">Validité</div></div>
+                    <div class="ps_sb-stat"><div class="ps_sb-stat-num">24 h</div><div class="ps_sb-stat-lbl">Validité</div></div>
                     <div class="ps_sb-stat"><div class="ps_sb-stat-num">1x</div><div class="ps_sb-stat-lbl">Usage</div></div>
-                    <div class="ps_sb-stat"><div class="ps_sb-stat-num">SSL</div><div class="ps_sb-stat-lbl">Chiffré</div></div>
+                    <div class="ps_sb-stat"><div class="ps_sb-stat-num">100%</div><div class="ps_sb-stat-lbl">Sécurisé</div></div>
                 </div>
                 <div class="ps_slide-ent">
                     <img id="ent-logo" src="/personnel/ressources/dist_assets/media/logos/logo_uahb.png" alt="">
@@ -43,7 +44,7 @@
             </div>
             <div class="ps_sb-bottom">
                 <div class="ps_sb-secure"><span class="material-symbols-outlined" style="font-size:13px">verified_user</span>Réinitialisation sécurisée</div>
-                <span>© 2026 GSJLF</span>
+                <span>© <span id="annee_en_cours1"></span> GSJLF</span>
             </div>
         </div>
     </aside>
@@ -54,7 +55,7 @@
 
             <form novalidate="novalidate" id="formReset" autocomplete="off">
 
-                <input type="hidden" name="option" value="6">
+                <input type="hidden" name="option" value="4">
 
                 <!-- PHASE 1 : demande -->
                 <div id="phase1" class="ps_phase">
@@ -76,7 +77,7 @@
                         <label>Email institutionnel</label>
                         <div class="ps_input-wrap">
                             <span class="material-symbols-outlined ps_ico">alternate_email</span>
-                            <input type="email" id="email1" name="email" placeholder="prenom.nom@uahb.sn" required>
+                            <input type="email" id="email1" name="email" placeholder="prenom.nom@uahb.sn" oninput="this.value = this.value.toLowerCase()" required>
                         </div>
                     </div>
                     <div class="ps_link-card">
@@ -108,54 +109,12 @@
                     <span class="material-symbols-outlined" style="font-size:18px;color:#2e7d32;margin-top:1px;flex-shrink:0">check_circle</span>
                     <p>Email envoyé avec succès. Lien valable 24 heures. Pensez à vérifier votre dossier spam.</p>
                 </div>
-                <button class="ps_btn-ghost" type="button" onclick="refreshPage(1)">
+                <button class="ps_btn-ghost" type="button" onclick="refreshPage()">
                     <span class="material-symbols-outlined" style="font-size:18px">refresh</span>Renvoyer le lien
                 </button>
             </div>
 
-            <!-- PHASE 3 : nouveau mot de passe -->
-            <!--            <div id="phase3" style="display:none">-->
-            <!--                <div class="ps_form-icon"><span class="material-symbols-outlined">key</span></div>-->
-            <!--                <h1 class="ps_form-title">Nouveau mot de passe</h1>-->
-            <!--                <p class="ps_form-subtitle">Choisissez un nouveau mot de passe sécurisé pour votre compte ENT.</p>-->
-            <!--                <div class="ps_field">-->
-            <!--                    <label>Nouveau mot de passe</label>-->
-            <!--                    <div class="ps_input-wrap">-->
-            <!--                        <span class="material-symbols-outlined ps_ico">lock</span>-->
-            <!--                        <input type="password" id="pw1" placeholder="Créer un mot de passe" oninput="checkStrength(this.value)" required>-->
-            <!--                        <button type="button" class="ps_eye-btn" onclick="togglePw('pw1','eye1')">-->
-            <!--                            <span class="material-symbols-outlined" style="font-size:18px" id="eye1">visibility</span>-->
-            <!--                        </button>-->
-            <!--                    </div>-->
-            <!--                </div>-->
-            <!--                <div class="ps_strength-bar">-->
-            <!--                    <div class="ps_strength-track"><div class="ps_strength-fill" id="sfill"></div></div>-->
-            <!--                    <div class="ps_strength-label" id="slabel">—</div>-->
-            <!--                </div>-->
-            <!--                <div class="ps_field">-->
-            <!--                    <label>Confirmation du mot de passe</label>-->
-            <!--                    <div class="ps_input-wrap">-->
-            <!--                        <span class="material-symbols-outlined ps_ico">lock_clock</span>-->
-            <!--                        <input type="password" id="pw2" placeholder="Répéter le mot de passe" oninput="checkMatch()" required>-->
-            <!--                        <button type="button" class="ps_eye-btn" onclick="togglePw('pw2','eye2')">-->
-            <!--                            <span class="material-symbols-outlined" style="font-size:18px" id="eye2">visibility</span>-->
-            <!--                        </button>-->
-            <!--                    </div>-->
-            <!--                </div>-->
-            <!--                <p class="ps_match-error" id="match-err">-->
-            <!--                    <span class="material-symbols-outlined" style="font-size:13px">error</span>Les mots de passe ne correspondent pas.-->
-            <!--                </p>-->
-            <!--                <div class="ps_rules">-->
-            <!--                    <span><span class="material-symbols-outlined">check_circle</span>Minimum 8 caractères</span>-->
-            <!--                    <span><span class="material-symbols-outlined">check_circle</span>Au moins une majuscule et un chiffre</span>-->
-            <!--                    <span><span class="material-symbols-outlined">check_circle</span>Différent de votre ancien mot de passe</span>-->
-            <!--                </div>-->
-            <!--                <button class="ps_submit-btn" type="button" id="btn-reset" onclick="handleReset()">-->
-            <!--                    <span class="material-symbols-outlined" style="font-size:18px">check_circle</span>Enregistrer le nouveau mot de passe-->
-            <!--                </button>-->
-            <!--            </div>-->
 
-            <!-- SUCCESS -->
             <div id="success-state" class="ps_success-banner" style="display:none">
                 <div class="ps_success-icon"><span class="material-symbols-outlined" style="font-size:34px">lock_open</span></div>
                 <h3>Mot de passe mis à jour !</h3>

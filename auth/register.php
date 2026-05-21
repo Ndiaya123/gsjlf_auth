@@ -1,9 +1,10 @@
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-    <title>GSJLF — Inscription ENT</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>ENT — GSJLF</title>
+    <link rel="shortcut icon" href="/personnel/ressources/dist_assets/media/logos/logo_gsjlf.png" />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
     <link href="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
@@ -38,13 +39,12 @@
                     Rejoindre l'ENT GSJLF
                 </div>
 
-                <h2 class="ps_sb-headline">
-                    Créez votre<br>espace <span>numérique.</span>
+                <h2 class="ps_sb-headline"> Rejoignez la <br>
+                    communauté <span>GSJLF.</span>
                 </h2>
 
                 <p class="ps_sb-desc">
-                    Accédez à vos cours, notes, emplois du temps et outils collaboratifs.
-                    Un seul compte pour tout le groupe scolaire.
+                    Créez votre compte en quelques étapes et accédez à tous vos services numériques.
                 </p>
 
                 <div class="ps_sb-stats">
@@ -53,7 +53,7 @@
                         <div class="ps_sb-stat-lbl">Entités</div>
                     </div>
                     <div class="ps_sb-stat">
-                        <div class="ps_sb-stat-num">100+</div>
+                        <div class="ps_sb-stat-num">20+</div>
                         <div class="ps_sb-stat-lbl">Membres</div>
                     </div>
                     <div class="ps_sb-stat">
@@ -70,15 +70,16 @@
                     </div>
                 </div>
 
+
                 <div class="ps_slide-dots" id="slide-dots"></div>
             </div>
 
             <div class="ps_sb-bottom">
                 <div class="ps_sb-secure">
                     <span class="material-symbols-outlined" style="font-size:13px">verified_user</span>
-                    Données protégées · SSL
+                    Données protégées
                 </div>
-                <span>© 2026 GSJLF</span>
+                <span>© <span id="annee_en_cours1"></span> GSJLF</span>
             </div>
         </div>
     </aside>
@@ -113,7 +114,7 @@
                         <label>Email institutionnel</label>
                         <div class="ps_input-wrap">
                             <span class="material-symbols-outlined ps_ico">alternate_email</span>
-                            <input type="email" id="f-email" placeholder="prenom.nom@gsjlf.sn" name="email" required autocomplete="email">
+                            <input type="email" id="f-email" placeholder="prenom.nom@uahb.sn" name="email" oninput="this.value = this.value.toLowerCase()" required autocomplete="email">
                         </div>
                     </div>
 
@@ -175,7 +176,7 @@
                     <span class="material-symbols-outlined" style="font-size:34px">mark_email_read</span>
                 </div>
                 <h3>Compte créé !</h3>
-                <p>Veuillez vérifier votre email institutionnel et cliquez sur le lien pour activer votre compte.</p>
+                <p>Un e-mail d’activation vous a été envoyé sur votre compte mail institutionnel. Si vous ne le trouvez pas dans votre boîte de réception, veuillez vérifier votre dossier des courriers indésirables (spams), puis cliquer sur le lien afin d’activer votre compte.</p>
             </div>
 
         </div>

@@ -1294,7 +1294,6 @@ Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet emai
     case 4:
 
 
-
         if (!empty($_POST['matricule']) && !empty($_POST['email'])) {
 
             try {
@@ -1626,7 +1625,7 @@ Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet emai
                                                     } else {
 
                                                         $bd->commit();
-                                                        echo "succès";
+                                                        echo "succès" . $authController->tokenencrypt($matricule);
                                                         die;
 
                                                     }
@@ -1662,7 +1661,7 @@ Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet emai
 
                                     } else {
 
-                                        echo "finContrat";
+                                        echo "erreur";
                                         die;
 
                                     }
@@ -1703,7 +1702,7 @@ Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet emai
                 if ($bd->inTransaction()) {
     $bd->rollBack();
 }
-                echo "erreur";
+                echo "erreur" . $e;
                 die;
             }
 
@@ -1715,8 +1714,6 @@ Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet emai
         break;
 
     case 5 :
-
-
 
         if (!empty($_POST['matricule']) && !empty($_POST['code']) && !empty($_POST['password']) && !empty($_POST['confirm-password'])) {
 
@@ -1734,6 +1731,7 @@ Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet emai
                 $confirmPassword = valid_donnees($_POST['confirm-password']);
 
                 if ($password !== $confirmPassword) {
+
                     echo "pasCorrespondantPWD";
                     die;
 
@@ -1741,11 +1739,6 @@ Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet emai
 
                 $password = password_hash($password, PASSWORD_DEFAULT);
 
-
-                if (strlen($password) < 8) {
-                    echo "passwordCourt";
-                    die;
-                }
 
                 $data = [
                     'matricule' => $matricule
@@ -1889,7 +1882,7 @@ Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet emai
                                                             if ($bd->inTransaction()) {
     $bd->rollBack();
 }
-                                                            echo "erreur";
+                                                            echo "erreur7";
                                                             die;
                                                         }
 
@@ -1898,7 +1891,7 @@ Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet emai
                                                         if ($bd->inTransaction()) {
     $bd->rollBack();
 }
-                                                        echo "erreur";
+                                                        echo "erreur6";
                                                         die;
                                                     }
 
@@ -1908,14 +1901,14 @@ Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet emai
                                                     if ($bd->inTransaction()) {
     $bd->rollBack();
 }
-                                                    echo "erreur";
+                                                    echo "erreur5";
                                                     die;
                                                 }
 
 
                                             } else {
 
-                                                echo "finContrat";
+                                                echo "erreur4";
                                                 die;
 
                                             }
@@ -1928,7 +1921,7 @@ Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet emai
 
 
                                     } else {
-                                        echo "erreur";
+                                        echo "erreur3";
                                         die;
 
                                     }

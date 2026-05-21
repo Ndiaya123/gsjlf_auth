@@ -64,7 +64,7 @@ try {
             return false;
 
         } catch (Exception $e) {
-            return false; // ou false selon ton choix de sécurité
+            return false;
         }
     }
 
@@ -108,14 +108,11 @@ try {
             {
                 if($result_reset_code->codeReset == $codeReset_encrypt)
                 {
-
                     $email = $result->email;
 
                     if($result->statutActivation == 0)
                     {
-
                         $statut = 1;
-
                     }else
                     {
 
@@ -124,31 +121,24 @@ try {
 
                             if(comparerDate($result_reset_code->dateEnregistrement))
                             {
-
                                 $statut = 4;
-
                             }else
                             {
                                 $statut = 3;
                                 $codeReset_encrypt = null;
-
                             }
                         }else
                         {
                             $statut = 2;
                             $codeReset_encrypt = null;
-
                         }
 
                     }
                 }else
                 {
-
                     $matricule = null;
                     $statut = 0;
                     $codeReset_encrypt = null;
-
-
                 }
             }else
             {
@@ -162,24 +152,19 @@ try {
             $matricule = null;
             $statut = 0;
             $codeReset_encrypt = null;
-
         }
 
     }else
     {
-
         $matricule = null;
         $statut = 0;
         $codeReset_encrypt = null;
-
     }
 
 
 
 
 }catch (Exception $e) {
-
-
     header("Location: /personnel/erreur");
     exit;
 }
@@ -192,9 +177,10 @@ try {
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-    <title>GSJLF — Réinitialisation mot de passe</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>ENT — GSJLF</title>
+    <link rel="shortcut icon" href="/personnel/ressources/dist_assets/media/logos/logo_gsjlf.png" />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
     <link href="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css" />
@@ -268,7 +254,7 @@ try {
     <span class="material-symbols-outlined" style="font-size:34px">
         warning
     </span>
-                    </div>                    <h3 style="color: #e0a800;">Échec de l'activation !</h3>
+                    </div>                    <h3 style="color: #e0a800;">Compte non activé !</h3>
                     <p>                            Votre compte n’a pas encore été activé. Veuillez vérifier le mail d’activation dans votre boîte Gmail pour procéder à l’activation. Sans cela, vous ne pourrez pas réinitialiser votre mot de passe en cas de problème. Contactez le service informatique à l’adresse <strong><em style="color: red;">criat@uahb.sn</em></strong>.
 
                     </p>
@@ -314,13 +300,11 @@ try {
 
 
             <form novalidate="novalidate" id="formReset" autocomplete="off">
-                <input type="hidden" name="option" value="7" />
+                <input type="hidden" name="option" value="5" />
                 <input type="hidden" name="matricule" id="matricule" value="<?=  $matricule ?>"/>
                 <input type="hidden" name="code" id="code" value="<?=  $codeReset_encrypt ?>"/>
 
 
-
-                <!-- PHASE 3 : nouveau mot de passe -->
                 <div id="phase3" >
                     <div class="ps_form-icon"><span class="material-symbols-outlined">key</span></div>
                     <h1 class="ps_form-title">Nouveau mot de passe</h1>
@@ -381,7 +365,6 @@ try {
                                     </span>
                     </div>                    <h3 style="color: red;">Erreur !</h3>
                     <p> Une erreur s’est produite. Veuillez réessayer ou contacter le service informatique à l’adresse <strong><em style="color: red;">criat@uahb.sn</em></strong>.</p>
-                    <!--                    <a href="/personnel/signin" class="submit-btn" style="margin-top:20px;text-decoration:none;width:auto;padding:0 28px">Se connecter maintenant</a>-->
                 </div>
             <?php }
             ?>

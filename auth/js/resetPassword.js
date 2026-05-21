@@ -25,6 +25,12 @@ function checkStrength(v) {
 
     return s;
 }
+
+function resetStrength() {
+    document.getElementById('sfill').style.width = '0%';
+    document.getElementById('sfill').style.background = '';
+    document.getElementById('slabel').textContent = '—';
+}
 // function checkStrength(v){let s=0;if(v.length>=8)s++;if(/[A-Z]/.test(v))s++;if(/[0-9]/.test(v))s++;if(/[^A-Za-z0-9]/.test(v))s++;const f=document.getElementById('sfill');if(f){f.style.width=[0,25,50,75,100][s]+'%';f.style.background=['','#e53935','#ff9800','#fbc02d','#2e7d32'][s];}const sl=document.getElementById('slabel');if(sl)sl.textContent=['—','Trop court','Faible','Moyen','Fort'][s];checkMatch();}
 function checkMatch(){const p1=document.getElementById('pw1').value,p2=document.getElementById('pw2').value,err=document.getElementById('match-err'),f2=document.getElementById('pw2');if(!p2)return;const bad=p2.length>0&&p1!==p2;err.classList.toggle('ps_show',bad);f2.style.borderColor=bad?'#e53935':'';f2.style.boxShadow=bad?'0 0 0 4px rgba(229,57,53,.1)':'';}
 function handleReset(){const p1=document.getElementById('pw1').value,p2=document.getElementById('pw2').value;if(!p1||!p2)return;if(p1!==p2){checkMatch();document.getElementById('pw2').focus();return;}const btn=document.getElementById('btn-reset');btn.innerHTML='<span class="material-symbols-outlined" style="font-size:18px;animation:ps_spin 1s linear infinite">progress_activity</span> Enregistrement…';btn.disabled=true;setTimeout(()=>{[1,2,3].forEach(i=>{const el=document.getElementById('phase'+i);if(el)el.style.display='none';});document.getElementById('success-state').style.display='flex';},1300);}
@@ -42,54 +48,45 @@ function resetPassword()
 
 
 
-function showAlert(message, type = "error", redirect = null, resetForm = false, btn = null) {
 
+
+function showAlert(title,message, type = "error", redirect = null, resetForm = false, btn = null,nomBtn = "OK") {
 
     const normalContent = `
         <span class="material-symbols-outlined" style="font-size:18px">check_circle</span>Enregistrer le nouveau mot de passe
     `;
-
     Swal.fire({
+        title : title,
         text: message,
         icon: type,
         timer: 4000,
         timerProgressBar: true,
-        confirmButtonText: "OK",
+        confirmButtonText: nomBtn,
         buttonsStyling: false,
-        customClass: {
-            confirmButton: "btn"
-        },
+        customClass: { confirmButton: "btn" },
         didOpen: () => {
             const confirmBtn = Swal.getConfirmButton();
+            const colors = {
+                success: "#113B26",
+                warning: "#ffc107",
+                error: "#dc3545",
+                info: "#0d6efd",
+                question: "#6c757d"
+            };
+            confirmBtn.style.backgroundColor =
+                colors[type] || "#0d6efd";
 
-            if (type === "success") {
-                confirmBtn.style.backgroundColor = "#113B26";
-                confirmBtn.style.color = "#fff";
-            } else {
-                confirmBtn.style.backgroundColor = "#dc3545";
-                confirmBtn.style.color = "#fff";
-            }
+            // confirmBtn.style.backgroundColor = type === "success" ? "#113B26" : "#dc3545";
+            confirmBtn.style.color = "#fff";
         }
     }).then(() => {
-
-        if (resetForm) {
-            $("#formReset")[0].reset();
+        if (resetForm)
+        {
+            document.getElementById('formReset').reset();
+            resetStrength();
         }
-
-        // ✅ corriger ici
-        if (btn) {
-
-
-            // btn.removeAttribute('data-kt-indicator');
-            // btn.disabled = false;
-
-            btn.innerHTML = normalContent;
-            btn.disabled = false;
-        }
-
-        if (redirect) {
-            window.location.href = redirect;
-        }
+        if (btn) { btn.innerHTML = normalContent; btn.disabled = false; }
+        if (redirect) window.location.href = redirect;
     });
 }
 
@@ -104,39 +101,24 @@ var validator = FormValidation.formValidation(
 
             password: {
                 validators: {
-                    notEmpty: {
-                        message: "Le nouveau mot de passe est un champ obligatoire. Veuillez le résigner."
-                    },
-                    // callback: {
-                    //   message: "Veuillez entrer un mot de passe valide",
-                    //  callback: function (e) {
-                    //    if (e.value.length > 0) return s()
-                    // }
-                    //}
-
+                    notEmpty: { message: "Le mot de passe est obligatoire. Veuillez le renseigner." },
                     callback: {
-                        message: "Mot de passe trop faible. Utilisez au moins 8 caractères, une majuscule, un chiffre et un symbole.",
+                        message: "Mot de passe trop faible. Minimum : 8 caractères, une majuscule, un chiffre et un symbole.",
                         callback: function (input) {
-                            const value = input.value;
-
-                            const score = checkStrength(value);
-
-                            // ❌ Refuser si < Bon
-                            return score >= 3;
+                            return checkStrength(input.value) >= 3; // Moyen ou Fort
                         }
                     }
                 }
             },
             "confirm-password": {
                 validators: {
-                    notEmpty: {
-                        message: "Le mot de passe de confirmation est obligatoire. Veuilez le renseigner."
-                    },
+                    notEmpty: { message: "La confirmation du mot de passe est obligatoire." },
                     identical: {
+                        /* CORRECTION BUG : utiliser formSignUp.querySelector (pas 'e' inexistant) */
                         compare: function () {
-                            return e.querySelector('[name="password"]').value
+                            return formSignUp.querySelector('[name="password"]').value;
                         },
-                        message: "Le nouveau mot de passe et le mot de passe de confirmation ne correspondent pas."
+                        message: "Les mots de passe ne correspondent pas."
                     }
                 }
             }
@@ -171,59 +153,31 @@ t.addEventListener('click', function (e) {
                         url: '/personnel/auth-controller',
                         data: form_data,
                         success: function (resp) {
-
-                            alert(resp);
-
-                            if (resp === "erreurConnexion") {
-                                showAlert("Erreur de connexion. Veuillez réessayer ultérieurement.", "error", null, false, t);
-
-                            } else if (resp === "champsObligatoire") {
-                                showAlert("Les champs marqués d'un astérisque (*) sont obligatoires.", "error", null, false, t);
-
-                            } else if (resp === "pasContrat") {
-                                showAlert("Aucun contrat n’a été trouvé. Veuillez vous rapprocher du DRH.", "error", null, true, t);
-
-                            } else if (resp === "pasCompte") {
-                                showAlert("Vous n’avez pas de compte. Veuillez vous inscrire.", "error", "/personnel/signup", true, t);
-
-                            } else if (resp === "finContrat") {
-                                showAlert("Votre contrat arrive à échéance. Veuillez contacter le DRH.", "error", null, true, t);
-
-                            } else if (resp === "pasCorrespondantPWD") {
-                                showAlert("Les mots de passe ne correspondent pas.", "error", null, false, t);
-
-                            }else if (resp === "compteInactive") {
-
-                                showAlert("Le compte n'est pas encore activé. Veuillez cliquer sur le lien envoyé par mail pour l'activer.", "error", null, true, t);
-
-                            }else if (resp === "bloquer") {
-
-                                showAlert("Le compte est bloqué. Veuillez contacter le service informatique.b", "error", null, true, t);
-
-                            } else if (resp.substr(0, 6) === "succès") {
-                                // showAlert("Compte créé avec succès !", "success", "/personnel/activate-account/"+resp.substr(6), false, t);
+                            if      (resp === "erreurConnexion")    showAlert("Erreur de connexion","Erreur de connexion. Veuillez réessayer ultérieurement.", "error", null, false, t,"OK");
+                            else if (resp === "champsObligatoire")  showAlert("Champs obligatoires","Tous les champs obligatoires doivent être remplis.", "error", null, false, t,"OK");
+                            else if (resp === "pasCorrespondantPWD")   showAlert("Mots de passe différents","Les mots de passe ne correspondent pas.", "error", null, false, t,"OK");
+                            else if (resp === "passwordCourt") showAlert("Mot de passe trop court","Le mot de passe doit contenir au moins 8 caractères.", "error", null, false, t,"OK");
+                            else if (resp === "pasCompte")         showAlert("Compte introuvable", "Aucun compte n'a été trouvé. Veuillez vous inscrire pour continuer.", "warning", "/personnel/signup", true, t, "S'inscrire");
+                            else if (resp === "compteInactive")         showAlert("Compte non activé", "Votre compte n’a pas encore été activé. Veuillez vérifier le mail d’activation dans votre boîte Gmail pour procéder à l’activation. Sans cela, vous ne pourrez pas réinitialiser votre mot de passe en cas de problème. Contactez le service informatique à l’adresse criat@uahb.sn.", "warning", null, true, t, "OK");
+                            else if (resp === "bloquer") showAlert("Ce compte est bloqué.","Veuillez contacter le service informatique.", "error", null, true, t,"OK");
+                            else if (resp === "pasContrat")         showAlert("Aucun contrat","Aucun contrat trouvé. Veuillez contacter le DRH.", "error", null, true, t,"OK");
+                            else if (resp === "finContrat")         showAlert("Contrat expiré","Votre contrat arrive à échéance. Veuillez contacter le DRH.", "error", null, true, t,"OK");
+                            else if (resp === "succès") {
 
                                 setTimeout(() => {
 
-                                    // cacher le formulaire
                                     document.getElementById('phase3').style.display = 'none';
-
-                                    // afficher succès
                                     document.getElementById('success-state-reset').style.display = 'flex';
-                                    // attendre 2 secondes avant redirection
-                                    // setTimeout(() => {
-
-                                    //  window.location.href = "/personnel/accueil";
-
-                                    //  }, 5000);
 
                                 }, 500);
 
+
                             } else {
-                                showAlert("Une erreur est survenue. Veuillez réessayer ultérieurement.", "error", null, true, t);
+                                showAlert( "Erreur inattendue","Une erreur inattendue est survenue. Veuillez réessayer.", "error", null, true, t);
                             }
-
-
+                        },
+                        error: function () {
+                            showAlert("Erreur réseau", "Vérifiez votre connexion et réessayez.", "error", null, false, t);
                         }
                     })
                 }, 2000);
