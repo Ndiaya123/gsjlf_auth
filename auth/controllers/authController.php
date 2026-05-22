@@ -357,7 +357,7 @@ WHERE p.matricule = :matricule;";
                                     $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 
 
-                                    if ($tmpStmtHistorique == 1) {
+                                    if ($tmpStmtHistorique) {
 
                                         $link = $BASE_URL."activate-account/" . $authController->tokenencrypt($matricule).'/'.$codeActivation_encrypt;
                                         $message = "<html>
@@ -878,7 +878,7 @@ WHERE p.matricule = :matricule;";
                                         $stmtHistorique = $bd->prepare($sqlHistorique);
                                         $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 
-                                        if ($tmpStmtHistorique == 1) {
+                                        if ($tmpStmtHistorique) {
 
                                             $link = $BASE_URL."activate-account/" . $authController->tokenencrypt($matricule)."/".$codeActivation_encrypt;
 
@@ -1305,7 +1305,7 @@ WHERE p.matricule = :matricule;";
 //                                            $stmtHistorique = $bd->prepare($sqlHistorique);
 //                                            $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 //
-//                                            if ($tmpStmtHistorique == 1) {
+//                                            if ($tmpStmtHistorique) {
 //
 //                                                $bd->commit();
 //                                                echo "succès";
@@ -1497,7 +1497,7 @@ WHERE p.matricule = :matricule;";
 //                                        $stmtHistorique = $bd->prepare($sqlHistorique);
 //                                        $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 //
-//                                        if ($tmpStmtHistorique == 1) {
+//                                        if ($tmpStmtHistorique) {
 //
 //                                            $link = $BASE_URL."activate-account/" . $authController->tokenencrypt($matricule);
 //
@@ -1775,7 +1775,7 @@ WHERE p.matricule = :matricule;";
                                                 $stmtHistorique = $bd->prepare($sqlHistorique);
                                                 $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 
-                                                if ($tmpStmtHistorique == 1) {
+                                                if ($tmpStmtHistorique) {
 
                                                     $resetLink = $BASE_URL."change-password/" . $authController->tokenencrypt($matricule)."/".$codeActivation_encrypt;
 
@@ -2222,7 +2222,7 @@ WHERE p.matricule = :matricule;";
                                                         $stmtHistorique = $bd->prepare($sqlHistorique);
                                                         $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 
-                                                        if ($tmpStmtHistorique == 1) {
+                                                        if ($tmpStmtHistorique) {
 
 
                                                             $bd->commit();

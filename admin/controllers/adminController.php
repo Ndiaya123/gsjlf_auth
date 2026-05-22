@@ -29,7 +29,16 @@ class papa extends BD
         return $result = base64_encode($result);
     }
 
-
+    function tokendecrypt($data)
+    {
+        $secretKey = 'U@hbENTDRI@TCRI@T2022';
+        $secretIv = 'www.ent.uahb.sn';
+        $encryptMethod = "AES-256-CBC";
+        $key = hash('sha256', $secretKey);
+        $iv = substr(hash('sha256', $secretIv), 0, 16);
+        $result = openssl_decrypt(base64_decode($data), $encryptMethod, $key, 0, $iv);
+        return $result;
+    }
     function decode($s)
     {
         if (version_compare(PHP_VERSION, '8.1.999', 'le')) {
@@ -302,9 +311,9 @@ switch ($option) {
     compteGmail.email,
 
     COALESCE(
-        unite_administrative_niv1.niveau1,
-        unite_administrative_niv2.niveau2,
-        unite_administrative_niv3.niveau3
+        unite_administrative_niv1.codeNiv1,
+        unite_administrative_niv2.codeNiv2,
+        unite_administrative_niv3.codeNiv3
     ) AS affectation
 
 FROM utilisateurs
@@ -502,8 +511,294 @@ FROM utilisateurs";
 
         break;
 
+    case 3:
+
+        if(!empty($_POST['tmp']))
+        {
+            $id = $adminController->tokendecrypt(valid_donnees($_POST['tmp']));
 
 
+
+            $idUtilisateur = 1;
+//            $idUtilisateur = null;
+//            if(!empty($_SESSION['tmpIdP']))
+//            {
+//                $idUtilisateur = $_SESSION['tmpIdP'];
+//            }else
+//            {
+//                echo "sessionExpired";
+//                die;
+//            }
+
+
+
+            try {
+                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bd->beginTransaction();
+
+
+                date_default_timezone_set('Africa/Dakar');
+                $date_jour = date('Y-m-d');
+
+
+                $data = [
+                    'id' => $id
+                ];
+
+                $sql = "SELECT * FROM utilisateurs WHERE id=:id";
+                $stmt = $bd->prepare($sql);
+                $stmt->execute($data);
+                $result = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if ($result) {
+
+
+                    if($result->statutUtilisateur == 0) {
+
+
+
+                        $data_up_user = [
+                            'statutUtilisateur' => 1,
+                            'id' => $id
+                        ];
+
+                        $sql_up_user = "UPDATE utilisateurs 
+                SET statutUtilisateur = :statutUtilisateur
+                WHERE id = :id";
+
+                        $stmt_up_user = $bd->prepare($sql_up_user);
+
+                        $tmpStmt_up_user = $stmt_up_user->execute($data_up_user);
+
+                        if ($tmpStmt_up_user) {
+
+                            if ($stmt_up_user->rowCount() > 0) {
+
+                                $table = "utilisateurs";
+                                $motif = "Blocage du compte de l'utilisateur";
+                                $dateEnregistrement = date('Y-m-d H:i:s');
+                                $dataHistorique = [
+                                    'identifiant' => $result->identifiant,
+                                    'tables' => $table,
+                                    'motif' => $motif,
+                                    'idUtilisateur' => $idUtilisateur,
+                                    'dateEnregistrement' => $dateEnregistrement
+
+                                ];
+                                $sqlHistorique = "INSERT INTO historiques(identifiant,motif,tables,idUtilisateur,dateEnregistrement) VALUES (:identifiant,:motif,:tables,:idUtilisateur,:dateEnregistrement)";
+                                $stmtHistorique = $bd->prepare($sqlHistorique);
+                                $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
+
+
+                                if ($tmpStmtHistorique) {
+
+                                    $bd->commit();
+                                    echo "succès";
+                                    die;
+
+                                } else {
+                                    if ($bd->inTransaction()) {
+                                        $bd->rollBack();
+                                    }
+                                    echo "erreur";
+                                    die;
+                                }
+
+
+
+
+                            } else {
+                                if ($bd->inTransaction()) {
+                                    $bd->rollBack();
+                                }
+                                echo "erreur";
+                                die;                            }
+
+                        } else {
+                            if ($bd->inTransaction()) {
+                                $bd->rollBack();
+                            }
+                            echo "erreur";
+                            die;                        }
+
+                    }else
+                    {
+                        if ($bd->inTransaction()) {
+                            $bd->rollBack();
+                        }
+                        echo "erreur";
+                        die;
+                    }
+
+
+                } else {
+                    if ($bd->inTransaction()) {
+                        $bd->rollBack();
+                    }
+                    echo "erreur";
+                    die;
+
+                }
+
+            } catch (Exception $e) {
+                if ($bd->inTransaction()) {
+                    $bd->rollBack();
+                }
+                echo "erreur";
+                die;
+            }
+
+
+        }else
+        {
+            echo "erreur";
+            die;
+        }
+break;
+
+
+    case 4 :
+
+
+        if(!empty($_POST['tmp']))
+        {
+            $id = $adminController->tokendecrypt(valid_donnees($_POST['tmp']));
+
+
+
+            $idUtilisateur = 1;
+//            $idUtilisateur = null;
+//            if(!empty($_SESSION['tmpIdP']))
+//            {
+//                $idUtilisateur = $_SESSION['tmpIdP'];
+//            }else
+//            {
+//                echo "sessionExpired";
+//                die;
+//            }
+
+
+
+            try {
+                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bd->beginTransaction();
+
+
+                date_default_timezone_set('Africa/Dakar');
+                $date_jour = date('Y-m-d');
+
+
+                $data = [
+                    'id' => $id];
+
+                $sql = "SELECT * FROM utilisateurs WHERE id=:id";
+                $stmt = $bd->prepare($sql);
+                $stmt->execute($data);
+                $result = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if ($result) {
+
+
+                    if($result->statutUtilisateur == 1) {
+
+
+
+                        $data_up_user = [
+                            'statutUtilisateur' => 0,
+                            'id' => $id
+                        ];
+
+                        $sql_up_user = "UPDATE utilisateurs 
+                SET statutUtilisateur = :statutUtilisateur
+                WHERE id = :id";
+
+                        $stmt_up_user = $bd->prepare($sql_up_user);
+
+                        $tmpStmt_up_user = $stmt_up_user->execute($data_up_user);
+
+                        if ($tmpStmt_up_user) {
+
+                            if ($stmt_up_user->rowCount() > 0) {
+
+                                $table = "utilisateurs";
+                                $motif = "Blocage du compte de l'utilisateur";
+                                $dateEnregistrement = date('Y-m-d H:i:s');
+                                $dataHistorique = [
+                                    'identifiant' => $result->identifiant,
+                                    'tables' => $table,
+                                    'motif' => $motif,
+                                    'idUtilisateur' => $idUtilisateur,
+                                    'dateEnregistrement' => $dateEnregistrement
+
+                                ];
+                                $sqlHistorique = "INSERT INTO historiques(identifiant,motif,tables,idUtilisateur,dateEnregistrement) VALUES (:identifiant,:motif,:tables,:idUtilisateur,:dateEnregistrement)";
+                                $stmtHistorique = $bd->prepare($sqlHistorique);
+                                $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
+
+
+                                if ($tmpStmtHistorique) {
+
+                                    $bd->commit();
+                                    echo "succès";
+                                    die;
+
+                                } else {
+                                    if ($bd->inTransaction()) {
+                                        $bd->rollBack();
+                                    }
+                                    echo "erreur";
+                                    die;
+                                }
+
+
+                            } else {
+                                if ($bd->inTransaction()) {
+                                    $bd->rollBack();
+                                }
+                                echo "erreur";
+                                die;                            }
+
+                        } else {
+                            if ($bd->inTransaction()) {
+                                $bd->rollBack();
+                            }
+                            echo "erreur";
+                            die;                        }
+
+                    }else
+                    {
+                        if ($bd->inTransaction()) {
+                            $bd->rollBack();
+                        }
+                        echo "erreur";
+                        die;
+                    }
+
+
+                } else {
+                    if ($bd->inTransaction()) {
+                        $bd->rollBack();
+                    }
+                    echo "erreur";
+                    die;
+
+                }
+
+            } catch (Exception $e) {
+                if ($bd->inTransaction()) {
+                    $bd->rollBack();
+                }
+                echo "erreur";
+                die;
+            }
+
+
+        }else
+        {
+            echo "erreur";
+            die;
+        }
+        break;
     default :
         echo "erreur1";
         die;

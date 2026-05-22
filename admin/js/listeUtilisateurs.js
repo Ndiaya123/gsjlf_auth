@@ -1,11 +1,4 @@
-// ================================================
-// CTD — Liste des utilisateurs
-// ================================================
 
-
-// ==================================================
-// LOADER
-// ==================================================
 function showLoader(message) {
 
     message = message || 'Chargement en cours…';
@@ -123,9 +116,6 @@ function hideLoader() {
 }
 
 
-// ==================================================
-// SYNC — fermeture loader
-// ==================================================
 var _loaderSync = {
     dtReady: false,
     statsReady: false
@@ -149,9 +139,7 @@ function _resetLoaderSync() {
 }
 
 
-// ==================================================
-// UTILS
-// ==================================================
+
 function testJSON(text) {
 
     if (typeof text !== "string") {
@@ -178,36 +166,6 @@ function getYearInDakar() {
     };
 
     return new Intl.DateTimeFormat('fr-FR', options).format(new Date());
-}
-
-function formatMoneyFCFA(amount) {
-
-    return new Intl.NumberFormat('fr-FR', {
-        style: 'currency',
-        currency: 'XOF',
-        currencyDisplay: 'symbol'
-    }).format(amount);
-}
-
-
-// ==================================================
-// FORM VALIDATION
-// ==================================================
-const form = document.getElementById('formEleves');
-
-if (form) {
-
-    var validator = FormValidation.formValidation(form, {
-        fields: {},
-        plugins: {
-            trigger: new FormValidation.plugins.Trigger(),
-            bootstrap: new FormValidation.plugins.Bootstrap5({
-                rowSelector: '.fv-row',
-                eleInvalidClass: '',
-                eleValidClass: ''
-            })
-        }
-    });
 }
 
 
@@ -556,6 +514,7 @@ function loadStats() {
 
 function actionBloquerCompte(tmp)
 {
+
     Swal.fire({
         title: 'Confirmation',
         text: 'Êtes-vous sûr de vouloir bloquer cet utilisateur ?',
@@ -569,7 +528,133 @@ function actionBloquerCompte(tmp)
 
         if (result.isConfirmed) {
 
-            window.location.href = url;
+
+            showLoader("Blocage de l'utilisateur en cours...");
+
+
+            $.ajax({
+
+                type: 'post',
+
+                url: '/personnel/admin-controller',
+
+                data: {
+                    option: 3,
+                    tmp: tmp
+                },
+
+                success: function (data) {
+
+                    hideLoader();
+
+                    if (data === "sessionExpired")
+                    {
+                        window.location.href = "/personnel/signin";
+
+                    }
+                    else if (data === "succès")
+                    {
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Succès',
+                            html: `
+                                Le compte de l'utilisateur a été bloqué avec succès.
+                            `,
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#28a745',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showClass: {
+                                popup: 'animate__animated animate__fadeInDown'
+                            },
+                            hideClass: {
+                                popup: 'animate__animated animate__fadeOutUp'
+                            }
+                        });
+
+                        $('#kt_datatable_utilisateurs').DataTable().destroy();
+                        KTDatatablesServerSide.init();
+                        loadStats();
+
+
+
+                    }
+                    else if (data === "erreur")
+                    {
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oups...',
+                            html: `
+                                Une erreur inattendue est survenue.<br>
+                                Veuillez réessayer ultérieurement.
+                            `,
+                            confirmButtonText: 'Ok',
+                            confirmButtonColor: '#d33',
+                            background: '#fff',
+                            color: '#333',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showClass: {
+                                popup: 'animate__animated animate__shakeX'
+                            },
+                            hideClass: {
+                                popup: 'animate__animated animate__fadeOut'
+                            }
+                        });
+
+                    }else
+                    {
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oups...',
+                            html: `
+                                Une erreur inattendue est survenue.<br>
+                                Veuillez réessayer ultérieurement.
+                            `,
+                            confirmButtonText: 'Ok',
+                            confirmButtonColor: '#d33',
+                            background: '#fff',
+                            color: '#333',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showClass: {
+                                popup: 'animate__animated animate__shakeX'
+                            },
+                            hideClass: {
+                                popup: 'animate__animated animate__fadeOut'
+                            }
+                        });
+
+
+                    }
+
+                },
+
+                error: function () {
+                    hideLoader();
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur réseau',
+                        text: 'Impossible de contacter le serveur.'
+                    });
+
+
+                }
+            });
+
+        }
+        else
+        {
+            Swal.fire({
+                icon: 'info',
+                title: 'Annulée',
+                text: 'Action annulée'
+            });
+
 
         }
     });
@@ -579,7 +664,6 @@ function actionBloquerCompte(tmp)
 
 function actionDeBloquerCompte(tmp)
 {
-
 
     Swal.fire({
         title: 'Confirmation',
@@ -594,8 +678,138 @@ function actionDeBloquerCompte(tmp)
 
         if (result.isConfirmed) {
 
-            window.location.href = url;
+
+            showLoader("Deblocage de l'utilisateur en cours...");
+
+            $.ajax({
+
+                type: 'post',
+
+                url: '/personnel/admin-controller',
+
+                data: {
+                    option: 4,
+                    tmp: tmp
+                },
+
+                success: function (data) {
+                    hideLoader();
+
+                    if (data === "sessionExpired")
+                    {
+                        window.location.href = "/personnel/signin";
+
+                    }
+                    else if (data === "succès")
+                    {
+
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Succès',
+                            html: `
+                                Le compte de l'utilisateur a été débloqué avec succès.
+                            `,
+                            confirmButtonText: 'OK',
+                            confirmButtonColor: '#28a745',
+                            timer: 3000,
+                            timerProgressBar: true,
+                            showClass: {
+                                popup: 'animate__animated animate__fadeInDown'
+                            },
+                            hideClass: {
+                                popup: 'animate__animated animate__fadeOutUp'
+                            }
+                        });
+
+                        $('#kt_datatable_utilisateurs').DataTable().destroy();
+                        KTDatatablesServerSide.init();
+                        loadStats();
+
+
+                    }
+                    else if (data === "erreur")
+                    {
+
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oups...',
+                            html: `
+                                Une erreur inattendue est survenue.<br>
+                                Veuillez réessayer ultérieurement.
+                            `,
+                            confirmButtonText: 'Ok',
+                            confirmButtonColor: '#d33',
+                            background: '#fff',
+                            color: '#333',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showClass: {
+                                popup: 'animate__animated animate__shakeX'
+                            },
+                            hideClass: {
+                                popup: 'animate__animated animate__fadeOut'
+                            }
+                        });
+
+
+
+
+                    }else
+                    {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Oups...',
+                            html: `
+                                Une erreur inattendue est survenue.<br>
+                                Veuillez réessayer ultérieurement.
+                            `,
+                            confirmButtonText: 'Ok',
+                            confirmButtonColor: '#d33',
+                            background: '#fff',
+                            color: '#333',
+                            allowOutsideClick: false,
+                            allowEscapeKey: false,
+                            showClass: {
+                                popup: 'animate__animated animate__shakeX'
+                            },
+                            hideClass: {
+                                popup: 'animate__animated animate__fadeOut'
+                            }
+                        });
+
+
+                    }
+
+                },
+
+                error: function () {
+
+                    Swal.fire({
+                        icon: 'error',
+                        title: 'Erreur réseau',
+                        text: 'Impossible de contacter le serveur.'
+                    });
+                    hideLoader();
+
+
+                }
+            });
 
         }
+        else
+        {
+            Swal.fire({
+                icon: 'info',
+                title: 'Annulée',
+                text: 'Action annulée'
+            });
+        }
     });
+}
+
+
+function ajouterUtilisateur()
+{
+    $("#kt_modal_add_user").modal('show');
+
 }
