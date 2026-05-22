@@ -361,57 +361,214 @@ WHERE p.matricule = :matricule;";
 
                                         $link = $BASE_URL."activate-account/" . $authController->tokenencrypt($matricule).'/'.$codeActivation_encrypt;
                                         $message = "<html>
-                                        <head>
-                                          <title>Création bde compte</title>
-                                          <style>
-                                        p{
-                                        font-size: 16px;
-                                        font-family: Roboto, Arial, sans-serif;
-                                        color: #202124;
-                                        background-color: #ffffff;
-                                        }
-                                        ul, li{
-                                        font-size: 16px;
-                                        font-family: Roboto, Arial, sans-serif;
-                                        color: #202124;
-                                        background-color: #ffffff;
-                                        }
-                                        .code {
-                                        text-align: center;
-                                        font-size: 32px;
-                                        font-weight: bold;
-                                        letter-spacing: 6px;
-                                        color: #28A745;
-                                        margin: 20px 0;
-                                        }
-                                          </style>
-                                        </head>
-                                        <body>
-                                        
-                                          <p>Bonjour " . $prenom . " " . $nom . ",</p>
-                                        
-                                          <p>Vous venez de créer votre compte sur l’ENT du <strong>Groupe Scolaire Jean de la Fontaine (GSJLF)</strong>.</p>
-                                                                      
-                                        
-                                        <p>Veuillez utiliser le lien suivant pour accéder à la page d’activation : <a href='$link'>Activer mon compte</a></p>
-                                          <p><strong>Important :</strong> le lien est valable pour une durée limitée de 24 heures. Pour des raisons de sécurité, ne le partagez avec personne.</p>
-                                        
-                                          <p>Une fois votre compte activé, vous pourrez :</p>
-                                          <ul>
-                                            <li>Accéder à votre espace de travail</li>
-                                            <li>Consulter vos informations professionnelles</li>
-                                            <li>Utiliser les services internes de l’établissement</li>
-                                          </ul>
-                                        <p>
-                                        Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet email ou contacter immédiatement le service informatique à :
-                                        <a href=\"mailto:criat@uahb.sn\">criat@uahb.sn</a>.
-                                        </p>
-                                          <p>Cordialement,<br>
-                                          Le service d'informatique<br>
-                                          Groupe Scolaire Jean de la Fontaine</p>
-                                        
-                                        </body>
-                                        </html>";
+<head>
+  <title>Activation de compte – ENT GSJLF</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      font-family: Roboto, Arial, sans-serif;
+    }
+    .wrapper {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .header {
+      background-color: #113B26;
+      padding: 32px 40px;
+      text-align: center;
+    }
+    .header h1 {
+      color: #f0cc6a;
+      font-size: 22px;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .header p {
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+      margin: 6px 0 0;
+    }
+    .body {
+      padding: 36px 40px;
+    }
+    .body p {
+      font-size: 15px;
+      color: #202124;
+      line-height: 1.7;
+      margin: 0 0 16px;
+    }
+    .cta-wrap {
+      text-align: center;
+      margin: 32px 0;
+    }
+    .cta-btn {
+      display: inline-block;
+      background-color: #113B26;
+      color: #ffffff !important;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 14px 36px;
+      border-radius: 10px;
+      letter-spacing: 0.3px;
+    }
+    .expiry-box {
+      background-color: #fff8e1;
+      border-left: 4px solid #f0cc6a;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin: 24px 0;
+    }
+    .expiry-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #5c3e08;
+      font-weight: 600;
+    }
+    .link-fallback {
+      background-color: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 20px 0;
+      word-break: break-all;
+    }
+    .link-fallback p {
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: #888;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .link-fallback a {
+      font-size: 13px;
+      color: #113B26;
+      text-decoration: none;
+    }
+    .features {
+      background-color: #f9fdf9;
+      border: 1px solid rgba(17,59,38,.1);
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 20px 0;
+    }
+    .features p {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: #113B26;
+      font-weight: 700;
+    }
+    .features ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .features li {
+      font-size: 14px;
+      color: #202124;
+      line-height: 1.8;
+    }
+    .warning-box {
+      background-color: #fff3f3;
+      border-left: 4px solid #e53935;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin: 24px 0;
+    }
+    .warning-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #b71c1c;
+      font-weight: 600;
+    }
+    .footer {
+      background-color: #f4f4f4;
+      padding: 24px 40px;
+      text-align: center;
+      border-top: 1px solid #e0e0e0;
+    }
+    .footer p {
+      font-size: 12px;
+      color: #888;
+      margin: 4px 0;
+      line-height: 1.6;
+    }
+    .footer a {
+      color: #113B26;
+      text-decoration: none;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+
+  <div class='wrapper'>
+
+    <!-- EN-TÊTE -->
+    <div class='header'>
+      <h1>✅ Activation de votre compte ENT</h1>
+      <p>Groupe Scolaire Jean de la Fontaine</p>
+    </div>
+
+    <!-- CORPS -->
+    <div class='body'>
+
+      <p>Bonjour <strong>" . $prenom . " " . $nom . "</strong>,</p>
+
+      <p>Votre compte sur l'ENT du <strong>Groupe Scolaire Jean de la Fontaine (GSJLF)</strong> a bien été créé. Pour finaliser votre inscription, veuillez activer votre compte en cliquant sur le bouton ci-dessous.</p>
+
+      <div class='cta-wrap'>
+        <a href='$link' class='cta-btn'>Activer mon compte</a>
+      </div>
+
+      <div class='expiry-box'>
+        <p>⏱ Ce lien est valable <strong>24 heures</strong> à compter de la réception de cet email. Passé ce délai, vous devrez effectuer une nouvelle demande depuis la page d'activation.</p>
+      </div>
+
+      <p>Si le bouton ne fonctionne pas, copiez et collez le lien suivant dans votre navigateur :</p>
+
+      <div class='link-fallback'>
+        <p>Lien d'activation</p>
+        <a href='$link'>$link</a>
+      </div>
+
+      <div class='features'>
+        <p>Une fois votre compte activé, vous pourrez :</p>
+        <ul>
+          <li>Accéder à votre espace de travail personnel</li>
+          <li>Consulter vos informations professionnelles</li>
+          <li>Utiliser les services internes de l'établissement</li>
+        </ul>
+      </div>
+
+      <div class='warning-box'>
+        <p>⚠ Si vous n'êtes pas à l'origine de cette demande, ignorez cet email et contactez immédiatement le service informatique. Votre compte ne sera pas activé sans action de votre part.</p>
+      </div>
+
+      <p>Cordialement,<br>
+      <strong>Le service informatique</strong><br>
+      Groupe Scolaire Jean de la Fontaine</p>
+
+    </div>
+
+    <!-- PIED DE PAGE -->
+    <div class='footer'>
+      <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
+      <p>Pour toute assistance : <a href='mailto:criat@uahb.sn'>criat@uahb.sn</a></p>
+      <p>© 2026 Groupe Scolaire Jean de la Fontaine</p>
+    </div>
+
+  </div>
+
+</body>
+</html>";
                                         // Envoyer l'e-mail
                                         $emailSent = $authController->sendEmail($email, $prenom, "Activez votre compte maintenant !", $message);
 
@@ -539,8 +696,22 @@ WHERE p.matricule = :matricule;";
                             if (password_verify(valid_donnees($password), $result->password) == 1) {
 
 
-                                echo "succès";
-                                die;
+                                if($result->idTypeUtilisateur == 1)
+                                {
+                                    $_SESSION['tmpIdP'] = $result->id;
+
+                                    echo "succès/personnel/admin-dashboard";
+                                    die;
+
+                                }else
+                                {
+
+                                    echo "succès/personnel/accueil";
+                                    die;
+                                }
+
+
+
 
                             } else {
                                 echo "pasCompte";
@@ -713,57 +884,232 @@ WHERE p.matricule = :matricule;";
 
                                             $message = "<html>
 <head>
-  <title>Lien d'activation</title>
+  <title>Nouveau lien d'activation – ENT GSJLF</title>
   <style>
-p{
-font-size: 16px;
-font-family: Roboto, Arial, sans-serif;
-color: #202124;
-background-color: #ffffff;
-}
-ul, li{
-font-size: 16px;
-font-family: Roboto, Arial, sans-serif;
-color: #202124;
-background-color: #ffffff;
-}
-.code {
-text-align: center;
-font-size: 32px;
-font-weight: bold;
-letter-spacing: 6px;
-color: #28A745;
-margin: 20px 0;
-}
+    body {
+      margin: 0;
+      padding: 0;
+      background-color: #f4f4f4;
+      font-family: Roboto, Arial, sans-serif;
+    }
+    .wrapper {
+      max-width: 600px;
+      margin: 40px auto;
+      background-color: #ffffff;
+      border-radius: 12px;
+      overflow: hidden;
+      box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+    }
+    .header {
+      background-color: #113B26;
+      padding: 32px 40px;
+      text-align: center;
+    }
+    .header h1 {
+      color: #f0cc6a;
+      font-size: 22px;
+      margin: 0;
+      font-weight: 700;
+      letter-spacing: 0.5px;
+    }
+    .header p {
+      color: rgba(255,255,255,0.7);
+      font-size: 13px;
+      margin: 6px 0 0;
+    }
+    .body {
+      padding: 36px 40px;
+    }
+    .body p {
+      font-size: 15px;
+      color: #202124;
+      line-height: 1.7;
+      margin: 0 0 16px;
+    }
+    .cta-wrap {
+      text-align: center;
+      margin: 32px 0;
+    }
+    .cta-btn {
+      display: inline-block;
+      background-color: #113B26;
+      color: #ffffff !important;
+      text-decoration: none;
+      font-size: 15px;
+      font-weight: 700;
+      padding: 14px 36px;
+      border-radius: 10px;
+      letter-spacing: 0.3px;
+    }
+    .info-box {
+      background-color: #e8f5e9;
+      border-left: 4px solid #2e7d32;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin: 24px 0;
+    }
+    .info-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #1b5e20;
+      font-weight: 600;
+    }
+    .expiry-box {
+      background-color: #fff8e1;
+      border-left: 4px solid #f0cc6a;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin: 24px 0;
+    }
+    .expiry-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #5c3e08;
+      font-weight: 600;
+    }
+    .link-fallback {
+      background-color: #f9f9f9;
+      border: 1px solid #e0e0e0;
+      border-radius: 8px;
+      padding: 14px 18px;
+      margin: 20px 0;
+      word-break: break-all;
+    }
+    .link-fallback p {
+      margin: 0 0 6px;
+      font-size: 12px;
+      color: #888;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .link-fallback a {
+      font-size: 13px;
+      color: #113B26;
+      text-decoration: none;
+    }
+    .features {
+      background-color: #f9fdf9;
+      border: 1px solid rgba(17,59,38,.1);
+      border-radius: 8px;
+      padding: 18px 20px;
+      margin: 20px 0;
+    }
+    .features p {
+      margin: 0 0 10px;
+      font-size: 13px;
+      color: #113B26;
+      font-weight: 700;
+    }
+    .features ul {
+      margin: 0;
+      padding-left: 20px;
+    }
+    .features li {
+      font-size: 14px;
+      color: #202124;
+      line-height: 1.8;
+    }
+    .warning-box {
+      background-color: #fff3f3;
+      border-left: 4px solid #e53935;
+      border-radius: 6px;
+      padding: 14px 18px;
+      margin: 24px 0;
+    }
+    .warning-box p {
+      margin: 0;
+      font-size: 14px;
+      color: #b71c1c;
+      font-weight: 600;
+    }
+    .footer {
+      background-color: #f4f4f4;
+      padding: 24px 40px;
+      text-align: center;
+      border-top: 1px solid #e0e0e0;
+    }
+    .footer p {
+      font-size: 12px;
+      color: #888;
+      margin: 4px 0;
+      line-height: 1.6;
+    }
+    .footer a {
+      color: #113B26;
+      text-decoration: none;
+      font-weight: 600;
+    }
   </style>
 </head>
 <body>
 
-  <p>Bonjour " . $prenom . " " . $nom . ",</p>
+  <div class='wrapper'>
 
-  <p>Vous venez de créer votre compte sur l’ENT du <strong>Groupe Scolaire Jean de la Fontaine (GSJLF)</strong>.</p>
+    <!-- EN-TÊTE -->
+    <div class='header'>
+      <h1>🔁 Nouveau lien d'activation</h1>
+      <p>Groupe Scolaire Jean de la Fontaine — ENT</p>
+    </div>
 
-                                    <p>Veuillez utiliser le lien suivant pour accéder à la page d’activation : <a href='$link'>Activer mon compte</a></p>
+    <!-- CORPS -->
+    <div class='body'>
 
-  <p><strong>Important :</strong> ce code est valable pour une durée limitée. Pour des raisons de sécurité, ne le partagez avec personne.</p>
+      <p>Bonjour <strong>" . $prenom . " " . $nom . "</strong>,</p>
 
-  <p>Une fois votre compte activé, vous pourrez :</p>
-  <ul>
-    <li>Accéder à votre espace de travail</li>
-    <li>Consulter vos informations professionnelles</li>
-    <li>Utiliser les services internes de l’établissement</li>
-  </ul>
-<p>
-Si vous n’êtes pas à l’origine de cette demande, veuillez ignorer cet email ou contacter immédiatement le service informatique à :
-<a href=\"mailto:criat@uahb.sn\">criat@uahb.sn</a>.
-</p>
-  <p>Cordialement,<br>
-  Le service d'informatique<br>
-  Groupe Scolaire Jean de la Fontaine</p>
+      <p>Vous avez demandé un nouveau lien d'activation pour votre compte ENT du <strong>Groupe Scolaire Jean de la Fontaine (GSJLF)</strong>. Votre précédent lien avait expiré.</p>
+
+      <div class='info-box'>
+        <p>✅ Un nouveau lien d'activation a été généré. L'ancien lien n'est plus valide.</p>
+      </div>
+
+      <p>Cliquez sur le bouton ci-dessous pour activer votre compte :</p>
+
+      <div class='cta-wrap'>
+        <a href='$link' class='cta-btn'>Activer mon compte</a>
+      </div>
+
+      <div class='expiry-box'>
+        <p>⏱ Ce nouveau lien est valable <strong>24 heures</strong> à compter de la réception de cet email. Passé ce délai, vous devrez effectuer une nouvelle demande depuis la page d'activation.</p>
+      </div>
+
+      <p>Si le bouton ne fonctionne pas, copiez et collez le lien suivant dans votre navigateur :</p>
+
+      <div class='link-fallback'>
+        <p>Lien d'activation</p>
+        <a href='$link'>$link</a>
+      </div>
+
+      <div class='features'>
+        <p>Une fois votre compte activé, vous pourrez :</p>
+        <ul>
+          <li>Accéder à votre espace de travail personnel</li>
+          <li>Consulter vos informations professionnelles</li>
+          <li>Utiliser les services internes de l'établissement</li>
+        </ul>
+      </div>
+
+      <div class='warning-box'>
+        <p>⚠ Si vous n'êtes pas à l'origine de cette demande, ignorez cet email et contactez immédiatement le service informatique. Votre compte ne sera pas activé sans action de votre part.</p>
+      </div>
+
+      <p>Cordialement,<br>
+      <strong>Le service informatique</strong><br>
+      Groupe Scolaire Jean de la Fontaine</p>
+
+    </div>
+
+    <!-- PIED DE PAGE -->
+    <div class='footer'>
+      <p>Cet email a été envoyé automatiquement, merci de ne pas y répondre.</p>
+      <p>Pour toute assistance : <a href='mailto:criat@uahb.sn'>criat@uahb.sn</a></p>
+      <p>© 2026 Groupe Scolaire Jean de la Fontaine</p>
+    </div>
+
+  </div>
 
 </body>
-</html>";
-                                            // Envoyer l'e-mail
+</html>";                                            // Envoyer l'e-mail
                                             $emailSent = $authController->sendEmail($email, $prenom, "Activez votre compte maintenant !", $message);
 
                                             if (!$emailSent) {

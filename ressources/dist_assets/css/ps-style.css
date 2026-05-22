@@ -1,0 +1,152 @@
+/* ===== CMJLF — STUDENT CARD — HORIZONTAL PREMIUM ===== */
+
+.ps1-scene {
+    font-family: 'DM Sans', sans-serif;
+    padding: 24px;
+    display: flex;
+    align-items: flex-start;
+    justify-content: flex-start;
+}
+
+/* Card — layout horizontal */
+.ps1-card {
+    background: #FFFFFF;
+    border-radius: 18px;
+    padding: 18px 24px;
+    box-sizing: border-box;
+    display: flex;
+    align-items: center;
+    gap: 0;
+    box-shadow:
+            0 2px 4px rgba(17, 59, 38, 0.04), 0 8px 28px rgba(17, 59, 38, 0.09);
+    border: 1px solid rgba(134, 76, 32, 0.07);
+    width: fit-content;
+}
+
+/* Bloc gauche — total */
+.ps1-card__left {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding-right: 28px;
+    box-sizing: border-box;
+}
+
+.ps1-card__eyebrow {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #6dbf94 ;
+    margin: 0;
+    padding: 0;
+}
+
+.ps1-card__dot {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: #113b26;
+    flex-shrink: 0;
+    display: inline-block;
+}
+
+.ps1-card__main {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.ps1-card__number {
+    font-family: 'DM Serif Display', serif;
+    font-size: 52px;
+    line-height: 1;
+    color: #113b26;
+    letter-spacing: -2px;
+    margin: 0;
+    padding: 0;
+}
+
+.ps1-card__unit {
+    font-size: 11px;
+    font-weight: 400;
+    color: #6dbf94 ;
+    margin: 0;
+    padding: 0;
+}
+
+/* Séparateur vertical */
+.ps1-card__vsep {
+    width: 1px;
+    height: 48px;
+    background: #b8e0c8 ;
+    flex-shrink: 0;
+    margin: 0 24px;
+}
+
+/* Stats */
+.ps1-card__stat {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 0 4px;
+    box-sizing: border-box;
+}
+
+.ps1-card__stat-num {
+    font-family: 'DM Serif Display', serif;
+    font-size: 32px;
+    line-height: 1;
+    letter-spacing: -1px;
+    margin: 0;
+    padding: 0;
+}
+
+.ps1-card__stat--actifs   .ps1-card__stat-num { color: #113b26; }
+.ps1-card__stat--inactifs .ps1-card__stat-num { color: #6dbf94 ; }
+.ps1-card__stat--bloquer .ps1-card__stat-num { color: #6dbf94 ; }
+
+.ps1-card__stat-label {
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    color: #6dbf94 ;
+    margin: 0;
+    padding: 0;
+}
+
+.ps1-card__stat-pct {
+    font-size: 10px;
+    font-weight: 400;
+    color: #b8e0c8 ;
+    margin: 0;
+    padding: 0;
+}
+
+/* Barre verticale de progression à droite */
+.ps1-card__bar {
+    width: 4px;
+    height: 56px;
+    background: #b8e0c8 ;
+    border-radius: 99px;
+    overflow: hidden;
+    margin-left: 24px;
+    flex-shrink: 0;
+    box-sizing: border-box;
+    display: flex;
+    align-items: flex-end;
+}
+
+.ps1-card__bar-fill {
+    width: 100%;
+    height: 100%;
+    background: #113b26;
+    border-radius: 99px;
+    transform: scaleY(0);
+    transform-origin: bottom center;
+    transition: transform 0.6s ease;
+}

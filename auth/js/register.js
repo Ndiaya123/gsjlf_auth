@@ -251,14 +251,14 @@ t.addEventListener('click', function (e) {
                     else if (resp === "pasCorrespondantEmail") showAlert("E-mail incorrect","L'adresse e-mail saisie est incorrecte.", "error", null, false, t,"OK");
                     else if (resp === "succès") {
                         /* Afficher l'email dans la phase 2 */
-                        const emailVal = document.getElementById('email1').value;
-                        const emailDisplay = document.getElementById('email-display');
-                        if (emailDisplay) emailDisplay.textContent = emailVal;
+
 
                         setTimeout(() => {
-                            document.getElementById('phase1').style.display = 'none';
-                            document.getElementById('phase2').style.display = 'block';
+                            document.getElementById('signup-form').style.display = 'none';
+                            document.getElementById('success-state').style.display = 'flex';
                         }, 500);
+
+
                     } else {
                         showAlert( "Erreur inattendue","Une erreur inattendue est survenue. Veuillez réessayer.", "error", null, true, t);
                     }

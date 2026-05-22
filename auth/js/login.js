@@ -165,10 +165,13 @@ t.addEventListener('click', function (e) {
                         showAlert("Ce compte est bloqué. Veuillez contacter le service informatique.", "error", null, true, t);
 
                     } else if (resp.startsWith("succès")) {
+
+                        alert(resp);
+                        alert(resp.substr(0, 6));
                         setTimeout(() => {
                             document.getElementById('main-form').style.display   = 'none';
                             document.getElementById('success-state').style.display = 'flex';
-                            setTimeout(() => { window.location.href = "/personnel/accueil"; }, 2000);
+                            setTimeout(() => { window.location.href = resp.substr(6); }, 2000);
                         }, 500);
 
                     } else {

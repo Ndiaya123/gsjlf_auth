@@ -96,3 +96,22 @@ RewriteRule ^scripts.bundle.5.js$ auth/js/resetPassword.js [L]
 
 
 
+#admin
+RewriteRule ^admin-controller$ admin/controllers/adminController.php [L]
+RewriteRule ^admin-dashboard$ admin/dashboard.php [L]
+RewriteRule ^scripts.bundle.6.js$ auth/js/register.js [L]
+
+RewriteRule ^admin-liste-utilisateurs$ admin/listeUtilisateurs.php [L]
+RewriteRule ^scripts.bundle.7.js$ admin/js/listeUtilisateurs.js [L]
+
+
+
+
+
+
+
+
+
+
+
+
