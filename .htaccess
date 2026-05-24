@@ -104,6 +104,9 @@ RewriteRule ^scripts.bundle.6.js$ auth/js/register.js [L]
 RewriteRule ^admin-liste-utilisateurs$ admin/listeUtilisateurs.php [L]
 RewriteRule ^scripts.bundle.7.js$ admin/js/listeUtilisateurs.js [L]
 
+RewriteRule ^admin-liste-sous-menus$ admin/sousMenus.php [L]
+RewriteRule ^scripts.bundle.8.js$ admin/js/sousMenus.js [L]
+
 
 
 

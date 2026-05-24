@@ -47,8 +47,8 @@ session_start();
                                       d="M14.2657 11.4343L18.45 7.25C18.8642 6.83579 18.8642 6.16421 18.45 5.75C18.0358 5.33579 17.3642 5.33579 16.95 5.75L11.4071 11.2929C11.0166 11.6834 11.0166 12.3166 11.4071 12.7071L16.95 18.25C17.3642 18.6642 18.0358 18.6642 18.45 18.25C18.8642 17.8358 18.8642 17.1642 18.45 16.75L14.2657 12.5657C13.9533 12.2533 13.9533 11.7467 14.2657 11.4343Z"
                                       fill="black"/>
                                 <path
-                                        d="M8.2657 11.4343L12.45 7.25C12.8642 6.83579 12.8642 6.16421 12.45 5.75C12.0358 5.33579 11.3642 5.33579 10.95 5.75L5.40712 11.2929C5.01659 11.6834 5.01659 12.3166 5.40712 12.7071L10.95 18.25C11.3642 18.6642 12.0358 18.6642 12.45 18.25C12.8642 17.8358 12.8642 17.1642 12.45 16.75L8.2657 12.5657C7.95328 12.2533 7.95328 11.7467 8.2657 11.4343Z"
-                                        fill="black"/>
+                                    d="M8.2657 11.4343L12.45 7.25C12.8642 6.83579 12.8642 6.16421 12.45 5.75C12.0358 5.33579 11.3642 5.33579 10.95 5.75L5.40712 11.2929C5.01659 11.6834 5.01659 12.3166 5.40712 12.7071L10.95 18.25C11.3642 18.6642 12.0358 18.6642 12.45 18.25C12.8642 17.8358 12.8642 17.1642 12.45 16.75L8.2657 12.5657C7.95328 12.2533 7.95328 11.7467 8.2657 11.4343Z"
+                                    fill="black"/>
                             </svg>
                         </span>
                 </div>
@@ -174,8 +174,8 @@ session_start();
                                                       d="M20.335 15.537C21.725 14.425 21.57 12.812 21.553 11.224C21.4407 9.50899 20.742 7.88483 19.574 6.624C18.5503 5.40102 17.2668 4.4216 15.817 3.757C14.4297 3.26981 12.9703 3.01966 11.5 3.01701C8.79576 2.83108 6.11997 3.66483 4 5.35398C2.289 6.72498 1.23101 9.12497 2.68601 11.089C3.22897 11.6881 3.93029 12.1214 4.709 12.339C5.44803 12.6142 6.24681 12.6888 7.024 12.555C6.88513 12.9965 6.85078 13.4644 6.92367 13.9215C6.99656 14.3786 7.17469 14.8125 7.444 15.189C7.73891 15.5299 8.10631 15.8006 8.51931 15.9812C8.93232 16.1619 9.38047 16.2478 9.831 16.233C10.0739 16.2296 10.3141 16.1807 10.539 16.089C10.7371 15.9871 10.9288 15.8732 11.113 15.748C12.1594 15.2831 13.3275 15.1668 14.445 15.416C15.7795 15.7213 17.1299 15.952 18.49 16.107C18.7927 16.1438 19.0993 16.1313 19.398 16.07C19.7445 15.9606 20.0639 15.7789 20.335 15.537Z"
                                                       fill="black"/>
                                                 <path
-                                                        d="M19.008 16.114C18.9486 16.6061 18.7934 17.0817 18.551 17.514C18.229 18.114 17.581 18.314 17.103 18.752C16.457 19.343 16.595 20.38 16.632 21.164C16.6522 21.3437 16.621 21.5254 16.542 21.688C16.4335 21.835 16.2751 21.9373 16.0965 21.9758C15.9179 22.0143 15.7314 21.9863 15.572 21.897C15.2577 21.7083 15.0072 21.4296 14.853 21.097C14.581 20.607 14.362 20.085 14.053 19.612C13.3182 18.7548 12.4201 18.0525 11.411 17.546C10.9334 17.1942 10.5857 16.6942 10.422 16.124C10.459 16.111 10.499 16.106 10.536 16.09C10.7336 15.9879 10.925 15.8741 11.109 15.749C12.1554 15.2842 13.3234 15.1678 14.441 15.417C15.7754 15.7223 17.1259 15.953 18.486 16.108C18.6598 16.1191 18.834 16.1211 19.008 16.114ZM18.8 10.278V3C18.8 2.73478 18.6946 2.48044 18.5071 2.29291C18.3196 2.10537 18.0652 2 17.8 2C17.5348 2 17.2804 2.10537 17.0929 2.29291C16.9053 2.48044 16.8 2.73478 16.8 3V10.278C16.4187 10.4981 16.1207 10.8379 15.9522 11.2447C15.7838 11.6514 15.7542 12.1024 15.8681 12.5277C15.9821 12.953 16.2332 13.3287 16.5825 13.5967C16.9318 13.8648 17.3597 14.0101 17.8 14.0101C18.2403 14.0101 18.6682 13.8648 19.0175 13.5967C19.3668 13.3287 19.6179 12.953 19.7318 12.5277C19.8458 12.1024 19.8162 11.6514 19.6477 11.2447C19.4793 10.8379 19.1813 10.4981 18.8 10.278ZM13.8 2C13.5348 2 13.2804 2.10537 13.0929 2.29291C12.9053 2.48044 12.8 2.73478 12.8 3V8.586L12.312 9.07397C11.8792 8.95363 11.4188 8.98003 11.0026 9.14899C10.5864 9.31794 10.2379 9.61994 10.0115 10.0079C9.78508 10.3958 9.69351 10.8478 9.75109 11.2933C9.80867 11.7387 10.0122 12.1526 10.3298 12.4702C10.6474 12.7878 11.0612 12.9913 11.5067 13.0489C11.9522 13.1065 12.4042 13.0149 12.7921 12.7885C13.18 12.5621 13.4821 12.2136 13.651 11.7974C13.82 11.3812 13.8463 10.9207 13.726 10.488L14.507 9.70697C14.6945 9.51948 14.7999 9.26519 14.8 9V3C14.8 2.73478 14.6946 2.48044 14.5071 2.29291C14.3196 2.10537 14.0652 2 13.8 2ZM9.79999 2C9.53478 2 9.28042 2.10537 9.09289 2.29291C8.90535 2.48044 8.79999 2.73478 8.79999 3V4.586L7.31199 6.07397C6.87924 5.95363 6.41882 5.98004 6.00263 6.14899C5.58644 6.31794 5.23792 6.61994 5.0115 7.00787C4.78508 7.39581 4.69351 7.84781 4.75109 8.29327C4.80867 8.73874 5.01216 9.1526 5.32977 9.47021C5.64739 9.78783 6.06124 9.99131 6.50671 10.0489C6.95218 10.1065 7.40417 10.0149 7.7921 9.78851C8.18004 9.56209 8.48207 9.21355 8.65102 8.79736C8.81997 8.38117 8.84634 7.92073 8.726 7.48798L10.507 5.70697C10.6945 5.51948 10.7999 5.26519 10.8 5V3C10.8 2.73478 10.6946 2.48044 10.5071 2.29291C10.3196 2.10537 10.0652 2 9.79999 2Z"
-                                                        fill="black"/>
+                                                    d="M19.008 16.114C18.9486 16.6061 18.7934 17.0817 18.551 17.514C18.229 18.114 17.581 18.314 17.103 18.752C16.457 19.343 16.595 20.38 16.632 21.164C16.6522 21.3437 16.621 21.5254 16.542 21.688C16.4335 21.835 16.2751 21.9373 16.0965 21.9758C15.9179 22.0143 15.7314 21.9863 15.572 21.897C15.2577 21.7083 15.0072 21.4296 14.853 21.097C14.581 20.607 14.362 20.085 14.053 19.612C13.3182 18.7548 12.4201 18.0525 11.411 17.546C10.9334 17.1942 10.5857 16.6942 10.422 16.124C10.459 16.111 10.499 16.106 10.536 16.09C10.7336 15.9879 10.925 15.8741 11.109 15.749C12.1554 15.2842 13.3234 15.1678 14.441 15.417C15.7754 15.7223 17.1259 15.953 18.486 16.108C18.6598 16.1191 18.834 16.1211 19.008 16.114ZM18.8 10.278V3C18.8 2.73478 18.6946 2.48044 18.5071 2.29291C18.3196 2.10537 18.0652 2 17.8 2C17.5348 2 17.2804 2.10537 17.0929 2.29291C16.9053 2.48044 16.8 2.73478 16.8 3V10.278C16.4187 10.4981 16.1207 10.8379 15.9522 11.2447C15.7838 11.6514 15.7542 12.1024 15.8681 12.5277C15.9821 12.953 16.2332 13.3287 16.5825 13.5967C16.9318 13.8648 17.3597 14.0101 17.8 14.0101C18.2403 14.0101 18.6682 13.8648 19.0175 13.5967C19.3668 13.3287 19.6179 12.953 19.7318 12.5277C19.8458 12.1024 19.8162 11.6514 19.6477 11.2447C19.4793 10.8379 19.1813 10.4981 18.8 10.278ZM13.8 2C13.5348 2 13.2804 2.10537 13.0929 2.29291C12.9053 2.48044 12.8 2.73478 12.8 3V8.586L12.312 9.07397C11.8792 8.95363 11.4188 8.98003 11.0026 9.14899C10.5864 9.31794 10.2379 9.61994 10.0115 10.0079C9.78508 10.3958 9.69351 10.8478 9.75109 11.2933C9.80867 11.7387 10.0122 12.1526 10.3298 12.4702C10.6474 12.7878 11.0612 12.9913 11.5067 13.0489C11.9522 13.1065 12.4042 13.0149 12.7921 12.7885C13.18 12.5621 13.4821 12.2136 13.651 11.7974C13.82 11.3812 13.8463 10.9207 13.726 10.488L14.507 9.70697C14.6945 9.51948 14.7999 9.26519 14.8 9V3C14.8 2.73478 14.6946 2.48044 14.5071 2.29291C14.3196 2.10537 14.0652 2 13.8 2ZM9.79999 2C9.53478 2 9.28042 2.10537 9.09289 2.29291C8.90535 2.48044 8.79999 2.73478 8.79999 3V4.586L7.31199 6.07397C6.87924 5.95363 6.41882 5.98004 6.00263 6.14899C5.58644 6.31794 5.23792 6.61994 5.0115 7.00787C4.78508 7.39581 4.69351 7.84781 4.75109 8.29327C4.80867 8.73874 5.01216 9.1526 5.32977 9.47021C5.64739 9.78783 6.06124 9.99131 6.50671 10.0489C6.95218 10.1065 7.40417 10.0149 7.7921 9.78851C8.18004 9.56209 8.48207 9.21355 8.65102 8.79736C8.81997 8.38117 8.84634 7.92073 8.726 7.48798L10.507 5.70697C10.6945 5.51948 10.7999 5.26519 10.8 5V3C10.8 2.73478 10.6946 2.48044 10.5071 2.29291C10.3196 2.10537 10.0652 2 9.79999 2Z"
+                                                    fill="black"/>
                                             </svg>
                                         </span>
                                     </span>
@@ -278,8 +278,8 @@ session_start();
                                                       d="M20.335 15.537C21.725 14.425 21.57 12.812 21.553 11.224C21.4407 9.50899 20.742 7.88483 19.574 6.624C18.5503 5.40102 17.2668 4.4216 15.817 3.757C14.4297 3.26981 12.9703 3.01966 11.5 3.01701C8.79576 2.83108 6.11997 3.66483 4 5.35398C2.289 6.72498 1.23101 9.12497 2.68601 11.089C3.22897 11.6881 3.93029 12.1214 4.709 12.339C5.44803 12.6142 6.24681 12.6888 7.024 12.555C6.88513 12.9965 6.85078 13.4644 6.92367 13.9215C6.99656 14.3786 7.17469 14.8125 7.444 15.189C7.73891 15.5299 8.10631 15.8006 8.51931 15.9812C8.93232 16.1619 9.38047 16.2478 9.831 16.233C10.0739 16.2296 10.3141 16.1807 10.539 16.089C10.7371 15.9871 10.9288 15.8732 11.113 15.748C12.1594 15.2831 13.3275 15.1668 14.445 15.416C15.7795 15.7213 17.1299 15.952 18.49 16.107C18.7927 16.1438 19.0993 16.1313 19.398 16.07C19.7445 15.9606 20.0639 15.7789 20.335 15.537Z"
                                                       fill="black"/>
                                                 <path
-                                                        d="M19.008 16.114C18.9486 16.6061 18.7934 17.0817 18.551 17.514C18.229 18.114 17.581 18.314 17.103 18.752C16.457 19.343 16.595 20.38 16.632 21.164C16.6522 21.3437 16.621 21.5254 16.542 21.688C16.4335 21.835 16.2751 21.9373 16.0965 21.9758C15.9179 22.0143 15.7314 21.9863 15.572 21.897C15.2577 21.7083 15.0072 21.4296 14.853 21.097C14.581 20.607 14.362 20.085 14.053 19.612C13.3182 18.7548 12.4201 18.0525 11.411 17.546C10.9334 17.1942 10.5857 16.6942 10.422 16.124C10.459 16.111 10.499 16.106 10.536 16.09C10.7336 15.9879 10.925 15.8741 11.109 15.749C12.1554 15.2842 13.3234 15.1678 14.441 15.417C15.7754 15.7223 17.1259 15.953 18.486 16.108C18.6598 16.1191 18.834 16.1211 19.008 16.114ZM18.8 10.278V3C18.8 2.73478 18.6946 2.48044 18.5071 2.29291C18.3196 2.10537 18.0652 2 17.8 2C17.5348 2 17.2804 2.10537 17.0929 2.29291C16.9053 2.48044 16.8 2.73478 16.8 3V10.278C16.4187 10.4981 16.1207 10.8379 15.9522 11.2447C15.7838 11.6514 15.7542 12.1024 15.8681 12.5277C15.9821 12.953 16.2332 13.3287 16.5825 13.5967C16.9318 13.8648 17.3597 14.0101 17.8 14.0101C18.2403 14.0101 18.6682 13.8648 19.0175 13.5967C19.3668 13.3287 19.6179 12.953 19.7318 12.5277C19.8458 12.1024 19.8162 11.6514 19.6477 11.2447C19.4793 10.8379 19.1813 10.4981 18.8 10.278ZM13.8 2C13.5348 2 13.2804 2.10537 13.0929 2.29291C12.9053 2.48044 12.8 2.73478 12.8 3V8.586L12.312 9.07397C11.8792 8.95363 11.4188 8.98003 11.0026 9.14899C10.5864 9.31794 10.2379 9.61994 10.0115 10.0079C9.78508 10.3958 9.69351 10.8478 9.75109 11.2933C9.80867 11.7387 10.0122 12.1526 10.3298 12.4702C10.6474 12.7878 11.0612 12.9913 11.5067 13.0489C11.9522 13.1065 12.4042 13.0149 12.7921 12.7885C13.18 12.5621 13.4821 12.2136 13.651 11.7974C13.82 11.3812 13.8463 10.9207 13.726 10.488L14.507 9.70697C14.6945 9.51948 14.7999 9.26519 14.8 9V3C14.8 2.73478 14.6946 2.48044 14.5071 2.29291C14.3196 2.10537 14.0652 2 13.8 2ZM9.79999 2C9.53478 2 9.28042 2.10537 9.09289 2.29291C8.90535 2.48044 8.79999 2.73478 8.79999 3V4.586L7.31199 6.07397C6.87924 5.95363 6.41882 5.98004 6.00263 6.14899C5.58644 6.31794 5.23792 6.61994 5.0115 7.00787C4.78508 7.39581 4.69351 7.84781 4.75109 8.29327C4.80867 8.73874 5.01216 9.1526 5.32977 9.47021C5.64739 9.78783 6.06124 9.99131 6.50671 10.0489C6.95218 10.1065 7.40417 10.0149 7.7921 9.78851C8.18004 9.56209 8.48207 9.21355 8.65102 8.79736C8.81997 8.38117 8.84634 7.92073 8.726 7.48798L10.507 5.70697C10.6945 5.51948 10.7999 5.26519 10.8 5V3C10.8 2.73478 10.6946 2.48044 10.5071 2.29291C10.3196 2.10537 10.0652 2 9.79999 2Z"
-                                                        fill="black"/>
+                                                    d="M19.008 16.114C18.9486 16.6061 18.7934 17.0817 18.551 17.514C18.229 18.114 17.581 18.314 17.103 18.752C16.457 19.343 16.595 20.38 16.632 21.164C16.6522 21.3437 16.621 21.5254 16.542 21.688C16.4335 21.835 16.2751 21.9373 16.0965 21.9758C15.9179 22.0143 15.7314 21.9863 15.572 21.897C15.2577 21.7083 15.0072 21.4296 14.853 21.097C14.581 20.607 14.362 20.085 14.053 19.612C13.3182 18.7548 12.4201 18.0525 11.411 17.546C10.9334 17.1942 10.5857 16.6942 10.422 16.124C10.459 16.111 10.499 16.106 10.536 16.09C10.7336 15.9879 10.925 15.8741 11.109 15.749C12.1554 15.2842 13.3234 15.1678 14.441 15.417C15.7754 15.7223 17.1259 15.953 18.486 16.108C18.6598 16.1191 18.834 16.1211 19.008 16.114ZM18.8 10.278V3C18.8 2.73478 18.6946 2.48044 18.5071 2.29291C18.3196 2.10537 18.0652 2 17.8 2C17.5348 2 17.2804 2.10537 17.0929 2.29291C16.9053 2.48044 16.8 2.73478 16.8 3V10.278C16.4187 10.4981 16.1207 10.8379 15.9522 11.2447C15.7838 11.6514 15.7542 12.1024 15.8681 12.5277C15.9821 12.953 16.2332 13.3287 16.5825 13.5967C16.9318 13.8648 17.3597 14.0101 17.8 14.0101C18.2403 14.0101 18.6682 13.8648 19.0175 13.5967C19.3668 13.3287 19.6179 12.953 19.7318 12.5277C19.8458 12.1024 19.8162 11.6514 19.6477 11.2447C19.4793 10.8379 19.1813 10.4981 18.8 10.278ZM13.8 2C13.5348 2 13.2804 2.10537 13.0929 2.29291C12.9053 2.48044 12.8 2.73478 12.8 3V8.586L12.312 9.07397C11.8792 8.95363 11.4188 8.98003 11.0026 9.14899C10.5864 9.31794 10.2379 9.61994 10.0115 10.0079C9.78508 10.3958 9.69351 10.8478 9.75109 11.2933C9.80867 11.7387 10.0122 12.1526 10.3298 12.4702C10.6474 12.7878 11.0612 12.9913 11.5067 13.0489C11.9522 13.1065 12.4042 13.0149 12.7921 12.7885C13.18 12.5621 13.4821 12.2136 13.651 11.7974C13.82 11.3812 13.8463 10.9207 13.726 10.488L14.507 9.70697C14.6945 9.51948 14.7999 9.26519 14.8 9V3C14.8 2.73478 14.6946 2.48044 14.5071 2.29291C14.3196 2.10537 14.0652 2 13.8 2ZM9.79999 2C9.53478 2 9.28042 2.10537 9.09289 2.29291C8.90535 2.48044 8.79999 2.73478 8.79999 3V4.586L7.31199 6.07397C6.87924 5.95363 6.41882 5.98004 6.00263 6.14899C5.58644 6.31794 5.23792 6.61994 5.0115 7.00787C4.78508 7.39581 4.69351 7.84781 4.75109 8.29327C4.80867 8.73874 5.01216 9.1526 5.32977 9.47021C5.64739 9.78783 6.06124 9.99131 6.50671 10.0489C6.95218 10.1065 7.40417 10.0149 7.7921 9.78851C8.18004 9.56209 8.48207 9.21355 8.65102 8.79736C8.81997 8.38117 8.84634 7.92073 8.726 7.48798L10.507 5.70697C10.6945 5.51948 10.7999 5.26519 10.8 5V3C10.8 2.73478 10.6946 2.48044 10.5071 2.29291C10.3196 2.10537 10.0652 2 9.79999 2Z"
+                                                    fill="black"/>
                                             </svg>
                                         </span>
                                     </span>
@@ -661,8 +661,8 @@ session_start();
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                          fill="none">
                                         <path
-                                                d="M21 7H3C2.4 7 2 6.6 2 6V4C2 3.4 2.4 3 3 3H21C21.6 3 22 3.4 22 4V6C22 6.6 21.6 7 21 7Z"
-                                                fill="black"/>
+                                            d="M21 7H3C2.4 7 2 6.6 2 6V4C2 3.4 2.4 3 3 3H21C21.6 3 22 3.4 22 4V6C22 6.6 21.6 7 21 7Z"
+                                            fill="black"/>
                                         <path opacity="0.3"
                                               d="M21 14H3C2.4 14 2 13.6 2 13V11C2 10.4 2.4 10 3 10H21C21.6 10 22 10.4 22 11V13C22 13.6 21.6 14 21 14ZM22 20V18C22 17.4 21.6 17 21 17H3C2.4 17 2 17.4 2 18V20C2 20.6 2.4 21 3 21H21C21.6 21 22 20.6 22 20Z"
                                               fill="black"/>
@@ -746,8 +746,8 @@ session_start();
                                         <div class="menu-item px-5">
                                             <div class="menu-content px-5">
                                                 <label
-                                                        class="form-check form-switch form-check-custom form-check-solid pulse pulse-success"
-                                                        for="kt_user_menu_dark_mode_toggle">
+                                                    class="form-check form-switch form-check-custom form-check-solid pulse pulse-success"
+                                                    for="kt_user_menu_dark_mode_toggle">
                                                     <input class="form-check-input w-30px h-20px" type="checkbox"
                                                            value="1" name="mode" id="kt_user_menu_dark_mode_toggle"
                                                            data-kt-url="/personnel/quitter"/>
@@ -767,8 +767,8 @@ session_start();
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                      viewBox="0 0 24 24" fill="none">
                                                     <path
-                                                            d="M13 11H3C2.4 11 2 10.6 2 10V9C2 8.4 2.4 8 3 8H13C13.6 8 14 8.4 14 9V10C14 10.6 13.6 11 13 11ZM22 5V4C22 3.4 21.6 3 21 3H3C2.4 3 2 3.4 2 4V5C2 5.6 2.4 6 3 6H21C21.6 6 22 5.6 22 5Z"
-                                                            fill="black"/>
+                                                        d="M13 11H3C2.4 11 2 10.6 2 10V9C2 8.4 2.4 8 3 8H13C13.6 8 14 8.4 14 9V10C14 10.6 13.6 11 13 11ZM22 5V4C22 3.4 21.6 3 21 3H3C2.4 3 2 3.4 2 4V5C2 5.6 2.4 6 3 6H21C21.6 6 22 5.6 22 5Z"
+                                                        fill="black"/>
                                                     <path opacity="0.3"
                                                           d="M21 16H3C2.4 16 2 15.6 2 15V14C2 13.4 2.4 13 3 13H21C21.6 13 22 13.4 22 14V15C22 15.6 21.6 16 21 16ZM14 20V19C14 18.4 13.6 18 13 18H3C2.4 18 2 18.4 2 19V20C2 20.6 2.4 21 3 21H13C13.6 21 14 20.6 14 20Z"
                                                           fill="black"/>
@@ -815,61 +815,6 @@ session_start();
                     <div id="formEleves" class="container-xxl">
 
 
-                        <div class="col-sm-12 mb-5">
-                            <div class="ps1-card">
-
-                                <!-- Bloc gauche — label + total -->
-                                <div class="ps1-card__left">
-                                    <div class="ps1-card__eyebrow">
-                                        <span class="ps1-card__dot"></span>
-                                        Nombre d’utilisateurs
-                                    </div>
-                                    <div class="ps1-card__main">
-                                        <span class="ps1-card__number" id="ps1-total">...</span>
-                                        <span class="ps1-card__unit">utilisateurs</span>
-                                    </div>
-                                </div>
-
-                                <!-- Séparateur vertical -->
-                                <div class="ps1-card__vsep"></div>
-
-                                <!-- Bloc milieu — Actifs -->
-                                <div class="ps1-card__stat ps1-card__stat--actifs">
-                                    <span class="ps1-card__stat-num" id="ps1-actifs">...</span>
-                                    <span class="ps1-card__stat-label">Actifs</span>
-                                    <span class="ps1-card__stat-pct" id="ps1-pct-actifs">0%</span>
-                                </div>
-
-                                <!-- Séparateur vertical -->
-                                <div class="ps1-card__vsep"></div>
-
-                                <!-- Bloc droite — Inactifs -->
-                                <div class="ps1-card__stat ps1-card__stat--inactifs">
-                                    <span class="ps1-card__stat-num" id="ps1-inactifs">...</span>
-                                    <span class="ps1-card__stat-label">Inactif</span>
-                                    <span class="ps1-card__stat-pct" id="ps1-pct-inactifs">0%</span>
-                                </div>
-
-
-                                <!-- Séparateur vertical -->
-                                <div class="ps1-card__vsep"></div>
-
-                                <!-- Bloc droite — Inactifs -->
-                                <div class="ps1-card__stat ps1-card__stat--bloquer">
-                                    <span class="ps1-card__stat-num" id="ps1-bloquer">...</span>
-                                    <span class="ps1-card__stat-label">Bloqués</span>
-                                    <span class="ps1-card__stat-pct" id="ps1-pct-bloquer">0%</span>
-                                </div>
-
-
-                                <!-- Barre verticale de progression -->
-                                <div class="ps1-card__bar">
-                                    <div id="ps1-bar-fill" class="ps1-card__bar-fill"></div>
-                                </div>
-
-                            </div>
-
-                        </div>
 
 
                         <div class="col sm-12" id="boxTable">
@@ -888,8 +833,8 @@ session_start();
                                                                   transform="rotate(45 17.0365 15.1223)"
                                                                   fill="black"/>
                                                             <path
-                                                                    d="M11 19C6.55556 19 3 15.4444 3 11C3 6.55556 6.55556 3 11 3C15.4444 3 19 6.55556 19 11C19 15.4444 15.4444 19 11 19ZM11 5C7.53333 5 5 7.53333 5 11C5 14.4667 7.53333 17 11 17C14.4667 17 17 14.4667 17 11C17 7.53333 14.4667 5 11 5Z"
-                                                                    fill="black"/>
+                                                                d="M11 19C6.55556 19 3 15.4444 3 11C3 6.55556 6.55556 3 11 3C15.4444 3 19 6.55556 19 11C19 15.4444 15.4444 19 11 19ZM11 5C7.53333 5 5 7.53333 5 11C5 14.4667 7.53333 17 11 17C14.4667 17 17 14.4667 17 11C17 7.53333 14.4667 5 11 5Z"
+                                                                fill="black"/>
                                                         </svg>
                                                     </span>
                                                 <input type="text" data-kt-docs-table-filter="search"
@@ -904,7 +849,7 @@ session_start();
                                                  data-kt-docs-table-toolbar="selected">
                                                 <a href="javascript:void(0)"
                                                    class="btn btn-sm btn-light btn-active-primary"
-                                                   onclick="ajouterUtilisateur()">
+                                                   onclick="ajouterSousMenu()">
                                                 <span class="svg-icon svg-icon-3">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                          viewBox="0 0 24 24" fill="none">
@@ -916,26 +861,17 @@ session_start();
                                                     </svg>
                                                 </span>
 
-                                                    Ajouter un utilisateur</a>
+                                                    Ajouter un sous menu</a>
                                             </div>
                                         </div>
-                                        <table id="kt_datatable_utilisateurs"
+                                        <table id="kt_table_sous_menu"
                                                class="table align-middle table-row-dashed fs-6 gy-5">
                                             <thead>
                                             <tr
-                                                    class="text-start text-gray-400 fw-bolder fs-7 text-uppercase gs-0">
-
-                                                <th>Photo</th>
-                                                <th>Matricule</th>
-                                                <th>Prénoms</th>
-                                                <th>Noms</th>
-                                                <th>Qualification</th>
-                                                <th>Affectation</th>
-                                                <th>Poste</th>
-                                                <th>Email</th>
-                                                <th>Date création</th>
-                                                <th>État</th>
-                                                <th>Actions</th>
+                                                class="text-start text-gray-400 fw-bolder fs-7 text-uppercase gs-0">
+                                                <th>Icon</th>
+                                                <th>sous_menu</th>
+                                                <th class="max-w-150px text-center">Action</th>
                                             </tr>
                                             </thead>
                                             <tbody class="text-gray-600 fw-bold"></tbody>
@@ -950,7 +886,7 @@ session_start();
             </div>
             <div class="footer py-4 d-flex flex-lg-column" id="kt_footer">
                 <div
-                        class="container-fluid d-flex flex-column flex-md-row align-items-center justify-content-between">
+                    class="container-fluid d-flex flex-column flex-md-row align-items-center justify-content-between">
                     <div class="text-dark order-2 order-md-1">
                             <span class="text-muted fw-bold me-1">
                                 <script type="text/javascript">
@@ -972,123 +908,77 @@ session_start();
                 <rect opacity="0.5" x="13" y="6" width="13" height="2" rx="1" transform="rotate(90 13 6)"
                       fill="black"/>
                 <path
-                        d="M12.5657 8.56569L16.75 12.75C17.1642 13.1642 17.8358 13.1642 18.25 12.75C18.6642 12.3358 18.6642 11.6642 18.25 11.25L12.7071 5.70711C12.3166 5.31658 11.6834 5.31658 11.2929 5.70711L5.75 11.25C5.33579 11.6642 5.33579 12.3358 5.75 12.75C6.16421 13.1642 6.83579 13.1642 7.25 12.75L11.4343 8.56569C11.7467 8.25327 12.2533 8.25327 12.5657 8.56569Z"
-                        fill="black"/>
+                    d="M12.5657 8.56569L16.75 12.75C17.1642 13.1642 17.8358 13.1642 18.25 12.75C18.6642 12.3358 18.6642 11.6642 18.25 11.25L12.7071 5.70711C12.3166 5.31658 11.6834 5.31658 11.2929 5.70711L5.75 11.25C5.33579 11.6642 5.33579 12.3358 5.75 12.75C6.16421 13.1642 6.83579 13.1642 7.25 12.75L11.4343 8.56569C11.7467 8.25327 12.2533 8.25327 12.5657 8.56569Z"
+                    fill="black"/>
             </svg>
         </span>
 </div>
 
 
-<div class="modal fade" id="kt_modal_add_user" tabindex="-1" aria-hidden="true" data-bs-backdrop="static"
-     data-bs-keyboard="false">
-    <div class="modal-dialog modal-dialog-centered mw-650px">
+
+
+<div class="modal fade" id="add_icon" tabindex="-1" aria-labelledby="add_icon" aria-hidden="true">
+    <div class="modal-dialog">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Ajouter un utilisateur</h2>
-                <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal"
-                     onclick="closeAddUser()">
-                    <span class="svg-icon svg-icon-1">
-														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                             viewBox="0 0 24 24" fill="none">
-															<rect opacity="0.5" x="6" y="17.3137" width="16" height="2"
-                                                                  rx="1" transform="rotate(-45 6 17.3137)"
-                                                                  fill="black"/>
-															<rect x="7.41422" y="6" width="16" height="2" rx="1"
-                                                                  transform="rotate(45 7.41422 6)" fill="black"/>
-														</svg>
-													</span>
+                <h5 class="modal-title" id="exampleModalLabel">Ajouter icon</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="col sm-12">
+                    <div class="card m-5 mb-xl-8">
+                        <form id="addIconForm" method="post" class="row g-2 d-flex align-items-center justify-content-center m-3">
+                            <input type="hidden" name="action" value="add_icon">
+                            <div class="mb-3">
+                                <label class="form-label">Icon <strong class="text-danger">(*)</strong></label>
+                                <textarea name="icon" id="iconInput" class="form-control" placeholder="icon"></textarea>
+                                <small id="iconError" class="text-danger" style="display: none;">Veuillez entrer une icône valide.</small>
+                            </div>
+                            <button type="submit" class="btn btn-success w-300px m-2 submitAddIconButton" onclick="validateIcon(event)">Valider</button>
+                        </form>
+                    </div>
                 </div>
             </div>
-            <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+        </div>
+    </div>
+</div>
 
-                <div class="d-block" id="box1">
-                    <form id="formAddUser" class="form" action="#">
-                        <input type="hidden" name="option" value="5"/>
-                        <div class="d-flex flex-column mb-7 fv-row">
-                            <label class="d-flex align-items-center fs-6 fw-bold form-label mb-2">
-                                <span class="required">Matricule</span>
-                            </label>
-                            <input type="text" class="form-control color-input" id="matricule" name="matricule"/>
+
+<div class="modal fade" id="add_sous_menu" tabindex="-1" aria-labelledby="service" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Ajouter sous_menu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="" id="addSousMenuForm" method="post" class="row g-2 d-flex align-items-center justify-content-center m-3" onsubmit="addSousMenu(event)">
+                    <input type="hidden" name="action" value="10">
+                    <div class="mb-3">
+                        <label class="form-label">Nom <strong class="text-danger">(*)</strong></label>
+                        <input type="text" name="nom" class="form-control" id="nom" placeholder="nom" aria-describedby="validationSousMenuFeedback" required>
+                        <div id="validationSousMenuFeedback" class="invalid-feedback">
+                            Ce champ est obligatoire.
                         </div>
+                    </div>
 
+                    <input type="hidden" name="idIcon" class="" id="selectedIconId" aria-describedby="validationIconFeedback" required>
+                    <div id="validationIconFeedback" class="invalid-feedback">
+                        Vous devez choisir un icône.
+                    </div>
+                    <div class="mb-3 d-flex align-items-center justify-content-center">
+                        <div class="btn-group">
+                                <span class="btn btn-primary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                    Icône
+                                </span>
+                            <ul class="dropdown-menu dropdown-menu-lg-start  scrollable-dropdown" aria-labelledby="dropdownMenuButton" id="boxIcon1">
 
-                        <div class="text-center pt-15">
-                            <button type="reset" class="btn btn-light me-3" onclick="closeAddUser()">Annuler</button>
-                            <button type="submit" id="formAddUser_submit" class="btn btn-primary">
-                                <span class="indicator-label">Ajouter</span>
-                                <span class="indicator-progress">Veuillez patienter...
-															<span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
-                            </button>
+                            </ul>
                         </div>
-                    </form>
+                    </div>
 
-                </div>
-
-                <div class="d-none" id="box2">
-                    <form id="formAddUser2" class="form" action="#">
-                        <input type="hidden" name="option" value="6"/>
-                        <div class="d-flex flex-column mb-7 fv-row">
-                            <label class="d-flex align-items-center fs-6 fw-bold form-label mb-2">
-                                <span class="required">Matricule</span>
-                            </label>
-                            <input type="text" class="form-control color-input" id="matricule2" name="matricule2" />
-                        </div>
-
-                        <div class="row">
-                            <div class="col-sm-8">
-                                <div class="row">
-                                    <div class="d-flex flex-column mb-6 fv-row">
-                                        <label class="d-flex align-items-center fs-6 fw-bold form-label mb-2">
-                                            <span class="required">Prénom (s)</span>
-                                        </label>
-                                        <input type="text" class="form-control color-input" id="prenom" name="prenom"/>
-                                    </div>
-                                    <div class="d-flex flex-column mb-6 fv-row">
-                                        <label class="d-flex align-items-center fs-6 fw-bold form-label mb-2">
-                                            <span class="required">Nom (s)</span>
-                                        </label>
-                                        <input type="text" class="form-control color-input" id="nom" name="nom"/>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="col-sm-4 mt-5 text-center">
-                                <div class="symbol symbol-100px symbol-lg-150px symbol-fixed position-relative">
-                                    <img src="/uahb/ressources/dist_assets/media/avatars/150-26.jpg" alt="image"
-                                         id="photoPersonnel">
-                                </div>
-                            </div>
-
-                        </div>
-
-
-                        <div class="d-flex flex-column mb-7 fv-row">
-                            <label class="d-flex align-items-center fs-6 fw-bold form-label mb-2">
-                                <span class="required">Email</span>
-                            </label>
-                            <input type="text" class="form-control color-input" id="email" name="email"/>
-                        </div>
-
-                        <div class="d-flex flex-column mb-7 fv-row">
-                            <label class="d-flex align-items-center fs-6 fw-bold form-label mb-2">
-                                <span class="required">Mot de passe par défaut</span>
-                            </label>
-                            <input type="text" class="form-control color-input" id="password" name="password"/>
-                        </div>
-
-                        <div class="text-center pt-15">
-                            <button type="reset" class="btn btn-light me-3" onclick="closeAddUser()">Annuler</button>
-                            <button type="submit" id="formAddUser2_submit" class="btn btn-primary">
-                                <span class="indicator-label">Valider</span>
-                                <span class="indicator-progress">Veuillez patienter...
-															<span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
-                            </button>
-                        </div>
-
-
-
-                    </form>
-
-                </div>
+                    <button type="submit" class="btn btn-success w-500px m-2 submitAddSousMenuButton">Valider</button>
+                </form>
 
             </div>
         </div>
@@ -1096,10 +986,93 @@ session_start();
 </div>
 
 
+<div class="modal fade" id="edit_sous_menu" tabindex="-1" aria-labelledby="edit_sous_menu" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exampleModalLabel">Modifier sous_menu</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <form action="" id="editSousMenuFrom" method="post" onsubmit="updateSousMenuOne(event)" class="row g-2 d-flex align-items-center justify-content-center m-3">
+                    <input type="hidden" name="action" value="edit_sous_menu">
+                    <input type="hidden" name="id_sous_menu" id="id_sous_menu">
+
+                    <div class="mb-3">
+                        <label class="form-label">Nom</label>
+                        <input type="text" id="nomTacheToEdit" name="nom" class="form-control" placeholder="nom">
+                    </div>
+                    <div class="mb-3 d-flex align-items-center justify-content-center border bg-light-primary">
+                        <label for="" class="form-label m-3">Icon actuel</label>
+                        <div id="ancienIcon" class="m-3"></div>
+                        <!-- <div class="btn-group">
+                            <span class="btn btn-primary" type="button" id="dropdownMenuButton">
+                                Sélectionner une icône
+                            </span>
+                        </div> -->
+                    </div>
+                    <label for="" class="form-label">Liste icons</label>
+                    <div class="icon-container d-flex flex-wrap justify-content-start bg-light-warning" id="boxIcon2" style="max-height: 300px; overflow-y: auto;">
+                      
+                    </div>
+                    <input type="hidden" name="idIcon" id="selectedIconIdToEdit">
+                    <style>
+                        /* Style pour l'icône active */
+                        .icon-item.active {
+                            background-color: rgb(41, 90, 29);
+                            color: white;
+                            border-color: rgb(66, 114, 76);
+                        }
+
+                        /* Conteneur des icônes */
+                        .icon-container {
+                            display: flex;
+                            flex-wrap: wrap;
+                            gap: 10px;
+                            margin-top: 10px;
+                        }
+
+                        /* Style pour chaque icône */
+                        .icon-item {
+                            display: flex;
+                            align-items: center;
+                            justify-content: center;
+                            padding: 10px;
+                            border: 1px solid rgb(40, 88, 46);
+                            border-radius: 5px;
+                            cursor: pointer;
+                            transition: all 0.3s ease;
+                            min-width: 100px;
+                            text-align: center;
+                        }
+
+                        /* Prévisualisation de l'icône */
+                        .icon-preview {
+                            font-size: 20px;
+                            /* Taille de l'icône */
+                            color: rgb(41, 90, 29);
+                            /* Couleur de l'icône */
+                            margin-right: 10px;
+                        }
+
+                        /* Effet au survol */
+                        .icon-item:hover {
+                            background-color: rgb(68, 110, 74);
+                            color: white;
+                            border-color: rgb(154, 212, 168);
+                        }
+                    </style>
+                    <button type="submit" class="btn btn-success w-500px m-2 submitEditSousMenuButton">valider</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/js/scripts.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.js"></script>
-<script src="/personnel/scripts.bundle.7.js"></script>
+<script src="/personnel/scripts.bundle.8.js"></script>
 </body>
 
 </html>
