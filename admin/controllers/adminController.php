@@ -1448,10 +1448,32 @@ WHERE p.matricule = :matricule;";
             $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 
-            $sql = "SELECT s.id AS id,s.nom AS nom_s, i.icon AS icon FROM sous_menu s
-                        JOIN icons i ON i.id = s.idIcon ORDER BY s.id DESC";
+            $data =
+                [
+                    'statut' => 0
+                ];
+
+            $sql = "SELECT 
+    sous_menu.id,
+    sous_menu.nom as nom_s,
+    sous_menu.dateEnregistrement,
+    i.icon,
+    CASE 
+        WHEN EXISTS (
+            SELECT 1
+            FROM tache t
+            WHERE t.idSousMenu = sous_menu.id
+              AND t.active = 1
+        )
+        THEN 1
+        ELSE 0
+    END AS tmp
+FROM sous_menu
+JOIN icons i 
+    ON i.id = sous_menu.idIcon
+WHERE sous_menu.statut = :statut;";
             $stmt = $bd->prepare($sql);
-            $stmt->execute();
+            $stmt->execute($data);
             $results = $stmt->fetchAll(PDO::FETCH_OBJ);
 
             echo json_encode($results);
@@ -1518,12 +1540,30 @@ break;
 
                 $data =
                     [
-                        'id' => $id
+                        'id' => $id,
+                        'statut' => 0
                     ];
 
-            $sql = "SELECT * FROM sous_menu 
-	    join icons i on i.id = sous_menu.idIcon
-	WHERE sous_menu.id = :id";
+            $sql = "SELECT 
+    sous_menu.id,
+    sous_menu.nom as nom,
+    sous_menu.dateEnregistrement,
+    i.id as idIcon,
+    i.icon,
+    CASE 
+        WHEN EXISTS (
+            SELECT 1
+            FROM tache t
+            WHERE t.idSousMenu = sous_menu.id
+              AND t.active = 1
+        )
+        THEN 1
+        ELSE 0
+    END AS tmp
+FROM sous_menu
+JOIN icons i 
+    ON i.id = sous_menu.idIcon
+WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
             $stmt = $bd->prepare($sql);
             $stmt->execute($data);
             $result = $stmt->fetch(PDO::FETCH_OBJ);
@@ -1586,25 +1626,27 @@ break;
 
                 $data =
                     [
-                        'nom' => $nom
+                        'nom' => $nom,
+                        'statut' => 0
                     ];
 
-                $sql = "SELECT * FROM sous_menu WHERE nom= :nom";
+                $sql = "SELECT * FROM sous_menu WHERE nom= :nom AND statut = :statut;";
                 $stmt = $bd->prepare($sql);
                 $stmt->execute($data);
-                $result = $stmt->fetch(PDO::FETCH_OBJ);
+                $result = $stmt->fetchAll(PDO::FETCH_OBJ);
 
-                if(!$result)
+                if(count($result) == 0)
                 {
 
                     $data_insert = [
                         'nom' => $nom,
                         'idIcon' => $idIcon,
                         'idUtilisateur' => $idUtilisateur,
+                        'statut' => 0,
                         'dateEnregistrement' => $dateEnregistrement
 
                     ];
-                $sql_insert = "INSERT INTO sous_menu(nom, idIcon,dateEnregistrement) VALUES (:nom, :idIcon,:idUtilisateur,:dateEnregistrement)";
+                $sql_insert = "INSERT INTO sous_menu(nom, idIcon,idUtilisateur,statut,dateEnregistrement) VALUES (:nom, :idIcon,:idUtilisateur,:statut,:dateEnregistrement)";
                 $stmt_insert = $bd->prepare($sql_insert);
                 $tmp_insert = $stmt_insert->execute($data_insert);
 
@@ -1617,10 +1659,10 @@ break;
                         'nom' => $nom,
                         'idIcon' => $idIcon,
                         'idUtilisateur' => $idUtilisateur,
+                        'statut' => 0,
                         'dateEnregistrement' => $dateEnregistrement
-
                     ];
-                    $sql_insert_his = "INSERT INTO sous_menu_historiques(idSousMenu,nom, idIcon,idUtilisateur,dateEnregistrement) VALUES (:idSousMenu,:nom, :idIcon,:idUtilisateur,:dateEnregistrement)";
+                    $sql_insert_his = "INSERT INTO sous_menu_historiques(idSousMenu,nom,idIcon,idUtilisateur,statut,dateEnregistrement) VALUES (:idSousMenu,:nom, :idIcon,:idUtilisateur,:statut,:dateEnregistrement)";
                     $stmt_insert_his = $bd->prepare($sql_insert_his);
                     $tmp_insert_his = $stmt_insert_his->execute($data_insert_his);
 
@@ -1629,6 +1671,8 @@ break;
                         if ($bd->inTransaction()) {
                             $bd->commit();
                         }
+                        echo "succès";
+                        die;
 
                     }else
                     {
@@ -1657,7 +1701,7 @@ break;
                     if ($bd->inTransaction()) {
                         $bd->rollBack();
                     }
-                    echo "erreur";
+                    echo "nomExiste";
                     die;
                 }
 
@@ -1683,6 +1727,312 @@ break;
         }
 
         break;
+
+    case 11 :
+
+
+
+        date_default_timezone_set('Africa/Dakar');
+
+        $idUtilisateur = 1;
+//            $idUtilisateur = null;
+//            if(!empty($_SESSION['tmpIdP']))
+//            {
+//                $idUtilisateur = $_SESSION['tmpIdP'];
+//            }else
+//            {
+//                echo "sessionExpired";
+//                die;
+//            }
+
+        if(!empty($_POST['id']))
+        {
+
+
+
+            $id = $_POST['id'];
+            $dateEnregistrement = date('Y-m-d H:i:s');
+
+            try {
+                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bd->beginTransaction();
+
+                $data =
+                    [
+                        'id' => $id,
+                        'statut' => 0
+                    ];
+
+                $sql = "SELECT * FROM sous_menu WHERE id= :id AND statut = :statut;";
+                $stmt = $bd->prepare($sql);
+                $stmt->execute($data);
+                $result = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if($result)
+                {
+
+
+                    $data_up_sm = [
+                        'statut1' => 1,
+                        'statut2' => 0,
+                        'id' => $id
+                    ];
+
+                    $sql_up_sm = "UPDATE sous_menu 
+                SET statut = :statut1
+                WHERE id = :id AND statut = :statut2;";
+
+                    $stmt_up_sm = $bd->prepare($sql_up_sm);
+
+                    $tmpStmt_up_sm = $stmt_up_sm->execute($data_up_sm);
+
+                    if($tmpStmt_up_sm)
+                    {
+
+                        if ($stmt_up_sm->rowCount() > 0)
+                        {
+                            $data_insert_his = [
+                                'idSousMenu' => $result->id,
+                                'nom' => $result->nom,
+                                'idIcon' => $result->idIcon,
+                                'idUtilisateur' => $idUtilisateur,
+                                'statut' => 1,
+                                'dateEnregistrement' => $dateEnregistrement
+                            ];
+                            $sql_insert_his = "INSERT INTO sous_menu_historiques(idSousMenu,nom,idIcon,idUtilisateur,statut,dateEnregistrement) VALUES (:idSousMenu,:nom, :idIcon,:idUtilisateur,:statut,:dateEnregistrement)";
+                            $stmt_insert_his = $bd->prepare($sql_insert_his);
+                            $tmp_insert_his = $stmt_insert_his->execute($data_insert_his);
+
+                            if($tmp_insert_his)
+                            {
+                                if ($bd->inTransaction()) {
+                                    $bd->commit();
+                                }
+                                echo "succès";
+                                die;
+
+                            }else
+                            {
+                                if ($bd->inTransaction()) {
+                                    $bd->rollBack();
+                                }
+                                echo "erreur4";
+                                die;
+                            }
+
+                        }else
+                        {
+                            if ($bd->inTransaction()) {
+                                $bd->rollBack();
+                            }
+                            echo "erreur3";
+                            die;
+                        }
+
+
+
+                    }else
+                    {
+
+                        if ($bd->inTransaction()) {
+                            $bd->rollBack();
+                        }
+                        echo "erreur2";
+                        die;
+                    }
+
+
+
+                }else
+                {
+
+                    if ($bd->inTransaction()) {
+                        $bd->rollBack();
+                    }
+                    echo "erreur1";
+                    die;
+                }
+
+
+
+
+
+            }catch (Exception $e) {
+
+                if ($bd->inTransaction()) {
+                    $bd->rollBack();
+                }
+                echo "erreur".$e;
+                die;
+            }
+
+        }else
+        {
+
+
+            echo "erreur1";
+            die;
+        }
+
+        break;
+
+    case 12 :
+
+
+
+        date_default_timezone_set('Africa/Dakar');
+
+        $idUtilisateur = 1;
+//            $idUtilisateur = null;
+//            if(!empty($_SESSION['tmpIdP']))
+//            {
+//                $idUtilisateur = $_SESSION['tmpIdP'];
+//            }else
+//            {
+//                echo "sessionExpired";
+//                die;
+//            }
+
+        if(!empty($_POST['id']) && !empty($_POST['nom']) && !empty($_POST['idIcon']))
+        {
+
+
+
+            $id = $_POST['id'];
+            $nom = $_POST['nom'];
+            $idIcon = $_POST['idIcon'];
+            $dateEnregistrement = date('Y-m-d H:i:s');
+
+            try {
+                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bd->beginTransaction();
+
+                $data =
+                    [
+                        'id' => $id,
+                        'statut' => 0
+                    ];
+
+                $sql = "SELECT * FROM sous_menu WHERE id= :id AND statut = :statut;";
+                $stmt = $bd->prepare($sql);
+                $stmt->execute($data);
+                $result = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if($result)
+                {
+
+                    if($result->nom == $nom)
+                    {
+                        echo "nomExiste";
+                        die;
+                    }
+
+
+                    $data_up_sm = [
+                        'nom' => $nom,
+                        'idIcon' => $idIcon,
+                        'statut' => 0,
+                        'id' => $id
+                    ];
+
+                    $sql_up_sm = "UPDATE sous_menu 
+                SET  nom=:nom, idIcon=:idIcon
+                WHERE id = :id AND statut = :statut;";
+
+                    $stmt_up_sm = $bd->prepare($sql_up_sm);
+
+                    $tmpStmt_up_sm = $stmt_up_sm->execute($data_up_sm);
+
+                    if($tmpStmt_up_sm)
+                    {
+
+                        if ($stmt_up_sm->rowCount() > 0)
+                        {
+                            $data_insert_his = [
+                                'idSousMenu' => $result->id,
+                                'nom' => $nom,
+                                'idIcon' => $idIcon,
+                                'idUtilisateur' => $idUtilisateur,
+                                'statut' => 0,
+                                'dateEnregistrement' => $dateEnregistrement
+                            ];
+                            $sql_insert_his = "INSERT INTO sous_menu_historiques(idSousMenu,nom,idIcon,idUtilisateur,statut,dateEnregistrement) VALUES (:idSousMenu,:nom, :idIcon,:idUtilisateur,:statut,:dateEnregistrement)";
+                            $stmt_insert_his = $bd->prepare($sql_insert_his);
+                            $tmp_insert_his = $stmt_insert_his->execute($data_insert_his);
+
+                            if($tmp_insert_his)
+                            {
+                                if ($bd->inTransaction()) {
+                                    $bd->commit();
+                                }
+                                echo "succès";
+                                die;
+
+                            }else
+                            {
+                                if ($bd->inTransaction()) {
+                                    $bd->rollBack();
+                                }
+                                echo "erreur4";
+                                die;
+                            }
+
+                        }else
+                        {
+                            if ($bd->inTransaction()) {
+                                $bd->rollBack();
+                            }
+                            echo "erreur3";
+                            die;
+                        }
+
+
+
+                    }else
+                    {
+
+                        if ($bd->inTransaction()) {
+                            $bd->rollBack();
+                        }
+                        echo "erreur2";
+                        die;
+                    }
+
+
+
+                }else
+                {
+
+                    if ($bd->inTransaction()) {
+                        $bd->rollBack();
+                    }
+                    echo "erreur1";
+                    die;
+                }
+
+
+
+
+
+            }catch (Exception $e) {
+
+                if ($bd->inTransaction()) {
+                    $bd->rollBack();
+                }
+                echo "erreur".$e;
+                die;
+            }
+
+        }else
+        {
+
+
+            echo "erreur1";
+            die;
+        }
+
+        break;
+
 
     default :
         echo "erreur";

@@ -953,7 +953,7 @@ session_start();
             </div>
             <div class="modal-body">
                 <form action="" id="addSousMenuForm" method="post" class="row g-2 d-flex align-items-center justify-content-center m-3" onsubmit="addSousMenu(event)">
-                    <input type="hidden" name="action" value="10">
+                    <input type="hidden" name="option" value="10">
                     <div class="mb-3">
                         <label class="form-label">Nom <strong class="text-danger">(*)</strong></label>
                         <input type="text" name="nom" class="form-control" id="nom" placeholder="nom" aria-describedby="validationSousMenuFeedback" required>
@@ -995,7 +995,7 @@ session_start();
             </div>
             <div class="modal-body">
                 <form action="" id="editSousMenuFrom" method="post" onsubmit="updateSousMenuOne(event)" class="row g-2 d-flex align-items-center justify-content-center m-3">
-                    <input type="hidden" name="action" value="edit_sous_menu">
+                    <input type="hidden" name="option" value="12">
                     <input type="hidden" name="id_sous_menu" id="id_sous_menu">
 
                     <div class="mb-3">
