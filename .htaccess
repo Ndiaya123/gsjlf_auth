@@ -107,6 +107,9 @@ RewriteRule ^scripts.bundle.7.js$ admin/js/listeUtilisateurs.js [L]
 RewriteRule ^admin-liste-sous-menus$ admin/sousMenus.php [L]
 RewriteRule ^scripts.bundle.8.js$ admin/js/sousMenus.js [L]
 
+RewriteRule ^admin-liste-taches$ admin/listeTaches.php [L]
+RewriteRule ^scripts.bundle.9.js$ admin/js/listeTaches.js [L]
+
 
 
 
