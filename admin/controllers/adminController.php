@@ -2266,184 +2266,373 @@ ORDER BY t.nom ASC;";
         break;
 
     case 19 :
-
-
-
-
-        $idUtilisateur = 1;
-//            $idUtilisateur = null;
-//            if(!empty($_SESSION['tmpIdP']))
-//            {
-//                $idUtilisateur = $_SESSION['tmpIdP'];
-//            }else
-//            {
-//                echo "sessionExpired";
+//
+//        date_default_timezone_set('Africa/Dakar');
+//
+//
+//
+//
+//        $idUtilisateur = 1;
+////            $idUtilisateur = null;
+////            if(!empty($_SESSION['tmpIdP']))
+////            {
+////                $idUtilisateur = $_SESSION['tmpIdP'];
+////            }else
+////            {
+////                echo "sessionExpired";
+////                die;
+////            }
+//
+//
+//        // Récupération des données
+//        $nom = $_POST['nom'];
+//        $idTypeTache = $_POST['idTypeTache'];
+//        $url = $_POST['url'];
+//        $idSousMenu = $_POST['idSousMenu'] ?? null;
+//        $idIcon = $_POST['idIcon'] ?? null;
+//        $autre_ressource = $_POST['autre_ressource'] ?? null;
+//        $commentaire = $_POST['commentaire'] ?? null;
+//        $id_UA = $_POST['idUA'];
+//        $niveau_UA = $_POST['nivUA'];
+//        $id_fonction = $_POST['id_fonction'] ?? null;
+//        $idAppli = $_POST['idAppli'] ?? null;
+//        $dateEnregistrement = date('Y-m-d H:i:s');
+//        if ($id_fonction === '' || $id_fonction === '0' || $id_fonction === 0) {
+//            $id_fonction = null;
+//        }
+//        if (!isset($_POST['idDB']) || $_POST['idDB'] == '') {
+//            $_POST['idDB'] = null;
+//        }
+//        $idDB = $_POST['idDB'] ?? null;
+//        // Ajout de la tâche
+//
+//
+//        try {
+//            $bd->beginTransaction();
+//
+//            // Vérifier si l'URL existe déjà
+//            $stmtCheck = $bd->prepare("SELECT COUNT(*) FROM tache WHERE url = ?");
+//            $stmtCheck->execute([$url]);
+//            if ($stmtCheck->fetchColumn() > 0) {
+//                $bd->rollBack();
+//
+//                echo "existeTache";
+//                die;
+////                return [
+////                    'success' => false,
+////                    'message' => "Une tâche avec cette URL existe déjà."
+////                ];
+//            }
+//
+//            // Initialisation des niveaux
+//            $idNiv1 = null;
+//            $idNiv2 = null;
+//            $idNiv3 = null;
+//
+//            if (empty($idSousMenu) || $idSousMenu == 0) {
+//                $idSousMenu = null;
+//            }
+//            if (empty($idIcon) || $idIcon == 0) {
+//                $idIcon = null;
+//            }
+//            if ($niveau_UA == 1) {
+//                $idNiv1 = $id_UA;
+//            } elseif ($niveau_UA == 2) {
+//                $idNiv2 = $id_UA;
+//            } elseif ($niveau_UA == 3) {
+//                $idNiv3 = $id_UA;
+//            }
+//
+//            // Vérifier si une tâche avec le même nom, même type et même UA existe déjà
+//            $whereUA = '';
+//            $paramsUA = [];
+//            if ($niveau_UA == 1) {
+//                $whereUA = 'idUniteAdministrativeNiv1 = ?';
+//                $paramsUA[] = $idNiv1;
+//            } elseif ($niveau_UA == 2) {
+//                $whereUA = 'idUniteAdministrativeNiv2 = ?';
+//                $paramsUA[] = $idNiv2;
+//            } elseif ($niveau_UA == 3) {
+//                $whereUA = 'idUniteAdministrativeNiv3 = ?';
+//                $paramsUA[] = $idNiv3;
+//            }
+//
+//            if ($whereUA) {
+//                $stmtCheckNom = $bd->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND $whereUA");
+//                $params = array_merge([$nom, $idTypeTache], $paramsUA);
+//                $stmtCheckNom->execute($params);
+//                if ($stmtCheckNom->fetchColumn() > 0) {
+//                    $bd->rollBack();
+//
+//                    echo "tacheExisteUnite";
+//                    die;
+////                    return [
+////                        'success' => false,
+////                        'message' => "Une tâche avec ce nom, ce type et cette unité administrative existe déjà."
+////                    ];
+//                }
+//            }
+//
+//            $stmt = $bd->prepare("
+//            INSERT INTO tache (nom, idTypeTache, url, idSousMenu, idIcon, autre_ressource, commentaire, idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3, dateEnregistrement, idFonction, createdBy, idDB,idAppli)
+//            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, 0), ?, ?,?)
+//        ");
+//            // Si id_fonction n'est pas null, récupérer ses unités administratives et les affecter à la tâche
+//            if (!empty($id_fonction)) {
+//                // Récupérer les unités administratives liées à la fonction
+//                $stmtUA = $bd->prepare("SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3 FROM fonction WHERE id = ?");
+//                $stmtUA->execute([$id_fonction]);
+//                $ua = $stmtUA->fetch(PDO::FETCH_ASSOC);
+//
+//                if ($ua) {
+//                    if (!empty($ua['idUniteAdministrativeNiv1'])) {
+//                        $idNiv1 = $ua['idUniteAdministrativeNiv1'];
+//                        $idNiv2 = null;
+//                        $idNiv3 = null;
+//                    } elseif (!empty($ua['idUniteAdministrativeNiv2'])) {
+//                        $idNiv1 = null;
+//                        $idNiv2 = $ua['idUniteAdministrativeNiv2'];
+//                        $idNiv3 = null;
+//                    } elseif (!empty($ua['idUniteAdministrativeNiv3'])) {
+//                        $idNiv1 = null;
+//                        $idNiv2 = null;
+//                        $idNiv3 = $ua['idUniteAdministrativeNiv3'];
+//                    }
+//                }
+//            }
+//            $id_fonction = (int)$id_fonction;
+//
+//            if ($stmt->execute([$nom, $idTypeTache, $url, $idSousMenu, $idIcon, $autre_ressource, $commentaire, $idNiv1, $idNiv2, $idNiv3, $dateEnregistrement, $id_fonction, $idUtilisateur, $idDB,$idAppli])) {
+//                // Récupérer l'id de la tâche insérée
+//                $idTache = $bd->lastInsertId();
+//
+//                // Insertion dans la table historiqueTache
+//                $stmtHist = $bd->prepare("INSERT INTO historiqueTache (
+//                idUtilisateur, idTache, nom, autre_ressource, url, idTypeTache, commentaire, idSousMenu, idIcon, idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3, dateEnregistrement, active, idFonction, createdBy, idDB,idAppli
+//            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)");
+//                $stmtHist->execute([
+//                    $idUtilisateur ?? null,
+//                    $idTache,
+//                    $nom,
+//                    $autre_ressource,
+//                    $url,
+//                    $idTypeTache,
+//                    $commentaire,
+//                    $idSousMenu,
+//                    $idIcon,
+//                    $idNiv1,
+//                    $idNiv2,
+//                    $idNiv3,
+//                    $dateEnregistrement,
+//                    1,
+//                    ($id_fonction === null || $id_fonction == 0) ? null : $id_fonction,
+//                    $idUtilisateur ?? null,
+//                    $idDB
+//                ]);
+//
+//                $bd->commit();
+//
+//                echo "succès";
+//                die;
+////                echo json_encode([
+////                    'success' => true,
+////                    'message' => 'Tâche ajoutée avec succès'
+////                ]);
+//                die;
+//            } else {
+//                $bd->rollBack();
+//                echo "erreur";
+////                echo json_encode([
+////                    'success' => false,
+////                    'message' => "Erreur lors de l'ajout de la tâche"
+////                ]);
 //                die;
 //            }
+//        } catch (PDOException $e) {
+//            if ($bd->inTransaction()) {
+//                $bd->rollBack();
+//            }
+//
+//            echo "erreur";
+//            die;
+////            error_log("Erreur add_tache: " . $e->getMessage());
+////            echo json_encode([
+////                'success' => false,
+////                'message' => "Erreur add_tache: " . $e->getMessage()
+////            ]);
+//            die;
+//        }
+//
+//        break;
 
 
-        // Récupération des données
-        $nom = $_POST['nom'];
-        $idTypeTache = $_POST['idTypeTache'];
-        $url = $_POST['url'];
-        $idSousMenu = $_POST['idSousMenu'] ?? null;
-        $idIcon = $_POST['idIcon'] ?? null;
-        $autre_ressource = $_POST['autre_ressource'] ?? null;
-        $commentaire = $_POST['commentaire'] ?? null;
-        $id_UA = $_POST['id_UA'];
-        $niveau_UA = $_POST['niveau_UA'];
-        $id_fonction = $_POST['id_fonction'] ?? null;
+        date_default_timezone_set('Africa/Dakar');
 
-        if ($id_fonction === '' || $id_fonction === '0' || $id_fonction === 0) {
-            $id_fonction = null;
+// ── Session ─────────────────────────────────────────────────
+
+        $idUtilisateur = 1;
+//        $idUtilisateur = null;
+//        if (!empty($_SESSION['tmpIdP'])) {
+//            $idUtilisateur = $_SESSION['tmpIdP'];
+//        } else {
+//            echo "sessionExpired";
+//            die;
+//        }
+
+// ── Récupération des données POST ───────────────────────────
+        $nom             = trim($_POST['nom']          ?? '');
+        $idTypeTache     = $_POST['idTypeTache']       ?? null;
+        $url             = trim($_POST['url']          ?? '');
+        $idSousMenu      = $_POST['idSousMenu']        ?? null;
+        $idIcon          = $_POST['idIcon']            ?? null;
+        $autre_ressource = $_POST['autre_ressource']   ?? null;
+        $commentaire     = $_POST['commentaire']       ?? null;
+        $id_UA           = $_POST['idUA']              ?? null;
+        $niveau_UA       = $_POST['nivUA']             ?? null;
+        $id_fonction     = $_POST['id_fonction']       ?? null;
+        $idAppli         = $_POST['idAppli']           ?? null;
+        $idDB            = $_POST['idDB']              ?? null;
+        $dateEnregistrement = date('Y-m-d H:i:s');
+
+// ── Nettoyage des valeurs vides ──────────────────────────────
+        if (empty($idSousMenu)  || $idSousMenu  == '0') $idSousMenu  = null;
+        if (empty($idIcon)      || $idIcon      == '0') $idIcon      = null;
+        if (empty($id_fonction) || $id_fonction == '0') $id_fonction = null;
+        if (empty($idDB)        || $idDB        == '0') $idDB        = null;
+        if (empty($idAppli)     || $idAppli     == '0') $idAppli     = null;
+        if (empty($id_UA)       || $id_UA       == '0') $id_UA       = null;
+
+// ── Initialisation des niveaux UA ───────────────────────────
+        $idNiv1 = null;
+        $idNiv2 = null;
+        $idNiv3 = null;
+
+        if ($niveau_UA == 1 && $id_UA) {
+            $idNiv1 = $id_UA;
+        } elseif ($niveau_UA == 2 && $id_UA) {
+            $idNiv2 = $id_UA;
+        } elseif ($niveau_UA == 3 && $id_UA) {
+            $idNiv3 = $id_UA;
         }
-        if (!isset($_POST['idDB']) || $_POST['idDB'] == '') {
-            $_POST['idDB'] = null;
-        }
-        $idDB = $_POST['idDB'] ?? null;
-        // Ajout de la tâche
-
 
         try {
             $bd->beginTransaction();
 
-            // Vérifier si l'URL existe déjà
+            // ── Vérifier si l'URL existe déjà ───────────────────────
             $stmtCheck = $bd->prepare("SELECT COUNT(*) FROM tache WHERE url = ?");
             $stmtCheck->execute([$url]);
             if ($stmtCheck->fetchColumn() > 0) {
                 $bd->rollBack();
-                return [
-                    'success' => false,
-                    'message' => "Une tâche avec cette URL existe déjà."
-                ];
+                echo "existeTache";
+                die;
             }
 
-            // Initialisation des niveaux
-            $idNiv1 = null;
-            $idNiv2 = null;
-            $idNiv3 = null;
-
-            if (empty($idSousMenu) || $idSousMenu == 0) {
-                $idSousMenu = null;
-            }
-            if (empty($idIcon) || $idIcon == 0) {
-                $idIcon = null;
-            }
-            if ($niveau_UA == 1) {
-                $idNiv1 = $id_UA;
-            } elseif ($niveau_UA == 2) {
-                $idNiv2 = $id_UA;
-            } elseif ($niveau_UA == 3) {
-                $idNiv3 = $id_UA;
-            }
-
-            // Vérifier si une tâche avec le même nom, même type et même UA existe déjà
-            $whereUA = '';
+            // ── Vérifier doublon nom + type + UA ────────────────────
+            $whereUA  = '';
             $paramsUA = [];
-            if ($niveau_UA == 1) {
-                $whereUA = 'idUniteAdministrativeNiv1 = ?';
+
+            if ($niveau_UA == 1 && $idNiv1) {
+                $whereUA  = 'idUniteAdministrativeNiv1 = ?';
                 $paramsUA[] = $idNiv1;
-            } elseif ($niveau_UA == 2) {
-                $whereUA = 'idUniteAdministrativeNiv2 = ?';
+            } elseif ($niveau_UA == 2 && $idNiv2) {
+                $whereUA  = 'idUniteAdministrativeNiv2 = ?';
                 $paramsUA[] = $idNiv2;
-            } elseif ($niveau_UA == 3) {
-                $whereUA = 'idUniteAdministrativeNiv3 = ?';
+            } elseif ($niveau_UA == 3 && $idNiv3) {
+                $whereUA  = 'idUniteAdministrativeNiv3 = ?';
                 $paramsUA[] = $idNiv3;
             }
 
             if ($whereUA) {
                 $stmtCheckNom = $bd->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND $whereUA");
-                $params = array_merge([$nom, $idTypeTache], $paramsUA);
-                $stmtCheckNom->execute($params);
+                $stmtCheckNom->execute(array_merge([$nom, $idTypeTache], $paramsUA));
                 if ($stmtCheckNom->fetchColumn() > 0) {
                     $bd->rollBack();
-                    return [
-                        'success' => false,
-                        'message' => "Une tâche avec ce nom, ce type et cette unité administrative existe déjà."
-                    ];
+                    echo "tacheExisteUnite";
+                    die;
                 }
             }
 
-            $stmt = $bd->prepare("
-            INSERT INTO tache (nom, idTypeTache, url, idSousMenu, idIcon, autre_ressource, commentaire, idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3, dateEnregistrement, idFonction, createdBy, idDB) 
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, 0), ?, ?)
-        ");
-            // Si id_fonction n'est pas null, récupérer ses unités administratives et les affecter à la tâche
+            // ── Si fonction → récupérer ses UA ──────────────────────
             if (!empty($id_fonction)) {
-                // Récupérer les unités administratives liées à la fonction
-                $stmtUA = $bd->prepare("SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3 FROM fonction WHERE id = ?");
+                $stmtUA = $bd->prepare("
+            SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3 
+            FROM fonction 
+            WHERE id = ?
+        ");
                 $stmtUA->execute([$id_fonction]);
                 $ua = $stmtUA->fetch(PDO::FETCH_ASSOC);
 
                 if ($ua) {
+                    $idNiv1 = null;
+                    $idNiv2 = null;
+                    $idNiv3 = null;
+
                     if (!empty($ua['idUniteAdministrativeNiv1'])) {
                         $idNiv1 = $ua['idUniteAdministrativeNiv1'];
-                        $idNiv2 = null;
-                        $idNiv3 = null;
                     } elseif (!empty($ua['idUniteAdministrativeNiv2'])) {
-                        $idNiv1 = null;
                         $idNiv2 = $ua['idUniteAdministrativeNiv2'];
-                        $idNiv3 = null;
                     } elseif (!empty($ua['idUniteAdministrativeNiv3'])) {
-                        $idNiv1 = null;
-                        $idNiv2 = null;
                         $idNiv3 = $ua['idUniteAdministrativeNiv3'];
                     }
                 }
             }
-            $id_fonction = (int)$id_fonction;
 
-            if ($stmt->execute([$nom, $idTypeTache, $url, $idSousMenu, $idIcon, $autre_ressource, $commentaire, $idNiv1, $idNiv2, $idNiv3, gmdate('Y-m-d H:i:s'), $id_fonction, $idUtilisateur, $idDB])) {
-                // Récupérer l'id de la tâche insérée
-                $idTache = $bd->lastInsertId();
+            // ── Insertion tache ─────────────────────────────────────
+            $stmtInsert = $bd->prepare("
+        INSERT INTO tache (
+            nom, idTypeTache, url, idSousMenu, idIcon,
+            autre_ressource, commentaire,
+            idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3,
+            dateEnregistrement, idFonction, createdBy, idDB, idAppli
+        ) VALUES (
+            ?, ?, ?, ?, ?,
+            ?, ?,
+            ?, ?, ?,
+            ?, NULLIF(?, NULL), ?, ?, ?
+        )
+    ");
 
-                // Insertion dans la table historiqueTache
-                $stmtHist = $bd->prepare("INSERT INTO historiqueTache (
-                idUtilisateur, idTache, nom, autre_ressource, url, idTypeTache, commentaire, idSousMenu, idIcon, idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3, dateEnregistrement, active, idFonction, createdBy, idDB
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmtHist->execute([
-                    $idUtilisateur ?? null,
-                    $idTache,
-                    $nom,
-                    $autre_ressource,
-                    $url,
-                    $idTypeTache,
-                    $commentaire,
-                    $idSousMenu,
-                    $idIcon,
-                    $idNiv1,
-                    $idNiv2,
-                    $idNiv3,
-                    gmdate('Y-m-d H:i:s'),
-                    1,
-                    ($id_fonction === null || $id_fonction == 0) ? null : $id_fonction,
-                    $idUtilisateur ?? null,
-                    $idDB
-                ]);
+            $stmtInsert->execute([
+                $nom, $idTypeTache, $url, $idSousMenu, $idIcon,
+                $autre_ressource, $commentaire,
+                $idNiv1, $idNiv2, $idNiv3,
+                $dateEnregistrement, $id_fonction, $idUtilisateur, $idDB, $idAppli
+            ]);
 
-                $bd->commit();
-                echo json_encode([
-                    'success' => true,
-                    'message' => 'Tâche ajoutée avec succès'
-                ]);
-                die;
-            } else {
-                $bd->rollBack();
-                echo json_encode([
-                    'success' => false,
-                    'message' => "Erreur lors de l'ajout de la tâche"
-                ]);
-                die;
-            }
+            $idTache = $bd->lastInsertId();
+
+            // ── Insertion historique ─────────────────────────────────
+            $stmtHist = $bd->prepare("
+        INSERT INTO historiqueTache (
+            idUtilisateur, idTache, nom, autre_ressource, url,
+            idTypeTache, commentaire, idSousMenu, idIcon,
+            idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3,
+            dateEnregistrement, active, idFonction, createdBy, idDB, idAppli
+        ) VALUES (
+            ?, ?, ?, ?, ?,
+            ?, ?, ?, ?,
+            ?, ?, ?,
+            ?, ?, NULLIF(?, NULL), ?, ?, ?
+        )
+    ");
+
+            $stmtHist->execute([
+                $idUtilisateur, $idTache, $nom, $autre_ressource, $url,
+                $idTypeTache, $commentaire, $idSousMenu, $idIcon,
+                $idNiv1, $idNiv2, $idNiv3,
+                $dateEnregistrement, 1, $id_fonction, $idUtilisateur, $idDB, $idAppli
+            ]);
+
+            $bd->commit();
+            echo "succès";
+            die;
+
         } catch (PDOException $e) {
             if ($bd->inTransaction()) {
                 $bd->rollBack();
             }
             error_log("Erreur add_tache: " . $e->getMessage());
-            echo json_encode([
-                'success' => false,
-                'message' => "Erreur add_tache: " . $e->getMessage()
-            ]);
+            echo "erreur";
             die;
         }
 
@@ -2453,13 +2642,24 @@ ORDER BY t.nom ASC;";
 
 
         try {
-            $niveau = $_POST['niveau'];
+            $niveau = $_POST['nivUA'];
 
-            $stmt = $bd->prepare('SELECT * FROM unite_administrative_niv' . $niveau);
+            $stmt = $bd->prepare('SELECT id,niveau'.$niveau.' as niveau FROM unite_administrative_niv' . $niveau);
             $stmt->execute();
-            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
-            echo json_encode($result);
+
+            echo '<option></option><option value="" >Choisir...</option>';
+//            echo '<option value="vide" hidden="">VIDE</option>';
+
+            if (count($listes) > 0) {
+                foreach ($listes as $tmp) {
+                    echo '<option value="' . $tmp->id . '">' . $tmp->niveau . '</option>';
+                }
+            } else {
+                echo '<option value="">--tâche--</option>';
+            }
+
             die;
 
         }catch (PDOException $e) {
@@ -2467,7 +2667,7 @@ ORDER BY t.nom ASC;";
            die;
         }
 
-brea;
+break;
 
     case 21 :
 
@@ -2494,151 +2694,372 @@ die;
     case 22 :
 
 
-        $id = $_POST['id'];
-        $nom = $_POST['nom'];
-        $type = $_POST['idTypeTache'];
-        $idSousMenu = $_POST['idSousMenu'] ?? null;
-        $nivUA = $_POST['niveau_UA'] ?? null;
-        $idUA = $_POST['id_UA'] ?? null;
-        $idIcon = $_POST['idIcon'] ?? null;
-        if (!isset($_POST['id_fonction']) || $_POST['id_fonction'] == '' || $_POST['id_fonction'] == 0) {
-            $_POST['id_fonction'] = null;
+//        $idUtilisateur = 1;
+////            $idUtilisateur = null;
+////            if(!empty($_SESSION['tmpIdP']))
+////            {
+////                $idUtilisateur = $_SESSION['tmpIdP'];
+////            }else
+////            {
+////                echo "sessionExpired";
+////                die;
+////            }
+//
+//
+//
+//        $id = $_POST['id'];
+//        $nom = $_POST['nom'];
+//        $type = $_POST['idTypeTache'];
+//        $idSousMenu = $_POST['idSousMenu'] ?? null;
+//        $nivUA = $_POST['niveau_UA'] ?? null;
+//        $idUA = $_POST['id_UA'] ?? null;
+//        $idIcon = $_POST['idIcon'] ?? null;
+//        if (!isset($_POST['id_fonction']) || $_POST['id_fonction'] == '' || $_POST['id_fonction'] == 0) {
+//            $_POST['id_fonction'] = null;
+//        }
+//        $id_fonction = $_POST['id_fonction'];
+//        $url = $_POST['url'];
+//        $autre_ressource = $_POST['autre_ressource'];
+//
+//        $idDB = $_POST['idDB'] ?? null;
+//        $commentaire = $_POST['commentaire'] ?? null;
+//
+//
+//
+//
+//        try {
+//            $bd->beginTransaction();
+//
+//            // Vérifier si l'URL existe déjà pour une autre tâche
+//            $stmtCheck = $bd->prepare("SELECT COUNT(*) FROM tache WHERE url = ? AND id != ?");
+//            $stmtCheck->execute([$url, $id]);
+//            if ($stmtCheck->fetchColumn() > 0) {
+//                $bd->rollBack();
+//                return [
+//                    'success' => false,
+//                    'message' => "Une tâche avec cette URL existe déjà."
+//                ];
+//            }
+//
+//            // Vérifier si une tâche avec le même nom, même type et même UA existe déjà (hors celle en cours d'édition)
+//            $stmtCheckNom = $bd->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND id != ?");
+//            $params = array_merge([$nom, $type], [$id]);
+//            $stmtCheckNom->execute($params);
+//            if ($stmtCheckNom->fetchColumn() > 0) {
+//                $bd->rollBack();
+//                return [
+//                    'success' => false,
+//                    'message' => "Une tâche avec ce nom et ce type existe déjà."
+//                ];
+//            }
+//
+//            $idUA = ($idUA === '' || $idUA === 0) ? null : $idUA;
+//            // Préparer les valeurs des niveaux administratifs
+//            $idNiv1 = null;
+//            $idNiv2 = null;
+//            $idNiv3 = null;
+//            if ($nivUA == 1) {
+//                $idNiv1 = $idUA;
+//            } elseif ($nivUA == 2) {
+//                $idNiv2 = $idUA;
+//            } elseif ($nivUA == 3) {
+//                $idNiv3 = $idUA;
+//            }
+//
+//            if ($type != 2) {
+//                $id_fonction = null;
+//            } elseif ($type == 2) {
+//                // Si id_fonction n'est pas null, récupérer ses unités administratives et les affecter à la tâche
+//                if (!empty($id_fonction)) {
+//                    // Récupérer les unités administratives liées à la fonction
+//                    $stmtUA = $bd->prepare("SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3 FROM fonction WHERE id = ?");
+//                    $stmtUA->execute([$id_fonction]);
+//                    $ua = $stmtUA->fetch(PDO::FETCH_ASSOC);
+//
+//                    if ($ua) {
+//                        if (!empty($ua['idUniteAdministrativeNiv1'])) {
+//                            $idNiv1 = $ua['idUniteAdministrativeNiv1'];
+//                            $idNiv2 = null;
+//                            $idNiv3 = null;
+//                        } elseif (!empty($ua['idUniteAdministrativeNiv2'])) {
+//                            $idNiv1 = null;
+//                            $idNiv2 = $ua['idUniteAdministrativeNiv2'];
+//                            $idNiv3 = null;
+//                        } elseif (!empty($ua['idUniteAdministrativeNiv3'])) {
+//                            $idNiv1 = null;
+//                            $idNiv2 = null;
+//                            $idNiv3 = $ua['idUniteAdministrativeNiv3'];
+//                        }
+//                    }
+//                }
+//            }
+//
+//            $sql = "UPDATE tache SET nom = ?, idTypeTache = ?,commentaire = ?, url = ?, autre_ressource = ?, idSousMenu = ?, idIcon = ?, idFonction = ?, idUniteAdministrativeNiv1 = ?, idUniteAdministrativeNiv2 = ?, idUniteAdministrativeNiv3 = ?, idDB = ? WHERE id = ?";
+//            $params = [
+//                $nom,
+//                $type,
+//                $commentaire,
+//                $url,
+//                $autre_ressource,
+//                $idSousMenu,
+//                $idIcon,
+//                $id_fonction,
+//                $idNiv1,
+//                $idNiv2,
+//                $idNiv3,
+//                $idDB,
+//                $id
+//            ];
+//            $stmt = $bd->prepare($sql);
+//            if ($stmt->execute($params)) {
+//                // Récupérer l'attribut createdBy de la tâche avant modification
+//                $stmtGetCreatedBy = $bd->prepare("SELECT createdBy FROM tache WHERE id = ?");
+//                $stmtGetCreatedBy->execute([$id]);
+//                $createdBy = $stmtGetCreatedBy->fetchColumn();
+//
+//                // Insertion dans la table historiqueTache
+//                $stmtHist = $bd->prepare("INSERT INTO historiqueTache (
+//                idUtilisateur, idTache, nom, autre_ressource, url, idTypeTache, commentaire, idSousMenu, idIcon, idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3, dateEnregistrement, active, idFonction, createdBy, idDB
+//            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
+//                $stmtHist->execute([
+//                    $idUtilisateur ?? null,
+//                    $id,
+//                    $nom,
+//                    $autre_ressource,
+//                    $url,
+//                    $type,
+//                    $commentaire, // commentaire non fourni ici
+//                    $idSousMenu,
+//                    $idIcon,
+//                    $idNiv1,
+//                    $idNiv2,
+//                    $idNiv3,
+//                    $dateEnregistrement,
+//                    1,
+//                    $id_fonction,
+//                    $createdBy,
+//                    $idDB
+//                ]);
+//                $bd->commit();
+//                echo json_encode(['success' => true, 'message' => 'Tâche modifiée avec succès']);
+//                die;
+//            } else {
+//                $bd->rollBack();
+//                 echo json_encode(['success' => false, 'message' => 'Erreur lors de la modification de la tâche']);
+//                 die;
+//            }
+//        } catch (Exception $e) {
+//            if ($bd->inTransaction()) {
+//                $bd->rollBack();
+//            }
+//             echo json_encode(['success' => false, 'message' => 'Erreur lors de la modification de la tâche : ' . $e->getMessage()]);
+//            die;
+//        }
+//
+//        break;
+
+
+        date_default_timezone_set('Africa/Dakar');
+
+
+        $idUtilisateur = 1;
+//        $idUtilisateur = null;
+//        if (!empty($_SESSION['tmpIdP'])) {
+//            $idUtilisateur = $_SESSION['tmpIdP'];
+//        } else {
+//            echo "sessionExpired";
+//            die;
+//        }
+
+        // ── Récupération POST ────────────────────────────────────
+        $id              = $_POST['id']              ?? null;
+        $nom             = trim($_POST['nom']         ?? '');
+        $idTypeTache     = $_POST['idTypeTache']      ?? null;
+        $url             = trim($_POST['url']         ?? '');
+        $idSousMenu      = $_POST['idSousMenu']       ?? null;
+        $idIcon          = $_POST['idIcon']           ?? null;
+        $autre_ressource = $_POST['autre_ressource']  ?? null;
+        $commentaire     = $_POST['commentaire']      ?? null;
+        $id_UA           = $_POST['idUA']             ?? null;
+        $niveau_UA       = $_POST['nivUA']            ?? null;
+        $id_fonction     = $_POST['id_fonction']      ?? null;
+        $idAppli         = $_POST['idDB']             ?? null;
+        $idDB            = $_POST['idBD']             ?? null;
+        $dateModification = date('Y-m-d H:i:s');
+
+        // ── Nettoyage ────────────────────────────────────────────
+        if (empty($idSousMenu)  || $idSousMenu  == '0') $idSousMenu  = null;
+        if (empty($idIcon)      || $idIcon      == '0') $idIcon      = null;
+        if (empty($id_fonction) || $id_fonction == '0') $id_fonction = null;
+        if (empty($idDB)        || $idDB        == '0') $idDB        = null;
+        if (empty($idAppli)     || $idAppli     == '0') $idAppli     = null;
+        if (empty($id_UA)       || $id_UA       == '0') $id_UA       = null;
+
+        // ── Niveaux UA ───────────────────────────────────────────
+        $idNiv1 = null;
+        $idNiv2 = null;
+        $idNiv3 = null;
+
+        if ($niveau_UA == 1 && $id_UA) {
+            $idNiv1 = $id_UA;
+        } elseif ($niveau_UA == 2 && $id_UA) {
+            $idNiv2 = $id_UA;
+        } elseif ($niveau_UA == 3 && $id_UA) {
+            $idNiv3 = $id_UA;
         }
-        $id_fonction = $_POST['id_fonction'];
-        $url = $_POST['url'];
-        $autre_ressource = $_POST['autre_ressource'];
-
-        $idDB = $_POST['idDB'] ?? null;
-
-
 
         try {
             $bd->beginTransaction();
 
-            // Vérifier si l'URL existe déjà pour une autre tâche
-            $stmtCheck = $bd->prepare("SELECT COUNT(*) FROM tache WHERE url = ? AND id != ?");
-            $stmtCheck->execute([$url, $id]);
-            if ($stmtCheck->fetchColumn() > 0) {
+            // ── Vérifier URL existante (hors tâche courante) ─────
+            $stmtCheckUrl = $bd->prepare("SELECT COUNT(*) FROM tache WHERE url = ? AND id != ?");
+            $stmtCheckUrl->execute([$url, $id]);
+            if ($stmtCheckUrl->fetchColumn() > 0) {
                 $bd->rollBack();
-                return [
-                    'success' => false,
-                    'message' => "Une tâche avec cette URL existe déjà."
-                ];
+                echo "existeTache";
+                die;
             }
 
-            // Vérifier si une tâche avec le même nom, même type et même UA existe déjà (hors celle en cours d'édition)
-            $stmtCheckNom = $bd->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND id != ?");
-            $params = array_merge([$nom, $type], [$id]);
-            $stmtCheckNom->execute($params);
-            if ($stmtCheckNom->fetchColumn() > 0) {
-                $bd->rollBack();
-                return [
-                    'success' => false,
-                    'message' => "Une tâche avec ce nom et ce type existe déjà."
-                ];
+            // ── Vérifier doublon nom + type + UA (hors tâche courante) ──
+            $whereUA  = '';
+            $paramsUA = [];
+
+            if ($niveau_UA == 1 && $idNiv1) {
+                $whereUA    = 'idUniteAdministrativeNiv1 = ?';
+                $paramsUA[] = $idNiv1;
+            } elseif ($niveau_UA == 2 && $idNiv2) {
+                $whereUA    = 'idUniteAdministrativeNiv2 = ?';
+                $paramsUA[] = $idNiv2;
+            } elseif ($niveau_UA == 3 && $idNiv3) {
+                $whereUA    = 'idUniteAdministrativeNiv3 = ?';
+                $paramsUA[] = $idNiv3;
             }
 
-            $idUA = ($idUA === '' || $idUA === 0) ? null : $idUA;
-            // Préparer les valeurs des niveaux administratifs
-            $idNiv1 = null;
-            $idNiv2 = null;
-            $idNiv3 = null;
-            if ($nivUA == 1) {
-                $idNiv1 = $idUA;
-            } elseif ($nivUA == 2) {
-                $idNiv2 = $idUA;
-            } elseif ($nivUA == 3) {
-                $idNiv3 = $idUA;
+            if ($whereUA) {
+                $stmtCheckNom = $bd->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND $whereUA AND id != ?");
+                $stmtCheckNom->execute(array_merge([$nom, $idTypeTache], $paramsUA, [$id]));
+                if ($stmtCheckNom->fetchColumn() > 0) {
+                    $bd->rollBack();
+                    echo "tacheExisteUnite";
+                    die;
+                }
             }
 
-            if ($type != 2) {
-                $id_fonction = null;
-            } elseif ($type == 2) {
-                // Si id_fonction n'est pas null, récupérer ses unités administratives et les affecter à la tâche
-                if (!empty($id_fonction)) {
-                    // Récupérer les unités administratives liées à la fonction
-                    $stmtUA = $bd->prepare("SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3 FROM fonction WHERE id = ?");
-                    $stmtUA->execute([$id_fonction]);
-                    $ua = $stmtUA->fetch(PDO::FETCH_ASSOC);
+            // ── Si fonction → récupérer ses UA ──────────────────
+            if (!empty($id_fonction)) {
+                $stmtUA = $bd->prepare("
+                SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3
+                FROM fonction WHERE id = ?
+            ");
+                $stmtUA->execute([$id_fonction]);
+                $ua = $stmtUA->fetch(PDO::FETCH_ASSOC);
 
-                    if ($ua) {
-                        if (!empty($ua['idUniteAdministrativeNiv1'])) {
-                            $idNiv1 = $ua['idUniteAdministrativeNiv1'];
-                            $idNiv2 = null;
-                            $idNiv3 = null;
-                        } elseif (!empty($ua['idUniteAdministrativeNiv2'])) {
-                            $idNiv1 = null;
-                            $idNiv2 = $ua['idUniteAdministrativeNiv2'];
-                            $idNiv3 = null;
-                        } elseif (!empty($ua['idUniteAdministrativeNiv3'])) {
-                            $idNiv1 = null;
-                            $idNiv2 = null;
-                            $idNiv3 = $ua['idUniteAdministrativeNiv3'];
-                        }
+                if ($ua) {
+                    $idNiv1 = null;
+                    $idNiv2 = null;
+                    $idNiv3 = null;
+                    if (!empty($ua['idUniteAdministrativeNiv1'])) {
+                        $idNiv1 = $ua['idUniteAdministrativeNiv1'];
+                    } elseif (!empty($ua['idUniteAdministrativeNiv2'])) {
+                        $idNiv2 = $ua['idUniteAdministrativeNiv2'];
+                    } elseif (!empty($ua['idUniteAdministrativeNiv3'])) {
+                        $idNiv3 = $ua['idUniteAdministrativeNiv3'];
                     }
                 }
             }
 
-            $sql = "UPDATE tache SET nom = ?, idTypeTache = ?, url = ?, autre_ressource = ?, idSousMenu = ?, idIcon = ?, idFonction = ?, idUniteAdministrativeNiv1 = ?, idUniteAdministrativeNiv2 = ?, idUniteAdministrativeNiv3 = ?, idDB = ? WHERE id = ?";
-            $params = [
-                $nom,
-                $type,
-                $url,
-                $autre_ressource,
-                $idSousMenu,
-                $idIcon,
-                $id_fonction,
-                $idNiv1,
-                $idNiv2,
-                $idNiv3,
-                $idDB,
-                $id
-            ];
-            $stmt = $bd->prepare($sql);
-            if ($stmt->execute($params)) {
-                // Récupérer l'attribut createdBy de la tâche avant modification
-                $stmtGetCreatedBy = $bd->prepare("SELECT createdBy FROM tache WHERE id = ?");
-                $stmtGetCreatedBy->execute([$id]);
-                $createdBy = $stmtGetCreatedBy->fetchColumn();
+            // ── Update tache ─────────────────────────────────────
+            $stmtUpdate = $bd->prepare("
+            UPDATE tache SET
+                nom                        = ?,
+                idTypeTache                = ?,
+                url                        = ?,
+                idSousMenu                 = ?,
+                idIcon                     = ?,
+                autre_ressource            = ?,
+                commentaire                = ?,
+                idUniteAdministrativeNiv1  = ?,
+                idUniteAdministrativeNiv2  = ?,
+                idUniteAdministrativeNiv3  = ?,
+                idFonction                 = NULLIF(?, 0),
+                idDB                       = ?,
+                idAppli                    = ?,
+                lastDateModification           = ?
+            WHERE id = ?
+        ");
 
-                // Insertion dans la table historiqueTache
-                $stmtHist = $bd->prepare("INSERT INTO historiqueTache (
-                idUtilisateur, idTache, nom, autre_ressource, url, idTypeTache, commentaire, idSousMenu, idIcon, idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3, dateEnregistrement, active, idFonction, createdBy, idDB
-            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-                $stmtHist->execute([
-                    $_SESSION['id'] ?? null,
-                    $id,
-                    $nom,
-                    $autre_ressource,
-                    $url,
-                    $type,
-                    null, // commentaire non fourni ici
-                    $idSousMenu,
-                    $idIcon,
-                    $idNiv1,
-                    $idNiv2,
-                    $idNiv3,
-                    gmdate('Y-m-d H:i:s'),
-                    1,
-                    $id_fonction,
-                    $createdBy,
-                    $idDB
-                ]);
-                $bd->commit();
-                echo json_encode(['success' => true, 'message' => 'Tâche modifiée avec succès']);
-                die;
-            } else {
-                $bd->rollBack();
-                 echo json_encode(['success' => false, 'message' => 'Erreur lors de la modification de la tâche']);
-                 die;
-            }
-        } catch (Exception $e) {
+            $stmtUpdate->execute([
+                $nom, $idTypeTache, $url, $idSousMenu, $idIcon,
+                $autre_ressource, $commentaire,
+                $idNiv1, $idNiv2, $idNiv3,
+                $id_fonction, $idDB, $idAppli,
+                $dateModification,
+                $id
+            ]);
+
+            // ── Insertion historique ─────────────────────────────
+            $stmtHist = $bd->prepare("
+            INSERT INTO historiqueTache (
+                idUtilisateur, idTache, nom, autre_ressource, url,
+                idTypeTache, commentaire, idSousMenu, idIcon,
+                idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3,
+                dateEnregistrement, active, idFonction, createdBy, idDB, idAppli
+            ) VALUES (
+                ?, ?, ?, ?, ?,
+                ?, ?, ?, ?,
+                ?, ?, ?,
+                ?, ?, NULLIF(?, 0), ?, ?, ?
+            )
+        ");
+
+            $stmtHist->execute([
+                $idUtilisateur, $id, $nom, $autre_ressource, $url,
+                $idTypeTache, $commentaire, $idSousMenu, $idIcon,
+                $idNiv1, $idNiv2, $idNiv3,
+                $dateModification, 1, $id_fonction, $idUtilisateur, $idDB, $idAppli
+            ]);
+
+            $bd->commit();
+            echo "succès";
+            die;
+
+        } catch (PDOException $e) {
             if ($bd->inTransaction()) {
                 $bd->rollBack();
             }
-             echo json_encode(['success' => false, 'message' => 'Erreur lors de la modification de la tâche : ' . $e->getMessage()]);
+            error_log("Erreur update_tache: " . $e->getMessage());
+            echo "erreur".$e;
             die;
         }
+
+        break;
+    case 23 :
+
+        try {
+
+
+
+            $stmt = $bd->prepare("SELECT * FROM listeApplications");
+            $stmt->execute();
+            $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            echo '<option></option><option value="">Choisir...</option>';
+//            echo '<option value="vide" hidden="">VIDE</option>';
+
+            if (count($listes) > 0) {
+                foreach ($listes as $tmp) {
+                    echo '<option value="' . $tmp->id . '">' . $tmp->nomApplication . '</option>';
+                }
+            } else {
+                echo '<option value="">-- Applications --</option>';
+            }
+
+            die;
+        } catch (\Throwable $th) {
+            echo "erreur";
+            die;
+        }
+        break;
     default :
         echo "erreur";
         die;

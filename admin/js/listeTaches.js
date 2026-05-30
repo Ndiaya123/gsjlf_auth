@@ -104,13 +104,10 @@ function reloadAll() {
     showLoader('Mise à jour en cours…');
 
     setTimeout(function () {
-        if ($.fn.DataTable.isDataTable('#kt_table_sous_menu')) {
-            $('#kt_table_sous_menu').DataTable().destroy();
+        if ($.fn.DataTable.isDataTable('#kt_table_taches')) {
+            $('#kt_table_taches').DataTable().destroy();
         }
-
-        // statsReady = true car on ne recharge pas les icônes
         _loaderSync.statsReady = true;
-
         KTDatatablesServerSide.init();
     }, 100);
 }
@@ -164,82 +161,93 @@ var KTDatatablesServerSide = function () {
                 error: function () {
                     _loaderSync.dtReady = true;
                     _checkCloseLoader();
-                    Swal.fire('Erreur', "Impossible de charger la liste des sous menus.", 'error');
+                    Swal.fire('Erreur', "Impossible de charger la liste des tâches.", 'error');
                 }
             },
             columns: [
                 { data: "nom" },
                 { data: "type" },
                 {
-                    data: null,
+                    data:      null,
                     orderable: false,
-                    render: function (data, type, row, meta) {
+                    render: function (data, type, row) {
                         if (row.type === "Par défaut") {
                             return "Tout le monde";
                         } else if (row.type === "Incarnée") {
                             return "Agents du post";
                         } else if (row.type === "Structure") {
-                            return `<span>
-                            ${row.nombre_utilisateurs || 0}
-                            </span>`;
+                            return '<span>' + (row.nombre_utilisateurs || 0) + '</span>';
                         }
+                        return '';
                     }
                 },
                 { data: "code" },
                 { data: "commentaire" },
-                // { data: "url" },
                 {
-                    data: null,
+                    data:      null,
                     orderable: false,
-                    render: function (data, type, row, meta) {
-                        let urlencoded = btoa(`${row.id_struture}`)
-                        let activateBtnText = row.active == 1 ? 'Déactiver' : 'Activer'
-                        let activateBtnColor = row.active == 1 ? 'svg-icon-danger' : 'svg-icon-warning'
-                        return `
-                            <div class="d-flex flex-wrap gap-2 justify-content-center align-items-center ">
-							   <span class="svg-icon svg-icon-primary svg-icon-2x" data-bs-toggle="modal" data-bs-target="#voirUtilisateur" onclick="voirUtilisateur(${row.id}, '${row.nom.replace(/'/g, "\\'")}','${row.type}')" style="cursor: pointer;"><!--begin::Svg Icon | path:C:\wamp64HG\themes\metronic\theme\html\demo2\dist/../src/media/svg/icons\Communication\Group.svg--><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-                                    <title>Voir les utilisateurs de la tache.</title>
-                                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                        <polygon points="0 0 24 0 24 24 0 24"/>
-                                        <path d="M18,14 C16.3431458,14 15,12.6568542 15,11 C15,9.34314575 16.3431458,8 18,8 C19.6568542,8 21,9.34314575 21,11 C21,12.6568542 19.6568542,14 18,14 Z M9,11 C6.790861,11 5,9.209139 5,7 C5,4.790861 6.790861,3 9,3 C11.209139,3 13,4.790861 13,7 C13,9.209139 11.209139,11 9,11 Z" fill="#000000" fill-rule="nonzero" opacity="0.3"/>
-                                        <path d="M17.6011961,15.0006174 C21.0077043,15.0378534 23.7891749,16.7601418 23.9984937,20.4 C24.0069246,20.5466056 23.9984937,21 23.4559499,21 L19.6,21 C19.6,18.7490654 18.8562935,16.6718327 17.6011961,15.0006174 Z M0.00065168429,20.1992055 C0.388258525,15.4265159 4.26191235,13 8.98334134,13 C13.7712164,13 17.7048837,15.2931929 17.9979143,20.2 C18.0095879,20.3954741 17.9979143,21 17.2466999,21 C13.541124,21 8.03472472,21 0.727502227,21 C0.476712155,21 -0.0204617505,20.45918 0.00065168429,20.1992055 Z" fill="#000000" fill-rule="nonzero"/>
-                                    </g>
-                                </svg><!--end::Svg Icon--></span>
-                                    <span class="svg-icon svg-icon-warning svg-icon-2x" style="cursor: pointer;" onclick="get_detail_tache(${row.id})"><!--begin::Svg Icon | path:/var/www/preview.keenthemes.com/metronic/releases/2021-05-14-112058/theme/html/demo1/dist/../src/media/svg/icons/Design/Edit.svg--><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-                                      <title>Modifier la tache. </title>
-                                      <desc>Created with Sketch.</desc>
-                                      <defs/>
-                                      <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                          <rect x="0" y="0" width="24" height="24"/>
-                                          <path d="M8,17.9148182 L8,5.96685884 C8,5.56391781 8.16211443,5.17792052 8.44982609,4.89581508 L10.965708,2.42895648 C11.5426798,1.86322723 12.4640974,1.85620921 13.0496196,2.41308426 L15.5337377,4.77566479 C15.8314604,5.0588212 16,5.45170806 16,5.86258077 L16,17.9148182 C16,18.7432453 15.3284271,19.4148182 14.5,19.4148182 L9.5,19.4148182 C8.67157288,19.4148182 8,18.7432453 8,17.9148182 Z" fill="#000000" fill-rule="nonzero" transform="translate(12.000000, 10.707409) rotate(-135.000000) translate(-12.000000, -10.707409) "/>
-                                          <rect fill="#000000" opacity="0.3" x="5" y="20" width="15" height="2" rx="1"/>
-                                      </g>
-                                  </svg><!--end::Svg Icon--></span>
-                                 
-                                  <span class="svg-icon ${activateBtnColor} svg-icon-2x" style="cursor: pointer;" onclick="changeEtatTache(${row.id}, ${row.nombre_utilisateurs || 0})"><!--begin::Svg Icon | path:C:\wamp64\www\keenthemes\themes\metronic\theme\html\demo2\dist/../src/media/svg/icons\Code\Error-circle.svg--><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-                                  <title>${activateBtnText} la tache.</title>
-                                    <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                        <rect x="0" y="0" width="24" height="24"/>
-                                        <circle fill="#000000" opacity="0.3" cx="12" cy="12" r="10"/>
-                                        <path d="M12.0355339,10.6213203 L14.863961,7.79289322 C15.2544853,7.40236893 15.8876503,7.40236893 16.2781746,7.79289322 C16.6686989,8.18341751 16.6686989,8.81658249 16.2781746,9.20710678 L13.4497475,12.0355339 L16.2781746,14.863961 C16.6686989,15.2544853 16.6686989,15.8876503 16.2781746,16.2781746 C15.8876503,16.6686989 15.2544853,16.6686989 14.863961,16.2781746 L12.0355339,13.4497475 L9.20710678,16.2781746 C8.81658249,16.6686989 8.18341751,16.6686989 7.79289322,16.2781746 C7.40236893,15.8876503 7.40236893,15.2544853 7.79289322,14.863961 L10.6213203,12.0355339 L7.79289322,9.20710678 C7.40236893,8.81658249 7.40236893,8.18341751 7.79289322,7.79289322 C8.18341751,7.40236893 8.81658249,7.40236893 9.20710678,7.79289322 L12.0355339,10.6213203 Z" fill="#000000"/>
-                                    </g>
-                                </svg><!--end::Svg Icon--></span>
-                                
-                                <a class="" href='${row.url+ "?id=" + urlencoded}' target="_blank">
-                                    <span class="svg-icon svg-icon-info svg-icon-2x" style="cursor: pointer;"><!--begin::Svg Icon | path:C:\wamp64\www\keenthemes\themes\metronic\theme\html\demo2\dist/../src/media/svg/icons\Navigation\Sign-out.svg--><svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
-                                      <title>Aller à la tache.</title>
-                                      <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
-                                          <rect x="0" y="0" width="24" height="24"/>
-                                          <path d="M14.0069431,7.00607258 C13.4546584,7.00607258 13.0069431,6.55855153 13.0069431,6.00650634 C13.0069431,5.45446114 13.4546584,5.00694009 14.0069431,5.00694009 L15.0069431,5.00694009 C17.2160821,5.00694009 19.0069431,6.7970243 19.0069431,9.00520507 L19.0069431,15.001735 C19.0069431,17.2099158 17.2160821,19 15.0069431,19 L3.00694311,19 C0.797804106,19 -0.993056895,17.2099158 -0.993056895,15.001735 L-0.993056895,8.99826498 C-0.993056895,6.7900842 0.797804106,5 3.00694311,5 L4.00694793,5 C4.55923268,5 5.00694793,5.44752105 5.00694793,5.99956624 C5.00694793,6.55161144 4.55923268,6.99913249 4.00694793,6.99913249 L3.00694311,6.99913249 C1.90237361,6.99913249 1.00694311,7.89417459 1.00694311,8.99826498 L1.00694311,15.001735 C1.00694311,16.1058254 1.90237361,17.0008675 3.00694311,17.0008675 L15.0069431,17.0008675 C16.1115126,17.0008675 17.0069431,16.1058254 17.0069431,15.001735 L17.0069431,9.00520507 C17.0069431,7.90111468 16.1115126,7.00607258 15.0069431,7.00607258 L14.0069431,7.00607258 Z" fill="#000000" fill-rule="nonzero" opacity="0.3" transform="translate(9.006943, 12.000000) scale(-1, 1) rotate(-90.000000) translate(-9.006943, -12.000000) "/>
-                                          <rect fill="#000000" opacity="0.3" transform="translate(14.000000, 12.000000) rotate(-270.000000) translate(-14.000000, -12.000000) " x="13" y="6" width="2" height="12" rx="1"/>
-                                          <path d="M21.7928932,9.79289322 C22.1834175,9.40236893 22.8165825,9.40236893 23.2071068,9.79289322 C23.5976311,10.1834175 23.5976311,10.8165825 23.2071068,11.2071068 L20.2071068,14.2071068 C19.8165825,14.5976311 19.1834175,14.5976311 18.7928932,14.2071068 L15.7928932,11.2071068 C15.4023689,10.8165825 15.4023689,10.1834175 15.7928932,9.79289322 C16.1834175,9.40236893 16.8165825,9.40236893 17.2071068,9.79289322 L19.5,12.0857864 L21.7928932,9.79289322 Z" fill="#000000" fill-rule="nonzero" transform="translate(19.500000, 12.000000) rotate(-90.000000) translate(-19.500000, -12.000000) "/>
-                                      </g>
-                                  </svg><!--end::Svg Icon--></span>
-                                </a>
+                    render: function (data, type, row) {
+                        var urlencoded      = btoa(row.id_struture);
+                        var activateBtnText  = row.active == 1 ? 'Déactiver' : 'Activer';
+                        var activateBtnColor = row.active == 1 ? 'svg-icon-danger' : 'svg-icon-warning';
+                        var nomEscaped       = row.nom.replace(/'/g, "\\'");
 
-                                
-                            </div>
-                        `;
+                        return `
+                            <div class="d-flex flex-wrap gap-2 justify-content-center align-items-center">
+                                <span class="svg-icon svg-icon-primary svg-icon-2x"
+                                    data-bs-toggle="modal" data-bs-target="#voirUtilisateur"
+                                    onclick="voirUtilisateur(${row.id}, '${nomEscaped}', '${row.type}')"
+                                    style="cursor:pointer;"
+                                    title="Voir les utilisateurs de la tâche.">
+                                    <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
+                                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                            <polygon points="0 0 24 0 24 24 0 24"/>
+                                            <path d="M18,14 C16.3431458,14 15,12.6568542 15,11 C15,9.34314575 16.3431458,8 18,8 C19.6568542,8 21,9.34314575 21,11 C21,12.6568542 19.6568542,14 18,14 Z M9,11 C6.790861,11 5,9.209139 5,7 C5,4.790861 6.790861,3 9,3 C11.209139,3 13,4.790861 13,7 C13,9.209139 11.209139,11 9,11 Z" fill="#000000" fill-rule="nonzero" opacity="0.3"/>
+                                            <path d="M17.6011961,15.0006174 C21.0077043,15.0378534 23.7891749,16.7601418 23.9984937,20.4 C24.0069246,20.5466056 23.9984937,21 23.4559499,21 L19.6,21 C19.6,18.7490654 18.8562935,16.6718327 17.6011961,15.0006174 Z M0.00065168429,20.1992055 C0.388258525,15.4265159 4.26191235,13 8.98334134,13 C13.7712164,13 17.7048837,15.2931929 17.9979143,20.2 C18.0095879,20.3954741 17.9979143,21 17.2466999,21 C13.541124,21 8.03472472,21 0.727502227,21 C0.476712155,21 -0.0204617505,20.45918 0.00065168429,20.1992055 Z" fill="#000000" fill-rule="nonzero"/>
+                                        </g>
+                                    </svg>
+                                </span>
+
+                                <span class="svg-icon svg-icon-warning svg-icon-2x"
+                                    style="cursor:pointer;"
+                                    onclick="get_detail_tache(${row.id})"
+                                    title="Modifier la tâche.">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
+                                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                            <rect x="0" y="0" width="24" height="24"/>
+                                            <path d="M8,17.9148182 L8,5.96685884 C8,5.56391781 8.16211443,5.17792052 8.44982609,4.89581508 L10.965708,2.42895648 C11.5426798,1.86322723 12.4640974,1.85620921 13.0496196,2.41308426 L15.5337377,4.77566479 C15.8314604,5.0588212 16,5.45170806 16,5.86258077 L16,17.9148182 C16,18.7432453 15.3284271,19.4148182 14.5,19.4148182 L9.5,19.4148182 C8.67157288,19.4148182 8,18.7432453 8,17.9148182 Z" fill="#000000" fill-rule="nonzero" transform="translate(12.000000, 10.707409) rotate(-135.000000) translate(-12.000000, -10.707409)"/>
+                                            <rect fill="#000000" opacity="0.3" x="5" y="20" width="15" height="2" rx="1"/>
+                                        </g>
+                                    </svg>
+                                </span>
+
+                                <span class="svg-icon ${activateBtnColor} svg-icon-2x"
+                                    style="cursor:pointer;"
+                                    onclick="changeEtatTache(${row.id}, ${row.nombre_utilisateurs || 0})"
+                                    title="${activateBtnText} la tâche.">
+                                    <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
+                                        <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                            <rect x="0" y="0" width="24" height="24"/>
+                                            <circle fill="#000000" opacity="0.3" cx="12" cy="12" r="10"/>
+                                            <path d="M12.0355339,10.6213203 L14.863961,7.79289322 C15.2544853,7.40236893 15.8876503,7.40236893 16.2781746,7.79289322 C16.6686989,8.18341751 16.6686989,8.81658249 16.2781746,9.20710678 L13.4497475,12.0355339 L16.2781746,14.863961 C16.6686989,15.2544853 16.6686989,15.8876503 16.2781746,16.2781746 C15.8876503,16.6686989 15.2544853,16.6686989 14.863961,16.2781746 L12.0355339,13.4497475 L9.20710678,16.2781746 C8.81658249,16.6686989 8.18341751,16.6686989 7.79289322,16.2781746 C7.40236893,15.8876503 7.40236893,15.2544853 7.79289322,14.863961 L10.6213203,12.0355339 L7.79289322,9.20710678 C7.40236893,8.81658249 7.40236893,8.18341751 7.79289322,7.79289322 C8.18341751,7.40236893 8.81658249,7.40236893 9.20710678,7.79289322 L12.0355339,10.6213203 Z" fill="#000000"/>
+                                        </g>
+                                    </svg>
+                                </span>
+
+                                <a href="${row.url + '?id=' + urlencoded}" target="_blank"
+                                    title="Aller à la tâche.">
+                                    <span class="svg-icon svg-icon-info svg-icon-2x" style="cursor:pointer;">
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">
+                                            <g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">
+                                                <rect x="0" y="0" width="24" height="24"/>
+                                                <path d="M14.0069431,7.00607258 C13.4546584,7.00607258 13.0069431,6.55855153 13.0069431,6.00650634 C13.0069431,5.45446114 13.4546584,5.00694009 14.0069431,5.00694009 L15.0069431,5.00694009 C17.2160821,5.00694009 19.0069431,6.7970243 19.0069431,9.00520507 L19.0069431,15.001735 C19.0069431,17.2099158 17.2160821,19 15.0069431,19 L3.00694311,19 C0.797804106,19 -0.993056895,17.2099158 -0.993056895,15.001735 L-0.993056895,8.99826498 C-0.993056895,6.7900842 0.797804106,5 3.00694311,5 L4.00694793,5 C4.55923268,5 5.00694793,5.44752105 5.00694793,5.99956624 C5.00694793,6.55161144 4.55923268,6.99913249 4.00694793,6.99913249 L3.00694311,6.99913249 C1.90237361,6.99913249 1.00694311,7.89417459 1.00694311,8.99826498 L1.00694311,15.001735 C1.00694311,16.1058254 1.90237361,17.0008675 3.00694311,17.0008675 L15.0069431,17.0008675 C16.1115126,17.0008675 17.0069431,16.1058254 17.0069431,15.001735 L17.0069431,9.00520507 C17.0069431,7.90111468 16.1115126,7.00607258 15.0069431,7.00607258 L14.0069431,7.00607258 Z" fill="#000000" fill-rule="nonzero" opacity="0.3" transform="translate(9.006943, 12.000000) scale(-1, 1) rotate(-90.000000) translate(-9.006943, -12.000000)"/>
+                                                <rect fill="#000000" opacity="0.3" transform="translate(14.000000, 12.000000) rotate(-270.000000) translate(-14.000000, -12.000000)" x="13" y="6" width="2" height="12" rx="1"/>
+                                                <path d="M21.7928932,9.79289322 C22.1834175,9.40236893 22.8165825,9.40236893 23.2071068,9.79289322 C23.5976311,10.1834175 23.5976311,10.8165825 23.2071068,11.2071068 L20.2071068,14.2071068 C19.8165825,14.5976311 19.1834175,14.5976311 18.7928932,14.2071068 L15.7928932,11.2071068 C15.4023689,10.8165825 15.4023689,10.1834175 15.7928932,9.79289322 C16.1834175,9.40236893 16.8165825,9.40236893 17.2071068,9.79289322 L19.5,12.0857864 L21.7928932,9.79289322 Z" fill="#000000" fill-rule="nonzero" transform="translate(19.500000, 12.000000) rotate(-90.000000) translate(-19.500000, -12.000000)"/>
+                                            </g>
+                                        </svg>
+                                    </span>
+                                </a>
+                            </div>`;
                     }
                 }
             ],
@@ -285,801 +293,886 @@ KTUtil.onDOMContentLoaded(function () {
 // ==================================================
 $(document).ready(function () {
     _resetLoaderSync();
-    showLoader("Chargement des sous menus...");
+    showLoader("Chargement des tâches...");
 
-    $.ajax({
-        type: 'POST',
-        url:  '/personnel/admin-controller',
-        data: { option: 14 },
-        success: function (data) {
-            if (typeof data === 'string' && data.substr(0, 7) === "<option") {
-                $('#idTypeTache').html(data.substr(4));
-                $('#type_tache').html(data.substr(4));
+    // Compteur pour synchroniser les N appels ajax avec le loader
+    var ajaxTotal = 6;
+    var ajaxDone  = 0;
 
-            } else {
-                $('#idTypeTache').html('');
-                $('#type_tache').html('');
-            }
+    function ajaxLoaderDone() {
+        ajaxDone++;
+        if (ajaxDone >= ajaxTotal) {
             _loaderSync.statsReady = true;
             _checkCloseLoader();
+        }
+    }
+
+    // Option 14 — Types de tâche
+    $.ajax({
+        type: 'POST', url: '/personnel/admin-controller', data: { option: 14 },
+        success: function (data) {
+            if (typeof data === 'string' && data.substr(0, 7) === '<option') {
+                $('#idTypeTache').html(data);
+            } else {
+                $('#idTypeTache').html('<option value="">Sélectionner un type</option>');
+            }
+            ajaxLoaderDone();
         },
         error: function () {
-            _loaderSync.statsReady = true;
-            _checkCloseLoader();
-            Swal.fire('Erreur', "Impossible de charger les icônes.", 'error');
+            ajaxLoaderDone();
+            Swal.fire('Erreur', "Impossible de charger les types de tâche.", 'error');
         }
     });
 
-
+    // Option 15 — Fonctions
     $.ajax({
-        type: 'POST',
-        url:  '/personnel/admin-controller',
-        data: { option: 15 },
+        type: 'POST', url: '/personnel/admin-controller', data: { option: 15 },
         success: function (data) {
-            alert(data);
-            if (typeof data === 'string' && data.substr(0, 7) === "<option") {
-                $('#id_fonction').html(data.substr(4));
+            if (typeof data === 'string' && data.substr(0, 7) === '<option') {
+                $('#id_fonction').html(data);
             } else {
-                $('#id_fonction').html('');
+                $('#id_fonction').html('<option value="">Sélectionner une fonction</option>');
             }
-            _loaderSync.statsReady = true;
-            _checkCloseLoader();
+            ajaxLoaderDone();
         },
         error: function () {
-            _loaderSync.statsReady = true;
-            _checkCloseLoader();
-            Swal.fire('Erreur', "Impossible de charger les icônes.", 'error');
+            ajaxLoaderDone();
+            Swal.fire('Erreur', "Impossible de charger les fonctions.", 'error');
         }
     });
 
-
+    // Option 16 — Sous menus
     $.ajax({
-        type: 'POST',
-        url:  '/personnel/admin-controller',
-        data: { option: 16 },
+        type: 'POST', url: '/personnel/admin-controller', data: { option: 16 },
         success: function (data) {
-
-            alert(data);
-            if (typeof data === 'string' && data.substr(0, 7) === "<option") {
-                $('#idSousMenu').html(data.substr(4));
-                $('#sous_menu_tache').html(data.substr(4));
+            if (typeof data === 'string' && data.substr(0, 7) === '<option') {
+                $('#idSousMenu').html(data);
+                $('#sous_menu_tache').html(data);
             } else {
-                $('#idSousMenu').html('');
+                $('#idSousMenu').html('<option value="">Sélectionner un sous menu</option>');
                 $('#sous_menu_tache').html('');
-
             }
-            _loaderSync.statsReady = true;
-            _checkCloseLoader();
+            ajaxLoaderDone();
         },
         error: function () {
-            _loaderSync.statsReady = true;
-            _checkCloseLoader();
-            Swal.fire('Erreur', "Impossible de charger les icônes.", 'error');
+            ajaxLoaderDone();
+            Swal.fire('Erreur', "Impossible de charger les sous menus.", 'error');
         }
     });
 
+    // Option 17 — Icônes (Select2 spécial)
     $.ajax({
-        type: 'POST',
-        url:  '/personnel/admin-controller',
-        data: { option: 17 },
+        type: 'POST', url: '/personnel/admin-controller', data: { option: 17 },
         success: function (data) {
             if (typeof data === 'string' && data.trim() !== '') {
-
-                // Injecter les options
                 $('#id_icon_tache').html(data);
-
-                // Initialiser Select2 avec rendu icône
-                $('#id_icon_tache').select2({
-                    escapeMarkup: function(m) { return m; },
-                    templateResult: function(option) {
-                        if (!option.id) return option.text;
-
-                        var icon = $(option.element).data('icon');
-                        if (!icon) return option.text;
-
-                        return $(
-                            '<span style="display:flex;align-items:center;gap:8px;">' +
-                            icon +
-                            '</span>'
-                        );
-                    },
-                    templateSelection: function(option) {
-                        if (!option.id) return option.text;
-
-                        var icon = $(option.element).data('icon');
-                        if (!icon) return option.text;
-
-                        return $(
-                            '<span style="display:flex;align-items:center;gap:8px;">' +
-                            icon +
-                            '</span>'
-                        );
-                    }
-                });
-
             } else {
                 $('#id_icon_tache').html('<option value="">Aucune icône disponible</option>');
             }
 
-            _loaderSync.statsReady = true;
-            _checkCloseLoader();
+            $('#id_icon_tache').select2({
+                escapeMarkup: function (m) { return m; },
+                templateResult: function (option) {
+                    if (!option.id) return option.text;
+                    var icon = $(option.element).data('icon');
+                    if (!icon) return option.text;
+                    return $('<span style="display:flex;align-items:center;gap:8px;">' + icon + '</span>');
+                },
+                templateSelection: function (option) {
+                    if (!option.id) return option.text;
+                    var icon = $(option.element).data('icon');
+                    if (!icon) return option.text;
+                    return $('<span style="display:flex;align-items:center;gap:8px;">' + icon + '</span>');
+                }
+            });
+
+            ajaxLoaderDone();
         },
         error: function () {
-            _loaderSync.statsReady = true;
-            _checkCloseLoader();
+            ajaxLoaderDone();
             Swal.fire('Erreur', "Impossible de charger les icônes.", 'error');
         }
     });
 
+    // Option 18 — Bases de données
     $.ajax({
-        type: 'POST',
-        url:  '/personnel/admin-controller',
-        data: { option: 18 },
+        type: 'POST', url: '/personnel/admin-controller', data: { option: 18 },
         success: function (data) {
-
-            alert(data);
-            if (typeof data === 'string' && data.substr(0, 7) === "<option") {
-                $('#idDB').html(data.substr(4));
+            if (typeof data === 'string' && data.substr(0, 7) === '<option') {
+                $('#idBD').html(data);
             } else {
-                $('#idDB').html('');
+                $('#idBD').html('<option value="">Sélectionner une base de données</option>');
             }
-            _loaderSync.statsReady = true;
-            _checkCloseLoader();
+            ajaxLoaderDone();
         },
         error: function () {
-            _loaderSync.statsReady = true;
-            _checkCloseLoader();
-            Swal.fire('Erreur', "Impossible de charger les icônes.", 'error');
+            ajaxLoaderDone();
+            Swal.fire('Erreur', "Impossible de charger les bases de données.", 'error');
         }
     });
 
-
-    $('.select2-icon').select2({
-        templateResult: formatIcon,
-        templateSelection: formatIcon
-    });
-
-    // Validation HTML5 + custom feedback
-    $('#tacheForm').on('submit', function(e) {
-        let valid = true;
-
-        if (!$('#id_icon_tache').val()) {
-            $('#id_icon_tache').addClass('is-invalid');
-            $('#validationid_icon_tacheFeedback').show();
-            valid = false;
-        } else {
-            $('#id_icon_tache').removeClass('is-invalid');
-            $('#validationid_icon_tacheFeedback').hide();
+    // Option 23 — Applications
+    $.ajax({
+        type: 'POST', url: '/personnel/admin-controller', data: { option: 23 },
+        success: function (data) {
+            if (typeof data === 'string' && data.substr(0, 7) === '<option') {
+                $('#idAppli').html(data);
+            } else {
+                $('#idAppli').html('<option value="">Sélectionner l\'application</option>');
+            }
+            ajaxLoaderDone();
+        },
+        error: function () {
+            ajaxLoaderDone();
+            Swal.fire('Erreur', "Impossible de charger les applications.", 'error');
         }
-        if (!valid) e.preventDefault();
-    });
-
-    $('#idSousMenu').on('change', function() {
-        if ($(this).val()) {
-            $(this).removeClass('is-invalid');
-            $('#validationidSousMenuFeedback').hide();
-        }
-    });
-    $('#id_icon_tache').on('change', function() {
-        if ($(this).val()) {
-            $(this).removeClass('is-invalid');
-            $('#validationid_icon_tacheFeedback').hide();
-        }
-    });
-
-    // Réinitialise Select2 lors du reset du formulaire
-    $('#tacheForm').on('reset', function() {
-        $('#id_icon_tache').val('').trigger('change');
     });
 });
 
+// ==================================================
+// TYPE TACHE
+// ==================================================
+function type_tache(value) {
+    const box_niv      = document.getElementById('box_niv');
+    const box_ua       = document.getElementById('box_ua');
+    const box_fonction = document.getElementById('box_fonction');
 
+    box_niv.classList.add('d-none');
+    box_ua.classList.add('d-none');
+    box_fonction.classList.add('d-none');
 
-function formatIcon(option) {
-    if (!option.id) return option.text;
-    var svgIcon = $(option.element).data('icon');
-    var $wrapper = $('<span></span>');
-    $wrapper.append(option.text);
-    return $wrapper;
-}
+    $('#nivUA').val('').trigger('change');
+    $('#id_fonction').val('').trigger('change');
+    $('#idUA').html('<option value="">Sélectionner une unité administrative</option>');
 
-function updateIconPreview(select) {
-    const selectedOption = select.options[select.selectedIndex];
-    const preview = document.getElementById("iconPreview");
-    if (selectedOption.value) {
-        preview.innerHTML = `
-                                            <span class="menu-icon">
-                                                <span class="svg-icon svg-icon-2">
-                                                    ${selectedOption.getAttribute("data-svg")}
-                                                </span>
-                                                ${selectedOption.text}
-                                            </span>
-                                        `;
-    } else {
-        preview.innerHTML = "";
+    if (value == 1) {
+        box_fonction.classList.remove('d-none');
+    } else if (value == 2) {
+        box_niv.classList.remove('d-none');
+        box_ua.classList.remove('d-none');
+    }
+    // value == 3 ou vide → tout caché
+
+    if (typeof validator1 !== 'undefined') {
+        validator1.revalidateField('id_fonction');
+        validator1.revalidateField('nivUA');
+        validator1.revalidateField('idUA');
     }
 }
 
+// ==================================================
+// UNITE ADMINISTRATIVE
+// ==================================================
+function actionUniteAdministrative(nivUA) {
+    $.ajax({
+        type: 'POST',
+        url:  '/personnel/admin-controller',
+        data: { option: 20, nivUA: nivUA },
+        success: function (data) {
+            if (typeof data === 'string' && data.substr(0, 7) === '<option') {
+                $('#idUA').html(data);
+            } else {
+                $('#idUA').html('<option value="">Sélectionner une unité administrative</option>');
+            }
+            if (typeof validator1 !== 'undefined') {
+                validator1.revalidateField('idUA');
+            }
+        },
+        error: function () {
+            Swal.fire('Erreur', "Impossible de charger les unités administratives.", 'error');
+        }
+    });
+}
 
-
-// ✅ Correct avec Select2
-$('#id_icon_tache').on('select2:select select2:unselect', function(e) {
+// ==================================================
+// APERCU ICONE
+// ==================================================
+$('#id_icon_tache').on('select2:select select2:unselect', function () {
     const selectedOption = this.options[this.selectedIndex];
     const iconPreview    = document.getElementById("iconPreview");
 
     if (selectedOption && selectedOption.value) {
         const icon = $(selectedOption).data('icon');
-
-        if (icon) {
-            iconPreview.innerHTML = '<span class="icon-preview">' + icon + '</span>';
-        } else {
-            iconPreview.innerHTML = '';
-        }
+        iconPreview.innerHTML = icon ? '<span class="icon-preview">' + icon + '</span>' : '';
     } else {
         iconPreview.innerHTML = '';
     }
+
+    if (typeof validator1 !== 'undefined') {
+        validator1.revalidateField('idIcon');
+    }
 });
 
-function ajouterTaches() {
-    $('#add_tache').modal('show');
-}
+// ==================================================
+// SOUS MENU ↔ ICONE
+// ==================================================
+// SOUS MENU ↔ ICONE
+// ==================================================
+$('#idSousMenu').on('select2:select select2:unselect', function () {
+    const sousMenu      = $(this).val();
+    const iconWrapper   = document.getElementById('iconSelectWrapper'); // ✅
+    const iconPreview   = document.getElementById('iconPreview');
 
-
-
-
-function submitForm() {
-    // Sélectionner tous les boutons de soumission des formulaires
-
-    // Récupérer le formulaire
-    const form = document.getElementById('tacheForm');
-    // vérifier si les champs obligatoires contenant l'attribut required sont remplis
-    const requiredFields = form.querySelectorAll('[required]');
-    let allFieldsFilled = true;
-    requiredFields.forEach(field => {
-        if (!field.value) {
-            allFieldsFilled = false;
-            field.classList.add('is-invalid'); // Ajoute une classe d'erreur si le champ est vide
-        } else {
-            field.classList.remove('is-invalid'); // Supprime la classe d'erreur si le champ est rempli
-        }
-    });
-    const typeTache = document.getElementById('type_tache').value;
-    if (typeTache == 1) {
-        const niveauUA = document.getElementById('nivUA').value;
-        const id_UA = document.getElementById('id_UA').value;
-        if (!niveauUA) {
-            allFieldsFilled = false;
-            document.getElementById('nivUA').classList.add('is-invalid');
-        }
-        if (!id_UA) {
-            allFieldsFilled = false;
-            document.getElementById('id_UA').classList.add('is-invalid');
-        }
-    }
-    if (typeTache == 2) {
-        const fonction = document.getElementById('id_fonction');
-        if (fonction) {
-            if (fonction.value.trim() === "") {
-                allFieldsFilled = false;
-                fonction.classList.add('is-invalid');
-                return;
-            } else {
-                allFieldsFilled = true
-                fonction.classList.remove('is-invalid');
-            }
-        }
-    }
-    const id_icon_tache = document.getElementById('id_icon_tache');
-    const idSousMenu = document.getElementById('idSousMenu');
-    // Si le sous-menu est vide, rendre id_icon_tache requis
-    if (id_icon_tache) {
-        if (!idSousMenu.value) {
-            id_icon_tache.setAttribute('required', 'required');
-        } else {
-            id_icon_tache.removeAttribute('required');
-        }
-    }
-    // Les deux champs doivent être remplis (non vides)
-    if (!id_icon_tache.value && !idSousMenu.value) {
-        allFieldsFilled = false;
-
-        if (!id_icon_tache.value) {
-            id_icon_tache.classList.add('is-invalid');
-        } else {
-            id_icon_tache.classList.remove('is-invalid');
-        }
-        return;
+    if (sousMenu && sousMenu !== '') {
+        $('#id_icon_tache').val('').trigger('change');
+        iconWrapper.style.opacity       = '0.5';
+        iconWrapper.style.pointerEvents = 'none';
+        iconPreview.innerHTML = '';
     } else {
-        id_icon_tache.classList.remove('is-invalid');
+        iconWrapper.style.opacity       = '1';
+        iconWrapper.style.pointerEvents = 'auto';
     }
 
-    if (!form) {
-        console.error("Formulaire introuvable !");
-        return;
+    if (typeof validator1 !== 'undefined') {
+        validator1.revalidateField('idIcon');
+    }
+});
+
+// ==================================================
+// VALIDATION FORMULAIRE
+// ==================================================
+var form1     = document.getElementById('formAddTache');
+var validator1 = FormValidation.formValidation(form1, {
+    fields: {
+        nom: {
+            validators: {
+                notEmpty: { message: 'Le nom est obligatoire. Veuillez le renseigner.' }
+            }
+        },
+        idTypeTache: {
+            validators: {
+                notEmpty: { message: 'Le type de tâche est obligatoire.' }
+            }
+        },
+
+        idIcon: {
+            validators: {
+                callback: {
+                    message: "L'icône est obligatoire si aucun sous-menu n'est sélectionné.",
+                    callback: function () {
+                        const sousMenu = document.getElementById('idSousMenu').value;
+                        const icon     = document.getElementById('id_icon_tache').value;
+                        if (sousMenu && sousMenu !== '') return true;
+                        return icon && icon !== '';
+                    }
+                }
+            }
+        },
+        url: {
+            validators: {
+                notEmpty: { message: "L'URL est obligatoire." }
+            },
+            uri: {
+                message: "Veuillez saisir une URL valide."
+            }
+        },
+        id_fonction: {
+            validators: {
+                callback: {
+                    message: 'La fonction est obligatoire.',
+                    callback: function () {
+                        const type     = document.getElementById('idTypeTache').value;
+                        const fonction = document.getElementById('id_fonction').value;
+                        if (type == 1) return fonction && fonction !== '';
+                        return true;
+                    }
+                }
+            }
+        },
+        nivUA: {
+            validators: {
+                callback: {
+                    message: 'Le niveau est obligatoire.',
+                    callback: function () {
+                        const type   = document.getElementById('idTypeTache').value;
+                        const niveau = document.getElementById('nivUA').value;
+                        if (type == 2) return niveau && niveau !== '';
+                        return true;
+                    }
+                }
+            }
+        },
+        idUA: {
+            validators: {
+                callback: {
+                    message: "L'unité administrative est obligatoire.",
+                    callback: function () {
+                        const type = document.getElementById('idTypeTache').value;
+                        const ua   = document.getElementById('idUA').value;
+                        if (type == 2) return ua && ua !== '';
+                        return true;
+                    }
+                }
+            }
+        },
+        idBD: {
+            validators: {
+                notEmpty: { message: 'La base de données est obligatoire.' }
+            }
+        },
+        idAppli: {
+            validators: {
+                notEmpty: { message: 'L\'application est obligatoire.' }
+            }
+        },
+    },
+    plugins: {
+        trigger:   new FormValidation.plugins.Trigger(),
+        bootstrap: new FormValidation.plugins.Bootstrap5({
+            rowSelector:     '.mb-3',
+            eleInvalidClass: '',
+            eleValidClass:   ''
+        })
+    }
+});
+
+// ==================================================
+// SOUMISSION
+// ==================================================
+var submitButton1 = document.getElementById('formAddTache_submit');
+
+submitButton1.addEventListener('click', function (e) {
+    e.preventDefault();
+    if (!validator1) return;
+
+    validator1.validate().then(function (status) {
+        if (status !== 'Valid') return;
+
+        submitButton1.disabled  = true;
+        var originalText        = submitButton1.innerHTML;
+        submitButton1.innerHTML = '<span class="indicator-progress d-inline">Veuillez patienter... <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>';
+
+        $.ajax({
+            type: 'POST',
+            url:  '/personnel/admin-controller',
+            data: $('#formAddTache').serialize(),
+            success: function (resp) {
+
+                alert(resp);
+                submitButton1.disabled  = false;
+                submitButton1.innerHTML = originalText;
+
+                var trimmed = (resp || '').trim();
+
+                if (trimmed === 'sessionExpired') {
+                    window.location.href = '/personnel/signin';
+
+                } else if (trimmed === 'succès') {
+                    $('#kt_modal_add_tache').modal('hide');
+                    Swal.fire({
+                        icon:               'success',
+                        title:              'Succès !',
+                        text:               'La tâche a été enregistrée avec succès.',
+                        confirmButtonColor: '#113B26',
+                        timer:              2000,
+                        timerProgressBar:   true,
+                    }).then(function () {
+                        videAddTache();
+                        reloadAll();
+                    });
+
+                } else if (trimmed === 'existeTache') {
+                    showInputError('urlInput', 'Une tâche avec cette URL existe déjà.');
+                    document.getElementById('urlInput').addEventListener('input', function () {
+                        clearInputError('urlInput');
+                    }, { once: true });
+
+                } else if (trimmed === 'tacheExisteUnite') {
+                    showSwal('warning', 'Doublon', 'Une tâche avec ce nom, ce type et cette unité administrative existe déjà.');
+
+                } else if (trimmed === 'erreur') {
+                    $('#kt_modal_add_tache').modal('hide');
+                    showSwal('error', 'Erreur', "Une erreur est survenue lors de l'enregistrement.");
+
+                } else {
+                    console.warn('Réponse inattendue :', trimmed);
+                    $('#kt_modal_add_tache').modal('hide');
+                    showSwal('error', 'Erreur inattendue', 'Réponse serveur non reconnue : ' + trimmed);
+                }
+            },
+            error: function () {
+                submitButton1.disabled  = false;
+                submitButton1.innerHTML = originalText;
+                $('#kt_modal_add_tache').modal('hide');
+                showSwal('error', 'Erreur', "Une erreur est survenue lors de l'enregistrement.");
+            }
+        });
+    });
+});
+
+// ==================================================
+// VIDER / FERMER FORMULAIRE
+// ==================================================
+function videAddTache() {
+    type_tache('');
+
+    $('#idTypeTache, #nivUA, #id_fonction, #idSousMenu, #id_icon_tache, #idBD, #idAppli')
+        .val('').trigger('change');
+
+    document.getElementById('iconPreview').innerHTML = '';
+
+    // ✅
+    var iconWrapper = document.getElementById('iconSelectWrapper');
+    if (iconWrapper) {
+        iconWrapper.style.opacity       = '1';
+        iconWrapper.style.pointerEvents = 'auto';
     }
 
-    // Créer un objet FormData pour récupérer les champs du formulaire
-    const formData = new FormData(form);
+    form1.reset();
+}
+function closeAddTache() {
+    videAddTache();
+    $('#kt_modal_add_tache').modal('hide');
+}
 
-    // Convertir FormData en objet simple
-    const data = {};
-    formData.forEach((value, key) => {
-        data[key] = value;
+function ajouterTaches() {
+    videAddTache();
+    $('#kt_modal_add_tache').modal('show');
+}
+
+
+// editer
+
+
+// ==================================================
+// COPIER LES OPTIONS DANS LE FORMULAIRE EDIT
+// ==================================================
+function copyOptionsToEdit() {
+    // Copier les options de chaque select du formulaire add vers edit
+    var selects = [
+        { from: '#idTypeTache',  to: '#edit_idTypeTache'  },
+        { from: '#id_fonction',  to: '#edit_id_fonction'  },
+        { from: '#idSousMenu',   to: '#edit_idSousMenu'   },
+        { from: '#id_icon_tache',to: '#edit_id_icon_tache'},
+        { from: '#idBD',         to: '#edit_idBD'         },
+        { from: '#idAppli',      to: '#edit_idAppli'      },
+    ];
+
+    selects.forEach(function(s) {
+        var fromHtml = $(s.from).html();
+        $(s.to).html(fromHtml);
     });
 
-    if (data.idTypeTache == 3) {
-        data.niveau_UA = null; // Réinitialiser le niveau UA
-
-        const niveauUA = document.getElementById('nivUA');
-        const id_UA = document.getElementById('id_UA');
-        if (!niveauUA) {
-            allFieldsFilled = true;
-        }
-        if (!id_UA) {
-            allFieldsFilled = true;
-        }
-    }
-    // Validation de l'URL
-    const urlInput = document.getElementById("urlInput");
-    const urlRegex = /^(https?:\/\/)?([\p{L}\p{N}_-]+\.)+[\p{L}\p{N}_-]{2,}(\/[\p{L}\p{N}\-._~:/?#[\]@!$&'()*+,;=%]*)?$/u;
-
-    if (urlInput) {
-        const urlValue = urlInput.value.trim();
-        if (!urlRegex.test(urlValue)) {
-            allFieldsFilled = false;
-            urlInput.classList.add('is-invalid');
-            const feedback = document.getElementById('validationUrlFeedback');
-            if (feedback) feedback.textContent = "Veuillez entrer une URL valide.";
-        } else {
-            urlInput.classList.remove('is-invalid');
-            urlInput.classList.add('is-valid');
-        }
-    }
-    console.log("Données envoyées :", data);
-    console.log("Type de tâche :", data.idTypeTache);
-    console.log("Tous les champs remplis :", allFieldsFilled);
-
-
-    if (allFieldsFilled) {
-
-        const submitButton = document.querySelector('.submitButton');
-        submitButton.disabled = true;
-
-        // Optionnel : Ajouter un indicateur de chargement
-        const originalText = submitButton.innerHTML;
-        submitButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> En cours...';
-
-        const queryString = new URLSearchParams(data).toString();
-
-        // Envoyer les données via Fetch API vers le backend (controller.php)
-        // Envoyer les données via Fetch API avec la méthode POST vers le backend (controller.php)
-        fetch('/personnel/admin-controller', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/x-www-form-urlencoded',
-            },
-            body: new URLSearchParams(data).toString()
-        }).then(response => {
-            if (!response.ok) {
-                throw new Error(`Erreur HTTP : ${response.status}`);
-            }
-            return response.json(); // Traiter la réponse comme JSON
-        })
-            .then(result => {
-                console.log("Réponse du serveur :", result);
-                submitButton.disabled = false;
-                submitButton.innerHTML = originalText; // Réinitialiser le texte du bouton
-                if (result.success) {
-                    Swal.fire({
-                        position: "center",
-                        icon: "success",
-                        title: result.message || "Tâche ajoutée avec succès !",
-                        showConfirmButton: false,
-                        timer: 1500
-                    });
-                    window.location.reload()
-
-                    // Réinitialiser le formulaire
-                    form.reset();
-
-                    // Fermer le modal
-                    const modal = bootstrap.Modal.getInstance(document.getElementById("add_tache"));
-                    if (modal) {
-                        modal.hide();
-                    }
-
-                    // Rafraîchir la liste des tâches
-                    KTDatatablesTache.init();
-                    KTDatatablesTacheQualification.init();
-                    getTacheQualification()
-                } else {
-                    Swal.fire({
-                        icon: 'error',
-                        title: 'Erreur',
-                        text: result.message || "Une erreur est survenue lors de l'ajout de la tâche.",
-                    });
-                }
-            })
-            .catch(error => {
-                console.error("Erreur lors de la requête :", error);
-                Swal.fire({
-                    icon: 'error',
-                    title: 'Erreur',
-                    text: "Une erreur est survenue lors de la soumission du formulaire.",
-                });
-            });
-    }
-}
-
-
-//Choix type tache
-async function type_tache(choix) {
-    const niveauUAElement = document.getElementById('niveau_UA');
-
-    const selected_UA = document.getElementById('selected_UA');
-    selected_UA.innerHTML = ''; // Réinitialise le contenu de l'élément
-    niveauUAElement.style.display = 'none'; // Affiche l'élément
-    if ( choix == 1) {
-        niveauUAElement.style.display = 'block'; // Masque l'élément
-        niveauUAElement.innerHTML = `
-                                <label class="form-label">Unite Administrative</label>
-
-    <select name="niveau_UA" id="nivUA" class="form-select" required aria-label="select example"  onchange="get_UA(this.value)" >
-                                    <option value="">Selectionner un niveau</option>
-                                    <option value="1">Niveau 1</option>
-                                    <option value="2">Niveau 2</option>
-                                    <option value="3">Niveau 3</option>
-
-                                </select>
-<div class="invalid-feedback">Veuillez choisir le niveau de l'unité administrative.</div>
-    `
-    }
-    if (choix == 2){
-        document.getElementById('id_fonction').setAttribute('required', 'required');
-        document.getElementById('selected_fonction').classList.remove('d-none')
-    }else{
-        document.getElementById('id_fonction').removeAttribute('required');
-        document.getElementById('selected_fonction').classList.add('d-none');
-    }
-
-    console.log(choix);
-}
-
-//Affichage des elements de l'unité administrative correspondant
-function get_UA(UA_value) {
-    const selected_UA = document.getElementById('selected_UA');
-    selected_UA.innerHTML = ''; // Réinitialise le contenu de l'élément
-
-    const select = document.createElement('select');
-    select.classList.add('form-control'); // Ajoute la classe au select
-    // Ajouter l'attribut id à l'élément select
-    select.setAttribute('id', 'id_UA'); // Ajoute l'ID à l'élément select
-
-    // Rendre le champ obligatoire
-
-    select.name = 'id_UA'
-    select.setAttribute('required', 'required'); // Rendre le champ obligatoire
-    select.innerHTML = `
-  <option value="">Selectionner une unité administrative</option>`; // Ajoute une option par défaut
-    let data = {
-        option: 20,
-        niveau: UA_value, // Peut-être 1, 2, ou 3
-    };
-
-    fetch('/personnel/admin-controller', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/x-www-form-urlencoded',
+    // Réinitialiser Select2 sur le select icône edit avec le même template
+    $('#edit_id_icon_tache').select2({
+        escapeMarkup: function (m) { return m; },
+        templateResult: function (option) {
+            if (!option.id) return option.text;
+            var icon = $(option.element).data('icon');
+            if (!icon) return option.text;
+            return $('<span style="display:flex;align-items:center;gap:8px;">' + icon + '</span>');
         },
-        body: new URLSearchParams(data).toString()
-    }).then((response) => {
-        if (!response.ok) {
-            throw new Error('Network response was not ok');
+        templateSelection: function (option) {
+            if (!option.id) return option.text;
+            var icon = $(option.element).data('icon');
+            if (!icon) return option.text;
+            return $('<span style="display:flex;align-items:center;gap:8px;">' + icon + '</span>');
         }
-        return response.json();
-    })
-        .then((data) => {
-            console.log(data);
-
-            // Traiter les données en fonction du niveau reçu
-            data.forEach((element) => {
-                if (element.sans == 0 ) {
-
-                    const option = document.createElement('option');
-                    option.classList.add('form-control'); // Ajoute la classe au select
-                    option.setAttribute('required', ''); // Rendre le champ obligatoire
-
-
-
-                    // Affiche des informations distinctes en fonction du niveau
-                    if (UA_value == 1) {
-                        option.value = element.id;
-                        option.innerHTML = element.niveau1;
-                    } else if (UA_value == 2) {
-                        option.value = element.id;
-                        option.innerHTML = element.niveau2;
-                    } else if (UA_value == 3) {
-                        option.value = element.id;
-                        option.innerHTML = element.niveau3;
-                    }
-                    console.log(option.value)
-                    select.appendChild(option);
-                }
-            });
-
-            selected_UA.appendChild(select); // Ajoute le select au DOM une fois qu'il est complet
-        })
-        .catch((error) => {
-            console.error('Error fetching data:', error);
-        });
+    });
 }
 
+// ==================================================
+// TYPE TACHE EDIT
+// ==================================================
+function edit_type_tache(value) {
+    const box_niv      = document.getElementById('edit_box_niv');
+    const box_ua       = document.getElementById('edit_box_ua');
+    const box_fonction = document.getElementById('edit_box_fonction');
 
-// function get_detail_tache(id) {
-//     // Préparer les données pour la requête
-//     const data = {
-//         action: "get_one_tache",
-//         id: id,
-//     };
+    box_niv.classList.add('d-none');
+    box_ua.classList.add('d-none');
+    box_fonction.classList.add('d-none');
 
-//     const queryString = new URLSearchParams(data).toString();
+    $('#edit_nivUA').val('').trigger('change');
+    $('#edit_id_fonction').val('').trigger('change');
+    $('#edit_idUA').html('<option value="">Sélectionner une unité administrative</option>');
 
-//     // Récupérer les éléments du formulaire et du modal
-//     const form = document.getElementById("tacheForm");
-//     if (!form) {
-//         console.error("Formulaire introuvable !");
-//         return;
-//     }
+    if (value == 1) {
+        box_fonction.classList.remove('d-none');
+    } else if (value == 2) {
+        box_niv.classList.remove('d-none');
+        box_ua.classList.remove('d-none');
+    }
 
-//     const id_tache = form.querySelector('input[name="id"]');
-//     const nom = form.querySelector('input[name="nom"]');
-//     const typeTache = form.querySelector('select[name="idTypeTache"]');
-//     const sousMenu = form.querySelector('select[name="idSousMenu"]');
-//     const url = form.querySelector('input[name="url"]');
-//     const autreRessource = form.querySelector('textarea[name="autre_ressource"]');
-//     const commentaire = form.querySelector('textarea[name="commentaire"]');
-//     const idIcon = form.querySelector('select[name="idIcon"]');
-//     const actionInput = form.querySelector('input[name="option"]');
-//     const niveau_UA = form.querySelector('select[name="nivUA"]');
-//     const id_UA = form.querySelector('select[name="id_UA"]');
-//     const idFonction = form.querySelector('select[name="id_fonction"]');
-//     const idDB = form.querySelector('select[name="idDB"]');
+    if (typeof validator2 !== 'undefined') {
+        validator2.revalidateField('id_fonction');
+        validator2.revalidateField('nivUA');
+        validator2.revalidateField('idUA');
+    }
+}
 
+// ==================================================
+// UNITE ADMINISTRATIVE EDIT
+// ==================================================
+function editActionUniteAdministrative(nivUA) {
+    $.ajax({
+        type: 'POST',
+        url:  '/personnel/admin-controller',
+        data: { option: 20, nivUA: nivUA },
+        success: function (data) {
+            if (typeof data === 'string' && data.substr(0, 7) === '<option') {
+                $('#edit_idUA').html(data);
+            } else {
+                $('#edit_idUA').html('<option value="">Sélectionner une unité administrative</option>');
+            }
+            if (typeof validator2 !== 'undefined') {
+                validator2.revalidateField('idUA');
+            }
+        },
+        error: function () {
+            Swal.fire('Erreur', "Impossible de charger les unités administratives.", 'error');
+        }
+    });
+}
 
-//     !id_tache && alert("Veuillez renseigner l'identifiant de la tâche");
-//     !nom && alert("Veuillez renseigner le nom");
-//     !typeTache && alert("Veuillez renseigner le type de tâche");
-//     !sousMenu && alert("Veuillez renseigner le sous-menu");
-//     !url && alert("Veuillez renseigner l'URL");
-//     !autreRessource && alert("Veuillez renseigner l'autre ressource");
-//     !commentaire && alert("Veuillez renseigner le commentaire");
-//     !idIcon && alert("Veuillez renseigner l'icône");
-//     !actionInput && alert("Veuillez renseigner l'action");
+// ==================================================
+// APERCU ICONE EDIT
+// ==================================================
+$('#edit_id_icon_tache').on('select2:select select2:unselect', function () {
+    const selectedOption = this.options[this.selectedIndex];
+    const iconPreview    = document.getElementById("edit_iconPreview");
 
-//     // Vérifier si tous les éléments nécessaires sont présents
-//     if (!id_tache || !nom || !typeTache || !sousMenu || !url || !autreRessource || !commentaire || !idIcon || !actionInput) {
-//         console.error("Certains champs du formulaire sont introuvables !");
-//         return;
-//     }
+    if (selectedOption && selectedOption.value) {
+        const icon = $(selectedOption).data('icon');
+        iconPreview.innerHTML = icon ? '<span class="icon-preview">' + icon + '</span>' : '';
+    } else {
+        iconPreview.innerHTML = '';
+    }
 
-//     // Envoyer la requête pour récupérer les détails de la tâche
-//    fetch('/personnel/admin-controller', {
-//         method:  "POST",
-//         headers: { "Content-Type": "application/x-www-form-urlencoded" },
-//         body:    new URLSearchParams({ option: 21, id: id })
-//     })
-//         .then((response) => {
-//             if (!response.ok) {
-//                 throw new Error("Erreur lors de la récupération des détails de la tâche.");
-//             }
-//             return response.json();
-//         })
-//         .then((data) => {
-//             if (data && data && data[0]) {
-//                 const tache = data[0];
-//                 console.log("Détails de la tâche :", tache);
+    if (typeof validator2 !== 'undefined') {
+        validator2.revalidateField('idIcon');
+    }
+});
 
-//                 // Remplir les champs du formulaire avec les données récupérées
-//                 id_tache.value = id;
-//                 nom.value = tache.nom;
-//                 typeTache.value = tache.idTypeTache;
-//                 sousMenu.value = tache.idSousMenu;
-//                 url.value = tache.url || "";
-//                 autreRessource.value = tache.autre_ressource || "";
-//                 commentaire.value = tache.commentaire || "";
-//                 idIcon.value = tache.idIcon;
-//                 idFonction.value = tache.idFonction
-//                 idDB.value = tache.idDB || "";
+// ==================================================
+// SOUS MENU ↔ ICONE EDIT
+// ==================================================
+$('#edit_idSousMenu').on('select2:select select2:unselect', function () {
+    const sousMenu    = $(this).val();
+    const iconWrapper = document.getElementById('edit_iconSelectWrapper');
+    const iconPreview = document.getElementById('edit_iconPreview');
 
-//                 // Appeler la fonction type_tache
-//                 type_tache(tache.idTypeTache);
-//                 // id_qualification.textContent = tache.qualification;
+    if (sousMenu && sousMenu !== '') {
+        $('#edit_id_icon_tache').val('').trigger('change');
+        iconWrapper.style.opacity       = '0.5';
+        iconWrapper.style.pointerEvents = 'none';
+        iconPreview.innerHTML = '';
+    } else {
+        iconWrapper.style.opacity       = '1';
+        iconWrapper.style.pointerEvents = 'auto';
+    }
 
-//                 // 4. Modifier get_UA pour accepter une valeur présélectionnée
-//                 if (tache.idTypeTache == 1) {
-//                     // Gérer le niveau UA après un court délai
-//                     const niveau_UA = document.getElementById('nivUA');
-//                     if (tache.idUniteAdministrativeNiv1 !== null) {
-//                         niveau_UA.value = 1;
-//                     } else if (tache.idUniteAdministrativeNiv2 !== null) {
-//                         niveau_UA.value = 2;
-//                     } else if (tache.idUniteAdministrativeNiv3 !== null) {
-//                         niveau_UA.value = 3;
-//                     }
-//                     niveau_UA.dispatchEvent(new Event('change')); // Déclencher l'événement de changement
+    if (typeof validator2 !== 'undefined') {
+        validator2.revalidateField('idIcon');
+    }
+});
 
-//                     setTimeout(() => {
-
-//                         let idUASelect = document.getElementById('id_UA');
-//                         if (idUASelect) {
-//                             // Déterminer l'ID à présélectionner
-//                             let idToSelect;
-//                             if (tache.idUniteAdministrativeNiv1 !== null) {
-//                                 idToSelect = tache.idUniteAdministrativeNiv1;
-//                             } else if (tache.idUniteAdministrativeNiv2 !== null) {
-//                                 idToSelect = tache.idUniteAdministrativeNiv2;
-//                             } else if (tache.idUniteAdministrativeNiv3 !== null) {
-//                                 idToSelect = tache.idUniteAdministrativeNiv3;
-//                             }
-
-//                             if (idToSelect) {
-//                                 // Modifier get_UA pour accepter un paramètre optionnel
-//                                 idUASelect.value = idToSelect; // Mettre à jour la valeur du select
-//                             }
-//                         }
-//                     }, 1000);
-//                 }
-//                 // Mettre à jour l'aperçu de l'icône
-//                 document.getElementById('iconPreview').innerHTML = tache.icon || "";
-
-//                 // Modifier l'attribut "action" du formulaire
-//                 actionInput.value = "edit_tache";
-
-//                 // Ouvrir le modal avec l'ID "add_tache"
-//                 const modal = new bootstrap.Modal(document.getElementById("add_tache"));
-//                 modal.show();
-//             } else {
-//                 console.error("Aucune tâche trouvée avec cet ID.");
-//                 Swal.fire({
-//                     icon: "error",
-//                     title: "Erreur",
-//                     text: "Impossible de récupérer les détails de la tâche.",
-//                 });
-//             }
-//         })
-//         .catch((error) => {
-//             console.error("Erreur :", error);
-//             Swal.fire({
-//                 icon: "error",
-//                 title: "Erreur",
-//                 text: "Une erreur est survenue lors de la récupération des détails de la tâche.",
-//             });
-//         });
-// }
-
+// ==================================================
+// GET DETAIL TACHE → OUVRIR MODAL EDIT
+// ==================================================
 function get_detail_tache(id) {
 
-    const form = document.getElementById("tacheForm");
-    if (!form) {
-        console.error("Formulaire introuvable !");
-        return;
-    }
-
-    const id_tache       = form.querySelector('input[name="id"]');
-    const nom            = form.querySelector('input[name="nom"]');
-    const typeTache      = form.querySelector('select[name="idTypeTache"]');
-    const sousMenu       = form.querySelector('select[name="idSousMenu"]');
-    const url            = form.querySelector('input[name="url"]');
-    const autreRessource = form.querySelector('textarea[name="autre_ressource"]');
-    const commentaire    = form.querySelector('textarea[name="commentaire"]');
-    const idIcon         = form.querySelector('select[name="idIcon"]');
-    const actionInput    = form.querySelector('input[name="option"]');
-    const idFonction     = form.querySelector('select[name="id_fonction"]');
-    const idDB           = form.querySelector('select[name="idDB"]');
-
-    if (!id_tache || !nom || !typeTache || !sousMenu || !url || !autreRessource || !commentaire || !idIcon || !actionInput) {
-        console.error("Certains champs du formulaire sont introuvables !");
-        return;
-    }
+    copyOptionsToEdit();
 
     fetch('/personnel/admin-controller', {
-        method:  "POST",
-        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        method:  'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
         body:    new URLSearchParams({ option: 21, id: id })
     })
-        .then((response) => {
-            if (!response.ok) throw new Error("Erreur lors de la récupération des détails de la tâche.");
+        .then(function(response) {
+            if (!response.ok) throw new Error('Erreur réseau');
             return response.json();
         })
-        .then((data) => {
+        .then(function(data) {
             if (!data || !data[0]) {
-                console.error("Aucune tâche trouvée avec cet ID.");
-                Swal.fire({
-                    icon:  "error",
-                    title: "Erreur",
-                    text:  "Impossible de récupérer les détails de la tâche.",
-                });
+                Swal.fire('Erreur', 'Impossible de récupérer les détails de la tâche.', 'error');
                 return;
             }
 
             const tache = data[0];
-            console.log("Détails de la tâche :", tache);
 
-            // ── Champs simples ──────────────────────────────────────
-            id_tache.value       = id;
-            nom.value            = tache.nom            || "";
-            url.value            = tache.url            || "";
-            autreRessource.value = tache.autre_ressource || "";
-            commentaire.value    = tache.commentaire    || "";
-            actionInput.value    = "edit_tache";
+            // Champs simples
+            document.getElementById('edit_id_tache').value       = id;
+            document.getElementById('edit_nom').value            = tache.nom            || '';
+            document.getElementById('edit_urlInput').value       = tache.url            || '';
+            document.getElementById('edit_autre_ressource').value = tache.autre_ressource || '';
+            document.getElementById('edit_commentaire').value    = tache.commentaire    || '';
 
-            // ── Champs Select2 ──────────────────────────────────────
-            $(typeTache).val(tache.idTypeTache).trigger('change');
-            $(sousMenu).val(tache.idSousMenu).trigger('change');
-            $(idFonction).val(tache.idFonction || "").trigger('change');
-            $(idDB).val(tache.idDB || "").trigger('change');
+            // Select2
+            $('#edit_idTypeTache').val(tache.idTypeTache || '').trigger('change');
+            $('#edit_idSousMenu').val(tache.idSousMenu   || '').trigger('change');
+            $('#edit_id_fonction').val(tache.idFonction  || '').trigger('change');
+            $('#edit_idBD').val(tache.idDB               || '').trigger('change');
+            $('#edit_idAppli').val(tache.idAppli         || '').trigger('change');
 
-            // ── Icône Select2 + aperçu ──────────────────────────────
-            $(idIcon).val(tache.idIcon).trigger('change');
-
-            const selectedOption = idIcon.options[idIcon.selectedIndex];
-            const iconPreview    = document.getElementById("iconPreview");
-
-            if (selectedOption && selectedOption.value) {
-                const icon = $(selectedOption).data('icon');
+            // Icône + aperçu
+            $('#edit_id_icon_tache').val(tache.idIcon || '').trigger('change');
+            var selectedIconOpt = document.getElementById('edit_id_icon_tache');
+            var iconPreview     = document.getElementById('edit_iconPreview');
+            if (tache.idIcon) {
+                var opt  = selectedIconOpt.options[selectedIconOpt.selectedIndex];
+                var icon = opt ? $(opt).data('icon') : null;
                 iconPreview.innerHTML = icon
                     ? '<span class="icon-preview">' + icon + '</span>'
-                    : (tache.icon || "");
+                    : (tache.icon || '');
             } else {
-                iconPreview.innerHTML = tache.icon || "";
+                iconPreview.innerHTML = tache.icon || '';
             }
 
-            // ── Type tâche ──────────────────────────────────────────
-            type_tache(tache.idTypeTache);
+            // Bloquer icône si sous menu sélectionné
+            var iconWrapper = document.getElementById('edit_iconSelectWrapper');
+            if (tache.idSousMenu) {
+                iconWrapper.style.opacity       = '0.5';
+                iconWrapper.style.pointerEvents = 'none';
+            } else {
+                iconWrapper.style.opacity       = '1';
+                iconWrapper.style.pointerEvents = 'auto';
+            }
 
-            // ── Niveau UA (si type Structure) ───────────────────────
-            if (tache.idTypeTache == 1) {
-                const niveau_UA = document.getElementById('nivUA');
+            // Type tache → afficher bons champs
+            edit_type_tache(tache.idTypeTache);
 
-                if (tache.idUniteAdministrativeNiv1 !== null) {
-                    $(niveau_UA).val(1).trigger('change');
-                } else if (tache.idUniteAdministrativeNiv2 !== null) {
-                    $(niveau_UA).val(2).trigger('change');
-                } else if (tache.idUniteAdministrativeNiv3 !== null) {
-                    $(niveau_UA).val(3).trigger('change');
+            // Niveau UA
+            if (tache.idTypeTache == 2) {
+                var niveau = null;
+                if (tache.idUniteAdministrativeNiv1) niveau = 1;
+                else if (tache.idUniteAdministrativeNiv2) niveau = 2;
+                else if (tache.idUniteAdministrativeNiv3) niveau = 3;
+
+                if (niveau) {
+                    $('#edit_nivUA').val(niveau).trigger('change');
+
+                    // Charger les UA puis présélectionner
+                    var idToSelect = tache.idUniteAdministrativeNiv1
+                        || tache.idUniteAdministrativeNiv2
+                        || tache.idUniteAdministrativeNiv3;
+
+
+                    $.ajax({
+                        type: 'POST',
+                        url:  '/personnel/admin-controller',
+                        data: { option: 20, nivUA: niveau },
+                        success: function (resp) {
+
+                            alert(resp);
+
+                            alert(idToSelect);
+                            if (typeof resp === 'string' && resp.substr(0, 7) === '<option') {
+                                $('#edit_idUA').html(resp);
+                            }
+
+                            setTimeout(function () {
+                                $('#edit_idUA').val(idToSelect).trigger('change');
+                            }, 100);
+                        }
+                    });
                 }
-
-                setTimeout(() => {
-                    const idUASelect = document.getElementById('id_UA');
-                    if (!idUASelect) return;
-
-                    let idToSelect = null;
-
-                    if (tache.idUniteAdministrativeNiv1 !== null) {
-                        idToSelect = tache.idUniteAdministrativeNiv1;
-                    } else if (tache.idUniteAdministrativeNiv2 !== null) {
-                        idToSelect = tache.idUniteAdministrativeNiv2;
-                    } else if (tache.idUniteAdministrativeNiv3 !== null) {
-                        idToSelect = tache.idUniteAdministrativeNiv3;
-                    }
-
-                    if (idToSelect) {
-                        $(idUASelect).val(idToSelect).trigger('change');
-                    }
-                }, 1000);
             }
 
-            // ── Ouvrir le modal ─────────────────────────────────────
-            const modal = new bootstrap.Modal(document.getElementById("add_tache"));
-            modal.show();
+            // Ouvrir le modal
+            $('#kt_modal_edit_tache').modal('show');
         })
-        .catch((error) => {
-            console.error("Erreur :", error);
-            Swal.fire({
-                icon:  "error",
-                title: "Erreur",
-                text:  "Une erreur est survenue lors de la récupération des détails de la tâche.",
-            });
+        .catch(function() {
+            Swal.fire('Erreur', 'Une erreur est survenue lors de la récupération des détails.', 'error');
         });
 }
 
+// ==================================================
+// VIDER FORMULAIRE EDIT
+// ==================================================
+function videEditTache() {
+    edit_type_tache('');
+
+    $('#edit_idTypeTache, #edit_nivUA, #edit_id_fonction, #edit_idSousMenu, #edit_id_icon_tache, #edit_idBD, #edit_idAppli')
+        .val('').trigger('change');
+
+    document.getElementById('edit_iconPreview').innerHTML  = '';
+    document.getElementById('edit_id_tache').value         = '';
+    document.getElementById('edit_nom').value              = '';
+    document.getElementById('edit_urlInput').value         = '';
+    document.getElementById('edit_autre_ressource').value  = '';
+    document.getElementById('edit_commentaire').value      = '';
+
+    var iconWrapper = document.getElementById('edit_iconSelectWrapper');
+    if (iconWrapper) {
+        iconWrapper.style.opacity       = '1';
+        iconWrapper.style.pointerEvents = 'auto';
+    }
+}
+
+function closeEditTache() {
+    videEditTache();
+    $('#kt_modal_edit_tache').modal('hide');
+}
+
+// ==================================================
+// VALIDATION FORMULAIRE EDIT
+// ==================================================
+var form2      = document.getElementById('formEditTache');
+var validator2 = FormValidation.formValidation(form2, {
+    fields: {
+        nom: {
+            validators: {
+                notEmpty: { message: 'Le nom est obligatoire.' }
+            }
+        },
+        idTypeTache: {
+            validators: {
+                notEmpty: { message: 'Le type de tâche est obligatoire.' }
+            }
+        },
+        //idSousMenu: {
+          //  validators: {
+           //     notEmpty: { message: 'Le sous-menu est obligatoire.' }
+          //  }
+      //  },
+        idIcon: {
+            validators: {
+                callback: {
+                    message: "L'icône est obligatoire si aucun sous-menu n'est sélectionné.",
+                    callback: function () {
+                        const sousMenu = document.getElementById('edit_idSousMenu').value;
+                        const icon     = document.getElementById('edit_id_icon_tache').value;
+                        if (sousMenu && sousMenu !== '') return true;
+                        return icon && icon !== '';
+                    }
+                }
+            }
+        },
+        url: {
+            validators: {
+                notEmpty: { message: "L'URL est obligatoire." }
+            }
+        },
+        id_fonction: {
+            validators: {
+                callback: {
+                    message: 'La fonction est obligatoire.',
+                    callback: function () {
+                        const type     = document.getElementById('edit_idTypeTache').value;
+                        const fonction = document.getElementById('edit_id_fonction').value;
+                        if (type == 1) return fonction && fonction !== '';
+                        return true;
+                    }
+                }
+            }
+        },
+        nivUA: {
+            validators: {
+                callback: {
+                    message: 'Le niveau est obligatoire.',
+                    callback: function () {
+                        const type   = document.getElementById('edit_idTypeTache').value;
+                        const niveau = document.getElementById('edit_nivUA').value;
+                        if (type == 2) return niveau && niveau !== '';
+                        return true;
+                    }
+                }
+            }
+        },
+        idUA: {
+            validators: {
+                callback: {
+                    message: "L'unité administrative est obligatoire.",
+                    callback: function () {
+                        const type = document.getElementById('edit_idTypeTache').value;
+                        const ua   = document.getElementById('edit_idUA').value;
+                        if (type == 2) return ua && ua !== '';
+                        return true;
+                    }
+                }
+            }
+        },
+        idBD: {
+            validators: {
+                notEmpty: { message: 'La base de données est obligatoire.' }
+            }
+        },
+        idAppli: {
+            validators: {
+                notEmpty: { message: 'L\'application est obligatoire.' }
+            }
+        },
+    },
+
+    plugins: {
+        trigger:   new FormValidation.plugins.Trigger(),
+        bootstrap: new FormValidation.plugins.Bootstrap5({
+            rowSelector:     '.mb-3',
+            eleInvalidClass: '',
+            eleValidClass:   ''
+        })
+    }
+});
+
+// ==================================================
+// SOUMISSION UPDATE
+// ==================================================
+var submitButton2 = document.getElementById('formEditTache_submit');
+
+submitButton2.addEventListener('click', function (e) {
+    e.preventDefault();
+    if (!validator2) return;
+
+    validator2.validate().then(function (status) {
+        if (status !== 'Valid') return;
+
+        submitButton2.disabled  = true;
+        var originalText        = submitButton2.innerHTML;
+        submitButton2.innerHTML = '<span class="indicator-progress d-inline">Veuillez patienter... <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>';
+
+        $.ajax({
+            type: 'POST',
+            url:  '/personnel/admin-controller',
+            data: $('#formEditTache').serialize(),
+            success: function (resp) {
+                submitButton2.disabled  = false;
+                submitButton2.innerHTML = originalText;
+
+                var trimmed = (resp || '').trim();
+
+                if (trimmed === 'sessionExpired') {
+                    window.location.href = '/personnel/signin';
+
+                } else if (trimmed === 'succès') {
+                    $('#kt_modal_edit_tache').modal('hide');
+                    Swal.fire({
+                        icon:               'success',
+                        title:              'Succès !',
+                        text:               'La tâche a été modifiée avec succès.',
+                        confirmButtonColor: '#113B26',
+                        timer:              2000,
+                        timerProgressBar:   true,
+                    }).then(function () {
+                        videEditTache();
+                        reloadAll();
+                    });
+
+                } else if (trimmed === 'existeTache') {
+                    showInputError('edit_urlInput', 'Une tâche avec cette URL existe déjà.');
+                    document.getElementById('edit_urlInput').addEventListener('input', function () {
+                        clearInputError('edit_urlInput');
+                    }, { once: true });
+
+                } else if (trimmed === 'tacheExisteUnite') {
+                    showSwal('warning', 'Doublon', 'Une tâche avec ce nom, ce type et cette unité administrative existe déjà.');
+
+                } else if (trimmed === 'erreur') {
+                    $('#kt_modal_edit_tache').modal('hide');
+                    showSwal('error', 'Erreur', "Une erreur est survenue lors de la modification.");
+
+                } else {
+                    console.warn('Réponse inattendue :', trimmed);
+                    $('#kt_modal_edit_tache').modal('hide');
+                    showSwal('error', 'Erreur inattendue', 'Réponse serveur non reconnue : ' + trimmed);
+                }
+            },
+            error: function () {
+                submitButton2.disabled  = false;
+                submitButton2.innerHTML = originalText;
+                $('#kt_modal_edit_tache').modal('hide');
+                showSwal('error', 'Erreur', "Une erreur est survenue lors de la modification.");
+            }
+        });
+    });
+});
