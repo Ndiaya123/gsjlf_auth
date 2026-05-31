@@ -830,55 +830,6 @@ session_start();
                     <div class="container-xxl">
 
 
-                        <div class="col-sm-12 mb-5">
-                            <div class="ps1-card">
-
-                                <!-- Bloc gauche — label + total -->
-                                <div class="ps1-card__left">
-                                    <div class="ps1-card__eyebrow">
-                                        <span class="ps1-card__dot"></span>
-                                        Nombre de taches
-                                    </div>
-                                    <div class="ps1-card__main">
-                                        <span class="ps1-card__number" id="ps1-total">...</span>
-                                        <span class="ps1-card__unit">taches</span>
-                                    </div>
-                                </div>
-
-                                <!-- Séparateur vertical -->
-                                <div class="ps1-card__vsep"></div>
-
-                                <!-- Bloc milieu — Actifs -->
-                                <div class="ps1-card__stat ps1-card__stat--actifs">
-                                    <span class="ps1-card__stat-num" id="ps1-actifs">...</span>
-                                    <span class="ps1-card__stat-label">Actifs</span>
-                                    <span class="ps1-card__stat-pct" id="ps1-pct-actifs">0%</span>
-                                </div>
-
-                                <!-- Séparateur vertical -->
-                                <div class="ps1-card__vsep"></div>
-
-                                <!-- Bloc droite — Inactifs -->
-                                <div class="ps1-card__stat ps1-card__stat--inactifs">
-                                    <span class="ps1-card__stat-num" id="ps1-inactifs">...</span>
-                                    <span class="ps1-card__stat-label">Inactif</span>
-                                    <span class="ps1-card__stat-pct" id="ps1-pct-inactifs">0%</span>
-                                </div>
-
-
-
-
-                                <!-- Barre verticale de progression -->
-                                <div class="ps1-card__bar">
-                                    <div id="ps1-bar-fill" class="ps1-card__bar-fill"></div>
-                                </div>
-
-                            </div>
-
-                        </div>
-
-
-
 
                         <div class="col sm-12" id="boxTable">
                             <div class="card card-xl-stretch mb-5 mb-xl-8">
@@ -912,7 +863,7 @@ session_start();
                                                  data-kt-docs-table-toolbar="selected">
                                                 <a href="javascript:void(0)"
                                                    class="btn btn-sm btn-light btn-active-primary"
-                                                   onclick="ajouterTaches()">
+                                                   onclick="ajouterTacheQualification()">
                                                 <span class="svg-icon svg-icon-3">
                                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                          viewBox="0 0 24 24" fill="none">
@@ -924,24 +875,18 @@ session_start();
                                                     </svg>
                                                 </span>
 
-                                                    Ajouter une tâche</a>
+                                                    Relier une tâche à une qualification</a>
                                             </div>
                                         </div>
-                                        <table id="kt_table_taches"
+                                        <table id="kt_table_tache_qualification"
                                                class="table align-middle table-row-dashed fs-6 gy-5">
                                             <thead>
                                             <tr
                                                 class="text-start text-gray-400 fw-bolder fs-7 text-uppercase gs-0">
-<!--                                                <th>Icon</th>-->
-<!--                                                <th>sous_menu</th>-->
-<!--                                                <th class="max-w-150px text-center">Action</th>-->
-
-                                                <th>Nom</th>
-                                                <th>Type</th>
-                                                <th>Nombre d'utilisateur</th>
-                                                <th>code</th>
-                                                <th>Commentaire</th>
-                                                <th>actions</th>
+                                                <th>Tache</th>
+                                                <th>Post</th>
+                                                <th>Qualification</th>
+                                                <th>action</th>
                                             </tr>
                                             </thead>
                                             <tbody class="text-gray-600 fw-bold"></tbody>
@@ -972,49 +917,25 @@ session_start();
     </div>
 </div>
 
-<div class="modal fade" id="kt_modal_add_tache" tabindex="-1" aria-labelledby="tache" aria-hidden="true">
+<div class="modal fade" id="kt_modal_add_tache_qualification" tabindex="-1" aria-labelledby="tache" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
             <div class="modal-header">
-                <h5 class="modal-title">Tâche</h5>
-                <button type="button" class="btn-close" onclick="closeAddTache()"></button>
+                <h5 class="modal-title">Associer une qualification à une tâche</h5>
+                <button type="button" class="btn-close" onclick="closeAddTacheQualification()"></button>
             </div>
             <div class="modal-body">
-                <form id="formAddTache" action="#" class="form m-3">
-                    <input type="hidden" name="option" value="19">
-                    <input type="hidden" name="id" id="id_tache">
+                <form id="formAddTacheQualification" action="#" class="form m-3">
+                    <input type="hidden" name="option" value="29">
 
-                    <!-- Nom -->
+                    <!-- Niveau -->
                     <div class="mb-3">
-                        <label class="form-label required">Nom</label>
-                        <input type="text" name="nom" class="form-control" placeholder="Nom de la tâche" id="nom">
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Type -->
-                    <div class="mb-3">
-                        <label class="form-label required">Type</label>
-                        <select name="idTypeTache"
-                                class="form-control"
+                        <label for="idNiv" class="form-label required">Niveau</label>
+                        <select name="idNiv" id="idNiv" class="form-control"
                                 data-control="select2"
                                 data-placeholder="Choisir..."
-                                id="idTypeTache"
-                                onchange="type_tache(this.value)">
-                            <option value="">Sélectionner un type</option>
-                        </select>
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Niveaux UA (visible si type == 2) -->
-                    <div class="mb-3 d-none" id="box_niv">
-                        <label class="form-label required">Niveaux</label>
-                        <select name="nivUA"
-                                class="form-control"
-                                data-control="select2"
-                                data-placeholder="Choisir..."
-                                id="nivUA"
-                                onchange="actionUniteAdministrative(this.value)">
-                            <option value="">Sélectionner le niveau</option>
+                                onchange="actionNiveau(this.value)">
+                            <option value="">Sélectionner un niveau</option>
                             <option value="1">Niveau 1</option>
                             <option value="2">Niveau 2</option>
                             <option value="3">Niveau 3</option>
@@ -1022,110 +943,46 @@ session_start();
                         <div class="invalid-feedback"></div>
                     </div>
 
-                    <!-- Unité administrative (visible si type == 2) -->
-                    <div class="mb-3 d-none" id="box_ua">
-                        <label class="form-label required">Unité administrative</label>
-                        <select name="idUA"
-                                class="form-control"
+                    <!-- Unité administrative -->
+                    <div class="mb-3">
+                        <label for="idUniteAd" class="form-label required">Unité administrative</label>
+                        <select name="idUniteAd" id="idUniteAd" class="form-control"
                                 data-control="select2"
                                 data-placeholder="Choisir..."
-                                id="idUA">
+                                onchange="actionTache(this.value)">
                             <option value="">Sélectionner une unité administrative</option>
                         </select>
                         <div class="invalid-feedback"></div>
                     </div>
 
-                    <!-- Fonction (visible si type == 1) -->
-                    <div class="mb-3 d-none" id="box_fonction">
-                        <label class="form-label required">Fonction</label>
-                        <select name="id_fonction"
-                                class="form-control"
-                                data-control="select2"
-                                data-placeholder="Choisir..."
-                                id="id_fonction">
-                            <option value="">Sélectionner une fonction</option>
-                        </select>
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Sous menu -->
+                    <!-- Tâche -->
                     <div class="mb-3">
-                        <label class="form-label required">Sous menu</label>
-                        <select name="idSousMenu"
-                                class="form-control"
-                                data-control="select2"
-                                data-placeholder="Choisir..."
-                                id="idSousMenu">
-                            <option value="">Sélectionner un sous menu</option>
-                        </select>
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Icône -->
-                    <!-- Icône -->
-                    <div class="mb-3">
-                        <label class="form-label required">Icône</label>
-                        <div class="d-flex align-items-center justify-content-start gap-3">
-                            <div id="iconPreview" class="border bg-light btn d-flex align-items-center justify-content-center" style="min-width:48px;min-height:48px;"></div>
-                            <div class="flex-grow-1" id="iconSelectWrapper"> <!-- ✅ id ajouté -->
-                                <select class="form-control" name="idIcon" id="id_icon_tache">
-                                    <option value="">Sélectionner une icône</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="invalid-feedback d-block" id="idIcon-feedback"></div>
-                    </div>
-                    <!-- URL -->
-                    <div class="mb-3">
-                        <label class="form-label required">URL</label>
-                        <input type="text" name="url" id="urlInput" class="form-control" placeholder="https://...">
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Base de données -->
-                    <div class="mb-3">
-                        <label class="form-label required">Base de données</label>
-                        <select name="idBD"
-                                class="form-control"
-                                data-control="select2"
-                                data-placeholder="Choisir..."
-                                id="idBD">
-                            <option value="">Sélectionner une base de données</option>
-                        </select>
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Applications -->
-                    <div class="mb-3">
-                        <label class="form-label required">Applications</label>
-                        <select name="idAppli"
-                                id="idAppli"
-                                class="form-control"
+                        <label for="idTache" class="form-label required">Tâche</label>
+                        <select name="idTache" id="idTache" class="form-control"
                                 data-control="select2"
                                 data-placeholder="Choisir...">
-                            <option value="">Sélectionner l'application</option>
+                            <option value="">Sélectionner une tâche</option>
                         </select>
                         <div class="invalid-feedback"></div>
                     </div>
 
-                    <!-- Autre ressource -->
+                    <!-- Qualification -->
                     <div class="mb-3">
-                        <label class="form-label">Autre ressource</label>
-                        <textarea name="autre_ressource" class="form-control" rows="3" placeholder="Autre ressource..."></textarea>
-                    </div>
-
-                    <!-- Commentaire -->
-                    <div class="mb-3">
-                        <label class="form-label">Commentaire</label>
-                        <textarea name="commentaire" class="form-control" rows="3" placeholder="Commentaire..."></textarea>
+                        <label for="idQualification" class="form-label required">Qualification</label>
+                        <select name="idQualification" id="idQualification" class="form-control"
+                                data-control="select2"
+                                data-placeholder="Choisir...">
+                            <option value="">Sélectionner une qualification</option>
+                        </select>
+                        <div class="invalid-feedback"></div>
                     </div>
 
                     <!-- Boutons -->
                     <div class="d-flex justify-content-end gap-2 mt-4">
-                        <button type="button" class="btn btn-light" onclick="closeAddTache()">
+                        <button type="button" class="btn btn-light" onclick="closeAddTacheQualification()">
                             Annuler
                         </button>
-                        <button type="submit" class="btn btn-success" id="formAddTache_submit">
+                        <button type="button" class="btn btn-success" id="formAddTacheQualification_submit">
                             <span class="indicator-label">Valider</span>
                             <span class="indicator-progress d-none">
                                 Veuillez patienter...
@@ -1140,299 +997,7 @@ session_start();
     </div>
 </div>
 
-<!--<div class="modal fade" id="kt_modal_add_tache" tabindex="-1" aria-labelledby="tache" aria-hidden="true">-->
-<!--    <div class="modal-dialog">-->
-<!--        <div class="modal-content">-->
-<!--            <div class="modal-header">-->
-<!--                <h5 class="modal-title" id="exampleModalLabel">Tache</h5>-->
-<!--                <button type="button" class="btn-close" onclick="closeAddTache()" ></button>-->
-<!--            </div>-->
-<!--            <div class="modal-body">-->
-<!--                <form id="formAddTache" action="#" class="form row g-2 d-flex align-items-center justify-content-center m-3">-->
-<!--                    <input type="hidden" name="option" value="19">-->
-<!--                    <input type="hidden" name="id" id="id_tache">-->
-<!---->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label required">Nom </label>-->
-<!--                        <input type="text" name="nom" class="form-control" placeholder="nom" id="nom">-->
-<!---->
-<!---->
-<!--                    </div>-->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label required">Type</label>-->
-<!--                        <select name="idTypeTache" class="form-control" data-control="select2" data-placeholder="Choisir..." id="idTypeTache" onchange="type_tache(this.value)">-->
-<!--                            <option value="">Sélectionner un type</option>-->
-<!--                        </select>-->
-<!---->
-<!--                    </div>-->
-<!--                    <div class="mb-3 d-none" id="box_niv">-->
-<!--                        <label class="form-label required">Niveaux</label>-->
-<!--                        <select name="nivUA" class="form-control" data-control="select2" data-placeholder="Choisir..." id="nivUA" onchange="actionUniteAdministrative(this.value)">-->
-<!--                            <option value="">Sélectionner le niveau</option>-->
-<!--                            <option value="1">Niveau 1</option>-->
-<!--                            <option value="2">Niveau 2</option>-->
-<!--                            <option value="3">Niveau 3</option>-->
-<!--                        </select>-->
-<!---->
-<!--                    </div>-->
-<!--                    <div class="mb-3 d-none" id="box_ua">-->
-<!--                        <label class="form-label required">Unité administrative</label>-->
-<!--                        <select name="idUA" class="form-control" data-control="select2" data-placeholder="Choisir..." id="idUA">-->
-<!--                            <option value="">Sélectionner une fonction</option>-->
-<!--                        </select>-->
-<!---->
-<!--                    </div>-->
-<!--                    <div class="mb-3 d-none" id="box_fonction">-->
-<!--                        <label class="form-label required">Fonction</label>-->
-<!--                        <select name="id_fonction" class="form-control" data-control="select2" data-placeholder="Choisir..." id="id_fonction">-->
-<!--                            <option value="">Sélectionner une fonction</option>-->
-<!--                        </select>-->
-<!---->
-<!--                    </div>-->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label required">Sous menu</label>-->
-<!--                        <select name="idSousMenu" class="form-control" data-control="select2" data-placeholder="Choisir..." id="idSousMenu">-->
-<!--                            <option value=''>Sélectionner un sous menu</option>-->
-<!--                        </select>-->
-<!---->
-<!--                    </div>-->
-<!---->
-<!--                    <label class="form-label required">Icône</label>-->
-<!--                    <div class="mb-1 d-flex align-items-center justify-content-start">-->
-<!--                        <div id="iconPreview" class="border bg-light b-1px btn "></div>-->
-<!--                        <div class="w-50 m-2">-->
-<!--                            <select class="form-control select2-icon"  name="idIcon" id="id_icon_tache">-->
-<!--                                <option value="">Sélectionner une icône</option>-->
-<!--                                <option value="1"><span class="menu-icon">-->
-<!--<span class="svg-icon svg-icon-2">-->
-<!--												<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">-->
-<!--													<rect x="2" y="2" width="9" height="9" rx="2" fill="black" />-->
-<!--													<rect opacity="0.3" x="13" y="2" width="9" height="9" rx="2" fill="black" />-->
-<!--													<rect opacity="0.3" x="13" y="13" width="9" height="9" rx="2" fill="black" />-->
-<!--													<rect opacity="0.3" x="2" y="13" width="9" height="9" rx="2" fill="black" />-->
-<!--												</svg>-->
-<!--											</span>-->
-<!--</span></option>-->
-<!---->
-<!--                            </select>-->
-<!---->
-<!--                        </div>-->
-<!---->
-<!--                    </div>-->
-<!---->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label required">URL</label>-->
-<!--                        <input type="text" name="url" id="urlInput" class="form-control" placeholder="url">-->
-<!---->
-<!--                    </div>-->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label required">Base de données</label>-->
-<!--                        <select name="idBD" class="form-control" data-control="select2" data-placeholder="Choisir..." id="idBD">-->
-<!--                            <option value="">Sélectionner une base de données</option>-->
-<!--                        </select>-->
-<!--                    </div>-->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label required">Applications</label>-->
-<!--                        <select name="idDB" id="idAppli" class="form-select" data-control="select2" data-placeholder="Choisir...">-->
-<!--                            <option value="">Sélectionner l'application</option>-->
-<!--                        </select>-->
-<!--                    </div>-->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label">Autre ressource </label>-->
-<!--                        <textarea name="autre_ressource" class="form-control"></textarea>-->
-<!---->
-<!--                    </div>-->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label">Commentaire</label>-->
-<!--                        <textarea name="commentaire" class="form-control"></textarea>-->
-<!--                    </div>-->
-<!---->
-<!--<!--                    <div class="text-center pt-15">-->-->
-<!--<!--                        <button type="reset" class="btn btn-light me-3" onclick="closeAddUser()">Annuler</button>-->-->
-<!--<!--                        <button type="submit" id="formAddUser2_submit" class="btn btn-primary">-->-->
-<!--<!--                            <span class="indicator-label">Valider</span>-->-->
-<!--<!--                            <span class="indicator-progress">Veuillez patienter...-->-->
-<!--<!--															<span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>-->-->
-<!--<!--                        </button>-->-->
-<!--<!--                    </div>-->-->
-<!--                    <button type="submit" class="btn btn-success w-500px m-2" ype="submit" id="formAddTache_submit">valider-->
-<!--                        <span class="indicator-progress">Veuillez patienter...-->
-<!--															<span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>-->
-<!--                    </button>-->
-<!--                </form>-->
-<!--            </div>-->
-<!---->
-<!--        </div>-->
-<!--    </div>-->
-<!--</div>-->
 
-
-<div class="modal fade" id="kt_modal_edit_tache" tabindex="-1" aria-labelledby="editTache" aria-hidden="true">
-    <div class="modal-dialog modal-lg">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">Modifier la Tâche</h5>
-                <button type="button" class="btn-close" onclick="closeEditTache()"></button>
-            </div>
-            <div class="modal-body">
-                <form id="formEditTache" action="#" class="form m-3">
-                    <input type="hidden" name="option" value="22">
-                    <input type="hidden" name="id" id="edit_id_tache">
-
-                    <!-- Nom -->
-                    <div class="mb-3">
-                        <label class="form-label required">Nom</label>
-                        <input type="text" name="nom" class="form-control" placeholder="Nom de la tâche" id="edit_nom">
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Type -->
-                    <div class="mb-3">
-                        <label class="form-label required">Type</label>
-                        <select name="idTypeTache"
-                                class="form-control"
-                                data-control="select2"
-                                data-placeholder="Choisir..."
-                                id="edit_idTypeTache"
-                                onchange="edit_type_tache(this.value)">
-                            <option value="">Sélectionner un type</option>
-                        </select>
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Niveaux UA (visible si type == 2) -->
-                    <div class="mb-3 d-none" id="edit_box_niv">
-                        <label class="form-label required">Niveaux</label>
-                        <select name="nivUA"
-                                class="form-control"
-                                data-control="select2"
-                                data-placeholder="Choisir..."
-                                id="edit_nivUA"
-                                onchange="editActionUniteAdministrative(this.value)">
-                            <option value="">Sélectionner le niveau</option>
-                            <option value="1">Niveau 1</option>
-                            <option value="2">Niveau 2</option>
-                            <option value="3">Niveau 3</option>
-                        </select>
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Unité administrative (visible si type == 2) -->
-                    <div class="mb-3 d-none" id="edit_box_ua">
-                        <label class="form-label required">Unité administrative</label>
-                        <select name="idUA"
-                                class="form-control"
-                                data-control="select2"
-                                data-placeholder="Choisir..."
-                                id="edit_idUA">
-                            <option value="">Sélectionner une unité administrative</option>
-                        </select>
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Fonction (visible si type == 1) -->
-                    <div class="mb-3 d-none" id="edit_box_fonction">
-                        <label class="form-label required">Fonction</label>
-                        <select name="id_fonction"
-                                class="form-control"
-                                data-control="select2"
-                                data-placeholder="Choisir..."
-                                id="edit_id_fonction">
-                            <option value="">Sélectionner une fonction</option>
-                        </select>
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Sous menu -->
-                    <div class="mb-3">
-                        <label class="form-label required">Sous menu</label>
-                        <select name="idSousMenu"
-                                class="form-control"
-                                data-control="select2"
-                                data-placeholder="Choisir..."
-                                id="edit_idSousMenu">
-                            <option value="">Sélectionner un sous menu</option>
-                        </select>
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Icône -->
-                    <div class="mb-3">
-                        <label class="form-label required">Icône</label>
-                        <div class="d-flex align-items-center justify-content-start gap-3">
-                            <div id="edit_iconPreview"
-                                 class="border bg-light btn d-flex align-items-center justify-content-center"
-                                 style="min-width:48px;min-height:48px;"></div>
-                            <div class="flex-grow-1" id="edit_iconSelectWrapper">
-                                <select class="form-control" name="idIcon" id="edit_id_icon_tache">
-                                    <option value="">Sélectionner une icône</option>
-                                </select>
-                            </div>
-                        </div>
-                        <div class="invalid-feedback d-block" id="edit_idIcon-feedback"></div>
-                    </div>
-
-                    <!-- URL -->
-                    <div class="mb-3">
-                        <label class="form-label required">URL</label>
-                        <input type="text" name="url" id="edit_urlInput" class="form-control" placeholder="https://...">
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Base de données -->
-                    <div class="mb-3">
-                        <label class="form-label required">Base de données</label>
-                        <select name="idBD"
-                                class="form-control"
-                                data-control="select2"
-                                data-placeholder="Choisir..."
-                                id="edit_idBD">
-                            <option value="">Sélectionner une base de données</option>
-                        </select>
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Applications -->
-                    <div class="mb-3">
-                        <label class="form-label required">Applications</label>
-                        <select name="idDB"
-                                id="edit_idAppli"
-                                class="form-control"
-                                data-control="select2"
-                                data-placeholder="Choisir...">
-                            <option value="">Sélectionner l'application</option>
-                        </select>
-                        <div class="invalid-feedback"></div>
-                    </div>
-
-                    <!-- Autre ressource -->
-                    <div class="mb-3">
-                        <label class="form-label">Autre ressource</label>
-                        <textarea name="autre_ressource" id="edit_autre_ressource" class="form-control" rows="3"></textarea>
-                    </div>
-
-                    <!-- Commentaire -->
-                    <div class="mb-3">
-                        <label class="form-label">Commentaire</label>
-                        <textarea name="commentaire" id="edit_commentaire" class="form-control" rows="3"></textarea>
-                    </div>
-
-                    <!-- Boutons -->
-                    <div class="d-flex justify-content-end gap-2 mt-4">
-                        <button type="button" class="btn btn-light" onclick="closeEditTache()">Annuler</button>
-                        <button type="submit" class="btn btn-success" id="formEditTache_submit">
-                            <span class="indicator-label">Modifier</span>
-                            <span class="indicator-progress d-none">
-                                Veuillez patienter...
-                                <span class="spinner-border spinner-border-sm align-middle ms-2"></span>
-                            </span>
-                        </button>
-                    </div>
-                </form>
-            </div>
-        </div>
-    </div>
-</div>
 
 <div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
         <span class="svg-icon">
@@ -1451,7 +1016,7 @@ session_start();
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/js/scripts.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.js"></script>
-<script src="/personnel/scripts.bundle.9.js"></script>
+<script src="/personnel/scripts.bundle.10.js"></script>
 </body>
 
 </html>

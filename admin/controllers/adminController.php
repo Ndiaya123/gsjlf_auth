@@ -264,6 +264,138 @@ AND postesAResponsabilite.dateFin IS NOT NULL;");
         }
     }
 
+
+
+//    function get_info($matricule)
+//    {
+//
+//        $bd = $this->connect();
+//
+//        $listes =  array();
+//        foreach ($matricule as $matricule)
+//       {
+//
+//
+//
+//           $data_perso = [
+//               'matricule' => $matricule
+//           ];
+//           $sql_perso = "SELECT
+//    p.identifiant,
+//    p.matricule,
+//    p.idQualification
+//FROM personnels p
+//WHERE p.matricule = :matricule;";
+//           $stmt_perso = $bd->prepare($sql_perso);
+//           $stmt_perso->execute($data_perso);
+//           $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
+//
+//           if ($result_perso) {
+//
+//
+//               $data_perso_contrat = [
+//                   'matricule' => $matricule,
+//                   'idTypeStatutContrat' => 1,
+//
+//               ];
+//               $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
+//               $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+//               $stmt_perso_contrat->execute($data_perso_contrat);
+//               $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
+//
+//               if ($result_perso_contrat) {
+//
+//                   $debutContrat = $result_perso_contrat->dateDebutContrat;
+//                   $finContrat = $result_perso_contrat->dateFinContrat;
+//
+//
+//                   if ($this->comparerDateContrat($finContrat)) {
+//
+//
+//
+//                       $listes[] = array(
+//                           'matricule' => $result_perso->matricule,
+//                           'idQualification' => $result_perso->idQualification,
+//
+//                       );
+//
+//                   }
+//
+//
+//               }
+//
+//           }
+//       }
+//
+//        return $listes;
+//
+//    }
+
+    function get_info($matricule)
+    {
+
+        $bd = $this->connect();
+
+        $listes =  array();
+        foreach ($matricule as $matricule)
+        {
+
+
+
+            $data_perso = [
+                'matricule' => $matricule
+            ];
+            $sql_perso = "SELECT 
+    p.identifiant,
+    p.matricule,
+    p.idQualification
+FROM personnels p
+WHERE p.matricule = :matricule;";
+            $stmt_perso = $bd->prepare($sql_perso);
+            $stmt_perso->execute($data_perso);
+            $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
+
+            if ($result_perso) {
+
+
+                $data_perso_contrat = [
+                    'matricule' => $matricule,
+                    'idTypeStatutContrat' => 1,
+
+                ];
+                $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
+                $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+                $stmt_perso_contrat->execute($data_perso_contrat);
+                $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
+
+                if ($result_perso_contrat) {
+
+                    $debutContrat = $result_perso_contrat->dateDebutContrat;
+                    $finContrat = $result_perso_contrat->dateFinContrat;
+
+
+                    if ($this->comparerDateContrat($finContrat)) {
+
+
+
+                        $listes[] = array(
+                            'matricule' => $result_perso->matricule,
+                            'idQualification' => $result_perso->idQualification,
+
+                        );
+
+                    }
+
+
+                }
+
+            }
+        }
+
+        return $listes;
+
+    }
+
 }
 
 
@@ -2981,7 +3113,7 @@ die;
                 idUniteAdministrativeNiv1  = ?,
                 idUniteAdministrativeNiv2  = ?,
                 idUniteAdministrativeNiv3  = ?,
-                idFonction                 = NULLIF(?, 0),
+                idFonction                 = NULLIF(?, NULL),
                 idDB                       = ?,
                 idAppli                    = ?,
                 lastDateModification           = ?
@@ -3008,7 +3140,7 @@ die;
                 ?, ?, ?, ?, ?,
                 ?, ?, ?, ?,
                 ?, ?, ?,
-                ?, ?, NULLIF(?, 0), ?, ?, ?
+                ?, ?, NULLIF(?, NULL), ?, ?, ?
             )
         ");
 
@@ -3060,9 +3192,892 @@ die;
             die;
         }
         break;
+
+    case 24:
+
+        date_default_timezone_set('Africa/Dakar');
+
+
+            $idUtilisateur = 1;
+
+//        $idUtilisateur = null;
+//        if (!empty($_SESSION['tmpIdP'])) {
+//            $idUtilisateur = $_SESSION['tmpIdP'];
+//        } else {
+//            echo "sessionExpired";
+//            die;
+//        }
+
+        $id_tache         = $_POST['id']   ?? null;
+        $dateModification = date('Y-m-d H:i:s');
+
+        if (!$id_tache) {
+            echo "erreur";
+            die;
+        }
+
+        try {
+            $bd->beginTransaction();
+
+            // Vérifier l'état actuel
+            $stmtEtat = $bd->prepare("SELECT active FROM tache WHERE id = ?");
+            $stmtEtat->execute([$id_tache]);
+            $etat = $stmtEtat->fetchColumn();
+
+            if ($etat === false) {
+                $bd->rollBack();
+                echo "erreur";
+                die;
+            }
+
+            // Inverser l'état
+            $nouvelEtat = ($etat == 1) ? 0 : 1;
+
+            // Mettre à jour
+            $stmtUpdate = $bd->prepare("
+            UPDATE tache 
+            SET active = ?, lastDateModification = ? 
+            WHERE id = ?
+        ");
+            $stmtUpdate->execute([$nouvelEtat, $dateModification, $id_tache]);
+
+            // Récupérer les infos pour l'historique
+            $stmtTache = $bd->prepare("SELECT * FROM tache WHERE id = ?");
+            $stmtTache->execute([$id_tache]);
+            $tache = $stmtTache->fetch(PDO::FETCH_ASSOC);
+
+            if (!$tache) {
+                $bd->rollBack();
+                echo "erreur";
+                die;
+            }
+
+            // Insertion historique
+            $stmtHist = $bd->prepare("
+            INSERT INTO historiqueTache (
+                idUtilisateur, idTache, nom, autre_ressource, url,
+                idTypeTache, commentaire, idSousMenu, idIcon,
+                idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3,
+                dateEnregistrement, active, idFonction, createdBy
+            ) VALUES (
+                ?, ?, ?, ?, ?,
+                ?, ?, ?, ?,
+                ?, ?, ?,
+                ?, ?, NULLIF(?, NULL), ?
+            )
+        ");
+
+            $stmtHist->execute([
+                $idUtilisateur,
+                $id_tache,
+                $tache['nom']                        ?? null,
+                $tache['autre_ressource']             ?? null,
+                $tache['url']                         ?? null,
+                $tache['idTypeTache']                 ?? null,
+                $tache['commentaire']                 ?? null,
+                $tache['idSousMenu']                  ?? null,
+                $tache['idIcon']                      ?? null,
+                $tache['idUniteAdministrativeNiv1']   ?? null,
+                $tache['idUniteAdministrativeNiv2']   ?? null,
+                $tache['idUniteAdministrativeNiv3']   ?? null,
+                $dateModification,
+                $nouvelEtat,
+                $tache['idFonction']                  ?? null,
+                $tache['createdBy']                   ?? null
+            ]);
+
+            $bd->commit();
+            echo "succès";
+            die;
+
+        } catch (Exception $e) {
+            if ($bd->inTransaction()) {
+                $bd->rollBack();
+            }
+            error_log("Erreur changeEtatTache: " . $e->getMessage());
+            echo "erreur";
+            die;
+        }
+
+        break;
+
+    case 25 :
+        $actifs = 0;
+        $inactifs = 0;
+        $total_taches = 0;
+
+
+        try {
+
+            $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+
+            $sql = "SELECT 
+    tache.id,
+    tache.active
+FROM tache";
+            $stmt = $bd->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+
+            $actifs = NULL;
+            $inactifs = null;
+
+            foreach ($result as $user) {
+
+
+
+                if ($user->active == 0) {
+
+                    ++$inactifs;
+
+                } elseif ($user->active == 1) {
+
+                    ++$actifs;
+
+                }
+
+
+
+            }
+
+            echo json_encode([
+                'total' => (int)count($result),
+                'actifs' => (int)$actifs,
+                'inactifs' => (int)$inactifs
+            ]);
+
+
+
+        } catch (Exception $e) {
+
+
+            echo json_encode(['total' => 0, 'actifs' => 0, 'inactifs' => 0]);
+            die;
+
+        }
+
+        break;
+
+    case 26 :
+
+
+        try {
+
+            $stmt = $bd->prepare('SELECT t.nom as tache,q.qualification as qualification, tq.id as id, t.id as idTache, q.id as idQualification,
+    coalesce(ua3.codeNiv3, ua2.codeNiv2, ua1.codeNiv1) as codeUA
+     FROM tache_qualification tq
+    JOIN tache t ON t.id = tq.idTache
+    JOIN qualifications q ON q.id = tq.idQualification
+    LEFT JOIN unite_administrative_niv2 ua2 ON ua2.id = t.idUniteAdministrativeNiv2
+    LEFT JOIN unite_administrative_niv1 ua1 ON ua1.id = t.idUniteAdministrativeNiv1
+    LEFT JOIN unite_administrative_niv3 ua3 ON ua3.id = t.idUniteAdministrativeNiv3
+    WHERE tq.valide = 1
+        ORDER BY tq.id DESC');
+            $stmt->execute();
+            $listes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            echo json_encode($listes);
+            die;
+
+        } catch (Exception $e) {
+            echo json_encode(array());
+            die;
+
+        }
+
+
+        break;
+
+
+    case 27 :
+
+        try {
+
+
+
+            $stmt = $bd->prepare("SELECT * FROM qualifications");
+            $stmt->execute();
+            $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            echo '<option></option><option value="">Choisir...</option>';
+//            echo '<option value="vide" hidden="">VIDE</option>';
+
+            if (count($listes) > 0) {
+                foreach ($listes as $tmp) {
+                    echo '<option value="' . $tmp->id . '">' . $tmp->qualification . '</option>';
+                }
+            } else {
+                echo '<option value="">-- Qualification --</option>';
+            }
+
+            die;
+        } catch (\Throwable $th) {
+            echo "erreur";
+            die;
+        }
+        break;
+
+    case 28 :
+
+
+
+        try {
+            $idUniteAd = $_POST['idUniteAd'];
+            $idNiv = $_POST['idNiv'];
+
+            $tmp = NULL;
+            if($idNiv == 1)
+            {
+                $tmp = "idUniteAdministrativeNiv1";
+
+            }else if($idNiv == 2)
+            {
+                $tmp = "idUniteAdministrativeNiv2";
+
+            }else if($idNiv == 3)
+            {
+                $tmp = "idUniteAdministrativeNiv3";
+
+            }else
+            {
+                echo "erreur";
+                die;
+            }
+
+            $data =
+                [
+                    'idUniteAd' => $idUniteAd,
+                    'idTypeTache' => 1
+                ];
+
+            $stmt = $bd->prepare('SELECT
+    tache.id,
+    tache.nom,
+    CASE
+        WHEN tache.idSousMenu IS NULL THEN NULL
+        ELSE sous_menu.nom
+    END AS sous_menu
+FROM tache
+LEFT JOIN sous_menu
+    ON sous_menu.id = tache.idSousMenu
+WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
+            $stmt->execute($data);
+            $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+
+
+
+            echo '<option></option><option value="" >Choisir...</option>';
+//            echo '<option value="vide" hidden="">VIDE</option>';
+
+            if (count($listes) > 0) {
+                foreach ($listes as $tmp) {
+                    if($tmp->sous_menu != null)
+                    {
+                        echo '<option value="' . $tmp->id . '">' .''.$tmp->sous_menu.'\\'. $tmp->nom . '</option>';
+
+                    }else
+                    {
+                        echo '<option value="' . $tmp->id . '">' .$tmp->nom . '</option>';
+
+                    }
+                }
+            } else {
+                echo '<option value="">--tâche--</option>';
+            }
+
+            die;
+
+        }catch (PDOException $e) {
+            echo '<option value="">--tâche--</option>';
+
+        }
+
+        break;
+
+    case 29 :
+
+
+
+//
+//
+//        $idUtilisateur = 1;
+////            $idUtilisateur = null;
+////            if(!empty($_SESSION['tmpIdP']))
+////            {
+////                $idUtilisateur = $_SESSION['tmpIdP'];
+////            }else
+////            {
+////                echo "sessionExpired";
+////                die;
+////            }
+//
+//        date_default_timezone_set('Africa/Dakar');
+//        $dateEnregistrement = date('Y-m-d H:i:s');
+//
+//
+//
+//
+//
+//        $idTache = $_POST['idTache'];
+//        $idQualification = $_POST['idQualification'];
+//        if ($idTache <= 0 || $idQualification <= 0) {
+//
+//            echo "erreur";
+//
+//        }
+//
+//        try {
+//            // On démarre une transaction
+//            $bd->beginTransaction();
+//
+//            // 1. Vérifier si l'association existe déjà
+//            $stmt = $bd->prepare("SELECT 1 FROM tache_qualification
+//                               WHERE idTache = ? AND idQualification = ? AND valide = 1 LIMIT 1");
+//            $stmt->execute([$idTache, $idQualification]);
+//
+//            if ($stmt->fetch()) {
+//                // Si l'association existe, on annule la transaction et on quitte
+//                $bd->rollBack();
+//
+//                echo "existe";
+//                die;
+////                echo ['success' => false, 'message' => 'Cette association existe déjà'];
+//            }
+//
+//            // 2. Récupérer les qualifications déjà associées à la tâche
+//            $stmt = $bd->prepare("SELECT idQualification FROM tache_qualification
+//                               WHERE idTache = ? AND valide = 1");
+//            $stmt->execute([$idTache]);
+//            $qualificationsExistantes = $stmt->fetchAll(PDO::FETCH_COLUMN);
+//
+//            // Ajouter la nouvelle qualification à la liste
+//            $qualificationsExistantes[] = $idQualification;
+//
+//            // 3. Récupérer les utilisateurs associés à la tâche
+//            $stmt = $bd->prepare("SELECT u.id, u.matricule, u.email
+//                               FROM tache_utilisateur tu
+//                               JOIN utilisateur u ON tu.idUtilisateur = u.id
+//                               WHERE tu.idTache = ? AND tu.access = 1");
+//            $stmt->execute([$idTache]);
+//            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+//
+//            // 4. Appel API batch pour récupérer les qualifications des utilisateurs
+//            $matricules = array_column($users, 'matricule');
+//            $usersInfo = get_info($matricules);
+//
+//            // 5. Préparer les requêtes
+//            $stmtGetLast = $bd->prepare("
+//    SELECT id
+//    FROM tache_utilisateur
+//    WHERE idTache = ? AND idUtilisateur = ?
+//    ORDER BY id DESC
+//    LIMIT 1
+//");
+//
+//            $updateStmt = $bd->prepare("
+//    UPDATE tache_utilisateur
+//    SET access = 0,
+//        idUtilisateurSupRetrait = ?,
+//        dateRetrait = ?
+//    WHERE id = ?
+//");
+//
+//            foreach ($users as $user) {
+//                $userQualifications = [];
+//
+//                if (isset($usersInfo[$user['matricule']])) {
+//                    foreach ($usersInfo[$user['matricule']] as $qualificationData) {
+//                        if (isset($qualificationData['idQualification'])) {
+//                            $userQualifications[] = $qualificationData['idQualification'];
+//                        }
+//                    }
+//                }
+//
+//                // Vérifier si l'utilisateur a au moins une des qualifications de la tâche
+//                $hasRequiredQualification = false;
+//                foreach ($userQualifications as $qualif) {
+//                    if (in_array($qualif, $qualificationsExistantes)) {
+//                        $hasRequiredQualification = true;
+//                        break;
+//                    }
+//                }
+//
+//                // Si l'utilisateur n'a aucune des qualifications, on lui retire l'accès
+//                if (!$hasRequiredQualification) {
+//                    // 1. Récupérer la dernière ligne correspondante
+//                    $stmtGetLast->execute([$idTache, $user['id']]);
+//                    $lastId = $stmtGetLast->fetchColumn();
+//
+//                    // 2. Faire la mise à jour uniquement si une ligne est trouvée
+//                    if ($lastId) {
+//                        $updateStmt->execute([$idUtilisateur, $dateEnregistrement, $lastId]);
+//                    }
+//                }
+//            }
+//            // 6. Créer la nouvelle association
+//            $bd->prepare("INSERT INTO tache_qualification
+//                      (idTache, idQualification, dateEnregistrement, createdBy)
+//                      VALUES (?, ?, ?, ?)")
+//                ->execute([$idTache, $idQualification, $dateEnregistrement,$idUtilisateur]);
+//
+//            // 7. Valider la transaction
+//            $bd->commit();
+//
+//            echo "succès";
+//            die;
+////            echo  ['success' => true, 'message' => 'Association réussie !!'];
+//
+//        } catch (Exception $e) {
+//            // Si une erreur survient, on annule tout
+//            if ($bd->inTransaction()) {
+//                $bd->rollBack();
+//            }
+//            error_log("Erreur addTacheQualification: " . $e->getMessage());
+//            echo "erreur";
+//            die;
+////            echo  ['success' => false, 'message' => $e->getMessage()];
+//        }
+//
+//        break;
+
+
+//        $idUtilisateur = 1;
+
+//    $idUtilisateur = null;
+//        if (!empty($_SESSION['tmpIdP'])) {
+//            $idUtilisateur = $_SESSION['tmpIdP'];
+//        } else {
+//            echo "sessionExpired";
+//            die;
+//        }
+//
+//        date_default_timezone_set('Africa/Dakar');
+//        $dateEnregistrement = date('Y-m-d H:i:s');
+//
+//        $idTache         = $_POST['idTache']         ?? null;
+//        $idQualification = $_POST['idQualification'] ?? null;
+//
+//        // Validation des données
+//        if (empty($idTache) || empty($idQualification) || $idTache <= 0 || $idQualification <= 0) {
+//            echo "erreur";
+//            die;
+//        }
+//
+//        try {
+//            $bd->beginTransaction();
+//
+//            // 1. Vérifier si l'association existe déjà
+//            $stmtCheck = $bd->prepare("
+//            SELECT 1 FROM tache_qualification
+//            WHERE idTache = ? AND idQualification = ? AND valide = 1
+//            LIMIT 1
+//        ");
+//            $stmtCheck->execute([$idTache, $idQualification]);
+//
+//            if ($stmtCheck->fetch()) {
+//                $bd->rollBack();
+//                echo "existe";
+//                die;
+//            }
+//
+//            // 2. Récupérer les qualifications déjà associées à la tâche
+//            $stmtQualifs = $bd->prepare("
+//            SELECT idQualification FROM tache_qualification
+//            WHERE idTache = ? AND valide = 1
+//        ");
+//            $stmtQualifs->execute([$idTache]);
+//            $qualificationsExistantes = $stmtQualifs->fetchAll(PDO::FETCH_COLUMN);
+//
+//            // Ajouter la nouvelle qualification à la liste
+//            $qualificationsExistantes[] = $idQualification;
+//
+//            // 3. Récupérer les utilisateurs associés à la tâche
+//            $stmtUsers = $bd->prepare("
+//            SELECT u.id, u.matricule, u.email
+//            FROM tache_utilisateur tu
+//            JOIN utilisateurs u ON tu.idUtilisateur = u.id
+//            WHERE tu.idTache = ? AND tu.access = 1
+//        ");
+//            $stmtUsers->execute([$idTache]);
+//            $users = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
+//
+//            // 4. Appel API batch pour récupérer les qualifications des utilisateurs
+//            $matricules = array_column($users, 'matricule');
+//            $usersInfo  = $adminController->get_info($matricules);
+//
+//            // 5. Préparer les requêtes de retrait d'accès
+//            $stmtGetLast = $bd->prepare("
+//            SELECT id FROM tache_utilisateur
+//            WHERE idTache = ? AND idUtilisateur = ?
+//            ORDER BY id DESC LIMIT 1
+//        ");
+//
+//            $stmtUpdate = $bd->prepare("
+//            UPDATE tache_utilisateur
+//            SET access = 0,
+//                idUtilisateurSupRetrait = ?,
+//                dateRetrait = ?
+//            WHERE id = ?
+//        ");
+//
+//            foreach ($users as $user) {
+//                $userQualifications = [];
+//
+//                if (isset($usersInfo[$user['matricule']])) {
+//                    foreach ($usersInfo[$user['matricule']] as $qualificationData) {
+//                        if (isset($qualificationData['idQualification'])) {
+//                            $userQualifications[] = $qualificationData['idQualification'];
+//                        }
+//                    }
+//                }
+//
+//                // Vérifier si l'utilisateur a au moins une des qualifications requises
+//                $hasRequiredQualification = false;
+//                foreach ($userQualifications as $qualif) {
+//                    if (in_array($qualif, $qualificationsExistantes)) {
+//                        $hasRequiredQualification = true;
+//                        break;
+//                    }
+//                }
+//
+//                // Si l'utilisateur n'a aucune qualification requise → retirer l'accès
+//                if (!$hasRequiredQualification) {
+//                    $stmtGetLast->execute([$idTache, $user['id']]);
+//                    $lastId = $stmtGetLast->fetchColumn();
+//                    if ($lastId) {
+//                        $stmtUpdate->execute([$idUtilisateur, $dateEnregistrement, $lastId]);
+//                    }
+//                }
+//            }
+//
+//            // 6. Créer la nouvelle association
+//            $stmtInsert = $bd->prepare("
+//            INSERT INTO tache_qualification (idTache, idQualification, dateEnregistrement, createdBy)
+//            VALUES (?, ?, ?, ?)
+//        ");
+//            $stmtInsert->execute([$idTache, $idQualification, $dateEnregistrement, $idUtilisateur]);
+//
+//            $bd->commit();
+//            echo "succes";
+//            die;
+//
+//        } catch (Exception $e) {
+//            if ($bd->inTransaction()) {
+//                $bd->rollBack();
+//            }
+//            error_log("Erreur addTacheQualification: " . $e->getMessage());
+//            echo "erreur".$e;
+//            die;
+//        }
+//
+//        break;
+
+        $idUtilisateur = 1;
+//        $idUtilisateur = null;
+//        if (!empty($_SESSION['tmpIdP'])) {
+//            $idUtilisateur = $_SESSION['tmpIdP'];
+//        } else {
+//            echo "sessionExpired";
+//            die;
+//        }
+
+        date_default_timezone_set('Africa/Dakar');
+        $dateEnregistrement = date('Y-m-d H:i:s');
+
+        $idTache         = $_POST['idTache']         ?? null;
+        $idQualification = $_POST['idQualification'] ?? null;
+
+        if (empty($idTache) || empty($idQualification) || $idTache <= 0 || $idQualification <= 0) {
+            echo "erreur";
+            die;
+        }
+
+        try {
+            $bd->beginTransaction();
+
+            // 1. Vérifier si l'association existe déjà
+            $stmtCheck = $bd->prepare("
+            SELECT 1 FROM tache_qualification
+            WHERE idTache = ? AND idQualification = ? AND valide = 1
+            LIMIT 1
+        ");
+            $stmtCheck->execute([$idTache, $idQualification]);
+
+            if ($stmtCheck->fetch()) {
+                $bd->rollBack();
+                echo "existe";
+                die;
+            }
+
+            // 2. Récupérer les qualifications déjà associées à la tâche
+            $stmtQualifs = $bd->prepare("
+            SELECT idQualification FROM tache_qualification
+            WHERE idTache = ? AND valide = 1
+        ");
+            $stmtQualifs->execute([$idTache]);
+            $qualificationsExistantes   = $stmtQualifs->fetchAll(PDO::FETCH_COLUMN);
+            $qualificationsExistantes[] = $idQualification; // ajouter la nouvelle
+
+            // 3. Récupérer les utilisateurs associés à la tâche
+            $stmtUsers = $bd->prepare("
+            SELECT u.id, u.matricule, u.email
+            FROM tache_utilisateur tu
+            JOIN utilisateurs u ON tu.idUtilisateur = u.id
+            WHERE tu.idTache = ? AND tu.access = 1
+        ");
+            $stmtUsers->execute([$idTache]);
+            $users = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
+
+            // 4. Appel get_info — retourne tableau indexé par matricule
+            $matricules = array_column($users, 'matricule');
+            $usersInfo  = $adminController->get_info($matricules);
+
+            // 5. Préparer les requêtes de retrait d'accès
+            $stmtGetLast = $bd->prepare("
+            SELECT id FROM tache_utilisateur
+            WHERE idTache = ? AND idUtilisateur = ?
+            ORDER BY id DESC LIMIT 1
+        ");
+
+            $stmtUpdate = $bd->prepare("
+            UPDATE tache_utilisateur
+            SET access = 0,
+                idUtilisateurSupRetrait = ?,
+                dateRetrait = ?
+            WHERE id = ?
+        ");
+
+            foreach ($users as $user) {
+                $userQualifications = [];
+
+                // get_info retourne une entrée par matricule (pas un tableau de qualifs)
+                if (isset($usersInfo[$user['matricule']])) {
+                    $info = $usersInfo[$user['matricule']];
+                    if (!empty($info['idQualification'])) {
+                        $userQualifications[] = $info['idQualification'];
+                    }
+                }
+
+                $hasRequiredQualification = false;
+                foreach ($userQualifications as $qualif) {
+                    if (in_array($qualif, $qualificationsExistantes)) {
+                        $hasRequiredQualification = true;
+                        break;
+                    }
+                }
+
+                if (!$hasRequiredQualification) {
+                    $stmtGetLast->execute([$idTache, $user['id']]);
+                    $lastId = $stmtGetLast->fetchColumn();
+                    if ($lastId) {
+                        $stmtUpdate->execute([$idUtilisateur, $dateEnregistrement, $lastId]);
+                    }
+                }
+            }
+
+            // 6. Créer la nouvelle association
+            $stmtInsert = $bd->prepare("
+            INSERT INTO tache_qualification (idTache, idQualification, dateEnregistrement, createdBy)
+            VALUES (?, ?, ?, ?)
+        ");
+            $stmtInsert->execute([$idTache, $idQualification, $dateEnregistrement, $idUtilisateur]);
+
+            $bd->commit();
+            echo "succes";
+            die;
+
+        } catch (Exception $e) {
+            if ($bd->inTransaction()) {
+                $bd->rollBack();
+            }
+            error_log("Erreur addTacheQualification: " . $e->getMessage());
+            echo "erreur";
+            die;
+        }
+
+        break;
+
+// ==================================================
+// CASE 30 — SUPPRIMER ASSOCIATION TACHE QUALIFICATION
+// ==================================================
+    case 30:
+
+
+                date_default_timezone_set('Africa/Dakar');
+        $dateModification = date('Y-m-d H:i:s');
+
+
+        $idUtilisateur = null;
+        if (!empty($_SESSION['tmpIdP'])) {
+            $idUtilisateur = $_SESSION['tmpIdP'];
+        } else {
+            echo "sessionExpired";
+            die;
+        }
+
+        $idTacheQualification = $_POST['id'] ?? null;
+
+        if (!$idTacheQualification) {
+            echo "erreur";
+            die;
+        }
+
+
+        try {
+            // Démarrer la transaction
+            $bd->beginTransaction();
+
+            // 1. Récupérer la tâche et la qualification liées
+            $stmt = $bd->prepare('SELECT idTache, idQualification FROM tache_qualification WHERE id = ?');
+            $stmt->execute([$idTacheQualification]);
+            $association = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$association) {
+                $bd->rollBack(); // Annuler la transaction si pas d'association
+                return [
+                    'success' => false,
+                    'message' => 'Association tâche-qualification introuvable.',
+                    'matricules' => []
+                ];
+            }
+
+            $idTache = $association['idTache'];
+            $idQualification = $association['idQualification'];
+
+            // 2. Vérifier le nombre de qualifications restantes valides pour la tâche
+            $stmt = $bd->prepare('SELECT COUNT(*) FROM tache_qualification WHERE idTache = ? AND valide = 1');
+            $stmt->execute([$idTache]);
+            $remainingQualifications = (int) $stmt->fetchColumn();
+
+            // 3. Désactiver la validité
+            $stmt = $bd->prepare('UPDATE tache_qualification SET valide = 0, updatedBy = ?, dateUpdate = ? WHERE id = ?');
+            $stmt->execute([$_SESSION['id'],$dateModification, $idTacheQualification]);
+
+            // Si c'était la dernière qualification valide
+            if ($remainingQualifications == 1) {
+                $bd->commit(); // Valider la transaction
+                return [
+                    'success' => true,
+                    'message' => 'Validité changée. Dernière qualification restante.',
+                    'matricules' => []
+                ];
+            }
+
+            // 4. Récupérer les utilisateurs ayant cette tâche
+            $stmt = $bd->prepare('
+            SELECT u.id AS idUtilisateur, u.matricule
+            FROM tache_utilisateur tu
+            JOIN utilisateur u ON tu.idUtilisateur = u.id
+            WHERE tu.idTache = ?
+        ');
+            $stmt->execute([$idTache]);
+            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            if (empty($users)) {
+                $bd->commit(); // Valider la transaction
+                echo "sucess";
+                die;
+//                return [
+//                    'success' => true,
+//                    'message' => 'Aucun utilisateur lié à cette tâche.',
+//                    'matricules' => []
+//                ];
+            }
+
+            // 5. Préparer la liste des matricules
+            $matricules = array_column($users, 'matricule');
+
+            // 6. Récupérer les informations utilisateurs via API
+            $infos = $adminController->get_info($matricules);
+
+            $updatedMatricules = [];
+
+// 7. Mise à jour des accès pour les utilisateurs qualifiés
+            $stmtGetLast = $bd->prepare('
+    SELECT id FROM tache_utilisateur 
+    WHERE idUtilisateur = ? AND idTache = ? 
+    ORDER BY id DESC 
+    LIMIT 1
+');
+
+            $stmtUpdate = $bd->prepare('
+    UPDATE tache_utilisateur 
+    SET access = 0, idUtilisateurSupRetrait = ?, dateRetrait = ? 
+    WHERE id = ?
+');
+
+            foreach ($users as $user) {
+                $matricule = $user['matricule'];
+                $idUtilisateur = $user['idUtilisateur'];
+
+                if (!isset($infos[$matricule]) || !is_array($infos[$matricule])) {
+                    continue;
+                }
+
+                $qualifications = $infos[$matricule];
+                $isQualified = array_filter($qualifications, function ($qualif) use ($idQualification) {
+                    return isset($qualif['idQualification']) && $qualif['idQualification'] == $idQualification;
+                });
+
+                if (!empty($isQualified)) {
+                    // Récupère la dernière ligne correspondante
+                    $stmtGetLast->execute([$idUtilisateur, $idTache]);
+                    $lastId = $stmtGetLast->fetchColumn();
+
+                    if ($lastId) {
+                        $stmtUpdate->execute([$_SESSION['id'], $dateModification, $lastId]);
+                        $updatedMatricules[] = $matricule;
+                    }
+                }
+            }
+            // Valider la transaction après toutes les mises à jour
+            $bd->commit();
+
+
+            echo "succes";
+            die;
+//            return [
+//                'success' => true,
+//                'message' => 'Validité changée. Accès mis à jour pour les utilisateurs qualifiés.',
+//                'matricules' => $updatedMatricules
+//            ];
+
+        } catch (PDOException $e) {
+            $bd->rollBack(); // Annuler la transaction en cas d'erreur PDO
+            error_log('Erreur PDO : ' . $e->getMessage());
+
+            echo "erreur";
+            die;
+//            return [
+//                'success' => false,
+//                'message' => 'Erreur lors de la mise à jour : ' . $e->getMessage(),
+//                'matricules' => []
+//            ];
+        } catch (Exception $e) {
+            $bd->rollBack(); // Annuler la transaction en cas d'erreur générale
+            error_log('Erreur : ' . $e->getMessage());
+
+            echo "erreur";
+            die;
+//            return [
+//                'success' => false,
+//                'message' => 'Erreur inattendue : ' . $e->getMessage(),
+//                'matricules' => []
+//            ];
+        }
+
+        break;
+
+
+
+
     default :
         echo "erreur";
         die;
+
 
 
 
