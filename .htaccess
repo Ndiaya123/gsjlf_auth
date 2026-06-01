@@ -115,6 +115,12 @@ RewriteRule ^admin-liste-tache_qualification$ admin/tacheQualification.php [L]
 RewriteRule ^scripts.bundle.10.js$ admin/js/tacheQualification.js [L]
 
 
+RewriteRule ^admin-accueil$ admin/accueil.php [L]
+RewriteRule ^scripts.bundle.11.js$ admin/js/accueil.js [L]
+
+
+
+
 
 
 

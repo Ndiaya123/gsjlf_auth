@@ -9,12 +9,12 @@ use PHPMailer\PHPMailer\SMTP;
 use setasign\Fpdi\Fpdi;
 use setasign\Fpdi\PdfReader;
 
-include_once('../../bd.php');
+include_once('../../bdP.php');
 require_once('../../includes/phpMailer/PHPMailer.php');
 require_once('../../includes/phpMailer/SMTP.php');
 require_once('../../includes/phpMailer/Exception.php');
 
-class papa extends BD
+class adminController extends BDP
 {
 
 
@@ -200,42 +200,6 @@ class papa extends BD
 
 
 
-    public function returnPosteResponsabilite($identifiant)
-    {
-
-
-        try {
-            $data = [
-                'identifiant' => $identifiant,
-                'statutPoste' => 1
-            ];
-            $db = $this->connect();
-            $stmt = $db->prepare("SELECT fonction.fonction
-FROM postesAResponsabilite
-INNER JOIN fonction 
-    ON postesAResponsabilite.idFonction = fonction.id
-WHERE postesAResponsabilite.identifiant=:identifiant AND postesAResponsabilite.statutPoste = :statutPoste
-AND postesAResponsabilite.dateFin IS NOT NULL;");
-            $stmt->execute($data);
-            $result = $stmt->fetch(PDO::FETCH_OBJ);
-
-            if($result)
-            {
-                return $result->fonction;
-
-            }else
-            {
-                return "Agent simple";
-
-            }
-
-
-        } catch (\Throwable $th) {
-            return "";
-        }
-
-
-    }
 
     function imageExiste($url)
     {
@@ -269,7 +233,7 @@ AND postesAResponsabilite.dateFin IS NOT NULL;");
 //    function get_info($matricule)
 //    {
 //
-//        $bd = $this->connect();
+//        $bdP = $this->connect();
 //
 //        $listes =  array();
 //        foreach ($matricule as $matricule)
@@ -286,7 +250,7 @@ AND postesAResponsabilite.dateFin IS NOT NULL;");
 //    p.idQualification
 //FROM personnels p
 //WHERE p.matricule = :matricule;";
-//           $stmt_perso = $bd->prepare($sql_perso);
+//           $stmt_perso = $bdP->prepare($sql_perso);
 //           $stmt_perso->execute($data_perso);
 //           $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
 //
@@ -299,7 +263,7 @@ AND postesAResponsabilite.dateFin IS NOT NULL;");
 //
 //               ];
 //               $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
-//               $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+//               $stmt_perso_contrat = $bdP->prepare($sql_perso_contrat);
 //               $stmt_perso_contrat->execute($data_perso_contrat);
 //               $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
 //
@@ -334,7 +298,7 @@ AND postesAResponsabilite.dateFin IS NOT NULL;");
     function get_info($matricule)
     {
 
-        $bd = $this->connect();
+        $bdP = $this->connect();
 
         $listes =  array();
         foreach ($matricule as $matricule)
@@ -351,7 +315,7 @@ AND postesAResponsabilite.dateFin IS NOT NULL;");
     p.idQualification
 FROM personnels p
 WHERE p.matricule = :matricule;";
-            $stmt_perso = $bd->prepare($sql_perso);
+            $stmt_perso = $bdP->prepare($sql_perso);
             $stmt_perso->execute($data_perso);
             $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
 
@@ -364,7 +328,7 @@ WHERE p.matricule = :matricule;";
 
                 ];
                 $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
-                $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+                $stmt_perso_contrat = $bdP->prepare($sql_perso_contrat);
                 $stmt_perso_contrat->execute($data_perso_contrat);
                 $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
 
@@ -399,9 +363,9 @@ WHERE p.matricule = :matricule;";
 }
 
 
-$bd = new BD();
-$bd = $bd->connect();
-$adminController = new papa();
+$bdP = new BDP();
+$bdP = $bdP->connect();
+$adminController = new adminController();
 date_default_timezone_set('Africa/Dakar');
 
 
@@ -424,7 +388,7 @@ switch ($option) {
 
             try {
 
-                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 
                 $sql = "SELECT 
@@ -476,7 +440,7 @@ LEFT JOIN unite_administrative_niv3
     ON affectations.idUniteAdministrativeNiv3 = unite_administrative_niv3.id
 
 ORDER BY utilisateurs.dateCreation ASC;";
-                $stmt = $bd->prepare($sql);
+                $stmt = $bdP->prepare($sql);
                 $stmt->execute();
                 $result = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -581,7 +545,7 @@ ORDER BY utilisateurs.dateCreation ASC;";
 
         try {
 
-            $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 
             $sql = "SELECT 
@@ -592,7 +556,7 @@ ORDER BY utilisateurs.dateCreation ASC;";
       utilisateurs.statutActivation,
       utilisateurs.idTypeUtilisateur
 FROM utilisateurs";
-            $stmt = $bd->prepare($sql);
+            $stmt = $bdP->prepare($sql);
             $stmt->execute();
             $result = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -665,8 +629,8 @@ FROM utilisateurs";
 
 
             try {
-                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $bd->beginTransaction();
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->beginTransaction();
 
 
                 date_default_timezone_set('Africa/Dakar');
@@ -678,7 +642,7 @@ FROM utilisateurs";
                 ];
 
                 $sql = "SELECT * FROM utilisateurs WHERE id=:id";
-                $stmt = $bd->prepare($sql);
+                $stmt = $bdP->prepare($sql);
                 $stmt->execute($data);
                 $result = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -698,7 +662,7 @@ FROM utilisateurs";
                 SET statutUtilisateur = :statutUtilisateur
                 WHERE id = :id";
 
-                        $stmt_up_user = $bd->prepare($sql_up_user);
+                        $stmt_up_user = $bdP->prepare($sql_up_user);
 
                         $tmpStmt_up_user = $stmt_up_user->execute($data_up_user);
 
@@ -718,19 +682,19 @@ FROM utilisateurs";
 
                                 ];
                                 $sqlHistorique = "INSERT INTO historiques(identifiant,motif,tables,idUtilisateur,dateEnregistrement) VALUES (:identifiant,:motif,:tables,:idUtilisateur,:dateEnregistrement)";
-                                $stmtHistorique = $bd->prepare($sqlHistorique);
+                                $stmtHistorique = $bdP->prepare($sqlHistorique);
                                 $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 
 
                                 if ($tmpStmtHistorique) {
 
-                                    $bd->commit();
+                                    $bdP->commit();
                                     echo "succès";
                                     die;
 
                                 } else {
-                                    if ($bd->inTransaction()) {
-                                        $bd->rollBack();
+                                    if ($bdP->inTransaction()) {
+                                        $bdP->rollBack();
                                     }
                                     echo "erreur";
                                     die;
@@ -740,23 +704,23 @@ FROM utilisateurs";
 
 
                             } else {
-                                if ($bd->inTransaction()) {
-                                    $bd->rollBack();
+                                if ($bdP->inTransaction()) {
+                                    $bdP->rollBack();
                                 }
                                 echo "erreur";
                                 die;                            }
 
                         } else {
-                            if ($bd->inTransaction()) {
-                                $bd->rollBack();
+                            if ($bdP->inTransaction()) {
+                                $bdP->rollBack();
                             }
                             echo "erreur";
                             die;                        }
 
                     }else
                     {
-                        if ($bd->inTransaction()) {
-                            $bd->rollBack();
+                        if ($bdP->inTransaction()) {
+                            $bdP->rollBack();
                         }
                         echo "erreur";
                         die;
@@ -764,8 +728,8 @@ FROM utilisateurs";
 
 
                 } else {
-                    if ($bd->inTransaction()) {
-                        $bd->rollBack();
+                    if ($bdP->inTransaction()) {
+                        $bdP->rollBack();
                     }
                     echo "erreur";
                     die;
@@ -773,8 +737,8 @@ FROM utilisateurs";
                 }
 
             } catch (Exception $e) {
-                if ($bd->inTransaction()) {
-                    $bd->rollBack();
+                if ($bdP->inTransaction()) {
+                    $bdP->rollBack();
                 }
                 echo "erreur";
                 die;
@@ -812,8 +776,8 @@ break;
 
 
             try {
-                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $bd->beginTransaction();
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->beginTransaction();
 
 
                 date_default_timezone_set('Africa/Dakar');
@@ -824,7 +788,7 @@ break;
                     'id' => $id];
 
                 $sql = "SELECT * FROM utilisateurs WHERE id=:id";
-                $stmt = $bd->prepare($sql);
+                $stmt = $bdP->prepare($sql);
                 $stmt->execute($data);
                 $result = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -844,7 +808,7 @@ break;
                 SET statutUtilisateur = :statutUtilisateur
                 WHERE id = :id";
 
-                        $stmt_up_user = $bd->prepare($sql_up_user);
+                        $stmt_up_user = $bdP->prepare($sql_up_user);
 
                         $tmpStmt_up_user = $stmt_up_user->execute($data_up_user);
 
@@ -864,19 +828,19 @@ break;
 
                                 ];
                                 $sqlHistorique = "INSERT INTO historiques(identifiant,motif,tables,idUtilisateur,dateEnregistrement) VALUES (:identifiant,:motif,:tables,:idUtilisateur,:dateEnregistrement)";
-                                $stmtHistorique = $bd->prepare($sqlHistorique);
+                                $stmtHistorique = $bdP->prepare($sqlHistorique);
                                 $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 
 
                                 if ($tmpStmtHistorique) {
 
-                                    $bd->commit();
+                                    $bdP->commit();
                                     echo "succès";
                                     die;
 
                                 } else {
-                                    if ($bd->inTransaction()) {
-                                        $bd->rollBack();
+                                    if ($bdP->inTransaction()) {
+                                        $bdP->rollBack();
                                     }
                                     echo "erreur";
                                     die;
@@ -884,23 +848,23 @@ break;
 
 
                             } else {
-                                if ($bd->inTransaction()) {
-                                    $bd->rollBack();
+                                if ($bdP->inTransaction()) {
+                                    $bdP->rollBack();
                                 }
                                 echo "erreur";
                                 die;                            }
 
                         } else {
-                            if ($bd->inTransaction()) {
-                                $bd->rollBack();
+                            if ($bdP->inTransaction()) {
+                                $bdP->rollBack();
                             }
                             echo "erreur";
                             die;                        }
 
                     }else
                     {
-                        if ($bd->inTransaction()) {
-                            $bd->rollBack();
+                        if ($bdP->inTransaction()) {
+                            $bdP->rollBack();
                         }
                         echo "erreur";
                         die;
@@ -908,8 +872,8 @@ break;
 
 
                 } else {
-                    if ($bd->inTransaction()) {
-                        $bd->rollBack();
+                    if ($bdP->inTransaction()) {
+                        $bdP->rollBack();
                     }
                     echo "erreur";
                     die;
@@ -917,8 +881,8 @@ break;
                 }
 
             } catch (Exception $e) {
-                if ($bd->inTransaction()) {
-                    $bd->rollBack();
+                if ($bdP->inTransaction()) {
+                    $bdP->rollBack();
                 }
                 echo "erreur";
                 die;
@@ -937,7 +901,7 @@ break;
         if (!empty($_POST['matricule'])) {
 
             try {
-                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 
                 date_default_timezone_set('Africa/Dakar');
@@ -954,7 +918,7 @@ break;
                 ];
 
                 $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
-                $stmt = $bd->prepare($sql);
+                $stmt = $bdP->prepare($sql);
                 $stmt->execute($data);
                 $result = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -978,7 +942,7 @@ INNER JOIN etatCivil ec
 LEFT JOIN compteGmail cg 
     ON p.idCompteGmail = cg.id
 WHERE p.matricule = :matricule;";
-                    $stmt_perso = $bd->prepare($sql_perso);
+                    $stmt_perso = $bdP->prepare($sql_perso);
                     $stmt_perso->execute($data_perso);
                     $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
 
@@ -1062,8 +1026,8 @@ $photo = NULL;
 
 
             try {
-                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $bd->beginTransaction();
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->beginTransaction();
 
 
                 date_default_timezone_set('Africa/Dakar');
@@ -1088,7 +1052,7 @@ $photo = NULL;
                 ];
 
                 $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule AND email=:email";
-                $stmt = $bd->prepare($sql);
+                $stmt = $bdP->prepare($sql);
                 $stmt->execute($data);
                 $result = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -1109,7 +1073,7 @@ INNER JOIN etatCivil ec
 LEFT JOIN compteGmail cg 
     ON p.idCompteGmail = cg.id
 WHERE p.matricule = :matricule;";
-                    $stmt_perso = $bd->prepare($sql_perso);
+                    $stmt_perso = $bdP->prepare($sql_perso);
                     $stmt_perso->execute($data_perso);
                     $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
 
@@ -1132,7 +1096,7 @@ WHERE p.matricule = :matricule;";
 
                         ];
                         $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
-                        $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+                        $stmt_perso_contrat = $bdP->prepare($sql_perso_contrat);
                         $stmt_perso_contrat->execute($data_perso_contrat);
                         $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
 
@@ -1167,7 +1131,7 @@ WHERE p.matricule = :matricule;";
                                     'idTypeUtilisateur' => 2
                                 ];
                                 $sql = "INSERT INTO utilisateurs(identifiant,matricule,email,password,cgu,dateCreation,statutUtilisateur,creerPar,statutCreerPar,statutActivation,codeActivation,dateEnvoiCodeValidation,idEtatCivil,idTypeUtilisateur) VALUES(:identifiant,:matricule,:email,:password,:cgu,:dateCreation,:statutUtilisateur,:creerPar,:statutCreerPar,:statutActivation,:codeActivation,:dateEnvoiCodeValidation,:idEtatCivil,:idTypeUtilisateur)";
-                                $stmt = $bd->prepare($sql);
+                                $stmt = $bdP->prepare($sql);
                                 $tmpStmt = $stmt->execute($dataCandidat);
 
                                 if ($tmpStmt == 1) {
@@ -1186,7 +1150,7 @@ WHERE p.matricule = :matricule;";
 
                                     ];
                                     $sqlHistorique = "INSERT INTO historiques(identifiant,motif,tables,idUtilisateur,dateEnregistrement) VALUES (:identifiant,:motif,:tables,:idUtilisateur,:dateEnregistrement)";
-                                    $stmtHistorique = $bd->prepare($sqlHistorique);
+                                    $stmtHistorique = $bdP->prepare($sqlHistorique);
                                     $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 
 
@@ -1490,22 +1454,22 @@ WHERE p.matricule = :matricule;";
                                         $emailSent = $adminController->sendEmail($email, $prenom, "Activez votre compte maintenant !", $message);
 
                                         if (!$emailSent) {
-                                            if ($bd->inTransaction()) {
-                                                $bd->rollBack();
+                                            if ($bdP->inTransaction()) {
+                                                $bdP->rollBack();
                                             }
                                             echo "erreurMail";
                                             die;
                                         } else {
 
-                                            $bd->commit();
+                                            $bdP->commit();
                                             echo "succès";
                                             die;
 
                                         }
 
                                     } else {
-                                        if ($bd->inTransaction()) {
-                                            $bd->rollBack();
+                                        if ($bdP->inTransaction()) {
+                                            $bdP->rollBack();
                                         }
                                         echo "erreur";
                                         die;
@@ -1513,8 +1477,8 @@ WHERE p.matricule = :matricule;";
 
 
                                 } else {
-                                    if ($bd->inTransaction()) {
-                                        $bd->rollBack();
+                                    if ($bdP->inTransaction()) {
+                                        $bdP->rollBack();
                                     }
 
                                     echo "erreur";
@@ -1523,8 +1487,8 @@ WHERE p.matricule = :matricule;";
 
 
                             } else {
-                                if ($bd->inTransaction()) {
-                                    $bd->rollBack();
+                                if ($bdP->inTransaction()) {
+                                    $bdP->rollBack();
                                 }
 
                                 echo "finContrat";
@@ -1534,8 +1498,8 @@ WHERE p.matricule = :matricule;";
 
 
                         } else {
-                            if ($bd->inTransaction()) {
-                                $bd->rollBack();
+                            if ($bdP->inTransaction()) {
+                                $bdP->rollBack();
                             }
                             echo "pasContrat";
                             die;
@@ -1543,8 +1507,8 @@ WHERE p.matricule = :matricule;";
 
 
                     } else {
-                        if ($bd->inTransaction()) {
-                            $bd->rollBack();
+                        if ($bdP->inTransaction()) {
+                            $bdP->rollBack();
                         }
                         echo "matriculeExistsPas";
                         die;
@@ -1552,8 +1516,8 @@ WHERE p.matricule = :matricule;";
                     }
 
                 } else {
-                    if ($bd->inTransaction()) {
-                        $bd->rollBack();
+                    if ($bdP->inTransaction()) {
+                        $bdP->rollBack();
                     }
                     echo "dejaCompte";
                     die;
@@ -1561,8 +1525,8 @@ WHERE p.matricule = :matricule;";
                 }
 
             } catch (Exception $e) {
-                if ($bd->inTransaction()) {
-                    $bd->rollBack();
+                if ($bdP->inTransaction()) {
+                    $bdP->rollBack();
                 }
                 echo "erreur";
                 die;
@@ -1577,7 +1541,7 @@ WHERE p.matricule = :matricule;";
     case 7 :
 
         try {
-            $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 
             $data =
@@ -1604,7 +1568,7 @@ FROM sous_menu
 JOIN icons i 
     ON i.id = sous_menu.idIcon
 WHERE sous_menu.statut = :statut;";
-            $stmt = $bd->prepare($sql);
+            $stmt = $bdP->prepare($sql);
             $stmt->execute($data);
             $results = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -1620,11 +1584,11 @@ WHERE sous_menu.statut = :statut;";
     case 8:
 
         try {
-            $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 
             $sql = "SELECT * FROM icons ORDER BY icons.id ASC";
-            $stmt = $bd->prepare($sql);
+            $stmt = $bdP->prepare($sql);
             $stmt->execute();
             $results = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -1668,7 +1632,7 @@ break;
 
             $id = $_POST['id'];
             try {
-                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
                 $data =
                     [
@@ -1696,7 +1660,7 @@ FROM sous_menu
 JOIN icons i 
     ON i.id = sous_menu.idIcon
 WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
-            $stmt = $bd->prepare($sql);
+            $stmt = $bdP->prepare($sql);
             $stmt->execute($data);
             $result = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -1753,8 +1717,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
             $dateEnregistrement = date('Y-m-d H:i:s');
 
             try {
-                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $bd->beginTransaction();
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->beginTransaction();
 
                 $data =
                     [
@@ -1763,7 +1727,7 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                     ];
 
                 $sql = "SELECT * FROM sous_menu WHERE nom= :nom AND statut = :statut;";
-                $stmt = $bd->prepare($sql);
+                $stmt = $bdP->prepare($sql);
                 $stmt->execute($data);
                 $result = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -1779,12 +1743,12 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
 
                     ];
                 $sql_insert = "INSERT INTO sous_menu(nom, idIcon,idUtilisateur,statut,dateEnregistrement) VALUES (:nom, :idIcon,:idUtilisateur,:statut,:dateEnregistrement)";
-                $stmt_insert = $bd->prepare($sql_insert);
+                $stmt_insert = $bdP->prepare($sql_insert);
                 $tmp_insert = $stmt_insert->execute($data_insert);
 
                 if($tmp_insert)
                 {
-                    $idSousMenu = $bd->lastInsertId();
+                    $idSousMenu = $bdP->lastInsertId();
 
                     $data_insert_his = [
                         'idSousMenu' => $idSousMenu,
@@ -1795,21 +1759,21 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                         'dateEnregistrement' => $dateEnregistrement
                     ];
                     $sql_insert_his = "INSERT INTO sous_menu_historiques(idSousMenu,nom,idIcon,idUtilisateur,statut,dateEnregistrement) VALUES (:idSousMenu,:nom, :idIcon,:idUtilisateur,:statut,:dateEnregistrement)";
-                    $stmt_insert_his = $bd->prepare($sql_insert_his);
+                    $stmt_insert_his = $bdP->prepare($sql_insert_his);
                     $tmp_insert_his = $stmt_insert_his->execute($data_insert_his);
 
                     if($tmp_insert_his)
                     {
-                        if ($bd->inTransaction()) {
-                            $bd->commit();
+                        if ($bdP->inTransaction()) {
+                            $bdP->commit();
                         }
                         echo "succès";
                         die;
 
                     }else
                     {
-                        if ($bd->inTransaction()) {
-                            $bd->rollBack();
+                        if ($bdP->inTransaction()) {
+                            $bdP->rollBack();
                         }
                         echo "erreur";
                         die;
@@ -1818,8 +1782,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                 }else
                 {
 
-                    if ($bd->inTransaction()) {
-                        $bd->rollBack();
+                    if ($bdP->inTransaction()) {
+                        $bdP->rollBack();
                     }
                     echo "erreur";
                     die;
@@ -1830,8 +1794,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
             }else
                 {
 
-                    if ($bd->inTransaction()) {
-                        $bd->rollBack();
+                    if ($bdP->inTransaction()) {
+                        $bdP->rollBack();
                     }
                     echo "nomExiste";
                     die;
@@ -1843,8 +1807,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
 
             }catch (Exception $e) {
 
-                if ($bd->inTransaction()) {
-                    $bd->rollBack();
+                if ($bdP->inTransaction()) {
+                    $bdP->rollBack();
                 }
                 echo "erreur";
                 die;
@@ -1886,8 +1850,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
             $dateEnregistrement = date('Y-m-d H:i:s');
 
             try {
-                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $bd->beginTransaction();
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->beginTransaction();
 
                 $data =
                     [
@@ -1896,7 +1860,7 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                     ];
 
                 $sql = "SELECT * FROM sous_menu WHERE id= :id AND statut = :statut;";
-                $stmt = $bd->prepare($sql);
+                $stmt = $bdP->prepare($sql);
                 $stmt->execute($data);
                 $result = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -1914,7 +1878,7 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                 SET statut = :statut1
                 WHERE id = :id AND statut = :statut2;";
 
-                    $stmt_up_sm = $bd->prepare($sql_up_sm);
+                    $stmt_up_sm = $bdP->prepare($sql_up_sm);
 
                     $tmpStmt_up_sm = $stmt_up_sm->execute($data_up_sm);
 
@@ -1932,21 +1896,21 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                                 'dateEnregistrement' => $dateEnregistrement
                             ];
                             $sql_insert_his = "INSERT INTO sous_menu_historiques(idSousMenu,nom,idIcon,idUtilisateur,statut,dateEnregistrement) VALUES (:idSousMenu,:nom, :idIcon,:idUtilisateur,:statut,:dateEnregistrement)";
-                            $stmt_insert_his = $bd->prepare($sql_insert_his);
+                            $stmt_insert_his = $bdP->prepare($sql_insert_his);
                             $tmp_insert_his = $stmt_insert_his->execute($data_insert_his);
 
                             if($tmp_insert_his)
                             {
-                                if ($bd->inTransaction()) {
-                                    $bd->commit();
+                                if ($bdP->inTransaction()) {
+                                    $bdP->commit();
                                 }
                                 echo "succès";
                                 die;
 
                             }else
                             {
-                                if ($bd->inTransaction()) {
-                                    $bd->rollBack();
+                                if ($bdP->inTransaction()) {
+                                    $bdP->rollBack();
                                 }
                                 echo "erreur4";
                                 die;
@@ -1954,8 +1918,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
 
                         }else
                         {
-                            if ($bd->inTransaction()) {
-                                $bd->rollBack();
+                            if ($bdP->inTransaction()) {
+                                $bdP->rollBack();
                             }
                             echo "erreur3";
                             die;
@@ -1966,8 +1930,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                     }else
                     {
 
-                        if ($bd->inTransaction()) {
-                            $bd->rollBack();
+                        if ($bdP->inTransaction()) {
+                            $bdP->rollBack();
                         }
                         echo "erreur2";
                         die;
@@ -1978,8 +1942,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                 }else
                 {
 
-                    if ($bd->inTransaction()) {
-                        $bd->rollBack();
+                    if ($bdP->inTransaction()) {
+                        $bdP->rollBack();
                     }
                     echo "erreur1";
                     die;
@@ -1991,8 +1955,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
 
             }catch (Exception $e) {
 
-                if ($bd->inTransaction()) {
-                    $bd->rollBack();
+                if ($bdP->inTransaction()) {
+                    $bdP->rollBack();
                 }
                 echo "erreur".$e;
                 die;
@@ -2036,8 +2000,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
             $dateEnregistrement = date('Y-m-d H:i:s');
 
             try {
-                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $bd->beginTransaction();
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->beginTransaction();
 
                 $data =
                     [
@@ -2046,7 +2010,7 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                     ];
 
                 $sql = "SELECT * FROM sous_menu WHERE id= :id AND statut = :statut;";
-                $stmt = $bd->prepare($sql);
+                $stmt = $bdP->prepare($sql);
                 $stmt->execute($data);
                 $result = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -2071,7 +2035,7 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                 SET  nom=:nom, idIcon=:idIcon
                 WHERE id = :id AND statut = :statut;";
 
-                    $stmt_up_sm = $bd->prepare($sql_up_sm);
+                    $stmt_up_sm = $bdP->prepare($sql_up_sm);
 
                     $tmpStmt_up_sm = $stmt_up_sm->execute($data_up_sm);
 
@@ -2089,21 +2053,21 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                                 'dateEnregistrement' => $dateEnregistrement
                             ];
                             $sql_insert_his = "INSERT INTO sous_menu_historiques(idSousMenu,nom,idIcon,idUtilisateur,statut,dateEnregistrement) VALUES (:idSousMenu,:nom, :idIcon,:idUtilisateur,:statut,:dateEnregistrement)";
-                            $stmt_insert_his = $bd->prepare($sql_insert_his);
+                            $stmt_insert_his = $bdP->prepare($sql_insert_his);
                             $tmp_insert_his = $stmt_insert_his->execute($data_insert_his);
 
                             if($tmp_insert_his)
                             {
-                                if ($bd->inTransaction()) {
-                                    $bd->commit();
+                                if ($bdP->inTransaction()) {
+                                    $bdP->commit();
                                 }
                                 echo "succès";
                                 die;
 
                             }else
                             {
-                                if ($bd->inTransaction()) {
-                                    $bd->rollBack();
+                                if ($bdP->inTransaction()) {
+                                    $bdP->rollBack();
                                 }
                                 echo "erreur4";
                                 die;
@@ -2111,8 +2075,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
 
                         }else
                         {
-                            if ($bd->inTransaction()) {
-                                $bd->rollBack();
+                            if ($bdP->inTransaction()) {
+                                $bdP->rollBack();
                             }
                             echo "erreur3";
                             die;
@@ -2123,8 +2087,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                     }else
                     {
 
-                        if ($bd->inTransaction()) {
-                            $bd->rollBack();
+                        if ($bdP->inTransaction()) {
+                            $bdP->rollBack();
                         }
                         echo "erreur2";
                         die;
@@ -2135,8 +2099,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                 }else
                 {
 
-                    if ($bd->inTransaction()) {
-                        $bd->rollBack();
+                    if ($bdP->inTransaction()) {
+                        $bdP->rollBack();
                     }
                     echo "erreur1";
                     die;
@@ -2148,8 +2112,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
 
             }catch (Exception $e) {
 
-                if ($bd->inTransaction()) {
-                    $bd->rollBack();
+                if ($bdP->inTransaction()) {
+                    $bdP->rollBack();
                 }
                 echo "erreur".$e;
                 die;
@@ -2222,7 +2186,7 @@ GROUP BY
     id_structure
 
 ORDER BY t.nom ASC;";
-            $stmt = $bd->prepare($sql);
+            $stmt = $bdP->prepare($sql);
             $stmt->execute();
             $result = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -2246,7 +2210,7 @@ ORDER BY t.nom ASC;";
         try {
 
 
-            $stmt = $bd->prepare("SELECT * FROM typetache");
+            $stmt = $bdP->prepare("SELECT * FROM typetache");
             $stmt->execute();
             $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -2273,7 +2237,7 @@ ORDER BY t.nom ASC;";
         try {
 
 
-            $stmt = $bd->prepare("SELECT * FROM fonction");
+            $stmt = $bdP->prepare("SELECT * FROM fonction");
             $stmt->execute();
             $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -2299,7 +2263,7 @@ ORDER BY t.nom ASC;";
            try {
 
 
-               $stmt = $bd->prepare("SELECT * FROM sous_menu");
+               $stmt = $bdP->prepare("SELECT * FROM sous_menu");
                $stmt->execute();
                $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -2331,7 +2295,7 @@ ORDER BY t.nom ASC;";
 //                       [
 //                           'adminAcceuilIcone' => 1
 //                       ];
-//                   $stmt = $bd->prepare("SELECT * FROM icons WHERE adminAcceuilIcone != :adminAcceuilIcone");
+//                   $stmt = $bdP->prepare("SELECT * FROM icons WHERE adminAcceuilIcone != :adminAcceuilIcone");
 //                   $stmt->execute($data);
 //                   $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 //
@@ -2350,7 +2314,7 @@ ORDER BY t.nom ASC;";
 
                    // option 17
                    $sql = "SELECT id, icon FROM icons ORDER BY id ASC";
-                   $stmt = $bd->prepare($sql);
+                   $stmt = $bdP->prepare($sql);
                    $stmt->execute();
                    $icons = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -2375,7 +2339,7 @@ ORDER BY t.nom ASC;";
 
 
 
-            $stmt = $bd->prepare("SELECT * FROM base_donnees");
+            $stmt = $bdP->prepare("SELECT * FROM base_donnees");
             $stmt->execute();
             $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -2440,13 +2404,13 @@ ORDER BY t.nom ASC;";
 //
 //
 //        try {
-//            $bd->beginTransaction();
+//            $bdP->beginTransaction();
 //
 //            // Vérifier si l'URL existe déjà
-//            $stmtCheck = $bd->prepare("SELECT COUNT(*) FROM tache WHERE url = ?");
+//            $stmtCheck = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE url = ?");
 //            $stmtCheck->execute([$url]);
 //            if ($stmtCheck->fetchColumn() > 0) {
-//                $bd->rollBack();
+//                $bdP->rollBack();
 //
 //                echo "existeTache";
 //                die;
@@ -2490,11 +2454,11 @@ ORDER BY t.nom ASC;";
 //            }
 //
 //            if ($whereUA) {
-//                $stmtCheckNom = $bd->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND $whereUA");
+//                $stmtCheckNom = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND $whereUA");
 //                $params = array_merge([$nom, $idTypeTache], $paramsUA);
 //                $stmtCheckNom->execute($params);
 //                if ($stmtCheckNom->fetchColumn() > 0) {
-//                    $bd->rollBack();
+//                    $bdP->rollBack();
 //
 //                    echo "tacheExisteUnite";
 //                    die;
@@ -2505,14 +2469,14 @@ ORDER BY t.nom ASC;";
 //                }
 //            }
 //
-//            $stmt = $bd->prepare("
+//            $stmt = $bdP->prepare("
 //            INSERT INTO tache (nom, idTypeTache, url, idSousMenu, idIcon, autre_ressource, commentaire, idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3, dateEnregistrement, idFonction, createdBy, idDB,idAppli)
 //            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, 0), ?, ?,?)
 //        ");
 //            // Si id_fonction n'est pas null, récupérer ses unités administratives et les affecter à la tâche
 //            if (!empty($id_fonction)) {
 //                // Récupérer les unités administratives liées à la fonction
-//                $stmtUA = $bd->prepare("SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3 FROM fonction WHERE id = ?");
+//                $stmtUA = $bdP->prepare("SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3 FROM fonction WHERE id = ?");
 //                $stmtUA->execute([$id_fonction]);
 //                $ua = $stmtUA->fetch(PDO::FETCH_ASSOC);
 //
@@ -2536,10 +2500,10 @@ ORDER BY t.nom ASC;";
 //
 //            if ($stmt->execute([$nom, $idTypeTache, $url, $idSousMenu, $idIcon, $autre_ressource, $commentaire, $idNiv1, $idNiv2, $idNiv3, $dateEnregistrement, $id_fonction, $idUtilisateur, $idDB,$idAppli])) {
 //                // Récupérer l'id de la tâche insérée
-//                $idTache = $bd->lastInsertId();
+//                $idTache = $bdP->lastInsertId();
 //
 //                // Insertion dans la table historiqueTache
-//                $stmtHist = $bd->prepare("INSERT INTO historiqueTache (
+//                $stmtHist = $bdP->prepare("INSERT INTO historiqueTache (
 //                idUtilisateur, idTache, nom, autre_ressource, url, idTypeTache, commentaire, idSousMenu, idIcon, idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3, dateEnregistrement, active, idFonction, createdBy, idDB,idAppli
 //            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)");
 //                $stmtHist->execute([
@@ -2562,7 +2526,7 @@ ORDER BY t.nom ASC;";
 //                    $idDB
 //                ]);
 //
-//                $bd->commit();
+//                $bdP->commit();
 //
 //                echo "succès";
 //                die;
@@ -2572,7 +2536,7 @@ ORDER BY t.nom ASC;";
 ////                ]);
 //                die;
 //            } else {
-//                $bd->rollBack();
+//                $bdP->rollBack();
 //                echo "erreur";
 ////                echo json_encode([
 ////                    'success' => false,
@@ -2581,8 +2545,8 @@ ORDER BY t.nom ASC;";
 //                die;
 //            }
 //        } catch (PDOException $e) {
-//            if ($bd->inTransaction()) {
-//                $bd->rollBack();
+//            if ($bdP->inTransaction()) {
+//                $bdP->rollBack();
 //            }
 //
 //            echo "erreur";
@@ -2648,13 +2612,13 @@ ORDER BY t.nom ASC;";
         }
 
         try {
-            $bd->beginTransaction();
+            $bdP->beginTransaction();
 
             // ── Vérifier si l'URL existe déjà ───────────────────────
-            $stmtCheck = $bd->prepare("SELECT COUNT(*) FROM tache WHERE url = ?");
+            $stmtCheck = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE url = ?");
             $stmtCheck->execute([$url]);
             if ($stmtCheck->fetchColumn() > 0) {
-                $bd->rollBack();
+                $bdP->rollBack();
                 echo "existeTache";
                 die;
             }
@@ -2675,10 +2639,10 @@ ORDER BY t.nom ASC;";
             }
 
             if ($whereUA) {
-                $stmtCheckNom = $bd->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND $whereUA");
+                $stmtCheckNom = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND $whereUA");
                 $stmtCheckNom->execute(array_merge([$nom, $idTypeTache], $paramsUA));
                 if ($stmtCheckNom->fetchColumn() > 0) {
-                    $bd->rollBack();
+                    $bdP->rollBack();
                     echo "tacheExisteUnite";
                     die;
                 }
@@ -2686,7 +2650,7 @@ ORDER BY t.nom ASC;";
 
             // ── Si fonction → récupérer ses UA ──────────────────────
             if (!empty($id_fonction)) {
-                $stmtUA = $bd->prepare("
+                $stmtUA = $bdP->prepare("
             SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3 
             FROM fonction 
             WHERE id = ?
@@ -2710,7 +2674,7 @@ ORDER BY t.nom ASC;";
             }
 
             // ── Insertion tache ─────────────────────────────────────
-            $stmtInsert = $bd->prepare("
+            $stmtInsert = $bdP->prepare("
         INSERT INTO tache (
             nom, idTypeTache, url, idSousMenu, idIcon,
             autre_ressource, commentaire,
@@ -2731,10 +2695,10 @@ ORDER BY t.nom ASC;";
                 $dateEnregistrement, $id_fonction, $idUtilisateur, $idDB, $idAppli
             ]);
 
-            $idTache = $bd->lastInsertId();
+            $idTache = $bdP->lastInsertId();
 
             // ── Insertion historique ─────────────────────────────────
-            $stmtHist = $bd->prepare("
+            $stmtHist = $bdP->prepare("
         INSERT INTO historiqueTache (
             idUtilisateur, idTache, nom, autre_ressource, url,
             idTypeTache, commentaire, idSousMenu, idIcon,
@@ -2755,13 +2719,13 @@ ORDER BY t.nom ASC;";
                 $dateEnregistrement, 1, $id_fonction, $idUtilisateur, $idDB, $idAppli
             ]);
 
-            $bd->commit();
+            $bdP->commit();
             echo "succès";
             die;
 
         } catch (PDOException $e) {
-            if ($bd->inTransaction()) {
-                $bd->rollBack();
+            if ($bdP->inTransaction()) {
+                $bdP->rollBack();
             }
             error_log("Erreur add_tache: " . $e->getMessage());
             echo "erreur";
@@ -2776,7 +2740,7 @@ ORDER BY t.nom ASC;";
         try {
             $niveau = $_POST['nivUA'];
 
-            $stmt = $bd->prepare('SELECT id,niveau'.$niveau.' as niveau FROM unite_administrative_niv' . $niveau);
+            $stmt = $bdP->prepare('SELECT id,niveau'.$niveau.' as niveau FROM unite_administrative_niv' . $niveau);
             $stmt->execute();
             $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -2806,7 +2770,7 @@ break;
 
         $id_tache = $_POST['id'];
 
-        $stmt = $bd->prepare('SELECT t.id as id, t.nom as nom,t.idFonction, tt.typeTache as type,tt.id as idTypeTache
+        $stmt = $bdP->prepare('SELECT t.id as id, t.nom as nom,t.idFonction, tt.typeTache as type,tt.id as idTypeTache
     , t.url as url, t.autre_ressource as autre_ressource, t.idSousMenu as idSousMenu, t.idIcon as idIcon, sm.nom as nom_sous_menu, i.icon as icon
 	    , t.commentaire as commentaire, t.idUniteAdministrativeNiv1 as idUniteAdministrativeNiv1, t.idUniteAdministrativeNiv2 as idUniteAdministrativeNiv2, t.idUniteAdministrativeNiv3 as idUniteAdministrativeNiv3,
         q.qualification as qualification, q.id as idQualification, t.idDB as idDB
@@ -2860,13 +2824,13 @@ die;
 //
 //
 //        try {
-//            $bd->beginTransaction();
+//            $bdP->beginTransaction();
 //
 //            // Vérifier si l'URL existe déjà pour une autre tâche
-//            $stmtCheck = $bd->prepare("SELECT COUNT(*) FROM tache WHERE url = ? AND id != ?");
+//            $stmtCheck = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE url = ? AND id != ?");
 //            $stmtCheck->execute([$url, $id]);
 //            if ($stmtCheck->fetchColumn() > 0) {
-//                $bd->rollBack();
+//                $bdP->rollBack();
 //                return [
 //                    'success' => false,
 //                    'message' => "Une tâche avec cette URL existe déjà."
@@ -2874,11 +2838,11 @@ die;
 //            }
 //
 //            // Vérifier si une tâche avec le même nom, même type et même UA existe déjà (hors celle en cours d'édition)
-//            $stmtCheckNom = $bd->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND id != ?");
+//            $stmtCheckNom = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND id != ?");
 //            $params = array_merge([$nom, $type], [$id]);
 //            $stmtCheckNom->execute($params);
 //            if ($stmtCheckNom->fetchColumn() > 0) {
-//                $bd->rollBack();
+//                $bdP->rollBack();
 //                return [
 //                    'success' => false,
 //                    'message' => "Une tâche avec ce nom et ce type existe déjà."
@@ -2904,7 +2868,7 @@ die;
 //                // Si id_fonction n'est pas null, récupérer ses unités administratives et les affecter à la tâche
 //                if (!empty($id_fonction)) {
 //                    // Récupérer les unités administratives liées à la fonction
-//                    $stmtUA = $bd->prepare("SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3 FROM fonction WHERE id = ?");
+//                    $stmtUA = $bdP->prepare("SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3 FROM fonction WHERE id = ?");
 //                    $stmtUA->execute([$id_fonction]);
 //                    $ua = $stmtUA->fetch(PDO::FETCH_ASSOC);
 //
@@ -2942,15 +2906,15 @@ die;
 //                $idDB,
 //                $id
 //            ];
-//            $stmt = $bd->prepare($sql);
+//            $stmt = $bdP->prepare($sql);
 //            if ($stmt->execute($params)) {
 //                // Récupérer l'attribut createdBy de la tâche avant modification
-//                $stmtGetCreatedBy = $bd->prepare("SELECT createdBy FROM tache WHERE id = ?");
+//                $stmtGetCreatedBy = $bdP->prepare("SELECT createdBy FROM tache WHERE id = ?");
 //                $stmtGetCreatedBy->execute([$id]);
 //                $createdBy = $stmtGetCreatedBy->fetchColumn();
 //
 //                // Insertion dans la table historiqueTache
-//                $stmtHist = $bd->prepare("INSERT INTO historiqueTache (
+//                $stmtHist = $bdP->prepare("INSERT INTO historiqueTache (
 //                idUtilisateur, idTache, nom, autre_ressource, url, idTypeTache, commentaire, idSousMenu, idIcon, idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3, dateEnregistrement, active, idFonction, createdBy, idDB
 //            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
 //                $stmtHist->execute([
@@ -2972,17 +2936,17 @@ die;
 //                    $createdBy,
 //                    $idDB
 //                ]);
-//                $bd->commit();
+//                $bdP->commit();
 //                echo json_encode(['success' => true, 'message' => 'Tâche modifiée avec succès']);
 //                die;
 //            } else {
-//                $bd->rollBack();
+//                $bdP->rollBack();
 //                 echo json_encode(['success' => false, 'message' => 'Erreur lors de la modification de la tâche']);
 //                 die;
 //            }
 //        } catch (Exception $e) {
-//            if ($bd->inTransaction()) {
-//                $bd->rollBack();
+//            if ($bdP->inTransaction()) {
+//                $bdP->rollBack();
 //            }
 //             echo json_encode(['success' => false, 'message' => 'Erreur lors de la modification de la tâche : ' . $e->getMessage()]);
 //            die;
@@ -3041,13 +3005,13 @@ die;
         }
 
         try {
-            $bd->beginTransaction();
+            $bdP->beginTransaction();
 
             // ── Vérifier URL existante (hors tâche courante) ─────
-            $stmtCheckUrl = $bd->prepare("SELECT COUNT(*) FROM tache WHERE url = ? AND id != ?");
+            $stmtCheckUrl = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE url = ? AND id != ?");
             $stmtCheckUrl->execute([$url, $id]);
             if ($stmtCheckUrl->fetchColumn() > 0) {
-                $bd->rollBack();
+                $bdP->rollBack();
                 echo "existeTache";
                 die;
             }
@@ -3068,10 +3032,10 @@ die;
             }
 
             if ($whereUA) {
-                $stmtCheckNom = $bd->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND $whereUA AND id != ?");
+                $stmtCheckNom = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND $whereUA AND id != ?");
                 $stmtCheckNom->execute(array_merge([$nom, $idTypeTache], $paramsUA, [$id]));
                 if ($stmtCheckNom->fetchColumn() > 0) {
-                    $bd->rollBack();
+                    $bdP->rollBack();
                     echo "tacheExisteUnite";
                     die;
                 }
@@ -3079,7 +3043,7 @@ die;
 
             // ── Si fonction → récupérer ses UA ──────────────────
             if (!empty($id_fonction)) {
-                $stmtUA = $bd->prepare("
+                $stmtUA = $bdP->prepare("
                 SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3
                 FROM fonction WHERE id = ?
             ");
@@ -3101,7 +3065,7 @@ die;
             }
 
             // ── Update tache ─────────────────────────────────────
-            $stmtUpdate = $bd->prepare("
+            $stmtUpdate = $bdP->prepare("
             UPDATE tache SET
                 nom                        = ?,
                 idTypeTache                = ?,
@@ -3130,7 +3094,7 @@ die;
             ]);
 
             // ── Insertion historique ─────────────────────────────
-            $stmtHist = $bd->prepare("
+            $stmtHist = $bdP->prepare("
             INSERT INTO historiqueTache (
                 idUtilisateur, idTache, nom, autre_ressource, url,
                 idTypeTache, commentaire, idSousMenu, idIcon,
@@ -3151,13 +3115,13 @@ die;
                 $dateModification, 1, $id_fonction, $idUtilisateur, $idDB, $idAppli
             ]);
 
-            $bd->commit();
+            $bdP->commit();
             echo "succès";
             die;
 
         } catch (PDOException $e) {
-            if ($bd->inTransaction()) {
-                $bd->rollBack();
+            if ($bdP->inTransaction()) {
+                $bdP->rollBack();
             }
             error_log("Erreur update_tache: " . $e->getMessage());
             echo "erreur".$e;
@@ -3171,8 +3135,11 @@ die;
 
 
 
-            $stmt = $bd->prepare("SELECT * FROM listeApplications");
-            $stmt->execute();
+            $data = [
+                'statut' => 1
+            ];
+            $stmt = $bdP->prepare("SELECT * FROM listeApplications WHERE statut = :statut");
+            $stmt->execute($data);
             $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
             echo '<option></option><option value="">Choisir...</option>';
@@ -3217,15 +3184,15 @@ die;
         }
 
         try {
-            $bd->beginTransaction();
+            $bdP->beginTransaction();
 
             // Vérifier l'état actuel
-            $stmtEtat = $bd->prepare("SELECT active FROM tache WHERE id = ?");
+            $stmtEtat = $bdP->prepare("SELECT active FROM tache WHERE id = ?");
             $stmtEtat->execute([$id_tache]);
             $etat = $stmtEtat->fetchColumn();
 
             if ($etat === false) {
-                $bd->rollBack();
+                $bdP->rollBack();
                 echo "erreur";
                 die;
             }
@@ -3234,7 +3201,7 @@ die;
             $nouvelEtat = ($etat == 1) ? 0 : 1;
 
             // Mettre à jour
-            $stmtUpdate = $bd->prepare("
+            $stmtUpdate = $bdP->prepare("
             UPDATE tache 
             SET active = ?, lastDateModification = ? 
             WHERE id = ?
@@ -3242,18 +3209,18 @@ die;
             $stmtUpdate->execute([$nouvelEtat, $dateModification, $id_tache]);
 
             // Récupérer les infos pour l'historique
-            $stmtTache = $bd->prepare("SELECT * FROM tache WHERE id = ?");
+            $stmtTache = $bdP->prepare("SELECT * FROM tache WHERE id = ?");
             $stmtTache->execute([$id_tache]);
             $tache = $stmtTache->fetch(PDO::FETCH_ASSOC);
 
             if (!$tache) {
-                $bd->rollBack();
+                $bdP->rollBack();
                 echo "erreur";
                 die;
             }
 
             // Insertion historique
-            $stmtHist = $bd->prepare("
+            $stmtHist = $bdP->prepare("
             INSERT INTO historiqueTache (
                 idUtilisateur, idTache, nom, autre_ressource, url,
                 idTypeTache, commentaire, idSousMenu, idIcon,
@@ -3286,13 +3253,13 @@ die;
                 $tache['createdBy']                   ?? null
             ]);
 
-            $bd->commit();
+            $bdP->commit();
             echo "succès";
             die;
 
         } catch (Exception $e) {
-            if ($bd->inTransaction()) {
-                $bd->rollBack();
+            if ($bdP->inTransaction()) {
+                $bdP->rollBack();
             }
             error_log("Erreur changeEtatTache: " . $e->getMessage());
             echo "erreur";
@@ -3309,14 +3276,14 @@ die;
 
         try {
 
-            $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+            $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 
             $sql = "SELECT 
     tache.id,
     tache.active
 FROM tache";
-            $stmt = $bd->prepare($sql);
+            $stmt = $bdP->prepare($sql);
             $stmt->execute();
             $result = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -3365,7 +3332,7 @@ FROM tache";
 
         try {
 
-            $stmt = $bd->prepare('SELECT t.nom as tache,q.qualification as qualification, tq.id as id, t.id as idTache, q.id as idQualification,
+            $stmt = $bdP->prepare('SELECT t.nom as tache,q.qualification as qualification, tq.id as id, t.id as idTache, q.id as idQualification,
     coalesce(ua3.codeNiv3, ua2.codeNiv2, ua1.codeNiv1) as codeUA
      FROM tache_qualification tq
     JOIN tache t ON t.id = tq.idTache
@@ -3397,7 +3364,7 @@ FROM tache";
 
 
 
-            $stmt = $bd->prepare("SELECT * FROM qualifications");
+            $stmt = $bdP->prepare("SELECT * FROM qualifications");
             $stmt->execute();
             $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
@@ -3452,7 +3419,7 @@ FROM tache";
                     'idTypeTache' => 1
                 ];
 
-            $stmt = $bd->prepare('SELECT
+            $stmt = $bdP->prepare('SELECT
     tache.id,
     tache.nom,
     CASE
@@ -3531,16 +3498,16 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 //
 //        try {
 //            // On démarre une transaction
-//            $bd->beginTransaction();
+//            $bdP->beginTransaction();
 //
 //            // 1. Vérifier si l'association existe déjà
-//            $stmt = $bd->prepare("SELECT 1 FROM tache_qualification
+//            $stmt = $bdP->prepare("SELECT 1 FROM tache_qualification
 //                               WHERE idTache = ? AND idQualification = ? AND valide = 1 LIMIT 1");
 //            $stmt->execute([$idTache, $idQualification]);
 //
 //            if ($stmt->fetch()) {
 //                // Si l'association existe, on annule la transaction et on quitte
-//                $bd->rollBack();
+//                $bdP->rollBack();
 //
 //                echo "existe";
 //                die;
@@ -3548,7 +3515,7 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 //            }
 //
 //            // 2. Récupérer les qualifications déjà associées à la tâche
-//            $stmt = $bd->prepare("SELECT idQualification FROM tache_qualification
+//            $stmt = $bdP->prepare("SELECT idQualification FROM tache_qualification
 //                               WHERE idTache = ? AND valide = 1");
 //            $stmt->execute([$idTache]);
 //            $qualificationsExistantes = $stmt->fetchAll(PDO::FETCH_COLUMN);
@@ -3557,7 +3524,7 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 //            $qualificationsExistantes[] = $idQualification;
 //
 //            // 3. Récupérer les utilisateurs associés à la tâche
-//            $stmt = $bd->prepare("SELECT u.id, u.matricule, u.email
+//            $stmt = $bdP->prepare("SELECT u.id, u.matricule, u.email
 //                               FROM tache_utilisateur tu
 //                               JOIN utilisateur u ON tu.idUtilisateur = u.id
 //                               WHERE tu.idTache = ? AND tu.access = 1");
@@ -3569,7 +3536,7 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 //            $usersInfo = get_info($matricules);
 //
 //            // 5. Préparer les requêtes
-//            $stmtGetLast = $bd->prepare("
+//            $stmtGetLast = $bdP->prepare("
 //    SELECT id
 //    FROM tache_utilisateur
 //    WHERE idTache = ? AND idUtilisateur = ?
@@ -3577,7 +3544,7 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 //    LIMIT 1
 //");
 //
-//            $updateStmt = $bd->prepare("
+//            $updateStmt = $bdP->prepare("
 //    UPDATE tache_utilisateur
 //    SET access = 0,
 //        idUtilisateurSupRetrait = ?,
@@ -3618,13 +3585,13 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 //                }
 //            }
 //            // 6. Créer la nouvelle association
-//            $bd->prepare("INSERT INTO tache_qualification
+//            $bdP->prepare("INSERT INTO tache_qualification
 //                      (idTache, idQualification, dateEnregistrement, createdBy)
 //                      VALUES (?, ?, ?, ?)")
 //                ->execute([$idTache, $idQualification, $dateEnregistrement,$idUtilisateur]);
 //
 //            // 7. Valider la transaction
-//            $bd->commit();
+//            $bdP->commit();
 //
 //            echo "succès";
 //            die;
@@ -3632,8 +3599,8 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 //
 //        } catch (Exception $e) {
 //            // Si une erreur survient, on annule tout
-//            if ($bd->inTransaction()) {
-//                $bd->rollBack();
+//            if ($bdP->inTransaction()) {
+//                $bdP->rollBack();
 //            }
 //            error_log("Erreur addTacheQualification: " . $e->getMessage());
 //            echo "erreur";
@@ -3667,10 +3634,10 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 //        }
 //
 //        try {
-//            $bd->beginTransaction();
+//            $bdP->beginTransaction();
 //
 //            // 1. Vérifier si l'association existe déjà
-//            $stmtCheck = $bd->prepare("
+//            $stmtCheck = $bdP->prepare("
 //            SELECT 1 FROM tache_qualification
 //            WHERE idTache = ? AND idQualification = ? AND valide = 1
 //            LIMIT 1
@@ -3678,13 +3645,13 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 //            $stmtCheck->execute([$idTache, $idQualification]);
 //
 //            if ($stmtCheck->fetch()) {
-//                $bd->rollBack();
+//                $bdP->rollBack();
 //                echo "existe";
 //                die;
 //            }
 //
 //            // 2. Récupérer les qualifications déjà associées à la tâche
-//            $stmtQualifs = $bd->prepare("
+//            $stmtQualifs = $bdP->prepare("
 //            SELECT idQualification FROM tache_qualification
 //            WHERE idTache = ? AND valide = 1
 //        ");
@@ -3695,7 +3662,7 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 //            $qualificationsExistantes[] = $idQualification;
 //
 //            // 3. Récupérer les utilisateurs associés à la tâche
-//            $stmtUsers = $bd->prepare("
+//            $stmtUsers = $bdP->prepare("
 //            SELECT u.id, u.matricule, u.email
 //            FROM tache_utilisateur tu
 //            JOIN utilisateurs u ON tu.idUtilisateur = u.id
@@ -3709,13 +3676,13 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 //            $usersInfo  = $adminController->get_info($matricules);
 //
 //            // 5. Préparer les requêtes de retrait d'accès
-//            $stmtGetLast = $bd->prepare("
+//            $stmtGetLast = $bdP->prepare("
 //            SELECT id FROM tache_utilisateur
 //            WHERE idTache = ? AND idUtilisateur = ?
 //            ORDER BY id DESC LIMIT 1
 //        ");
 //
-//            $stmtUpdate = $bd->prepare("
+//            $stmtUpdate = $bdP->prepare("
 //            UPDATE tache_utilisateur
 //            SET access = 0,
 //                idUtilisateurSupRetrait = ?,
@@ -3754,19 +3721,19 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 //            }
 //
 //            // 6. Créer la nouvelle association
-//            $stmtInsert = $bd->prepare("
+//            $stmtInsert = $bdP->prepare("
 //            INSERT INTO tache_qualification (idTache, idQualification, dateEnregistrement, createdBy)
 //            VALUES (?, ?, ?, ?)
 //        ");
 //            $stmtInsert->execute([$idTache, $idQualification, $dateEnregistrement, $idUtilisateur]);
 //
-//            $bd->commit();
+//            $bdP->commit();
 //            echo "succes";
 //            die;
 //
 //        } catch (Exception $e) {
-//            if ($bd->inTransaction()) {
-//                $bd->rollBack();
+//            if ($bdP->inTransaction()) {
+//                $bdP->rollBack();
 //            }
 //            error_log("Erreur addTacheQualification: " . $e->getMessage());
 //            echo "erreur".$e;
@@ -3796,10 +3763,10 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
         }
 
         try {
-            $bd->beginTransaction();
+            $bdP->beginTransaction();
 
             // 1. Vérifier si l'association existe déjà
-            $stmtCheck = $bd->prepare("
+            $stmtCheck = $bdP->prepare("
             SELECT 1 FROM tache_qualification
             WHERE idTache = ? AND idQualification = ? AND valide = 1
             LIMIT 1
@@ -3807,13 +3774,13 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
             $stmtCheck->execute([$idTache, $idQualification]);
 
             if ($stmtCheck->fetch()) {
-                $bd->rollBack();
+                $bdP->rollBack();
                 echo "existe";
                 die;
             }
 
             // 2. Récupérer les qualifications déjà associées à la tâche
-            $stmtQualifs = $bd->prepare("
+            $stmtQualifs = $bdP->prepare("
             SELECT idQualification FROM tache_qualification
             WHERE idTache = ? AND valide = 1
         ");
@@ -3822,7 +3789,7 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
             $qualificationsExistantes[] = $idQualification; // ajouter la nouvelle
 
             // 3. Récupérer les utilisateurs associés à la tâche
-            $stmtUsers = $bd->prepare("
+            $stmtUsers = $bdP->prepare("
             SELECT u.id, u.matricule, u.email
             FROM tache_utilisateur tu
             JOIN utilisateurs u ON tu.idUtilisateur = u.id
@@ -3836,13 +3803,13 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
             $usersInfo  = $adminController->get_info($matricules);
 
             // 5. Préparer les requêtes de retrait d'accès
-            $stmtGetLast = $bd->prepare("
+            $stmtGetLast = $bdP->prepare("
             SELECT id FROM tache_utilisateur
             WHERE idTache = ? AND idUtilisateur = ?
             ORDER BY id DESC LIMIT 1
         ");
 
-            $stmtUpdate = $bd->prepare("
+            $stmtUpdate = $bdP->prepare("
             UPDATE tache_utilisateur
             SET access = 0,
                 idUtilisateurSupRetrait = ?,
@@ -3879,19 +3846,19 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
             }
 
             // 6. Créer la nouvelle association
-            $stmtInsert = $bd->prepare("
+            $stmtInsert = $bdP->prepare("
             INSERT INTO tache_qualification (idTache, idQualification, dateEnregistrement, createdBy)
             VALUES (?, ?, ?, ?)
         ");
             $stmtInsert->execute([$idTache, $idQualification, $dateEnregistrement, $idUtilisateur]);
 
-            $bd->commit();
+            $bdP->commit();
             echo "succes";
             die;
 
         } catch (Exception $e) {
-            if ($bd->inTransaction()) {
-                $bd->rollBack();
+            if ($bdP->inTransaction()) {
+                $bdP->rollBack();
             }
             error_log("Erreur addTacheQualification: " . $e->getMessage());
             echo "erreur";
@@ -3906,9 +3873,177 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
     case 30:
 
 
-                date_default_timezone_set('Africa/Dakar');
-        $dateModification = date('Y-m-d H:i:s');
+//                date_default_timezone_set('Africa/Dakar');
+//        $dateModification = date('Y-m-d H:i:s');
+//
+//
+//        $idUtilisateur = null;
+//        if (!empty($_SESSION['tmpIdP'])) {
+//            $idUtilisateur = $_SESSION['tmpIdP'];
+//        } else {
+//            echo "sessionExpired";
+//            die;
+//        }
+//
+//        $idTacheQualification = $_POST['id'] ?? null;
+//
+//        if (!$idTacheQualification) {
+//            echo "erreur";
+//            die;
+//        }
+//
+//
+//        try {
+//            // Démarrer la transaction
+//            $bdP->beginTransaction();
+//
+//            // 1. Récupérer la tâche et la qualification liées
+//            $stmt = $bdP->prepare('SELECT idTache, idQualification FROM tache_qualification WHERE id = ?');
+//            $stmt->execute([$idTacheQualification]);
+//            $association = $stmt->fetch(PDO::FETCH_ASSOC);
+//
+//            if (!$association) {
+//                $bdP->rollBack(); // Annuler la transaction si pas d'association
+//                return [
+//                    'success' => false,
+//                    'message' => 'Association tâche-qualification introuvable.',
+//                    'matricules' => []
+//                ];
+//            }
+//
+//            $idTache = $association['idTache'];
+//            $idQualification = $association['idQualification'];
+//
+//            // 2. Vérifier le nombre de qualifications restantes valides pour la tâche
+//            $stmt = $bdP->prepare('SELECT COUNT(*) FROM tache_qualification WHERE idTache = ? AND valide = 1');
+//            $stmt->execute([$idTache]);
+//            $remainingQualifications = (int) $stmt->fetchColumn();
+//
+//            // 3. Désactiver la validité
+//            $stmt = $bdP->prepare('UPDATE tache_qualification SET valide = 0, updatedBy = ?, dateUpdate = ? WHERE id = ?');
+//            $stmt->execute([$_SESSION['id'],$dateModification, $idTacheQualification]);
+//
+//            // Si c'était la dernière qualification valide
+//            if ($remainingQualifications == 1) {
+//                $bdP->commit(); // Valider la transaction
+//                return [
+//                    'success' => true,
+//                    'message' => 'Validité changée. Dernière qualification restante.',
+//                    'matricules' => []
+//                ];
+//            }
+//
+//            // 4. Récupérer les utilisateurs ayant cette tâche
+//            $stmt = $bdP->prepare('
+//            SELECT u.id AS idUtilisateur, u.matricule
+//            FROM tache_utilisateur tu
+//            JOIN utilisateur u ON tu.idUtilisateur = u.id
+//            WHERE tu.idTache = ?
+//        ');
+//            $stmt->execute([$idTache]);
+//            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+//
+//            if (empty($users)) {
+//                $bdP->commit(); // Valider la transaction
+//                echo "sucess";
+//                die;
+////                return [
+////                    'success' => true,
+////                    'message' => 'Aucun utilisateur lié à cette tâche.',
+////                    'matricules' => []
+////                ];
+//            }
+//
+//            // 5. Préparer la liste des matricules
+//            $matricules = array_column($users, 'matricule');
+//
+//            // 6. Récupérer les informations utilisateurs via API
+//            $infos = $adminController->get_info($matricules);
+//
+//            $updatedMatricules = [];
+//
+//// 7. Mise à jour des accès pour les utilisateurs qualifiés
+//            $stmtGetLast = $bdP->prepare('
+//    SELECT id FROM tache_utilisateur
+//    WHERE idUtilisateur = ? AND idTache = ?
+//    ORDER BY id DESC
+//    LIMIT 1
+//');
+//
+//            $stmtUpdate = $bdP->prepare('
+//    UPDATE tache_utilisateur
+//    SET access = 0, idUtilisateurSupRetrait = ?, dateRetrait = ?
+//    WHERE id = ?
+//');
+//
+//            foreach ($users as $user) {
+//                $matricule = $user['matricule'];
+//                $idUtilisateur = $user['idUtilisateur'];
+//
+//                if (!isset($infos[$matricule]) || !is_array($infos[$matricule])) {
+//                    continue;
+//                }
+//
+//                $qualifications = $infos[$matricule];
+//                $isQualified = array_filter($qualifications, function ($qualif) use ($idQualification) {
+//                    return isset($qualif['idQualification']) && $qualif['idQualification'] == $idQualification;
+//                });
+//
+//                if (!empty($isQualified)) {
+//                    // Récupère la dernière ligne correspondante
+//                    $stmtGetLast->execute([$idUtilisateur, $idTache]);
+//                    $lastId = $stmtGetLast->fetchColumn();
+//
+//                    if ($lastId) {
+//                        $stmtUpdate->execute([$_SESSION['id'], $dateModification, $lastId]);
+//                        $updatedMatricules[] = $matricule;
+//                    }
+//                }
+//            }
+//            // Valider la transaction après toutes les mises à jour
+//            $bdP->commit();
+//
+//
+//            echo "succes";
+//            die;
+////            return [
+////                'success' => true,
+////                'message' => 'Validité changée. Accès mis à jour pour les utilisateurs qualifiés.',
+////                'matricules' => $updatedMatricules
+////            ];
+//
+//        } catch (PDOException $e) {
+//            $bdP->rollBack(); // Annuler la transaction en cas d'erreur PDO
+//            error_log('Erreur PDO : ' . $e->getMessage());
+//
+//            echo "erreur";
+//            die;
+////            return [
+////                'success' => false,
+////                'message' => 'Erreur lors de la mise à jour : ' . $e->getMessage(),
+////                'matricules' => []
+////            ];
+//        } catch (Exception $e) {
+//            $bdP->rollBack(); // Annuler la transaction en cas d'erreur générale
+//            error_log('Erreur : ' . $e->getMessage());
+//
+//            echo "erreur";
+//            die;
+////            return [
+////                'success' => false,
+////                'message' => 'Erreur inattendue : ' . $e->getMessage(),
+////                'matricules' => []
+////            ];
+//        }
+//
+//        break;
+//
 
+
+        case 30:
+
+        date_default_timezone_set('Africa/Dakar');
+        $dateModification = date('Y-m-d H:i:s');
 
         $idUtilisateur = null;
         if (!empty($_SESSION['tmpIdP'])) {
@@ -3925,153 +4060,143 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
             die;
         }
 
-
         try {
-            // Démarrer la transaction
-            $bd->beginTransaction();
+            $bdP->beginTransaction();
 
             // 1. Récupérer la tâche et la qualification liées
-            $stmt = $bd->prepare('SELECT idTache, idQualification FROM tache_qualification WHERE id = ?');
-            $stmt->execute([$idTacheQualification]);
-            $association = $stmt->fetch(PDO::FETCH_ASSOC);
+            $stmtAssoc = $bdP->prepare("
+            SELECT idTache, idQualification 
+            FROM tache_qualification 
+            WHERE id = ? AND valide = 1
+        ");
+            $stmtAssoc->execute([$idTacheQualification]);
+            $association = $stmtAssoc->fetch(PDO::FETCH_ASSOC);
 
             if (!$association) {
-                $bd->rollBack(); // Annuler la transaction si pas d'association
-                return [
-                    'success' => false,
-                    'message' => 'Association tâche-qualification introuvable.',
-                    'matricules' => []
-                ];
+                $bdP->rollBack();
+                echo "erreur";
+                die;
             }
 
-            $idTache = $association['idTache'];
+            $idTache         = $association['idTache'];
             $idQualification = $association['idQualification'];
 
-            // 2. Vérifier le nombre de qualifications restantes valides pour la tâche
-            $stmt = $bd->prepare('SELECT COUNT(*) FROM tache_qualification WHERE idTache = ? AND valide = 1');
-            $stmt->execute([$idTache]);
-            $remainingQualifications = (int) $stmt->fetchColumn();
+            // 2. Compter les qualifications valides restantes pour cette tâche
+            $stmtCount = $bdP->prepare("
+            SELECT COUNT(*) FROM tache_qualification 
+            WHERE idTache = ? AND valide = 1
+        ");
+            $stmtCount->execute([$idTache]);
+            $remainingQualifications = (int) $stmtCount->fetchColumn();
 
-            // 3. Désactiver la validité
-            $stmt = $bd->prepare('UPDATE tache_qualification SET valide = 0, updatedBy = ?, dateUpdate = ? WHERE id = ?');
-            $stmt->execute([$_SESSION['id'],$dateModification, $idTacheQualification]);
+            // 3. Désactiver la validité de l'association
+            $stmtDisable = $bdP->prepare("
+            UPDATE tache_qualification 
+            SET valide = 0, updatedBy = ?, dateUpdate = ? 
+            WHERE id = ?
+        ");
+            $stmtDisable->execute([$idUtilisateur, $dateModification, $idTacheQualification]);
 
-            // Si c'était la dernière qualification valide
-            if ($remainingQualifications == 1) {
-                $bd->commit(); // Valider la transaction
-                return [
-                    'success' => true,
-                    'message' => 'Validité changée. Dernière qualification restante.',
-                    'matricules' => []
-                ];
+            // Si c'était la dernière qualification → pas besoin de vérifier les accès
+            if ($remainingQualifications <= 1) {
+                $bdP->commit();
+                echo "succes";
+                die;
             }
 
-            // 4. Récupérer les utilisateurs ayant cette tâche
-            $stmt = $bd->prepare('
+            // 4. Récupérer les utilisateurs ayant accès à cette tâche
+            $stmtUsers = $bdP->prepare("
             SELECT u.id AS idUtilisateur, u.matricule
             FROM tache_utilisateur tu
-            JOIN utilisateur u ON tu.idUtilisateur = u.id
-            WHERE tu.idTache = ?
-        ');
-            $stmt->execute([$idTache]);
-            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
+            JOIN utilisateurs u ON tu.idUtilisateur = u.id
+            WHERE tu.idTache = ? AND tu.access = 1
+        ");
+            $stmtUsers->execute([$idTache]);
+            $users = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
 
+            // Pas d'utilisateurs → terminer proprement
             if (empty($users)) {
-                $bd->commit(); // Valider la transaction
-                echo "sucess";
+                $bdP->commit();
+                echo "succes";
                 die;
-//                return [
-//                    'success' => true,
-//                    'message' => 'Aucun utilisateur lié à cette tâche.',
-//                    'matricules' => []
-//                ];
             }
 
-            // 5. Préparer la liste des matricules
+            // 5. Récupérer les infos utilisateurs via get_info
             $matricules = array_column($users, 'matricule');
+            $infos      = $adminController->get_info($matricules);
 
-            // 6. Récupérer les informations utilisateurs via API
-            $infos = $adminController->get_info($matricules);
+            // 6. Préparer les requêtes de retrait d'accès
+            $stmtGetLast = $bdP->prepare("
+            SELECT id FROM tache_utilisateur
+            WHERE idUtilisateur = ? AND idTache = ?
+            ORDER BY id DESC LIMIT 1
+        ");
 
-            $updatedMatricules = [];
+            $stmtUpdate = $bdP->prepare("
+            UPDATE tache_utilisateur
+            SET access = 0,
+                idUtilisateurSupRetrait = ?,
+                dateRetrait = ?
+            WHERE id = ?
+        ");
 
-// 7. Mise à jour des accès pour les utilisateurs qualifiés
-            $stmtGetLast = $bd->prepare('
-    SELECT id FROM tache_utilisateur 
-    WHERE idUtilisateur = ? AND idTache = ? 
-    ORDER BY id DESC 
-    LIMIT 1
-');
-
-            $stmtUpdate = $bd->prepare('
-    UPDATE tache_utilisateur 
-    SET access = 0, idUtilisateurSupRetrait = ?, dateRetrait = ? 
-    WHERE id = ?
-');
-
+            // 7. Pour chaque utilisateur, vérifier s'il a UNIQUEMENT la qualification supprimée
             foreach ($users as $user) {
-                $matricule = $user['matricule'];
-                $idUtilisateur = $user['idUtilisateur'];
+                $matricule           = $user['matricule'];
+                $idUtilisateurCourant = $user['idUtilisateur'];
 
-                if (!isset($infos[$matricule]) || !is_array($infos[$matricule])) {
+                // Si pas d'info pour cet utilisateur → ignorer
+                if (!isset($infos[$matricule])) {
                     continue;
                 }
 
-                $qualifications = $infos[$matricule];
-                $isQualified = array_filter($qualifications, function ($qualif) use ($idQualification) {
-                    return isset($qualif['idQualification']) && $qualif['idQualification'] == $idQualification;
-                });
+                $info = $infos[$matricule];
 
-                if (!empty($isQualified)) {
-                    // Récupère la dernière ligne correspondante
-                    $stmtGetLast->execute([$idUtilisateur, $idTache]);
-                    $lastId = $stmtGetLast->fetchColumn();
+                // get_info retourne une entrée par matricule avec idQualification
+                $userIdQualification = $info['idQualification'] ?? null;
 
-                    if ($lastId) {
-                        $stmtUpdate->execute([$_SESSION['id'], $dateModification, $lastId]);
-                        $updatedMatricules[] = $matricule;
+                // Si l'utilisateur a UNIQUEMENT la qualification supprimée → retirer l'accès
+                if ($userIdQualification == $idQualification) {
+
+                    // Vérifier si l'utilisateur a une autre qualification valide pour cette tâche
+                    $stmtCheckOtherQualif = $bdP->prepare("
+                    SELECT COUNT(*) FROM tache_qualification tq
+                    WHERE tq.idTache = ? 
+                    AND tq.valide = 1 
+                    AND tq.idQualification = ?
+                ");
+                    $stmtCheckOtherQualif->execute([$idTache, $userIdQualification]);
+                    $hasOtherValidQualif = (int) $stmtCheckOtherQualif->fetchColumn();
+
+                    // Si la qualification de l'utilisateur n'est plus valide pour la tâche
+                    if ($hasOtherValidQualif === 0) {
+                        $stmtGetLast->execute([$idUtilisateurCourant, $idTache]);
+                        $lastId = $stmtGetLast->fetchColumn();
+                        if ($lastId) {
+                            $stmtUpdate->execute([$idUtilisateur, $dateModification, $lastId]);
+                        }
                     }
                 }
             }
-            // Valider la transaction après toutes les mises à jour
-            $bd->commit();
 
-
+            $bdP->commit();
             echo "succes";
             die;
-//            return [
-//                'success' => true,
-//                'message' => 'Validité changée. Accès mis à jour pour les utilisateurs qualifiés.',
-//                'matricules' => $updatedMatricules
-//            ];
 
         } catch (PDOException $e) {
-            $bd->rollBack(); // Annuler la transaction en cas d'erreur PDO
-            error_log('Erreur PDO : ' . $e->getMessage());
-
+            if ($bdP->inTransaction()) $bdP->rollBack();
+            error_log("Erreur PDO changeValiditeTacheQualification: " . $e->getMessage());
             echo "erreur";
             die;
-//            return [
-//                'success' => false,
-//                'message' => 'Erreur lors de la mise à jour : ' . $e->getMessage(),
-//                'matricules' => []
-//            ];
+
         } catch (Exception $e) {
-            $bd->rollBack(); // Annuler la transaction en cas d'erreur générale
-            error_log('Erreur : ' . $e->getMessage());
-
+            if ($bdP->inTransaction()) $bdP->rollBack();
+            error_log("Erreur changeValiditeTacheQualification: " . $e->getMessage());
             echo "erreur";
             die;
-//            return [
-//                'success' => false,
-//                'message' => 'Erreur inattendue : ' . $e->getMessage(),
-//                'matricules' => []
-//            ];
         }
 
         break;
-
-
 
 
     default :

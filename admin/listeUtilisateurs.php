@@ -33,7 +33,7 @@ session_start();
              data-kt-drawer-overlay="true" data-kt-drawer-width="{default:'200px', '300px': '250px'}"
              data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_aside_mobile_toggle">
             <div class="aside-logo flex-column-auto text-center" id="kt_aside_logo">
-                <a href="/personnel/admin-controller" style="margin-left: 65px;">
+                <a href="/personnel/admin-accueil" style="margin-left: 65px;">
                     <img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/logo_gsjlf.png"
                          class="h-50px logo"/>
                 </a>
@@ -66,7 +66,7 @@ session_start();
                             </div>
                         </div>
                         <div class="menu-item">
-                            <a class="menu-link" href="/personnel/reponsable-financier-paiement">
+                            <a class="menu-link" href="/personnel/admin-dashboard">
                                     <span class="menu-icon">
                                         <span class="svg-icon svg-icon-2">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
@@ -91,18 +91,18 @@ session_start();
                             </div>
                         </div>
                         <div class="menu-item">
-                            <a class="menu-link" href="/personnel/reponsable-financier-paiement">
+                            <a class="menu-link active" href="/personnel/admin-liste-utilisateurs">
                                     <span class="menu-icon">
                                         <span class="svg-icon svg-icon-2">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                  viewBox="0 0 24 24" fill="none">
-                                                <rect x="2" y="2" width="9" height="9" rx="2" fill="black"/>
-                                                <rect opacity="0.3" x="13" y="2" width="9" height="9" rx="2"
-                                                      fill="black"/>
-                                                <rect opacity="0.3" x="13" y="13" width="9" height="9" rx="2"
-                                                      fill="black"/>
-                                                <rect opacity="0.3" x="2" y="13" width="9" height="9" rx="2"
-                                                      fill="black"/>
+                                              <path d="M16.0173 9H15.3945C14.2833 9 13.263 9.61425 12.7431 10.5963L12.154 11.7091C12.0645 11.8781 12.1072 12.0868 12.2559 12.2071L12.6402 12.5183C13.2631 13.0225 13.7556 13.6691 14.0764 14.4035L14.2321 14.7601C14.2957 14.9058 14.4396 15 14.5987 15H18.6747C19.7297 15 20.4057 13.8774 19.912 12.945L18.6686 10.5963C18.1487 9.61425 17.1285 9 16.0173 9Z"
+                                                    fill="black"/>
+<rect opacity="0.3" x="14" y="4" width="4" height="4" rx="2" fill="black"/>
+<path d="M4.65486 14.8559C5.40389 13.1224 7.11161 12 9 12C10.8884 12 12.5961 13.1224 13.3451 14.8559L14.793 18.2067C15.3636 19.5271 14.3955 21 12.9571 21H5.04292C3.60453 21 2.63644 19.5271 3.20698 18.2067L4.65486 14.8559Z"
+      fill="black"/>
+<rect opacity="0.3" x="6" y="5" width="6" height="6" rx="3" fill="black"/>
+
                                             </svg>
                                         </span>
                                     </span>Liste des utilisateurs
@@ -111,18 +111,17 @@ session_start();
                         </div>
 
                         <div class="menu-item">
-                            <a class="menu-link" href="/personnel/reponsable-financier-paiement">
+                            <a class="menu-link" href="/personnel/admin-liste-sous-menus">
                                     <span class="menu-icon">
                                         <span class="svg-icon svg-icon-2">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                  viewBox="0 0 24 24" fill="none">
-                                                <rect x="2" y="2" width="9" height="9" rx="2" fill="black"/>
-                                                <rect opacity="0.3" x="13" y="2" width="9" height="9" rx="2"
-                                                      fill="black"/>
-                                                <rect opacity="0.3" x="13" y="13" width="9" height="9" rx="2"
-                                                      fill="black"/>
-                                                <rect opacity="0.3" x="2" y="13" width="9" height="9" rx="2"
-                                                      fill="black"/>
+                                               <path d="M7 21H3C2.4 21 2 20.6 2 20V4C2 3.4 2.4 3 3 3H7C7.6 3 8 3.4 8 4V20C8 20.6 7.6 21 7 21Z"
+                                                     fill="black"/>
+<path opacity="0.3"
+      d="M21 11H11C10.4 11 10 10.6 10 10V4C10 3.4 10.4 3 11 3H21C21.6 3 22 3.4 22 4V10C22 10.6 21.6 11 21 11ZM22 20V14C22 13.4 21.6 13 21 13H11C10.4 13 10 13.4 10 14V20C10 20.6 10.4 21 11 21H21C21.6 21 22 20.6 22 20Z"
+      fill="black"/>
+
                                             </svg>
                                         </span>
                                     </span>Liste des sous-menus
@@ -131,18 +130,18 @@ session_start();
                         </div>
 
                         <div class="menu-item">
-                            <a class="menu-link" href="/personnel/reponsable-financier-paiement">
+                            <a class="menu-link" href="/personnel/admin-liste-taches">
                                     <span class="menu-icon">
                                         <span class="svg-icon svg-icon-2">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                  viewBox="0 0 24 24" fill="none">
-                                                <rect x="2" y="2" width="9" height="9" rx="2" fill="black"/>
-                                                <rect opacity="0.3" x="13" y="2" width="9" height="9" rx="2"
-                                                      fill="black"/>
-                                                <rect opacity="0.3" x="13" y="13" width="9" height="9" rx="2"
-                                                      fill="black"/>
-                                                <rect opacity="0.3" x="2" y="13" width="9" height="9" rx="2"
-                                                      fill="black"/>
+                                              <path opacity="0.5"
+                                                    d="M18 2H9C7.34315 2 6 3.34315 6 5H8C8 4.44772 8.44772 4 9 4H18C18.5523 4 19 4.44772 19 5V16C19 16.5523 18.5523 17 18 17V19C19.6569 19 21 17.6569 21 16V5C21 3.34315 19.6569 2 18 2Z"
+                                                    fill="black"/>
+<path fill-rule="evenodd" clip-rule="evenodd"
+      d="M14.7857 7.125H6.21429C5.62255 7.125 5.14286 7.6007 5.14286 8.1875V18.8125C5.14286 19.3993 5.62255 19.875 6.21429 19.875H14.7857C15.3774 19.875 15.8571 19.3993 15.8571 18.8125V8.1875C15.8571 7.6007 15.3774 7.125 14.7857 7.125ZM6.21429 5C4.43908 5 3 6.42709 3 8.1875V18.8125C3 20.5729 4.43909 22 6.21429 22H14.7857C16.5609 22 18 20.5729 18 18.8125V8.1875C18 6.42709 16.5609 5 14.7857 5H6.21429Z"
+      fill="black"/>
+
                                             </svg>
                                         </span>
                                     </span>Liste des taches
@@ -151,25 +150,23 @@ session_start();
                         </div>
 
                         <div class="menu-item">
-                            <a class="menu-link" href="/personnel/reponsable-financier-paiement">
+                            <a class="menu-link" href="/personnel/admin-liste-tache_qualification">
                                     <span class="menu-icon">
                                         <span class="svg-icon svg-icon-2">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                  viewBox="0 0 24 24" fill="none">
-                                                <rect x="2" y="2" width="9" height="9" rx="2" fill="black"/>
-                                                <rect opacity="0.3" x="13" y="2" width="9" height="9" rx="2"
+                                                <path opacity="0.3"
+                                                      d="M8.9 21L7.19999 22.6999C6.79999 23.0999 6.2 23.0999 5.8 22.6999L4.1 21H8.9ZM4 16.0999L2.3 17.8C1.9 18.2 1.9 18.7999 2.3 19.1999L4 20.9V16.0999ZM19.3 9.1999L15.8 5.6999C15.4 5.2999 14.8 5.2999 14.4 5.6999L9 11.0999V21L19.3 10.6999C19.7 10.2999 19.7 9.5999 19.3 9.1999Z"
                                                       fill="black"/>
-                                                <rect opacity="0.3" x="13" y="13" width="9" height="9" rx="2"
-                                                      fill="black"/>
-                                                <rect opacity="0.3" x="2" y="13" width="9" height="9" rx="2"
-                                                      fill="black"/>
+<path d="M21 15V20C21 20.6 20.6 21 20 21H11.8L18.8 14H20C20.6 14 21 14.4 21 15ZM10 21V4C10 3.4 9.6 3 9 3H4C3.4 3 3 3.4 3 4V21C3 21.6 3.4 22 4 22H9C9.6 22 10 21.6 10 21ZM7.5 18.5C7.5 19.1 7.1 19.5 6.5 19.5C5.9 19.5 5.5 19.1 5.5 18.5C5.5 17.9 5.9 17.5 6.5 17.5C7.1 17.5 7.5 17.9 7.5 18.5Z"
+      fill="black"/>
+
                                             </svg>
                                         </span>
                                     </span>Liste des taches post
                                 <span class="menu-title"></span>
                             </a>
                         </div>
-
 
 
                     </div>
@@ -196,7 +193,7 @@ session_start();
                         </div>
                     </div>
                     <div class="d-flex align-items-center flex-grow-1 flex-lg-grow-0">
-                        <a href="/personnel/admin-controller" class="d-lg-none">
+                        <a href="/personnel/admin-accueil" class="d-lg-none">
                             <img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/logo_gsjlf.png"
                                  class="h-30px"/>
                         </a>
@@ -213,7 +210,7 @@ session_start();
                                 <div class="menu menu-lg-rounded menu-column menu-lg-row menu-state-bg menu-title-gray-700 menu-state-title-primary menu-state-icon-primary menu-state-bullet-primary menu-arrow-gray-400 fw-bold my-5 my-lg-0 align-items-stretch"
                                      id="#kt_header_menu" data-kt-menu="true">
                                     <div class="menu-item me-lg-1">
-                                        <a class="menu-link py-3" href="/personnel/admin-controller">
+                                        <a class="menu-link py-3" href="/personnel/admin-accueil">
                                             <h3><span class="menu-title">Environnement Numérique de Travail</span>
                                             </h3>
 
@@ -270,15 +267,16 @@ session_start();
                                         <div class="separator my-2"></div>
                                         <div class="menu-item px-5">
                                             <div class="menu-content px-5">
-                                                <label
-                                                        class="form-check form-switch form-check-custom form-check-solid pulse pulse-success"
-                                                        for="kt_user_menu_dark_mode_toggle">
-                                                    <input class="form-check-input w-30px h-20px" type="checkbox"
-                                                           value="1" name="mode" id="kt_user_menu_dark_mode_toggle"
-                                                           data-kt-url="/personnel/quitter"/>
-                                                    <span class="pulse-ring ms-n1"></span>
-                                                    <span class="form-check-label text-gray-600 fs-7">Se
-                                                            déconnecter</span>
+                                                <label class="form-check form-switch form-check-custom form-check-solid pulse pulse-success"
+                                                       for="kt_user_menu_dark_mode_toggle">
+                                                    <a href="/personnel/quitter">
+                                                        <input class="form-check-input w-30px h-20px" checked="checked"
+                                                               type="checkbox" value="1" name="mode"
+                                                               id="kt_user_menu_dark_mode_toggle"
+                                                               data-kt-url="/personnel/quitter"/>
+                                                        <span class="pulse-ring ms-n1"></span>
+                                                        <span class="form-check-label text-gray-600 fs-7">se déconnecter</span>
+                                                    </a>
                                                 </label>
                                             </div>
                                         </div>
@@ -318,13 +316,13 @@ session_start();
                             <ul class="breadcrumb breadcrumb-separatorless fw-bold fs-7 my-1">
                                 <li class="breadcrumb-item text-muted">
 
-                                    <a href="/personnel/comptable-accueil"
-                                       class="text-muted text-hover-primary">accueil</a>
+                                    <a href="/personnel/admin-accueil"
+                                       class="text-muted text-hover-primary">Accueil</a>
                                 </li>
                                 <span class="h-20px border-gray-200 border-start mx-4"></span>
 
                                 <li class="breadcrumb-item text-muted">
-                                    <span class="text-muted text-hover-primary">liste des utilisateurs</span>
+                                    <span class="text-muted text-hover-primary">Liste des utilisateurs</span>
                                 </li>
 
                             </ul>
@@ -551,7 +549,7 @@ session_start();
                             <label class="d-flex align-items-center fs-6 fw-bold form-label mb-2">
                                 <span class="required">Matricule</span>
                             </label>
-                            <input type="text" class="form-control color-input" id="matricule2" name="matricule2" />
+                            <input type="text" class="form-control color-input" id="matricule2" name="matricule2"/>
                         </div>
 
                         <div class="row">
@@ -573,7 +571,7 @@ session_start();
                             </div>
                             <div class="col-sm-4 mt-5 text-center">
                                 <div class="symbol symbol-100px symbol-lg-150px symbol-fixed position-relative">
-                                    <img src="/uahb/ressources/dist_assets/media/avatars/150-26.jpg" alt="image"
+                                    <img src="/personnel/ressources/dist_assets/media/avatars/150-26.jpg" alt="image"
                                          id="photoPersonnel">
                                 </div>
                             </div>
@@ -603,7 +601,6 @@ session_start();
 															<span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
                             </button>
                         </div>
-
 
 
                     </form>

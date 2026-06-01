@@ -1,7 +1,7 @@
 <?php
 
-ini_set('session.gc_maxlifetime', 36000);
-session_set_cookie_params(36000);
+//ini_set('session.gc_maxlifetime', 36000);
+//session_set_cookie_params(36000);
 session_start();
 
 use PHPMailer\PHPMailer\PHPMailer;
@@ -9,13 +9,19 @@ use PHPMailer\PHPMailer\SMTP;
 use setasign\Fpdi\Fpdi;
 use setasign\Fpdi\PdfReader;
 
+include_once('../../bdP.php');
 include_once('../../bd.php');
+include_once('../../bdBASI.php');
 require_once('../../includes/phpMailer/PHPMailer.php');
 require_once('../../includes/phpMailer/SMTP.php');
 require_once('../../includes/phpMailer/Exception.php');
 
-class papa extends BD
+include_once('../../session.php');
+
+class authController extends BDP
 {
+
+
 
 
     function tokenencrypt($data)
@@ -193,13 +199,240 @@ class papa extends BD
     }
 
 
+    function getInitiales($prenom, $nom)
+    {
+        $premiereLettrePrenom = mb_substr(trim($prenom), 0, 1, 'UTF-8');
+        $deuxiemeLettreNom = mb_substr(trim($nom), 1, 1, 'UTF-8');
+
+        return mb_strtoupper($premiereLettrePrenom . $deuxiemeLettreNom, 'UTF-8');
+    }
+
+    public function infoApplication()
+    {
+        try {
+
+            $bdP = $this->connect();
+
+            $stmt = $bdP->prepare("
+            SELECT 
+                COUNT(*) AS total_applications,
+                SUM(CASE WHEN statut = 0 THEN 1 ELSE 0 END) AS en_attente
+            FROM listeApplications
+        ");
+
+            $stmt->execute();
+
+            return $stmt->fetch(PDO::FETCH_OBJ);
+
+        } catch (\Throwable $th) {
+
+            return (object)[
+                'total_applications' => 0,
+                'en_attente' => 0
+            ];
+
+        }
+    }
+
+
+    public function verifierUserCRIAT($bd,$email,$matricule,$nom, $prenom)
+    {
+        try {
+
+
+            // Vérifier si l'utilisateur existe
+            $stmt = $bd->prepare("
+            SELECT id, email
+            FROM utilisateurs
+            WHERE email = :email
+            LIMIT 1
+        ");
+
+            $stmt->execute([
+                'email' => $email
+            ]);
+
+            $user = $stmt->fetch(PDO::FETCH_OBJ);
+
+            // Utilisateur trouvé
+            if ($user) {
+                return $user;
+            }
+
+
+            // Création de l'utilisateur
+            $password = password_hash(valid_donnees($_POST['password']), PASSWORD_DEFAULT, ['cost' => 5]);
+
+            $stmt = $bd->prepare("
+            INSERT INTO utilisateurs (matricule,prenom,nom,email,password,photo,statut,idRole,idDepartement)
+            VALUES (:nom, :prenom, :email)
+        ");
+
+            $stmt->execute([
+'matricule' => $matricule,
+'prenom' => $prenom,
+'nom' => $nom,
+'email' => $email,
+'password' => $password,
+'photo' => '1.png',
+'statut' => 1,
+'idRole' => 20,
+'idDepartement' => NULL
+            ]);
+
+            $id = $bd->lastInsertId();
+
+            return (object)[
+                'id' => $id,
+                'email' => $email
+            ];
+
+        } catch (\Throwable $th) {
+
+            return false;
+
+        }
+    }
+
+
+    public function verifierUserBASI($bdBASI,$email,$matricule,$nom, $prenom)
+    {
+        try {
+
+
+            // Vérifier si l'utilisateur existe
+            $stmt = $bdBASI->prepare("
+            SELECT id, email
+            FROM utilisateurs
+            WHERE email = :email
+            LIMIT 1
+        ");
+
+            $stmt->execute([
+                'email' => $email
+            ]);
+
+            $user = $stmt->fetch(PDO::FETCH_OBJ);
+
+            // Utilisateur trouvé
+            if ($user) {
+                return $user;
+            }
+
+
+            // Création de l'utilisateur
+            $password = password_hash(valid_donnees($_POST['password']), PASSWORD_DEFAULT, ['cost' => 5]);
+
+            $stmt = $bdBASI->prepare("
+            INSERT INTO utilisateurs (matricule,prenom,nom,email,password,photo,statut,idRole)
+            VALUES (:matricule,:prenom,:nom,:email,:password,:photo,:statut,:idRole)
+        ");
+
+            $stmt->execute([
+                'matricule' => $matricule,
+                'prenom' => $prenom,
+                'nom' => $nom,
+                'email' => $email,
+                'password' => $password,
+                'photo' => '1.png',
+                'statut' => 1,
+                'idRole' => 20
+            ]);
+
+            $id = $bdBASI->lastInsertId();
+
+            return (object)[
+                'id' => $id,
+                'email' => $email
+            ];
+
+        } catch (\Throwable $th) {
+
+            return false;
+
+        }
+    }
+
+
+//    public function listeApplications()
+//    {
+//        try {
+//
+//            $bdP = $this->connect();
+//
+//            $stmt = $bdP->prepare("
+//            SELECT
+//               *
+//            FROM listeApplications
+//        ");
+//
+//            $stmt->execute();
+//            return $stmt->fetchAll(PDO::FETCH_OBJ);
+//
+//        } catch (\Throwable $th) {
+//
+//            return "erreur";
+//
+//        }
+//    }
+
+    public function listeApplications()
+    {
+        try {
+
+            $bdP = $this->connect();
+
+            $stmt = $bdP->prepare("
+            SELECT 
+                la.id,
+                la.nomApplication,
+                GROUP_CONCAT(ha.nom_hashtag) AS hashtags
+            FROM listeApplications la
+            LEFT JOIN hashtag_appli ha 
+                ON ha.idAppli = la.id
+            GROUP BY la.id, la.nomApplication
+        ");
+
+            $stmt->execute();
+
+            $data = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            // transformer en tableau propre
+            foreach ($data as $app) {
+                $app->hashtags = $app->hashtags
+                    ? explode(',', $app->hashtags)
+                    : [];
+            }
+
+            return $data;
+
+        } catch (\Throwable $th) {
+
+            return [];
+
+        }
+    }
+
+
+
 }
 
 
+$bdP = new BDP();
+$bdP = $bdP->connect();
+
 $bd = new BD();
 $bd = $bd->connect();
-$authController = new papa();
+
+$bdBASI = new BDBASI();
+$bdBASI = $bdBASI->connect();
+
+initialiserSession();
+
+
+$authController = new authController();
 date_default_timezone_set('Africa/Dakar');
+
 
 
 function valid_donnees($donnees)
@@ -221,8 +454,8 @@ switch ($option) {
         if (!empty($_POST['matricule']) && !empty($_POST['email']) && !empty($_POST['password']) && !empty($_POST['confirm-password'])) {
 
             try {
-                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $bd->beginTransaction();
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->beginTransaction();
 
 
                 date_default_timezone_set('Africa/Dakar');
@@ -254,7 +487,7 @@ switch ($option) {
                 ];
 
                 $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule AND email=:email";
-                $stmt = $bd->prepare($sql);
+                $stmt = $bdP->prepare($sql);
                 $stmt->execute($data);
                 $result = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -275,7 +508,7 @@ INNER JOIN etatCivil ec
 LEFT JOIN compteGmail cg 
     ON p.idCompteGmail = cg.id
 WHERE p.matricule = :matricule;";
-                    $stmt_perso = $bd->prepare($sql_perso);
+                    $stmt_perso = $bdP->prepare($sql_perso);
                     $stmt_perso->execute($data_perso);
                     $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
 
@@ -292,13 +525,14 @@ WHERE p.matricule = :matricule;";
                         $nom = $authController->fctRetirerAccents(mb_strtoupper($result_perso->nom));
 
 
+
                         $data_perso_contrat = [
                             'matricule' => $matricule,
                             'idTypeStatutContrat' => 1,
 
                         ];
                         $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
-                        $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+                        $stmt_perso_contrat = $bdP->prepare($sql_perso_contrat);
                         $stmt_perso_contrat->execute($data_perso_contrat);
                         $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
 
@@ -334,7 +568,7 @@ WHERE p.matricule = :matricule;";
                                     'idTypeUtilisateur' => 2
                                 ];
                                 $sql = "INSERT INTO utilisateurs(identifiant,matricule,email,password,cgu,dateCreation,statutUtilisateur,statutActivation,codeActivation,dateEnvoiCodeValidation,idEtatCivil,idTypeUtilisateur) VALUES(:identifiant,:matricule,:email,:password,:cgu,:dateCreation,:statutUtilisateur,:statutActivation,:codeActivation,:dateEnvoiCodeValidation,:idEtatCivil,:idTypeUtilisateur)";
-                                $stmt = $bd->prepare($sql);
+                                $stmt = $bdP->prepare($sql);
                                 $tmpStmt = $stmt->execute($dataCandidat);
 
                                 if ($tmpStmt == 1) {
@@ -353,7 +587,7 @@ WHERE p.matricule = :matricule;";
                                         'dateEnregistremenent' => $dateEnregistrement,
                                     ];
                                     $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
-                                    $stmtHistorique = $bd->prepare($sqlHistorique);
+                                    $stmtHistorique = $bdP->prepare($sqlHistorique);
                                     $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 
 
@@ -573,22 +807,22 @@ WHERE p.matricule = :matricule;";
                                         $emailSent = $authController->sendEmail($email, $prenom, "Activez votre compte maintenant !", $message);
 
                                         if (!$emailSent) {
-                                            if ($bd->inTransaction()) {
-    $bd->rollBack();
+                                            if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                                             echo "erreurMail";
                                             die;
                                         } else {
 
-                                            $bd->commit();
+                                            $bdP->commit();
                                             echo "succès";
                                             die;
 
                                         }
 
                                     } else {
-                                        if ($bd->inTransaction()) {
-    $bd->rollBack();
+                                        if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                                         echo "erreur";
                                         die;
@@ -596,8 +830,8 @@ WHERE p.matricule = :matricule;";
 
 
                                 } else {
-                                    if ($bd->inTransaction()) {
-    $bd->rollBack();
+                                    if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
 
                                     echo "erreur";
@@ -606,8 +840,8 @@ WHERE p.matricule = :matricule;";
 
 
                             } else {
-                                if ($bd->inTransaction()) {
-    $bd->rollBack();
+                                if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
 
                                 echo "finContrat";
@@ -617,8 +851,8 @@ WHERE p.matricule = :matricule;";
 
 
                         } else {
-                            if ($bd->inTransaction()) {
-    $bd->rollBack();
+                            if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                             echo "pasContrat";
                             die;
@@ -626,8 +860,8 @@ WHERE p.matricule = :matricule;";
 
 
                     } else {
-                        if ($bd->inTransaction()) {
-    $bd->rollBack();
+                        if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                         echo "matriculeExistsPas";
                         die;
@@ -635,8 +869,8 @@ WHERE p.matricule = :matricule;";
                     }
 
                 } else {
-                    if ($bd->inTransaction()) {
-    $bd->rollBack();
+                    if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                     echo "dejaCompte";
                     die;
@@ -644,8 +878,8 @@ WHERE p.matricule = :matricule;";
                 }
 
             } catch (Exception $e) {
-                if ($bd->inTransaction()) {
-    $bd->rollBack();
+                if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                 echo "erreur";
                 die;
@@ -666,8 +900,8 @@ WHERE p.matricule = :matricule;";
         if (!empty($_POST['email']) && !empty($_POST['password'])) {
 
             try {
-                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $bd->beginTransaction();
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->beginTransaction();
 
 
                 date_default_timezone_set('Africa/Dakar');
@@ -681,7 +915,7 @@ WHERE p.matricule = :matricule;";
                 ];
 
                 $sql = "SELECT * FROM utilisateurs WHERE email=:email";
-                $stmt = $bd->prepare($sql);
+                $stmt = $bdP->prepare($sql);
                 $stmt->execute($data);
                 $result = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -696,19 +930,97 @@ WHERE p.matricule = :matricule;";
                             if (password_verify(valid_donnees($password), $result->password) == 1) {
 
 
-                                if($result->idTypeUtilisateur == 1)
-                                {
-                                    $_SESSION['tmpIdP'] = $result->id;
+                                $matricule = $result->matricule;
+                                $data_info_user = [
+                                    'matricule' => $matricule
+                                ];
 
-                                    echo "succès/personnel/admin-dashboard";
-                                    die;
+                                $sql_info_user = "SELECT * FROM etatCivil WHERE matricule=:matricule";
+                                $stmt_info_user = $bdP->prepare($sql_info_user);
+                                $stmt_info_user->execute($data_info_user);
+                                $result_info_user = $stmt_info_user->fetch(PDO::FETCH_OBJ);
+
+                                if($result_info_user)
+                                {
+
+
+                                    $prenom = ucwords(mb_strtolower($result->prenom));
+                                    $nom= $authController->fctRetirerAccents(mb_strtoupper($result->prenom));
+                                    $infoApplication = $authController->infoApplication();
+                                    // session id utilisateur personnel
+                                    $_SESSION['tmpIdP'] = $result->id;
+                                    $_SESSION['tmpPrenom'] = $prenom;
+                                    $_SESSION['tmpNom'] =  $nom;
+                                    $_SESSION['tmpInitiales'] = $authController->getInitiales($prenom, $nom);
+                                    $_SESSION['tmpNbrAppli'] = $infoApplication->total_applications;
+                                    $_SESSION['tmpNbrAppliEnAttente'] = $infoApplication->en_attente;
+                                    $_SESSION['tmpNbrAppliAutorisees'] = $infoApplication->total_applications - $infoApplication->en_attente;
+                                    $_SESSION['tmpNbrAppliRefusees'] = 0;
+
+
+
+                                    if($result->idTypeUtilisateur == 1)
+                                    {
+                                        //pour tous les utilisateurs admin = 1 et user simple = 2
+                                        $_SESSION['connectUser'] = 1;
+
+
+                                        //base de donnee criat
+                                        $resultVerifierUserCRIAT = $authController->verifierUserCRIAT($bd,$email,$matricule,$prenom,$nom);
+
+                                        if (is_object($resultVerifierUserCRIAT)) {
+                                            $tmpId = $resultVerifierUserCRIAT->id;
+                                            $_SESSION['tmpId'] = $tmpId;
+                                        } else {
+                                            session_destroy();
+                                            echo "erreur";
+                                            die;
+                                        }
+
+                                        //base de donnee BASI
+                                        $resultVerifierUserBASI = $authController->verifierUserBASI($bdBASI,$email,$matricule,$prenom,$nom);
+
+                                        if (is_object($resultVerifierUserBASI)) {
+                                            $tmpIdBASI = $result->id;
+                                            $_SESSION['tmpIdBASI'] = $tmpIdBASI;
+                                        } else {
+                                            session_destroy();
+                                            echo "erreur";
+                                            die;
+                                        }
+
+
+                                        // Liste des applications
+                                        $listeApplications = $authController->listeApplications();
+
+                                        if (is_object($listeApplications)) {
+                                            $_SESSION['tmpListeApplication'] = $listeApplications;
+                                        } else {
+                                            session_destroy();
+                                            echo "erreur";
+                                            die;
+                                        }
+
+
+                                        echo "succès/personnel/admin-dashboard";
+                                        die;
+
+                                    }else
+                                    {
+
+                                        //pour tous les utilisateurs admin = 1 et user simple = 2
+                                        $_SESSION['connectUser'] = 2;
+
+                                        echo "succès/personnel/accueil";
+                                        die;
+                                    }
 
                                 }else
                                 {
-
-                                    echo "succès/personnel/accueil";
+                                    echo "erreur";
                                     die;
                                 }
+
 
 
 
@@ -738,8 +1050,8 @@ WHERE p.matricule = :matricule;";
                 }
 
             } catch (Exception $e) {
-                if ($bd->inTransaction()) {
-    $bd->rollBack();
+                if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                 echo "erreur";
                 die;
@@ -759,8 +1071,8 @@ WHERE p.matricule = :matricule;";
 
 
             try {
-                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $bd->beginTransaction();
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->beginTransaction();
 
 
 
@@ -773,7 +1085,7 @@ WHERE p.matricule = :matricule;";
                 ];
 
                 $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
-                $stmt = $bd->prepare($sql);
+                $stmt = $bdP->prepare($sql);
                 $stmt->execute($data);
                 $result = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -805,7 +1117,7 @@ WHERE p.matricule = :matricule;";
                                 LEFT JOIN compteGmail cg 
                                     ON p.idCompteGmail = cg.id
                                 WHERE p.matricule = :matricule;";
-                        $stmt_perso = $bd->prepare($sql_perso);
+                        $stmt_perso = $bdP->prepare($sql_perso);
                         $stmt_perso->execute($data_perso);
                         $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
 
@@ -824,7 +1136,7 @@ WHERE p.matricule = :matricule;";
 
                             ];
                             $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
-                            $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+                            $stmt_perso_contrat = $bdP->prepare($sql_perso_contrat);
                             $stmt_perso_contrat->execute($data_perso_contrat);
                             $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
 
@@ -856,7 +1168,7 @@ WHERE p.matricule = :matricule;";
                                                         dateEnvoiCodeValidation = :dateEnvoiCodeValidation
                                                     WHERE matricule = :matricule";
 
-                                    $stmt = $bd->prepare($sql);
+                                    $stmt = $bdP->prepare($sql);
                                     $tmpStmt = $stmt->execute($dataCandidat);
 
                                     if ($tmpStmt == 1) {
@@ -875,7 +1187,7 @@ WHERE p.matricule = :matricule;";
                                             'dateEnregistremenent' => $dateEnregistrement,
                                         ];
                                         $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
-                                        $stmtHistorique = $bd->prepare($sqlHistorique);
+                                        $stmtHistorique = $bdP->prepare($sqlHistorique);
                                         $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 
                                         if ($tmpStmtHistorique) {
@@ -1113,23 +1425,23 @@ WHERE p.matricule = :matricule;";
                                             $emailSent = $authController->sendEmail($email, $prenom, "Activez votre compte maintenant !", $message);
 
                                             if (!$emailSent) {
-                                                if ($bd->inTransaction()) {
-    $bd->rollBack();
+                                                if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
 
                                                 echo "erreurMail";
                                                 die;
                                             } else {
 
-                                                $bd->commit();
+                                                $bdP->commit();
                                                 echo "succès";
                                                 die;
 
                                             }
 
                                         } else {
-                                            if ($bd->inTransaction()) {
-    $bd->rollBack();
+                                            if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                                             echo "erreur";
                                             die;
@@ -1170,8 +1482,8 @@ WHERE p.matricule = :matricule;";
                 }
 
             }catch (Exception $e) {
-                if ($bd->inTransaction()) {
-    $bd->rollBack();
+                if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                 echo "erreur";
                 die;
@@ -1191,8 +1503,8 @@ WHERE p.matricule = :matricule;";
 //
 //
 //            try {
-//                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-//                $bd->beginTransaction();
+//                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+//                $bdP->beginTransaction();
 //
 //
 //
@@ -1207,7 +1519,7 @@ WHERE p.matricule = :matricule;";
 //                ];
 //
 //                $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
-//                $stmt = $bd->prepare($sql);
+//                $stmt = $bdP->prepare($sql);
 //                $stmt->execute($data);
 //                $result = $stmt->fetch(PDO::FETCH_OBJ);
 //
@@ -1231,7 +1543,7 @@ WHERE p.matricule = :matricule;";
 //LEFT JOIN compteGmail cg
 //    ON p.idCompteGmail = cg.id
 //WHERE p.matricule = :matricule;";
-//                        $stmt_perso = $bd->prepare($sql_perso);
+//                        $stmt_perso = $bdP->prepare($sql_perso);
 //                        $stmt_perso->execute($data_perso);
 //                        $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
 //
@@ -1250,7 +1562,7 @@ WHERE p.matricule = :matricule;";
 //
 //                            ];
 //                            $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
-//                            $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+//                            $stmt_perso_contrat = $bdP->prepare($sql_perso_contrat);
 //                            $stmt_perso_contrat->execute($data_perso_contrat);
 //                            $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
 //
@@ -1283,7 +1595,7 @@ WHERE p.matricule = :matricule;";
 //            dateActivation = :dateActivation
 //        WHERE matricule = :matricule";
 //
-//                                        $stmt = $bd->prepare($sql);
+//                                        $stmt = $bdP->prepare($sql);
 //                                        $tmpStmt = $stmt->execute($dataCandidat);
 //
 //                                        if ($tmpStmt == 1) {
@@ -1302,18 +1614,18 @@ WHERE p.matricule = :matricule;";
 //                                                'dateEnregistremenent' => $dateEnregistrement,
 //                                            ];
 //                                            $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
-//                                            $stmtHistorique = $bd->prepare($sqlHistorique);
+//                                            $stmtHistorique = $bdP->prepare($sqlHistorique);
 //                                            $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 //
 //                                            if ($tmpStmtHistorique) {
 //
-//                                                $bd->commit();
+//                                                $bdP->commit();
 //                                                echo "succès";
 //                                                die;
 //
 //                                            } else {
-//                                                if ($bd->inTransaction()) {
-//    $bd->rollBack();
+//                                                if ($bdP->inTransaction()) {
+//    $bdP->rollBack();
 //}
 //                                                echo "erreur";
 //                                                die;
@@ -1366,8 +1678,8 @@ WHERE p.matricule = :matricule;";
 //
 //
 //            }catch (Exception $e) {
-//                if ($bd->inTransaction()) {
-//    $bd->rollBack();
+//                if ($bdP->inTransaction()) {
+//    $bdP->rollBack();
 //}
 //                echo "erreur";
 //                die;
@@ -1384,8 +1696,8 @@ WHERE p.matricule = :matricule;";
 //        if (!empty($_POST['matricule']) && !empty($_POST['email'])) {
 //
 //            try {
-//                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-//                $bd->beginTransaction();
+//                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+//                $bdP->beginTransaction();
 //
 //
 //                date_default_timezone_set('Africa/Dakar');
@@ -1400,7 +1712,7 @@ WHERE p.matricule = :matricule;";
 //                ];
 //
 //                $sql = "SELECT * FROM utilisateurs WHERE email=:email";
-//                $stmt = $bd->prepare($sql);
+//                $stmt = $bdP->prepare($sql);
 //                $stmt->execute($data);
 //                $result = $stmt->fetch(PDO::FETCH_OBJ);
 //
@@ -1424,7 +1736,7 @@ WHERE p.matricule = :matricule;";
 //                                LEFT JOIN compteGmail cg
 //                                    ON p.idCompteGmail = cg.id
 //                                WHERE p.matricule = :matricule;";
-//                        $stmt_perso = $bd->prepare($sql_perso);
+//                        $stmt_perso = $bdP->prepare($sql_perso);
 //                        $stmt_perso->execute($data_perso);
 //                        $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
 //
@@ -1443,7 +1755,7 @@ WHERE p.matricule = :matricule;";
 //
 //                            ];
 //                            $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
-//                            $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+//                            $stmt_perso_contrat = $bdP->prepare($sql_perso_contrat);
 //                            $stmt_perso_contrat->execute($data_perso_contrat);
 //                            $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
 //
@@ -1475,7 +1787,7 @@ WHERE p.matricule = :matricule;";
 //                                                        dateEnvoiCodeValidation = :dateEnvoiCodeValidation
 //                                                    WHERE matricule = :matricule";
 //
-//                                    $stmt = $bd->prepare($sql);
+//                                    $stmt = $bdP->prepare($sql);
 //                                    $tmpStmt = $stmt->execute($dataCandidat);
 //
 //                                    if ($tmpStmt == 1) {
@@ -1494,7 +1806,7 @@ WHERE p.matricule = :matricule;";
 //                                            'dateEnregistremenent' => $dateEnregistrement,
 //                                        ];
 //                                        $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
-//                                        $stmtHistorique = $bd->prepare($sqlHistorique);
+//                                        $stmtHistorique = $bdP->prepare($sqlHistorique);
 //                                        $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 //
 //                                        if ($tmpStmtHistorique) {
@@ -1562,23 +1874,23 @@ WHERE p.matricule = :matricule;";
 //                                            $emailSent = $authController->sendEmail($email, $prenom, "Activez votre compte maintenant !", $message);
 //
 //                                            if (!$emailSent) {
-//                                                if ($bd->inTransaction()) {
-//    $bd->rollBack();
+//                                                if ($bdP->inTransaction()) {
+//    $bdP->rollBack();
 //}
 //
 //                                                echo "erreurMail";
 //                                                die;
 //                                            } else {
 //
-//                                                $bd->commit();
+//                                                $bdP->commit();
 //                                                echo "succès" . $authController->tokenencrypt($matricule);
 //                                                die;
 //
 //                                            }
 //
 //                                        } else {
-//                                            if ($bd->inTransaction()) {
-//    $bd->rollBack();
+//                                            if ($bdP->inTransaction()) {
+//    $bdP->rollBack();
 //}
 //                                            echo "erreur";
 //                                            die;
@@ -1623,8 +1935,8 @@ WHERE p.matricule = :matricule;";
 //                }
 //
 //            } catch (Exception $e) {
-//                if ($bd->inTransaction()) {
-//    $bd->rollBack();
+//                if ($bdP->inTransaction()) {
+//    $bdP->rollBack();
 //}
 //                echo "erreur" . $e;
 //                die;
@@ -1644,8 +1956,8 @@ WHERE p.matricule = :matricule;";
         if (!empty($_POST['matricule']) && !empty($_POST['email'])) {
 
             try {
-                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $bd->beginTransaction();
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->beginTransaction();
 
 
                 date_default_timezone_set('Africa/Dakar');
@@ -1660,7 +1972,7 @@ WHERE p.matricule = :matricule;";
                 ];
 
                 $sql = "SELECT * FROM utilisateurs WHERE email=:email AND matricule=:matricule";
-                $stmt = $bd->prepare($sql);
+                $stmt = $bdP->prepare($sql);
                 $stmt->execute($data);
                 $result = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -1688,7 +2000,7 @@ WHERE p.matricule = :matricule;";
                                 LEFT JOIN compteGmail cg 
                                     ON p.idCompteGmail = cg.id
                                 WHERE p.matricule = :matricule;";
-                            $stmt_perso = $bd->prepare($sql_perso);
+                            $stmt_perso = $bdP->prepare($sql_perso);
                             $stmt_perso->execute($data_perso);
                             $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
 
@@ -1707,7 +2019,7 @@ WHERE p.matricule = :matricule;";
 
                                 ];
                                 $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
-                                $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+                                $stmt_perso_contrat = $bdP->prepare($sql_perso_contrat);
                                 $stmt_perso_contrat->execute($data_perso_contrat);
                                 $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
 
@@ -1737,7 +2049,7 @@ WHERE p.matricule = :matricule;";
                                                         statut = :statut1
                                                     WHERE matricule = :matricule AND statut=:statut2";
 
-                                        $stmt = $bd->prepare($sql);
+                                        $stmt = $bdP->prepare($sql);
                                         $tmpStmt = $stmt->execute($dataCandidat);
 
                                         if($tmpStmt)
@@ -1753,7 +2065,7 @@ WHERE p.matricule = :matricule;";
                                                 'dateEnregistrement' => $dateEnregistrement,
                                             ];
                                             $sql_reset = "INSERT INTO auth_reset_password(matricule,codeReset,statut,dateEnregistrement) VALUES (:matricule,:codeReset,:statut,:dateEnregistrement)";
-                                            $stmt_reset  = $bd->prepare($sql_reset);
+                                            $stmt_reset  = $bdP->prepare($sql_reset);
                                             $tmpStmt_reset  = $stmt_reset ->execute($data_reset);
 
                                             if ($tmpStmt_reset == 1) {
@@ -1772,7 +2084,7 @@ WHERE p.matricule = :matricule;";
                                                     'dateEnregistremenent' => $dateEnregistrement,
                                                 ];
                                                 $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
-                                                $stmtHistorique = $bd->prepare($sqlHistorique);
+                                                $stmtHistorique = $bdP->prepare($sqlHistorique);
                                                 $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 
                                                 if ($tmpStmtHistorique) {
@@ -1963,23 +2275,23 @@ WHERE p.matricule = :matricule;";
                                                     $emailSent = $authController->sendEmail($email, $prenom, $authController->decode("Réinitialisez votre mot de passe !"), $message);
 
                                                     if (!$emailSent) {
-                                                        if ($bd->inTransaction()) {
-    $bd->rollBack();
+                                                        if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
 
                                                         echo "erreurMail";
                                                         die;
                                                     } else {
 
-                                                        $bd->commit();
+                                                        $bdP->commit();
                                                         echo "succès";
                                                         die;
 
                                                     }
 
                                                 } else {
-                                                    if ($bd->inTransaction()) {
-    $bd->rollBack();
+                                                    if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                                                     echo "erreur";
                                                     die;
@@ -1993,8 +2305,8 @@ WHERE p.matricule = :matricule;";
 
                                         }else
                                         {
-                                            if ($bd->inTransaction()) {
-    $bd->rollBack();
+                                            if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                                             echo "erreur";
                                             die;
@@ -2046,8 +2358,8 @@ WHERE p.matricule = :matricule;";
                 }
 
             } catch (Exception $e) {
-                if ($bd->inTransaction()) {
-    $bd->rollBack();
+                if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                 echo "erreur";
                 die;
@@ -2067,8 +2379,8 @@ WHERE p.matricule = :matricule;";
         if (!empty($_POST['matricule']) && !empty($_POST['code']) && !empty($_POST['password']) && !empty($_POST['confirm-password'])) {
 
             try {
-                $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-                $bd->beginTransaction();
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->beginTransaction();
 
 
                 date_default_timezone_set('Africa/Dakar');
@@ -2098,7 +2410,7 @@ WHERE p.matricule = :matricule;";
                 ];
 
                 $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
-                $stmt = $bd->prepare($sql);
+                $stmt = $bdP->prepare($sql);
                 $stmt->execute($data);
                 $result = $stmt->fetch(PDO::FETCH_OBJ);
 
@@ -2112,7 +2424,7 @@ WHERE p.matricule = :matricule;";
                     ];
 
                     $sql_reset_code = "SELECT * FROM auth_reset_password WHERE matricule=:matricule AND statut=:statut";
-                    $stmt_reset_code = $bd ->prepare($sql_reset_code);
+                    $stmt_reset_code = $bdP ->prepare($sql_reset_code);
                     $stmt_reset_code->execute($data_reset_code);
                     $result_reset_code = $stmt_reset_code->fetch(PDO::FETCH_OBJ);
 
@@ -2142,7 +2454,7 @@ WHERE p.matricule = :matricule;";
                                 LEFT JOIN compteGmail cg 
                                     ON p.idCompteGmail = cg.id
                                 WHERE p.matricule = :matricule;";
-                                    $stmt_perso = $bd->prepare($sql_perso);
+                                    $stmt_perso = $bdP->prepare($sql_perso);
                                     $stmt_perso->execute($data_perso);
                                     $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
 
@@ -2159,7 +2471,7 @@ WHERE p.matricule = :matricule;";
 
                                         ];
                                         $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
-                                        $stmt_perso_contrat = $bd->prepare($sql_perso_contrat);
+                                        $stmt_perso_contrat = $bdP->prepare($sql_perso_contrat);
                                         $stmt_perso_contrat->execute($data_perso_contrat);
                                         $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
 
@@ -2183,7 +2495,7 @@ WHERE p.matricule = :matricule;";
                                                         statut = :statut1
                                                     WHERE matricule = :matricule AND statut=:statut2";
 
-                                                $stmt_reset_up = $bd->prepare($sql_reset_up);
+                                                $stmt_reset_up = $bdP->prepare($sql_reset_up);
                                                 $tmpStmt_reset_up = $stmt_reset_up->execute($data_reset_up);
 
                                                 if($tmpStmt_reset_up)
@@ -2200,7 +2512,7 @@ WHERE p.matricule = :matricule;";
                                                             password = :password
                                                         WHERE matricule = :matricule";
 
-                                                    $stmt_utilisateur = $bd->prepare($sql_utilisateur);
+                                                    $stmt_utilisateur = $bdP->prepare($sql_utilisateur);
                                                     $tmpStmt_utilisateur = $stmt_utilisateur->execute($data_utilisateur);
 
                                                     if($tmpStmt_utilisateur)
@@ -2219,21 +2531,21 @@ WHERE p.matricule = :matricule;";
                                                             'dateEnregistremenent' => $dateEnregistrement,
                                                         ];
                                                         $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
-                                                        $stmtHistorique = $bd->prepare($sqlHistorique);
+                                                        $stmtHistorique = $bdP->prepare($sqlHistorique);
                                                         $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 
                                                         if ($tmpStmtHistorique) {
 
 
-                                                            $bd->commit();
+                                                            $bdP->commit();
                                                             echo "succès";
                                                             die;
 
 
                                                         }else
                                                         {
-                                                            if ($bd->inTransaction()) {
-    $bd->rollBack();
+                                                            if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                                                             echo "erreur";
                                                             die;
@@ -2241,8 +2553,8 @@ WHERE p.matricule = :matricule;";
 
                                                     }else
                                                     {
-                                                        if ($bd->inTransaction()) {
-    $bd->rollBack();
+                                                        if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                                                         echo "erreur";
                                                         die;
@@ -2251,8 +2563,8 @@ WHERE p.matricule = :matricule;";
 
                                                 }else
                                                 {
-                                                    if ($bd->inTransaction()) {
-    $bd->rollBack();
+                                                    if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                                                     echo "erreur";
                                                     die;
@@ -2287,8 +2599,8 @@ WHERE p.matricule = :matricule;";
 
 
                             } else {
-                                if ($bd->inTransaction()) {
-    $bd->rollBack();
+                                if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                                 echo "compteInactive";
                                 die;
@@ -2304,8 +2616,8 @@ WHERE p.matricule = :matricule;";
 
                     }else
                     {
-                        if ($bd->inTransaction()) {
-    $bd->rollBack();
+                        if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                         echo "erreur";
                         die;
@@ -2314,8 +2626,8 @@ WHERE p.matricule = :matricule;";
 
 
                 } else {
-                    if ($bd->inTransaction()) {
-    $bd->rollBack();
+                    if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                     echo "pasCompte";
                     die;
@@ -2323,8 +2635,8 @@ WHERE p.matricule = :matricule;";
                 }
 
             } catch (Exception $e) {
-                if ($bd->inTransaction()) {
-    $bd->rollBack();
+                if ($bdP->inTransaction()) {
+    $bdP->rollBack();
 }
                 echo "erreur2".$e;
                 die;
