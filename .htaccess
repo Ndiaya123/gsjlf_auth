@@ -121,6 +121,20 @@ RewriteRule ^scripts.bundle.11.js$ admin/js/accueil.js [L]
 
 
 
+# page accueil par defaut des aplications
+
+RewriteRule ^page_par_defaut_basi$ default/default_basi.php [L]
+RewriteRule ^page_par_defaut_diplome$ default/default_diplome.php [L]
+RewriteRule ^page_par_defaut_finance$ default/default_finance.php [L]
+RewriteRule ^page_par_defaut_pedagogie$ default/default_pedagogie.php [L]
+RewriteRule ^page_par_defaut_personnel$ default/default_personnel.php [L]
+RewriteRule ^page_par_defaut_scolarite$ default/default_scolarite.php [L]
+RewriteRule ^page_par_defaut_finance_stats$ default/default_finance_stats.php [L]
+
+
+
+
+
 
 
 
