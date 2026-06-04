@@ -1,7 +1,7 @@
 <?php
 
 
-class BDP
+class BD
 {
     public function connect()
     {

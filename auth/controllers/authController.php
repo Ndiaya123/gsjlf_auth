@@ -2,7 +2,6 @@
 
 //ini_set('session.gc_maxlifetime', 36000);
 //session_set_cookie_params(36000);
-session_start();
 
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\SMTP;
@@ -16,7 +15,7 @@ require_once('../../includes/phpMailer/PHPMailer.php');
 require_once('../../includes/phpMailer/SMTP.php');
 require_once('../../includes/phpMailer/Exception.php');
 
-include_once('../../session.php');
+include_once('../../sessions/session.php');
 
 class authController extends BDP
 {
@@ -234,6 +233,38 @@ class authController extends BDP
         }
     }
 
+    public function infoEntite($identifiant)
+    {
+        try {
+
+            $bdP = $this->connect();
+
+
+            $data =
+                [
+                    'identifiant' => $identifiant,
+                ];
+            $stmt = $bdP->prepare("
+           SELECT DISTINCT entites.entite
+FROM affectations
+INNER JOIN entites ON affectations.idEntite = entites.id
+WHERE affectations.identifiant = :identifiant;
+        ");
+
+            $stmt->execute($data);
+
+            return $stmt->fetch(PDO::FETCH_OBJ);
+
+        } catch (\Throwable $th) {
+
+
+            return (object)[
+                'entite' => null
+            ];
+
+        }
+    }
+
 
     public function verifierUserCRIAT($bd,$email,$matricule,$nom, $prenom)
     {
@@ -354,27 +385,7 @@ class authController extends BDP
     }
 
 
-//    public function listeApplications()
-//    {
-//        try {
-//
-//            $bdP = $this->connect();
-//
-//            $stmt = $bdP->prepare("
-//            SELECT
-//               *
-//            FROM listeApplications
-//        ");
-//
-//            $stmt->execute();
-//            return $stmt->fetchAll(PDO::FETCH_OBJ);
-//
-//        } catch (\Throwable $th) {
-//
-//            return "erreur";
-//
-//        }
-//    }
+
 
     public function listeApplications()
     {
@@ -383,14 +394,33 @@ class authController extends BDP
             $bdP = $this->connect();
 
             $stmt = $bdP->prepare("
-            SELECT 
-                la.id,
-                la.nomApplication,
-                GROUP_CONCAT(ha.nom_hashtag) AS hashtags
-            FROM listeApplications la
-            LEFT JOIN hashtag_appli ha 
-                ON ha.idAppli = la.id
-            GROUP BY la.id, la.nomApplication
+         SELECT 
+    la.id AS numero,
+    la.nomApplication,
+        la.icon,
+    la.description AS descriptionApplication,
+    la.statut AS statutApplication,
+    CASE la.statut
+        WHEN 0 THEN 'pending'
+        WHEN 1 THEN 'authorized'
+        WHEN 2 THEN 'denied'
+        ELSE 'Inconnu'
+    END AS statutLibelle,
+ CASE la.idEntite
+        WHEN 1 THEN 'cmjlf'
+        WHEN 2 THEN 'ctd'
+        WHEN 3 THEN 'uahb'
+        WHEN 4 THEN 'gsjlf'
+        WHEN 5 THEN 'gsjlf'
+        ELSE 'gsjlf'
+    END AS entite,
+    GROUP_CONCAT(ha.nom_hashtag) AS hashtags
+
+FROM listeApplications la
+LEFT JOIN hashtag_appli ha 
+    ON ha.idAppli = la.id
+
+GROUP BY la.id, la.nomApplication, la.description, la.statut;
         ");
 
             $stmt->execute();
@@ -931,11 +961,12 @@ WHERE p.matricule = :matricule;";
 
 
                                 $matricule = $result->matricule;
+                                $identifiant = $result->identifiant;
                                 $data_info_user = [
-                                    'matricule' => $matricule
+                                    'identifiant' => $identifiant
                                 ];
 
-                                $sql_info_user = "SELECT * FROM etatCivil WHERE matricule=:matricule";
+                                $sql_info_user = "SELECT * FROM etatCivil WHERE identifiant=:identifiant";
                                 $stmt_info_user = $bdP->prepare($sql_info_user);
                                 $stmt_info_user->execute($data_info_user);
                                 $result_info_user = $stmt_info_user->fetch(PDO::FETCH_OBJ);
@@ -944,9 +975,12 @@ WHERE p.matricule = :matricule;";
                                 {
 
 
-                                    $prenom = ucwords(mb_strtolower($result->prenom));
-                                    $nom= $authController->fctRetirerAccents(mb_strtoupper($result->prenom));
+                                    $prenom = ucwords(mb_strtolower($result_info_user->prenom));
+                                    $nom= $authController->fctRetirerAccents(mb_strtoupper($result_info_user->nom));
                                     $infoApplication = $authController->infoApplication();
+                                    $infoEntite = $authController->infoEntite($identifiant);
+
+
                                     // session id utilisateur personnel
                                     $_SESSION['tmpIdP'] = $result->id;
                                     $_SESSION['tmpPrenom'] = $prenom;
@@ -956,6 +990,8 @@ WHERE p.matricule = :matricule;";
                                     $_SESSION['tmpNbrAppliEnAttente'] = $infoApplication->en_attente;
                                     $_SESSION['tmpNbrAppliAutorisees'] = $infoApplication->total_applications - $infoApplication->en_attente;
                                     $_SESSION['tmpNbrAppliRefusees'] = 0;
+                                    $_SESSION['tmpEntite'] = $infoEntite->entite;
+
 
 
 
@@ -973,7 +1009,7 @@ WHERE p.matricule = :matricule;";
                                             $_SESSION['tmpId'] = $tmpId;
                                         } else {
                                             session_destroy();
-                                            echo "erreur";
+                                            echo "erreur3";
                                             die;
                                         }
 
@@ -985,7 +1021,7 @@ WHERE p.matricule = :matricule;";
                                             $_SESSION['tmpIdBASI'] = $tmpIdBASI;
                                         } else {
                                             session_destroy();
-                                            echo "erreur";
+                                            echo "erreur2";
                                             die;
                                         }
 
@@ -993,16 +1029,22 @@ WHERE p.matricule = :matricule;";
                                         // Liste des applications
                                         $listeApplications = $authController->listeApplications();
 
-                                        if (is_object($listeApplications)) {
+
+
+                                        if (!empty($listeApplications) && is_array($listeApplications)) {
                                             $_SESSION['tmpListeApplication'] = $listeApplications;
                                         } else {
                                             session_destroy();
-                                            echo "erreur";
-                                            die;
+echo "erreur";
+                                        die;
                                         }
 
 
-                                        echo "succès/personnel/admin-dashboard";
+                                        // liste des taches
+
+
+
+                                        echo "succès/personnel/admin-accueil";
                                         die;
 
                                     }else
@@ -1053,7 +1095,7 @@ WHERE p.matricule = :matricule;";
                 if ($bdP->inTransaction()) {
     $bdP->rollBack();
 }
-                echo "erreur";
+                echo "erreur".$e;
                 die;
             }
 

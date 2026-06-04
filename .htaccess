@@ -42,7 +42,7 @@ RewriteRule ^accueil$ index.php [L]
 RewriteRule ^page-de-connexion$ login.php [L]
 RewriteRule ^jquery-login$ login-user.js [L]
 RewriteRule ^page-de-connexion-controller$ loginController.php [L]
-RewriteRule ^quitter$ logout.php [L]
+RewriteRule ^signout$ auth/logout.php [L]
 
 #autres pages
 
@@ -110,10 +110,8 @@ RewriteRule ^scripts.bundle.8.js$ admin/js/sousMenus.js [L]
 RewriteRule ^admin-liste-taches$ admin/listeTaches.php [L]
 RewriteRule ^scripts.bundle.9.js$ admin/js/listeTaches.js [L]
 
-
 RewriteRule ^admin-liste-tache_qualification$ admin/tacheQualification.php [L]
 RewriteRule ^scripts.bundle.10.js$ admin/js/tacheQualification.js [L]
-
 
 RewriteRule ^admin-accueil$ admin/accueil.php [L]
 RewriteRule ^scripts.bundle.11.js$ admin/js/accueil.js [L]

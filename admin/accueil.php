@@ -1,9 +1,15 @@
+<?php
+
+include_once('../sessions/admin.php');
+
+
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-    <title>GSJLF — Mes applications ENT</title>
+    <title>ENT — GSJLF</title>
     <link rel="shortcut icon" href="/personnel/ressources/dist_assets/media/logos/logo_gsjlf.png"/>
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,700;0,900;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
@@ -714,8 +720,8 @@
         .ps_app-icon.ps_cmjlf::after{background:#a85f28}
         .ps_app-icon.ps_ctd  {background:linear-gradient(135deg,#2d8a57,#1a5c38);color:white;box-shadow:0 8px 18px rgba(45,138,87,.2)}
         .ps_app-icon.ps_ctd::after{background:#2d8a57}
-        .ps_app-icon.ps_grp  {background:linear-gradient(135deg,#2c5364,#203a43);color:white;box-shadow:0 8px 18px rgba(44,83,100,.2)}
-        .ps_app-icon.ps_grp::after{background:#2c5364}
+        .ps_app-icon.ps_gsjlf  {background:linear-gradient(135deg,#2c5364,#203a43);color:white;box-shadow:0 8px 18px rgba(44,83,100,.2)}
+        .ps_app-icon.ps_gsjlf::after{background:#2c5364}
 
         /* BADGE STATUT */
         .ps_status{
@@ -1186,9 +1192,9 @@
             <button class="ps_dock-btn ps_active" data-tip="Applications">
                 <span class="material-symbols-outlined">apps</span>
             </button>
-            <button class="ps_dock-btn" data-tip="Tableau de bord">
-                <span class="material-symbols-outlined">dashboard</span>
-            </button>
+<!--            <button class="ps_dock-btn ps_active" data-tip="Applications">-->
+<!--                <span class="material-symbols-outlined">dashboard</span>-->
+<!--            </button>-->
             <button class="ps_dock-btn" data-tip="Messagerie">
                 <span class="material-symbols-outlined">mail</span>
             </button>
@@ -1200,7 +1206,7 @@
             </button>
         </div>
 
-        <div class="ps_profile-mini" title="Mon profil">AD</div>
+        <div class="ps_profile-mini" title="Mon profil"><?= $tmpInitiales  ?></div>
     </aside>
 
     <!-- ═══ MAIN ═══ -->
@@ -1230,8 +1236,10 @@
                 <div class="ps_user-chip" title="Mon profil">
                     <div class="ps_user-avatar">AD</div>
                     <div>
-                        <div class="ps_user-name">Amadou Diallo</div>
-                        <div class="ps_user-role">Enseignant · UAHB</div>
+                        <div class="ps_user-name"><?= $tmpPrenom.' '.$tmpNom ?></div>
+<!--                        <div class="ps_user-role">Enseignant · UAHB</div>-->
+                        <div class="ps_user-role">Entité : <?= $tmpEntite ?></div>
+
                     </div>
                 </div>
 
@@ -1264,7 +1272,7 @@
                     <div class="ps_hero-actions">
                         <button class="ps_hero-btn ps_primary" onclick="document.getElementById('appsGrid').scrollIntoView({behavior:'smooth'})">
                             <span class="material-symbols-outlined" style="font-size:16px">open_in_new</span>
-                            Voir mes accès
+                            Voir mes infos
                         </button>
                         <button class="ps_hero-btn ps_ghost">
                             <span class="material-symbols-outlined" style="font-size:16px">help_outline</span>
@@ -1286,19 +1294,19 @@
 
             <div class="ps_stats-grid">
                 <div class="ps_stat ps_s1">
-                    <strong id="statTotal">12</strong>
+                    <strong id="statTotal"><?= $tmpNbrAppli   ?></strong>
                     <small>Applications</small>
                 </div>
                 <div class="ps_stat ps_s2">
-                    <strong id="statAuth">07</strong>
+                    <strong id="statAuth"><?= $tmpNbrAppliAutorisees ?></strong>
                     <small>Autorisées</small>
                 </div>
                 <div class="ps_stat ps_s3">
-                    <strong id="statPend">03</strong>
+                    <strong id="statPend"><?= $tmpNbrAppliEnAttente ?></strong>
                     <small>En attente</small>
                 </div>
                 <div class="ps_stat ps_s4">
-                    <strong id="statDeny">02</strong>
+                    <strong id="statDeny"><?= $tmpNbrAppliRefusees ?></strong>
                     <small>Refusées</small>
                 </div>
             </div>
@@ -1317,19 +1325,19 @@
             <div class="ps_tabs">
                 <button class="ps_tab ps_active" onclick="setFilter('all',this)">
                     <span class="material-symbols-outlined" style="font-size:14px">apps</span>
-                    Toutes <span class="ps_count" id="cntAll">12</span>
+                    Toutes <span class="ps_count" id="cntAll"><?= $tmpNbrAppli   ?></span>
                 </button>
                 <button class="ps_tab" onclick="setFilter('authorized',this)">
                     <span class="material-symbols-outlined" style="font-size:14px">check_circle</span>
-                    Autorisées <span class="ps_count" id="cntAuth">7</span>
+                    Autorisées <span class="ps_count" id="cntAuth"><?= $tmpNbrAppliAutorisees ?></span>
                 </button>
                 <button class="ps_tab" onclick="setFilter('pending',this)">
                     <span class="material-symbols-outlined" style="font-size:14px">schedule</span>
-                    Attente <span class="ps_count" id="cntPend">3</span>
+                    Attente <span class="ps_count" id="cntPend"><?= $tmpNbrAppliEnAttente ?></span>
                 </button>
                 <button class="ps_tab" onclick="setFilter('denied',this)">
                     <span class="material-symbols-outlined" style="font-size:14px">block</span>
-                    Refusées <span class="ps_count" id="cntDeny">2</span>
+                    Refusées <span class="ps_count" id="cntDeny"><?= $tmpNbrAppliRefusees ?></span>
                 </button>
             </div>
 
@@ -1339,7 +1347,7 @@
                     <option value="uahb">UAHB</option>
                     <option value="cmjlf">CMJLF</option>
                     <option value="ctd">CTD</option>
-                    <option value="grp">Groupe</option>
+                    <option value="gsjlf">Groupe</option>
                 </select>
                 <div class="ps_view-toggle" role="group" aria-label="Mode d'affichage">
                     <button class="ps_vt-btn ps_active" onclick="setView(0,this)" title="Grille" aria-label="Vue grille">
@@ -1360,234 +1368,125 @@
 
         <!-- GRILLE APPLICATIONS -->
         <section class="ps_apps-grid" id="appsGrid">
-            <article class="ps_app ps_authorized" data-status="authorized" data-entity="grp" data-name="tableau de bord dashboard statistiques administration groupe">
+
+
+            <article class="ps_app ps_authorized" data-status="authorized" data-entity="gsjlf" data-name="Gestion des utilisateurs, sous-menus, tâches et taches qualifications.">
                 <div class="ps_app-stripe"></div>
                 <div class="ps_app-body">
                     <div class="ps_app-top">
-                        <div class="ps_app-icon ps_grp"><span class="material-symbols-outlined">dashboard</span></div>
+                        <div class="ps_app-icon ps_gsjlf"><span class="material-symbols-outlined">dashboard</span></div>
                         <div class="ps_status ps_authorized">Autorisée</div>
                     </div>
                     <div class="ps_app-meta">
-                        <h3>Tableau de bord</h3>
-                        <p class="ps_app-desc">Statistiques, indicateurs de performance et vue globale du groupe.</p>
+                        <h3>Général</h3>
+                        <p class="ps_app-desc">Gestion des utilisateurs, sous-menus, tâches et qualifications.</p>
                     </div>
-                    <div class="ps_tags"><div class="ps_tag">Administration</div><div class="ps_tag">Groupe</div></div>
+                    <div class="ps_tags"><div class="ps_tag">Utilisateur</div><div class="ps_tag">Sous-menus</div></div>
                 </div>
                 <div class="ps_app-sep"></div>
                 <div class="ps_app-footer">
-                    <button class="ps_open-btn"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
-                    <button class="ps_action-icon-btn" title="Détails"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
+                    <button class="ps_open-btn" onclick="actionOuvrirApplication('general')"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
+                    <button class="ps_action-icon-btn" title="Détails" onclick="actionOuvrirApplication('general')"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
                 </div>
             </article>
-            <article class="ps_app ps_authorized" data-status="authorized" data-entity="uahb" data-name="gestion pédagogique notes ue ec délibérations uahb">
-                <div class="ps_app-stripe"></div>
-                <div class="ps_app-body">
-                    <div class="ps_app-top">
-                        <div class="ps_app-icon ps_uahb"><span class="material-symbols-outlined">school</span></div>
-                        <div class="ps_status ps_authorized">Autorisée</div>
-                    </div>
-                    <div class="ps_app-meta">
-                        <h3>Gestion pédagogique</h3>
-                        <p class="ps_app-desc">Notes, UE, EC, niveaux, délibérations et parcours étudiants UAHB.</p>
-                    </div>
-                    <div class="ps_tags"><div class="ps_tag">UAHB</div><div class="ps_tag">Pédagogie</div></div>
-                </div>
-                <div class="ps_app-sep"></div>
-                <div class="ps_app-footer">
-                    <button class="ps_open-btn"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
-                    <button class="ps_action-icon-btn" title="Détails"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
-                </div>
-            </article>
-            <article class="ps_app ps_authorized" data-status="authorized" data-entity="grp" data-name="messagerie mail communication interne groupe">
-                <div class="ps_app-stripe"></div>
-                <div class="ps_app-body">
-                    <div class="ps_app-top">
-                        <div class="ps_app-icon ps_grp"><span class="material-symbols-outlined">mail</span></div>
-                        <div class="ps_status ps_authorized">Autorisée</div>
-                    </div>
-                    <div class="ps_app-meta">
-                        <h3>Messagerie</h3>
-                        <p class="ps_app-desc">Communication interne entre enseignants, administration et étudiants.</p>
-                    </div>
-                    <div class="ps_tags"><div class="ps_tag">Communication</div><div class="ps_tag">Groupe</div></div>
-                </div>
-                <div class="ps_app-sep"></div>
-                <div class="ps_app-footer">
-                    <button class="ps_open-btn"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
-                    <button class="ps_action-icon-btn" title="Détails"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
-                </div>
-            </article>
-            <article class="ps_app ps_authorized" data-status="authorized" data-entity="grp" data-name="documents archives fichiers pédagogiques groupe">
-                <div class="ps_app-stripe"></div>
-                <div class="ps_app-body">
-                    <div class="ps_app-top">
-                        <div class="ps_app-icon ps_grp"><span class="material-symbols-outlined">folder_open</span></div>
-                        <div class="ps_status ps_authorized">Autorisée</div>
-                    </div>
-                    <div class="ps_app-meta">
-                        <h3>Documents</h3>
-                        <p class="ps_app-desc">Gestion des documents officiels, archives et fichiers pédagogiques.</p>
-                    </div>
-                    <div class="ps_tags"><div class="ps_tag">Archives</div><div class="ps_tag">Fichiers</div></div>
-                </div>
-                <div class="ps_app-sep"></div>
-                <div class="ps_app-footer">
-                    <button class="ps_open-btn"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
-                    <button class="ps_action-icon-btn" title="Détails"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
-                </div>
-            </article>
-            <article class="ps_app ps_authorized" data-status="authorized" data-entity="grp" data-name="ressources humaines rh personnel contrats congés groupe">
-                <div class="ps_app-stripe"></div>
-                <div class="ps_app-body">
-                    <div class="ps_app-top">
-                        <div class="ps_app-icon ps_grp"><span class="material-symbols-outlined">group</span></div>
-                        <div class="ps_status ps_authorized">Autorisée</div>
-                    </div>
-                    <div class="ps_app-meta">
-                        <h3>Ressources Humaines</h3>
-                        <p class="ps_app-desc">Personnel, contrats, congés et dossiers administratifs du groupe.</p>
-                    </div>
-                    <div class="ps_tags"><div class="ps_tag">RH</div><div class="ps_tag">Personnel</div></div>
-                </div>
-                <div class="ps_app-sep"></div>
-                <div class="ps_app-footer">
-                    <button class="ps_open-btn"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
-                    <button class="ps_action-icon-btn" title="Détails"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
-                </div>
-            </article>
-            <article class="ps_app ps_authorized" data-status="authorized" data-entity="cmjlf" data-name="emploi du temps planning cours salles cmjlf">
-                <div class="ps_app-stripe"></div>
-                <div class="ps_app-body">
-                    <div class="ps_app-top">
-                        <div class="ps_app-icon ps_cmjlf"><span class="material-symbols-outlined">calendar_month</span></div>
-                        <div class="ps_status ps_authorized">Autorisée</div>
-                    </div>
-                    <div class="ps_app-meta">
-                        <h3>Emploi du temps</h3>
-                        <p class="ps_app-desc">Planning des cours, salles, enseignants et examens du CMJLF.</p>
-                    </div>
-                    <div class="ps_tags"><div class="ps_tag">CMJLF</div><div class="ps_tag">Planning</div></div>
-                </div>
-                <div class="ps_app-sep"></div>
-                <div class="ps_app-footer">
-                    <button class="ps_open-btn"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
-                    <button class="ps_action-icon-btn" title="Détails"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
-                </div>
-            </article>
-            <article class="ps_app ps_authorized" data-status="authorized" data-entity="uahb" data-name="admissions inscriptions candidats dossiers uahb">
-                <div class="ps_app-stripe"></div>
-                <div class="ps_app-body">
-                    <div class="ps_app-top">
-                        <div class="ps_app-icon ps_uahb"><span class="material-symbols-outlined">how_to_reg</span></div>
-                        <div class="ps_status ps_authorized">Autorisée</div>
-                    </div>
-                    <div class="ps_app-meta">
-                        <h3>Admissions</h3>
-                        <p class="ps_app-desc">Candidatures, dossiers d'inscription et admissions de l'UAHB.</p>
-                    </div>
-                    <div class="ps_tags"><div class="ps_tag">UAHB</div><div class="ps_tag">Inscriptions</div></div>
-                </div>
-                <div class="ps_app-sep"></div>
-                <div class="ps_app-footer">
-                    <button class="ps_open-btn"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
-                    <button class="ps_action-icon-btn" title="Détails"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
-                </div>
-            </article>
-            <article class="ps_app ps_pending" data-status="pending" data-entity="grp" data-name="finances facturation paiements comptabilité groupe">
-                <div class="ps_app-stripe"></div>
-                <div class="ps_app-body">
-                    <div class="ps_app-top">
-                        <div class="ps_app-icon ps_grp"><span class="material-symbols-outlined">payments</span></div>
-                        <div class="ps_status ps_pending">En attente</div>
-                    </div>
-                    <div class="ps_app-meta">
-                        <h3>Finances</h3>
-                        <p class="ps_app-desc">Facturation, paiements, états financiers et comptabilité du groupe.</p>
-                    </div>
-                    <div class="ps_tags"><div class="ps_tag">Sécurisé</div><div class="ps_tag">Groupe</div></div>
-                </div>
-                <div class="ps_app-sep"></div>
-                <div class="ps_app-footer">
-                    <button class="ps_pending-btn"><span class="material-symbols-outlined" style="font-size:15px">schedule</span>En validation</button>
-                    <button class="ps_action-icon-btn"><span class="material-symbols-outlined" style="font-size:15px">schedule</span></button>
-                </div>
-            </article>
-            <article class="ps_app ps_pending" data-status="pending" data-entity="grp" data-name="support technique tickets assistance utilisateurs groupe">
-                <div class="ps_app-stripe"></div>
-                <div class="ps_app-body">
-                    <div class="ps_app-top">
-                        <div class="ps_app-icon ps_grp"><span class="material-symbols-outlined">support_agent</span></div>
-                        <div class="ps_status ps_pending">En attente</div>
-                    </div>
-                    <div class="ps_app-meta">
-                        <h3>Support technique</h3>
-                        <p class="ps_app-desc">Centre d'assistance, tickets et suivi des demandes utilisateurs.</p>
-                    </div>
-                    <div class="ps_tags"><div class="ps_tag">Support</div><div class="ps_tag">Assistance</div></div>
-                </div>
-                <div class="ps_app-sep"></div>
-                <div class="ps_app-footer">
-                    <button class="ps_pending-btn"><span class="material-symbols-outlined" style="font-size:15px">schedule</span>En validation</button>
-                    <button class="ps_action-icon-btn"><span class="material-symbols-outlined" style="font-size:15px">schedule</span></button>
-                </div>
-            </article>
-            <article class="ps_app ps_pending" data-status="pending" data-entity="ctd" data-name="bibliothèque numérique livres ressources ctd">
-                <div class="ps_app-stripe"></div>
-                <div class="ps_app-body">
-                    <div class="ps_app-top">
-                        <div class="ps_app-icon ps_ctd"><span class="material-symbols-outlined">auto_stories</span></div>
-                        <div class="ps_status ps_pending">En attente</div>
-                    </div>
-                    <div class="ps_app-meta">
-                        <h3>Bibliothèque numérique</h3>
-                        <p class="ps_app-desc">Ressources numériques, livres et contenus pédagogiques du CTD.</p>
-                    </div>
-                    <div class="ps_tags"><div class="ps_tag">CTD</div><div class="ps_tag">Ressources</div></div>
-                </div>
-                <div class="ps_app-sep"></div>
-                <div class="ps_app-footer">
-                    <button class="ps_pending-btn"><span class="material-symbols-outlined" style="font-size:15px">schedule</span>En validation</button>
-                    <button class="ps_action-icon-btn"><span class="material-symbols-outlined" style="font-size:15px">schedule</span></button>
-                </div>
-            </article>
-            <article class="ps_app ps_denied" data-status="denied" data-entity="grp" data-name="audit logs journaux accès sécurité système groupe">
-                <div class="ps_app-stripe"></div>
-                <div class="ps_app-body">
-                    <div class="ps_app-top">
-                        <div class="ps_app-icon ps_grp"><span class="material-symbols-outlined">policy</span></div>
-                        <div class="ps_status ps_denied">Non autorisée</div>
-                    </div>
-                    <div class="ps_app-meta">
-                        <h3>Audit & Logs</h3>
-                        <p class="ps_app-desc">Journaux d'accès, traçabilité des actions et audit de sécurité.</p>
-                    </div>
-                    <div class="ps_tags"><div class="ps_tag">Restreint</div><div class="ps_tag">Sécurité</div></div>
-                </div>
-                <div class="ps_app-sep"></div>
-                <div class="ps_app-footer">
-                    <button class="ps_deny-btn"><span class="material-symbols-outlined" style="font-size:15px">lock</span>Demander l'accès</button>
-                    <button class="ps_action-icon-btn"><span class="material-symbols-outlined" style="font-size:15px">lock</span></button>
-                </div>
-            </article>
-            <article class="ps_app ps_denied" data-status="denied" data-entity="grp" data-name="paramètres système configuration administration réseau groupe">
-                <div class="ps_app-stripe"></div>
-                <div class="ps_app-body">
-                    <div class="ps_app-top">
-                        <div class="ps_app-icon ps_grp"><span class="material-symbols-outlined">settings_applications</span></div>
-                        <div class="ps_status ps_denied">Non autorisée</div>
-                    </div>
-                    <div class="ps_app-meta">
-                        <h3>Paramètres système</h3>
-                        <p class="ps_app-desc">Configuration avancée, droits, réseau et administration système.</p>
-                    </div>
-                    <div class="ps_tags"><div class="ps_tag">Admin</div><div class="ps_tag">Restreint</div></div>
-                </div>
-                <div class="ps_app-sep"></div>
-                <div class="ps_app-footer">
-                    <button class="ps_deny-btn"><span class="material-symbols-outlined" style="font-size:15px">lock</span>Demander l'accès</button>
-                    <button class="ps_action-icon-btn"><span class="material-symbols-outlined" style="font-size:15px">lock</span></button>
-                </div>
-            </article>
+
+            <?php
+
+            foreach ($tmpListeApplication as $tmpAppli)
+            {
+
+                if($tmpAppli->statutApplication == 0)
+                {
+                    ?>
+
+                    <article class="ps_app ps_pending" data-status="pending" data-entity="<?= $tmpAppli->entite  ?>" data-name="<?= $tmpAppli->descriptionApplication  ?>">
+                        <div class="ps_app-stripe"></div>
+                        <div class="ps_app-body">
+                            <div class="ps_app-top">
+                                <div class="ps_app-icon ps_gsjlf"><?= $tmpAppli->icon  ?></div>
+                                <div class="ps_status ps_pending">En attente</div>
+                            </div>
+                            <div class="ps_app-meta">
+                                <h3><?= $tmpAppli->nomApplication  ?></h3>
+                                <p class="ps_app-desc"><?= $tmpAppli->descriptionApplication  ?></p>
+                            </div>
+                            <div class="ps_tags">
+                                <?php   foreach ($tmpAppli->hashtags as $tag) { ?>
+                                    <div class="ps_tag"><?= $tag ?></div>
+                               <?php } ?>
+                            </div>
+                        </div>
+                        <div class="ps_app-sep"></div>
+                        <div class="ps_app-footer">
+                            <button class="ps_pending-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>)"><span class="material-symbols-outlined" style="font-size:15px">schedule</span>En construction</button>
+                            <button class="ps_action-icon-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>)"><span class="material-symbols-outlined" style="font-size:15px">schedule</span></button>
+                        </div>
+                    </article>
+
+
+               <?php }else if($tmpAppli->statutApplication == 1)
+                {?>
+
+                    <article class="ps_app ps_authorized" data-status="authorized" data-entity="<?= $tmpAppli->entite  ?>" data-name="<?= $tmpAppli->descriptionApplication  ?>">
+                        <div class="ps_app-stripe"></div>
+                        <div class="ps_app-body">
+                            <div class="ps_app-top">
+                                <div class="ps_app-icon ps_gsjlf"><?= $tmpAppli->icon  ?></div>
+                                <div class="ps_status ps_authorized">Autorisée</div>
+                            </div>
+                            <div class="ps_app-meta">
+                                <h3><?= $tmpAppli->nomApplication  ?></h3>
+                                <p class="ps_app-desc"><?= $tmpAppli->descriptionApplication  ?></p>
+                            </div>
+                            <div class="ps_tags">
+                                <?php   foreach ($tmpAppli->hashtags as $tag) { ?>
+                                    <div class="ps_tag"><?= $tag ?></div>
+                                <?php } ?>
+                        </div>
+                        </div>
+                        <div class="ps_app-sep"></div>
+                        <div class="ps_app-footer">
+                            <button class="ps_open-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>)"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
+                            <button class="ps_action-icon-btn" title="Détails" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>)"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
+                        </div>
+                    </article>
+
+
+
+
+
+                <?php }else if($tmpAppli->statutApplication == 2)
+                { ?>
+
+
+                    <article class="ps_app ps_denied" data-status="denied" data-entity="<?= $tmpAppli->entite  ?>" data-name="<?= $tmpAppli->descriptionApplication  ?>">
+                        <div class="ps_app-stripe"></div>
+                        <div class="ps_app-body">
+                            <div class="ps_app-top">
+                                <div class="ps_app-icon ps_gsjlf"><span class="material-symbols-outlined">policy</span></div>
+                                <div class="ps_status ps_denied">Non autorisée</div>
+                            </div>
+                            <div class="ps_app-meta">
+                                <h3><?= $tmpAppli->nomApplication  ?></h3>
+                                <p class="ps_app-desc"><?= $tmpAppli->descriptionApplication  ?></p>
+                            </div>
+                            <div class="ps_tags">
+                                <?php   foreach ($tmpAppli->hashtags as $tag) { ?>
+                                    <div class="ps_tag"><?= $tag ?></div>
+                                <?php } ?>                            </div>
+                        </div>
+                        <div class="ps_app-sep"></div>
+                        <div class="ps_app-footer">
+                            <button class="ps_deny-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>)"><span class="material-symbols-outlined" style="font-size:15px">lock</span>Demander l'accès</button>
+                            <button class="ps_action-icon-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>)"><span class="material-symbols-outlined" style="font-size:15px">lock</span></button>
+                        </div>
+                    </article>
+
+
+
+               <?php }
+
+            } ?>
 
         </section>
 
@@ -1598,9 +1497,9 @@
         <button class="ps_mn-btn ps_active">
             <span class="material-symbols-outlined">apps</span>Apps
         </button>
-        <button class="ps_mn-btn">
-            <span class="material-symbols-outlined">dashboard</span>Board
-        </button>
+<!--        <button class="ps_mn-btn">-->
+<!--            <span class="material-symbols-outlined">dashboard</span>Board-->
+<!--        </button>-->
         <button class="ps_mn-btn">
             <span class="material-symbols-outlined">mail</span>Mail
         </button>
@@ -1661,19 +1560,19 @@
     /* ══════════════════════════════════════
        DOCK
     ══════════════════════════════════════ */
-    document.querySelectorAll('.ps_dock-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.ps_dock-btn').forEach(b => b.classList.remove('ps_active'));
-            btn.classList.add('ps_active');
-        });
-    });
+  //  document.querySelectorAll('.ps_dock-btn').forEach(btn => {
+      //  btn.addEventListener('click', () => {
+         //   document.querySelectorAll('.ps_dock-btn').forEach(b => b.classList.remove('ps_active'));
+         //   btn.classList.add('ps_active');
+       // });
+    //});
 
-    document.querySelectorAll('.ps_mn-btn').forEach(btn => {
-        btn.addEventListener('click', () => {
-            document.querySelectorAll('.ps_mn-btn').forEach(b => b.classList.remove('ps_active'));
-            btn.classList.add('ps_active');
-        });
-    });
+   // document.querySelectorAll('.ps_mn-btn').forEach(btn => {
+     //   btn.addEventListener('click', () => {
+        //    document.querySelectorAll('.ps_mn-btn').forEach(b => b.classList.remove('ps_active'));
+           // btn.classList.add('ps_active');
+        //});
+   // });
 
     /* ══════════════════════════════════════
        VUE GRILLE / LISTE
@@ -1682,39 +1581,228 @@
         document.querySelectorAll('.ps_vt-btn').forEach(b => b.classList.remove('ps_active'));
         btn.classList.add('ps_active');
         const grid = document.getElementById('appsGrid');
+
         if (mode === 1) {
-            /* VUE LISTE */
+            /* ── VUE LISTE ── */
             grid.style.gridTemplateColumns = '1fr';
+            grid.style.gap = '10px';
+
             document.querySelectorAll('.ps_app').forEach(a => {
                 a.style.flexDirection = 'row';
-                a.style.alignItems = 'stretch';
+                a.style.alignItems    = 'stretch';
+                a.style.borderRadius  = '16px';
+                a.style.minHeight     = '90px';
             });
-            document.querySelectorAll('.ps_app-banner').forEach(b => {
-                b.style.width = '100px';
-                b.style.height = 'auto';
-                b.style.flexShrink = '0';
-            });
-            document.querySelectorAll('.ps_app-body').forEach(b => {
-                b.style.padding = '14px 16px 10px';
-            });
-            document.querySelectorAll('.ps_app-footer').forEach(f => {
-                f.style.padding = '0 16px 14px';
-            });
-        } else {
-            /* VUE GRILLE */
-            grid.style.gridTemplateColumns = '';
-            document.querySelectorAll('.ps_app').forEach(a => {
-                a.style.flexDirection = '';a.style.alignItems = '';
-            });
-            document.querySelectorAll('.ps_app-banner').forEach(b => {
-                b.style.width = '';b.style.height = '';b.style.flexShrink = '';
-            });
-            document.querySelectorAll('.ps_app-body').forEach(b => { b.style.padding = ''; });
-            document.querySelectorAll('.ps_app-footer').forEach(f => { f.style.padding = ''; });
-        }
-    }
 
-    /* ══════════════════════════════════════
+            /* Stripe verticale gauche */
+            document.querySelectorAll('.ps_app-stripe').forEach(s => {
+                s.style.width      = '4px';
+                s.style.height     = 'auto';
+                s.style.alignSelf  = 'stretch';
+                s.style.flexShrink = '0';
+            });
+
+            /* Corps en row */
+            document.querySelectorAll('.ps_app-body').forEach(b => {
+                b.style.flexDirection = 'row';
+                b.style.alignItems    = 'center';
+                b.style.gap           = '16px';
+                b.style.padding       = '12px 16px';
+                b.style.flex          = '1';
+            });
+
+            /* Icône fixe à gauche */
+            document.querySelectorAll('.ps_app-icon').forEach(ic => {
+                ic.style.width        = '44px';
+                ic.style.height       = '44px';
+                ic.style.flexShrink   = '0';
+            });
+
+            /* app-top : icône + badge */
+            document.querySelectorAll('.ps_app-top').forEach(t => {
+                t.style.flex        = '0 0 auto';
+                t.style.flexDirection = 'row';
+                t.style.alignItems  = 'center';
+                t.style.gap         = '10px';
+            });
+
+            /* Bloc texte : titre + desc + tags en colonne */
+            document.querySelectorAll('.ps_app-meta').forEach(m => {
+                m.style.flex        = '1';
+                m.style.minWidth    = '0';
+                m.style.display     = 'flex';
+                m.style.flexDirection = 'column';
+                m.style.gap         = '4px';
+            });
+
+            /* Titre */
+            document.querySelectorAll('.ps_app h3').forEach(h => {
+                h.style.fontSize     = '15px';
+                h.style.marginBottom = '0';
+                h.style.whiteSpace   = 'nowrap';
+                h.style.overflow     = 'hidden';
+                h.style.textOverflow = 'ellipsis';
+            });
+
+            /* Description visible, 1 ligne */
+            document.querySelectorAll('.ps_app-desc').forEach(d => {
+                d.style.display            = 'block';
+                d.style.fontSize           = '11px';
+                d.style.webkitLineClamp    = '1';
+                d.style.webkitBoxOrient    = 'vertical';
+                d.style.overflow           = 'hidden';
+            });
+
+            /* Tags visibles */
+            document.querySelectorAll('.ps_tags').forEach(t => {
+                t.style.display   = 'flex';
+                t.style.flexWrap  = 'nowrap';
+                t.style.gap       = '4px';
+                t.style.overflow  = 'hidden';
+            });
+
+            document.querySelectorAll('.ps_tag').forEach(t => {
+                t.style.fontSize   = '9px';
+                t.style.padding    = '2px 7px';
+                t.style.flexShrink = '0';
+            });
+
+            /* Séparateur vertical */
+            document.querySelectorAll('.ps_app-sep').forEach(s => {
+                s.style.width      = '1px';
+                s.style.height     = 'auto';
+                s.style.margin     = '12px 0';
+                s.style.alignSelf  = 'stretch';
+                s.style.flexShrink = '0';
+            });
+
+            /* Footer à droite, vertical centré */
+            document.querySelectorAll('.ps_app-footer').forEach(f => {
+                f.style.padding       = '0 16px';
+                f.style.flex          = '0 0 200px';
+                f.style.flexDirection = 'row';
+                f.style.alignItems    = 'center';
+                f.style.gap           = '6px';
+            });
+
+            document.querySelectorAll('.ps_open-btn, .ps_pending-btn, .ps_deny-btn').forEach(b => {
+                b.style.height     = '34px';
+                b.style.fontSize   = '11px';
+                b.style.flex       = '1';
+                b.style.whiteSpace = 'nowrap';
+            });
+
+            document.querySelectorAll('.ps_action-icon-btn').forEach(b => {
+                b.style.width  = '34px';
+                b.style.height = '34px';
+            });
+
+        } else {
+            /* ── VUE GRILLE : reset complet ── */
+            grid.style.gridTemplateColumns = '';
+            grid.style.gap = '';
+
+            document.querySelectorAll('.ps_app').forEach(a => {
+                a.style.flexDirection = '';
+                a.style.alignItems    = '';
+                a.style.borderRadius  = '';
+                a.style.minHeight     = '';
+            });
+
+            document.querySelectorAll('.ps_app-stripe').forEach(s => {
+                s.style.width      = '';
+                s.style.height     = '';
+                s.style.alignSelf  = '';
+                s.style.flexShrink = '';
+            });
+
+            document.querySelectorAll('.ps_app-body').forEach(b => {
+                b.style.flexDirection = '';
+                b.style.alignItems    = '';
+                b.style.gap           = '';
+                b.style.padding       = '';
+                b.style.flex          = '';
+            });
+
+            document.querySelectorAll('.ps_app-icon').forEach(ic => {
+                ic.style.width      = '';
+                ic.style.height     = '';
+                ic.style.flexShrink = '';
+            });
+
+            document.querySelectorAll('.ps_app-top').forEach(t => {
+                t.style.flex          = '';
+                t.style.flexDirection = '';
+                t.style.alignItems    = '';
+                t.style.gap           = '';
+            });
+
+            document.querySelectorAll('.ps_app-meta').forEach(m => {
+                m.style.flex          = '';
+                m.style.minWidth      = '';
+                m.style.display       = '';
+                m.style.flexDirection = '';
+                m.style.gap           = '';
+            });
+
+            document.querySelectorAll('.ps_app h3').forEach(h => {
+                h.style.fontSize     = '';
+                h.style.marginBottom = '';
+                h.style.whiteSpace   = '';
+                h.style.overflow     = '';
+                h.style.textOverflow = '';
+            });
+
+            document.querySelectorAll('.ps_app-desc').forEach(d => {
+                d.style.display         = '';
+                d.style.fontSize        = '';
+                d.style.webkitLineClamp = '';
+                d.style.webkitBoxOrient = '';
+                d.style.overflow        = '';
+            });
+
+            document.querySelectorAll('.ps_tags').forEach(t => {
+                t.style.display  = '';
+                t.style.flexWrap = '';
+                t.style.gap      = '';
+                t.style.overflow = '';
+            });
+
+            document.querySelectorAll('.ps_tag').forEach(t => {
+                t.style.fontSize   = '';
+                t.style.padding    = '';
+                t.style.flexShrink = '';
+            });
+
+            document.querySelectorAll('.ps_app-sep').forEach(s => {
+                s.style.width     = '';
+                s.style.height    = '';
+                s.style.margin    = '';
+                s.style.alignSelf = '';
+                s.style.flexShrink = '';
+            });
+
+            document.querySelectorAll('.ps_app-footer').forEach(f => {
+                f.style.padding       = '';
+                f.style.flex          = '';
+                f.style.flexDirection = '';
+                f.style.alignItems    = '';
+                f.style.gap           = '';
+            });
+
+            document.querySelectorAll('.ps_open-btn, .ps_pending-btn, .ps_deny-btn').forEach(b => {
+                b.style.height     = '';
+                b.style.fontSize   = '';
+                b.style.flex       = '';
+                b.style.whiteSpace = '';
+            });
+
+            document.querySelectorAll('.ps_action-icon-btn').forEach(b => {
+                b.style.width  = '';
+                b.style.height = '';
+            });
+        }
+    }    /* ══════════════════════════════════════
        DIAPORAMA HERO CARD
     ══════════════════════════════════════ */
     const HERO_SLIDES = [
@@ -1783,5 +1871,8 @@
 
     heroTimer = setInterval(() => heroGoSlide(heroCur + 1, false), 5000);
 </script>
+
+<script src="/personnel/scripts.bundle.11.js"></script>
+
 </body>
 </html>
