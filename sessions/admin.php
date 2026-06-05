@@ -17,7 +17,9 @@ $tmpIdBASI = null;
 $tmpListeApplication = null;
 $tmpEntite = null;
 
-
+$listeTachesStructures = null;
+$listeTachesIncarnes = null;
+$listeTachesParDefaut = null;
 
 if (
     !isset($_SESSION['tmpIdP']) ||
@@ -32,7 +34,10 @@ if (
     !isset($_SESSION['tmpId']) ||
     !isset($_SESSION['tmpIdBASI']) ||
     !isset($_SESSION['tmpListeApplication']) ||
-    !isset($_SESSION['tmpEntite'])
+    !isset($_SESSION['tmpEntite']) ||
+    !isset($_SESSION['listeTachesStructures']) ||
+    !isset($_SESSION['listeTachesIncarnes']) ||
+    !isset($_SESSION['listeTachesParDefaut'])
 ) {
     session_unset();
     session_destroy();
@@ -42,6 +47,18 @@ if (
 }else
 {
 
+
+        $connectUser = $_SESSION['connectUser'] ?? null;
+
+    if($connectUser != 1)
+    {
+        session_unset();
+        session_destroy();
+
+        header("Location: /personnel/signin");
+        exit();
+
+    }
     $tmpIdP = $_SESSION['tmpIdP'] ?? null;
     $tmpPrenom = $_SESSION['tmpPrenom'] ?? null;
     $tmpNom = $_SESSION['tmpNom'] ?? null;
@@ -50,11 +67,17 @@ if (
     $tmpNbrAppliEnAttente = $_SESSION['tmpNbrAppliEnAttente'] ?? null;
     $tmpNbrAppliAutorisees = $_SESSION['tmpNbrAppliAutorisees'] ?? null;
     $tmpNbrAppliRefusees = $_SESSION['tmpNbrAppliRefusees'] ?? null;
-    $connectUser = $_SESSION['connectUser'] ?? null;
     $tmpId = $_SESSION['tmpId'] ?? null;
     $tmpIdBASI = $_SESSION['tmpIdBASI'] ?? null;
     $tmpListeApplication = $_SESSION['tmpListeApplication'] ?? null;
     $tmpEntite = $_SESSION['tmpEntite'];
+
+
+    $listeTachesStructures = $_SESSION['listeTachesStructures'];
+    $listeTachesIncarnes = $_SESSION['listeTachesIncarnes'];
+    $listeTachesParDefaut = $_SESSION['listeTachesParDefaut'];
+
+
 
 
 }

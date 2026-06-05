@@ -132,6 +132,13 @@ RewriteRule ^page_par_defaut_finance_stats$ default/default_finance_stats.php [L
 
 
 
+#user simple
+RewriteRule ^user-accueil$ userSimple/accueil.php [L]
+RewriteRule ^scripts.bundle.12.js$ userSimple/js/accueil.js [L]
+
+
+
+
 
 
 

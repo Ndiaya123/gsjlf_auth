@@ -1,6 +1,6 @@
 <?php
 
-include_once('../sessions/admin.php');
+include_once('../sessions/userSimple.php');
 
 
 ?>
@@ -1363,39 +1363,16 @@ include_once('../sessions/admin.php');
         <!-- SECTION LABEL -->
         <div class="ps_section-label">
             <h2>Applications</h2>
-<!--            <span id="resultCount">12 résultats</span>-->
-            <span id="resultCount"> <?= count($tmpListeApplication) + 1 ?>
-                <?php if((count($tmpListeApplication) + 1) > 1): ?>
-                    résultats
-                <?php else: ?>
-                    résultat
-                <?php endif; ?>
-</span>
-        </div>
+            <span id="resultCount"> <?= count($tmpListeApplication) ?>
+    <?php if(count($tmpListeApplication) > 1): ?>
+        résultats
+    <?php else: ?>
+        résultat
+    <?php endif; ?>
+</span>        </div>
 
         <!-- GRILLE APPLICATIONS -->
         <section class="ps_apps-grid" id="appsGrid">
-
-
-            <article class="ps_app ps_authorized" data-status="authorized" data-entity="gsjlf" data-name="Gestion des utilisateurs, sous-menus, tâches et taches qualifications.">
-                <div class="ps_app-stripe"></div>
-                <div class="ps_app-body">
-                    <div class="ps_app-top">
-                        <div class="ps_app-icon ps_gsjlf"><span class="material-symbols-outlined">dashboard</span></div>
-                        <div class="ps_status ps_authorized">Autorisée</div>
-                    </div>
-                    <div class="ps_app-meta">
-                        <h3>Général</h3>
-                        <p class="ps_app-desc">Gestion des utilisateurs, sous-menus, tâches et qualifications.</p>
-                    </div>
-                    <div class="ps_tags"><div class="ps_tag">Utilisateur</div><div class="ps_tag">Sous-menus</div></div>
-                </div>
-                <div class="ps_app-sep"></div>
-                <div class="ps_app-footer">
-                    <button class="ps_open-btn" onclick="actionOuvrirApplication('general')"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
-                    <button class="ps_action-icon-btn" title="Détails" onclick="actionOuvrirApplication('general')"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
-                </div>
-            </article>
 
             <?php
 
@@ -1879,7 +1856,7 @@ include_once('../sessions/admin.php');
     heroTimer = setInterval(() => heroGoSlide(heroCur + 1, false), 5000);
 </script>
 
-<script src="/personnel/scripts.bundle.11.js"></script>
+<script src="/personnel/scripts.bundle.12.js"></script>
 
 </body>
 </html>

@@ -444,7 +444,666 @@ GROUP BY la.id, la.nomApplication, la.description, la.statut;
     }
 
 
+    public function listeTachesParDefaut()
+    {
+        try {
 
+            $bdP = $this->connect();
+
+            $params = [
+                'idTypeTache' => 3,
+                'active' => 1
+            ];
+
+            $sql = "
+          SELECT
+    t.id,
+    t.nom,
+    t.url,
+    sm.nom AS sousMenu,
+
+    CASE
+        WHEN sm.id IS NOT NULL THEN ic_sm.icon
+        ELSE ic_t.icon
+    END AS icon,
+
+    CASE
+        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 1
+        ELSE 0
+    END AS statut
+
+FROM tache t
+
+LEFT JOIN sous_menu sm
+    ON sm.id = t.idSousMenu
+
+LEFT JOIN icons ic_t
+    ON ic_t.id = t.idIcon
+
+LEFT JOIN icons ic_sm
+    ON ic_sm.id = sm.idIcon
+
+WHERE t.idTypeTache = :idTypeTache
+  AND t.active = :active
+
+ORDER BY
+    CASE
+        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 0
+        ELSE 1
+    END,
+    COALESCE(sm.nom, ''),
+    t.nom;
+        ";
+
+            $stmt = $bdP->prepare($sql);
+            $stmt->execute($params);
+
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+
+        } catch (\Throwable $th) {
+            return [];
+        }
+    }
+
+    public function listeTachesIncarnes($idFonction)
+    {
+        try {
+
+            $bdP = $this->connect();
+
+            $params = [
+                'idTypeTache' => 2,
+                'idFonction' => $idFonction,
+                'active' => 1
+            ];
+
+            $sql = "
+         SELECT
+    t.id,
+    t.nom,
+        t.url,
+    sm.nom AS sousMenu,
+
+    CASE
+        WHEN sm.id IS NOT NULL THEN ic_sm.icon
+        ELSE ic_t.icon
+    END AS icon,
+
+    CASE
+        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 1
+        ELSE 0
+    END AS statut
+
+FROM tache t
+
+LEFT JOIN sous_menu sm
+    ON sm.id = t.idSousMenu
+
+LEFT JOIN icons ic_t
+    ON ic_t.id = t.idIcon
+
+LEFT JOIN icons ic_sm
+    ON ic_sm.id = sm.idIcon
+
+WHERE t.idTypeTache = :idTypeTache
+  AND t.idFonction = :idFonction
+  AND t.active = :active
+
+ORDER BY
+    CASE
+        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 0
+        ELSE 1
+    END,
+    COALESCE(sm.nom, ''),
+    t.nom;
+        ";
+
+            $stmt = $bdP->prepare($sql);
+            $stmt->execute($params);
+
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+
+        } catch (\Throwable $th) {
+            return [];
+                    }
+    }
+
+    public function listeTachesIncarnesAdmin()
+    {
+        try {
+
+            $bdP = $this->connect();
+
+            $params = [
+                'idTypeTache' => 2,
+                'active' => 1
+
+            ];
+
+            $sql = "
+SELECT
+    t.id,
+    t.nom,
+        t.url,
+    sm.nom AS sousMenu,
+
+    CASE
+        WHEN sm.id IS NOT NULL THEN ic_sm.icon
+        ELSE ic_t.icon
+    END AS icon,
+
+    CASE
+        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 1
+        ELSE 0
+    END AS statut
+
+FROM tache t
+
+LEFT JOIN sous_menu sm
+    ON sm.id = t.idSousMenu
+
+LEFT JOIN icons ic_t
+    ON ic_t.id = t.idIcon
+
+LEFT JOIN icons ic_sm
+    ON ic_sm.id = sm.idIcon
+
+WHERE t.idTypeTache = :idTypeTache
+  AND t.active = :active
+
+ORDER BY
+    CASE
+        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 0
+        ELSE 1
+    END,
+    COALESCE(sm.nom, ''),
+    t.nom;        ";
+
+            $stmt = $bdP->prepare($sql);
+            $stmt->execute($params);
+
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+
+        } catch (\Throwable $th) {
+            return [];
+        }
+    }
+
+    public function listeTachesStructures($matricule)
+    {
+        try {
+
+            $bdP = $this->connect();
+
+            $params = [
+                'idTypeTache' => 1,
+                'matricule' => $matricule,
+                'access' => 1,
+                'active' => 1
+
+            ];
+
+            $sql = "
+SELECT
+    t.id,
+    t.nom,
+        t.url,
+    sm.nom AS sousMenu,
+
+    CASE
+        WHEN sm.id IS NOT NULL THEN ic_sm.icon
+        ELSE ic_t.icon
+    END AS icon,
+
+    CASE
+        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 1
+        ELSE 0
+    END AS statut
+
+FROM tache t
+
+INNER JOIN tache_utilisateur tu
+    ON tu.idTache = t.id
+
+LEFT JOIN sous_menu sm
+    ON sm.id = t.idSousMenu
+
+LEFT JOIN icons ic_t
+    ON ic_t.id = t.idIcon
+
+LEFT JOIN icons ic_sm
+    ON ic_sm.id = sm.idIcon
+
+WHERE t.idTypeTache = :idTypeTache
+  AND t.active = :active
+  AND tu.matricule = :matricule
+  AND tu.access = :access
+
+ORDER BY
+    CASE
+        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 0
+        ELSE 1
+    END,
+    COALESCE(sm.nom, ''),
+    t.nom;        ";
+
+            $stmt = $bdP->prepare($sql);
+            $stmt->execute($params);
+
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+
+        } catch (\Throwable $th) {
+            return [];
+        }
+    }
+
+
+    public function listeTachesStructuresAdmin()
+    {
+        try {
+
+            $bdP = $this->connect();
+
+            $params = [
+                'idTypeTache' => 1,
+                'active' => 1
+            ];
+
+            $sql = "
+SELECT
+    t.id,
+    t.nom,
+    t.url,
+    sm.nom AS sousMenu,
+
+    COALESCE(ic_sm.icon, ic_t.icon) AS icon,
+
+    CASE
+        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 1
+        ELSE 0
+    END AS statut
+
+FROM tache t
+
+LEFT JOIN sous_menu sm
+    ON sm.id = t.idSousMenu
+
+LEFT JOIN icons ic_t
+    ON ic_t.id = t.idIcon
+
+LEFT JOIN icons ic_sm
+    ON ic_sm.id = sm.idIcon
+
+WHERE t.idTypeTache = :idTypeTache
+  AND t.active = :active
+
+ORDER BY
+    CASE
+        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 0
+        ELSE 1
+    END,
+    COALESCE(sm.nom, ''),
+    t.nom;        ";
+
+            $stmt = $bdP->prepare($sql);
+            $stmt->execute($params);
+
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+
+        } catch (\Throwable $th) {
+            return [];
+        }
+    }
+
+
+
+    public function infoPosteResponsable($identifiant)
+    {
+        try {
+
+            $bdP = $this->connect();
+
+            $data = [
+                'identifiant' => $identifiant,
+                'statutPoste' => 1
+            ];
+
+            $stmt = $bdP->prepare("
+            SELECT *
+            FROM postesAResponsabilite
+            WHERE identifiant = :identifiant
+              AND statutPoste = :statutPoste
+        ");
+
+            $stmt->execute($data);
+
+            if ($stmt->rowCount() == 1) {
+                $result =  $stmt->fetch(PDO::FETCH_OBJ);
+
+                return $result->idFonction;
+            }
+
+            return null;
+
+        } catch (\Throwable $th) {
+            return null;
+        }
+    }
+
+
+
+//    public function listeApplicationUserSimple($matricule)
+//    {
+//
+//
+//        try {
+//
+//            $bdP = $this->connect();
+//
+//            $params = [
+//                'idTypeTache1' => 1,
+//                'idTypeTache2' => 2,
+//                'idTypeTache3' => 3,
+//                'matricule' => $matricule,
+//                'access' => 1,
+//                'active' => 1
+//
+//            ];
+//
+//            $sql = "
+//          SELECT DISTINCT
+//    numero,
+//    nomApplication,
+//    icon,
+//    descriptionApplication,
+//    statutApplication
+//FROM (
+//
+//    SELECT
+//        la.id AS numero,
+//        la.nomApplication,
+//        la.icon,
+//        la.description AS descriptionApplication,
+//        la.statut AS statutApplication
+//    FROM tache t
+//    LEFT JOIN listeApplications la ON la.id = t.idAppli
+//    WHERE t.idTypeTache = :idTypeTache3
+//      AND t.active = :active
+//
+//    UNION ALL
+//
+//    SELECT
+//        la.id AS numero,
+//        la.nomApplication,
+//        la.icon,
+//        la.description AS descriptionApplication,
+//        la.statut AS statutApplication
+//    FROM tache t
+//    LEFT JOIN listeApplications la ON la.id = t.idAppli
+//    WHERE t.idTypeTache = idTypeTache2
+//      AND t.active = :active
+//      AND t.idFonction = :idFonction
+//
+//    UNION ALL
+//
+//    SELECT
+//        la.id AS numero,
+//        la.nomApplication,
+//        la.icon,
+//        la.description AS descriptionApplication,
+//        la.statut AS statutApplication
+//    FROM tache t
+//    LEFT JOIN listeApplications la ON la.id = t.idAppli
+//    INNER JOIN tache_utilisateur tu
+//        ON tu.idTache = t.id
+//    WHERE t.idTypeTache = :idTypeTache1
+//      AND t.active = :active
+//      AND tu.matricule = :matricule
+//      AND tu.access = :access
+//
+//) applications
+//
+//ORDER BY nomApplication;
+//        ";
+//
+//            $stmt = $bdP->prepare($sql);
+//            $stmt->execute($params);
+//
+//            return $stmt->fetchAll(PDO::FETCH_OBJ);
+//
+//
+//        } catch (\Throwable $th) {
+//            return [];
+//        }
+//
+//    }
+
+
+
+
+
+    public function listeApplicationUserSimple($matricule, $idFonction)
+    {
+        try {
+
+            $bdP = $this->connect();
+
+            $params = [
+                'idTypeTache1' => 1, // tâches utilisateur
+                'idTypeTache2' => 2, // tâches liées à une fonction
+                'idTypeTache3' => 3, // tâches par défaut
+                'idFonction'   => $idFonction,
+                'matricule'    => $matricule,
+                'access'       => 1,
+                'active'       => 1
+            ];
+
+            $sql = "SELECT
+    numero,
+    nomApplication,
+    icon,
+    descriptionApplication,
+    statutApplication,
+    statutLibelle,
+    entite,
+    GROUP_CONCAT(DISTINCT hashtags SEPARATOR ',') AS hashtags
+FROM (
+
+    SELECT
+        la.id AS numero,
+        la.nomApplication,
+        la.icon,
+        la.description AS descriptionApplication,
+        la.statut AS statutApplication,
+        CASE la.statut
+            WHEN 0 THEN 'pending'
+            WHEN 1 THEN 'authorized'
+            WHEN 2 THEN 'denied'
+            ELSE 'Inconnu'
+        END AS statutLibelle,
+        CASE la.idEntite
+            WHEN 1 THEN 'cmjlf'
+            WHEN 2 THEN 'ctd'
+            WHEN 3 THEN 'uahb'
+            WHEN 4 THEN 'gsjlf'
+            ELSE 'gsjlf'
+        END AS entite,
+        ha.nom_hashtag AS hashtags
+    FROM tache t
+    INNER JOIN listeApplications la ON la.id = t.idAppli
+    LEFT JOIN hashtag_appli ha ON ha.idAppli = la.id
+    WHERE t.idTypeTache = :idTypeTache3
+            AND t.active = :active
+            -- ❌ Pas de GROUP BY ici
+
+    UNION ALL
+
+    SELECT
+        la.id,
+        la.nomApplication,
+        la.icon,
+        la.description,
+        la.statut,
+        CASE la.statut
+            WHEN 0 THEN 'pending'
+            WHEN 1 THEN 'authorized'
+            WHEN 2 THEN 'denied'
+            ELSE 'Inconnu'
+        END,
+        CASE la.idEntite
+            WHEN 1 THEN 'cmjlf'
+            WHEN 2 THEN 'ctd'
+            WHEN 3 THEN 'uahb'
+            WHEN 4 THEN 'gsjlf'
+            ELSE 'gsjlf'
+        END,
+        ha.nom_hashtag
+    FROM tache t
+    INNER JOIN listeApplications la ON la.id = t.idAppli
+    LEFT JOIN hashtag_appli ha ON ha.idAppli = la.id
+    WHERE t.idTypeTache = :idTypeTache2
+            AND t.active = :active
+            AND t.idFonction = :idFonction
+            -- ❌ Pas de GROUP BY ici
+
+    UNION ALL
+
+    SELECT
+        la.id,
+        la.nomApplication,
+        la.icon,
+        la.description,
+        la.statut,
+        CASE la.statut
+            WHEN 0 THEN 'pending'
+            WHEN 1 THEN 'authorized'
+            WHEN 2 THEN 'denied'
+            ELSE 'Inconnu'
+        END,
+        CASE la.idEntite
+            WHEN 1 THEN 'cmjlf'
+            WHEN 2 THEN 'ctd'
+            WHEN 3 THEN 'uahb'
+            WHEN 4 THEN 'gsjlf'
+            ELSE 'gsjlf'
+        END,
+        ha.nom_hashtag
+    FROM tache t
+    INNER JOIN listeApplications la ON la.id = t.idAppli
+    LEFT JOIN hashtag_appli ha ON ha.idAppli = la.id
+    INNER JOIN tache_utilisateur tu ON tu.idTache = t.id
+    WHERE t.idTypeTache = :idTypeTache1
+            AND t.active = :active
+            AND tu.matricule = :matricule
+            AND tu.access = :access
+            -- ❌ Pas de GROUP BY ici
+    
+
+
+) applications
+
+GROUP BY
+    numero,
+    nomApplication,
+    icon,
+    descriptionApplication,
+    statutApplication,
+    statutLibelle,
+    entite
+
+ORDER BY nomApplication;
+        ";
+
+            $stmt = $bdP->prepare($sql);
+            $stmt->execute($params);
+            $data = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            // transformer en tableau propre
+            foreach ($data as $app) {
+                $app->hashtags = $app->hashtags
+                    ? explode(',', $app->hashtags)
+                    : [];
+            }
+
+            return $data;
+
+
+
+        } catch (\Throwable $th) {
+
+            return [];
+        }
+    }
+
+    public function listeBaseDoneeUserSimple($matricule, $idFonction)
+    {
+        try {
+
+            $bdP = $this->connect();
+
+            $params = [
+                'idTypeTache1' => 1,
+                'idTypeTache2' => 2,
+                'idTypeTache3' => 3,
+                'idFonction'   => $idFonction,
+                'matricule'    => $matricule,
+                'access'       => 1,
+                'active'       => 1
+            ];
+
+            $sql = "
+            SELECT DISTINCT base_donnees, code_base_donnees
+            FROM (
+
+                -- Type 3 : accès par défaut
+                SELECT
+                    bd.nom AS base_donnees,
+                    bd.code AS code_base_donnees
+                FROM tache t
+                INNER JOIN base_donnees bd ON bd.id = t.idDB
+                WHERE t.idTypeTache = :idTypeTache3
+                  AND t.active = :active
+
+                UNION ALL
+
+                -- Type 2 : accès par fonction
+                SELECT
+                    bd.nom AS base_donnees,
+                    bd.code AS code_base_donnees
+                FROM tache t
+                INNER JOIN base_donnees bd ON bd.id = t.idDB
+                WHERE t.idTypeTache = :idTypeTache2
+                  AND t.active = :active
+                  AND t.idFonction = :idFonction
+
+                UNION ALL
+
+                -- Type 1 : accès utilisateur
+                SELECT
+                    bd.nom AS base_donnees,
+                    bd.code AS code_base_donnees
+                FROM tache t
+                INNER JOIN base_donnees bd ON bd.id = t.idDB
+                INNER JOIN tache_utilisateur tu ON tu.idTache = t.id
+                WHERE t.idTypeTache = :idTypeTache1
+                  AND t.active = :active
+                  AND tu.matricule = :matricule
+                  AND tu.access = :access
+
+            ) data
+
+            ORDER BY base_donnees, code_base_donnees
+        ";
+
+            $stmt = $bdP->prepare($sql);
+            $stmt->execute($params);
+
+            return $stmt->fetchAll(PDO::FETCH_OBJ);
+
+        } catch (\Throwable $th) {
+            return $th;
+        }
+    }
 }
 
 
@@ -977,7 +1636,6 @@ WHERE p.matricule = :matricule;";
 
                                     $prenom = ucwords(mb_strtolower($result_info_user->prenom));
                                     $nom= $authController->fctRetirerAccents(mb_strtoupper($result_info_user->nom));
-                                    $infoApplication = $authController->infoApplication();
                                     $infoEntite = $authController->infoEntite($identifiant);
 
 
@@ -986,11 +1644,8 @@ WHERE p.matricule = :matricule;";
                                     $_SESSION['tmpPrenom'] = $prenom;
                                     $_SESSION['tmpNom'] =  $nom;
                                     $_SESSION['tmpInitiales'] = $authController->getInitiales($prenom, $nom);
-                                    $_SESSION['tmpNbrAppli'] = $infoApplication->total_applications;
-                                    $_SESSION['tmpNbrAppliEnAttente'] = $infoApplication->en_attente;
-                                    $_SESSION['tmpNbrAppliAutorisees'] = $infoApplication->total_applications - $infoApplication->en_attente;
-                                    $_SESSION['tmpNbrAppliRefusees'] = 0;
                                     $_SESSION['tmpEntite'] = $infoEntite->entite;
+                                    $infoApplication = $authController->infoApplication();
 
 
 
@@ -999,7 +1654,10 @@ WHERE p.matricule = :matricule;";
                                     {
                                         //pour tous les utilisateurs admin = 1 et user simple = 2
                                         $_SESSION['connectUser'] = 1;
-
+                                        $_SESSION['tmpNbrAppli'] = $infoApplication->total_applications;
+                                        $_SESSION['tmpNbrAppliEnAttente'] = $infoApplication->en_attente;
+                                        $_SESSION['tmpNbrAppliAutorisees'] = $infoApplication->total_applications - $infoApplication->en_attente;
+                                        $_SESSION['tmpNbrAppliRefusees'] = 0;
 
                                         //base de donnee criat
                                         $resultVerifierUserCRIAT = $authController->verifierUserCRIAT($bd,$email,$matricule,$prenom,$nom);
@@ -1035,12 +1693,40 @@ WHERE p.matricule = :matricule;";
                                             $_SESSION['tmpListeApplication'] = $listeApplications;
                                         } else {
                                             session_destroy();
-echo "erreur";
+                                            echo "erreur4";
                                         die;
                                         }
 
 
                                         // liste des taches
+                                        $listeTachesParDefaut = $authController->listeTachesParDefaut();
+
+                                        if (is_array($listeTachesParDefaut)) {
+                                            $_SESSION['listeTachesParDefaut'] = $listeTachesParDefaut;
+                                        } else {
+                                            session_destroy();
+                                            echo "erreur3";
+                                            die;
+                                        }
+
+
+                                        $listeTachesIncarnes = $authController->listeTachesIncarnesAdmin();
+                                        if (is_array($listeTachesIncarnes)) {
+                                            $_SESSION['listeTachesIncarnes'] = $listeTachesIncarnes;
+                                        } else {
+                                            session_destroy();
+                                            echo "erreur2";
+                                            die;
+                                        }
+
+                                        $listeTachesStructures = $authController->listeTachesStructuresAdmin();
+                                        if (is_array($listeTachesStructures)) {
+                                            $_SESSION['listeTachesStructures'] = $listeTachesStructures;
+                                        } else {
+                                            session_destroy();
+                                            echo "erreur1";
+                                            die;
+                                        }
 
 
 
@@ -1050,10 +1736,149 @@ echo "erreur";
                                     }else
                                     {
 
+
+
                                         //pour tous les utilisateurs admin = 1 et user simple = 2
                                         $_SESSION['connectUser'] = 2;
 
-                                        echo "succès/personnel/accueil";
+                                        $idFonction = $authController->infoPosteResponsable($identifiant);
+                                        $listeApplicationUserSimple = $authController->listeApplicationUserSimple(
+                                            $matricule,
+                                            $idFonction
+                                        );
+
+                                        if (!empty($listeApplicationUserSimple) && is_array($listeApplicationUserSimple)) {
+
+                                            $_SESSION['tmpListeApplication'] = $listeApplicationUserSimple;
+
+                                            $_SESSION['tmpNbrAppli'] = $infoApplication->total_applications;
+                                            $_SESSION['tmpNbrAppliEnAttente'] = $infoApplication->en_attente;
+                                            $_SESSION['tmpNbrAppliAutorisees'] = count($listeApplicationUserSimple);
+
+                                            $_SESSION['tmpNbrAppliRefusees'] = max(
+                                                0,
+                                                $infoApplication->total_applications
+                                                - $infoApplication->en_attente
+                                                - count($listeApplicationUserSimple)
+                                            );
+
+                                        } else {
+
+                                            session_destroy();
+                                            echo "erreur";
+                                            die;
+                                        }
+
+
+
+
+                                        // creer utilisateurs
+
+                                        $listeBaseDoneeUserSimple = $authController->listeBaseDoneeUserSimple(
+                                            $matricule,
+                                            $idFonction
+                                        );
+
+
+
+
+                                        $tmp_nombre_bd = 0;
+                                        if (is_array($listeBaseDoneeUserSimple)) {
+
+                                            if(!empty($listeBaseDoneeUserSimple))
+                                            {
+                                                foreach ($listeBaseDoneeUserSimple as $base) {
+                                                    if($base->code_base_donnees == "criat_uahb"){
+                                                        //base de donnee criat
+                                                        $resultVerifierUserCRIAT = $authController->verifierUserCRIAT($bd,$email,$matricule,$prenom,$nom);
+
+                                                        if (is_object($resultVerifierUserCRIAT)) {
+                                                            $tmpId = $resultVerifierUserCRIAT->id;
+                                                            $_SESSION['tmpId'] = $tmpId;
+                                                            ++$tmp_nombre_bd;
+                                                        } else {
+                                                            session_destroy();
+                                                            echo "erreur3";
+                                                            die;
+                                                        }
+
+                                                    }
+
+                                                    if($base->code_base_donnees == "basi") {
+
+                                                        //base de donnee BASI
+                                                        $resultVerifierUserBASI = $authController->verifierUserBASI($bdBASI,$email,$matricule,$prenom,$nom);
+
+                                                        if (is_object($resultVerifierUserBASI)) {
+                                                            $tmpIdBASI = $result->id;
+                                                            $_SESSION['tmpIdBASI'] = $tmpIdBASI;
+                                                            ++$tmp_nombre_bd;
+                                                        } else {
+                                                            session_destroy();
+                                                            echo "erreur2";
+                                                            die;
+                                                        }
+                                                    }
+
+
+
+                                                }
+
+
+
+                                                // importnat quand tout sera ok
+//                                                        if(count($listeBaseDoneeUserSimple) != $tmp_nombre_bd)
+//                                                        {
+//                                                            session_destroy();
+//                                                            echo "erreur9";
+//                                                            die;
+//                                                        }
+                                            }
+
+
+                                        } else {
+
+                                            session_destroy();
+                                            echo "erreur70";
+                                            die;
+                                        }
+
+
+
+                                        // liste des taches
+                                        $listeTachesParDefaut = $authController->listeTachesParDefaut();
+                                        if (is_array($listeTachesParDefaut)) {
+                                            $_SESSION['listeTachesParDefaut'] = $listeTachesParDefaut;
+                                        } else {
+                                            session_destroy();
+                                            echo "erreur11";
+                                            die;
+                                        }
+
+
+                                        $listeTachesIncarnes = $authController->listeTachesIncarnes($idFonction);
+
+                                        if (is_array($listeTachesIncarnes)) {
+                                            $_SESSION['listeTachesIncarnes'] = $listeTachesIncarnes;
+                                        } else {
+                                            session_destroy();
+                                            echo "erreur12";
+                                            die;
+                                        }
+
+                                        $listeTachesStructures = $authController->listeTachesStructures($idFonction);
+                                        if (is_array($listeTachesStructures)) {
+                                            $_SESSION['listeTachesStructures'] = $listeTachesStructures;
+                                        } else {
+                                            session_destroy();
+                                            echo "erreur13";
+                                            die;
+                                        }
+
+
+
+
+                                        echo "succès/personnel/user-accueil";
                                         die;
                                     }
 
@@ -1062,9 +1887,6 @@ echo "erreur";
                                     echo "erreur";
                                     die;
                                 }
-
-
-
 
 
                             } else {
