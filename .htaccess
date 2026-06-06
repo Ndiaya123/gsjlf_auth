@@ -94,6 +94,8 @@ RewriteRule ^scripts.bundle.4.js$ auth/js/reset.js [L]
 RewriteRule ^change-password/(.*)/(.*)$ auth/resetPassword.php?mat=$1&code=$2 [L]
 RewriteRule ^scripts.bundle.5.js$ auth/js/resetPassword.js [L]
 
+RewriteRule ^user-modification-mdp/(.*)$ auth/userModificationLMDP.php?mat=$1 [L]
+RewriteRule ^scripts.bundle.14.js$ auth/js/userModificationLMDP.js [L]
 
 
 #admin
@@ -119,6 +121,8 @@ RewriteRule ^scripts.bundle.11.js$ admin/js/accueil.js [L]
 
 
 
+
+
 # page accueil par defaut des aplications
 
 RewriteRule ^page_par_defaut_basi$ default/default_basi.php [L]
@@ -133,8 +137,14 @@ RewriteRule ^page_par_defaut_finance_stats$ default/default_finance_stats.php [L
 
 
 #user simple
+RewriteRule ^user-controller$ admin/controllers/userSimpleController.php [L]
+
+
 RewriteRule ^user-accueil$ userSimple/accueil.php [L]
 RewriteRule ^scripts.bundle.12.js$ userSimple/js/accueil.js [L]
+
+RewriteRule ^user-gestion-taches$ userSimple/gestionTaches.php [L]
+RewriteRule ^scripts.bundle.13.js$ userSimple/js/gestionTaches.js [L]
 
 
 

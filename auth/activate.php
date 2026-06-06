@@ -1,4 +1,11 @@
 <?php
+
+include_once('../sessions/commun.php');
+
+
+?>
+
+<?php
 try {
     include_once('../bd.php');
 

@@ -164,6 +164,10 @@ t.addEventListener('click', function (e) {
                     } else if (resp === "bloquer") {
                         showAlert("Ce compte est bloqué. Veuillez contacter le service informatique.", "error", null, true, t);
 
+                    } else if (resp.startsWith("mdp")) {
+
+                        window.location.href = resp.substr(3);
+
                     } else if (resp.startsWith("succès")) {
 
                         alert(resp);

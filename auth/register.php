@@ -1,3 +1,11 @@
+<?php
+
+include_once('../sessions/commun.php');
+
+
+?>
+
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>

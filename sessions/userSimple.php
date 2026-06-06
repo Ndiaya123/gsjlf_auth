@@ -20,6 +20,10 @@ $tmpEntite = null;
 $listeTachesStructures = null;
 $listeTachesIncarnes = null;
 $listeTachesParDefaut = null;
+$statutPoste = null;
+
+
+
 
 if (
     !isset($_SESSION['tmpIdP']) ||
@@ -35,8 +39,7 @@ if (
     !isset($_SESSION['tmpEntite']) ||
     !isset($_SESSION['listeTachesStructures']) ||
     !isset($_SESSION['listeTachesIncarnes']) ||
-    !isset($_SESSION['listeTachesParDefaut'])
-) {
+    !isset($_SESSION['listeTachesParDefaut']) ) {
 
     session_unset();
     session_destroy();
@@ -74,6 +77,7 @@ if (
     $listeTachesStructures = $_SESSION['listeTachesStructures'];
     $listeTachesIncarnes = $_SESSION['listeTachesIncarnes'];
     $listeTachesParDefaut = $_SESSION['listeTachesParDefaut'];
+    $statutPoste = $_SESSION['statutPoste'] ?? null;
 
 
 

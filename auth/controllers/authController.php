@@ -777,16 +777,13 @@ ORDER BY
 
             $stmt->execute($data);
 
-            if ($stmt->rowCount() == 1) {
                 $result =  $stmt->fetch(PDO::FETCH_OBJ);
 
-                return $result->idFonction;
-            }
+                return $result;
 
-            return null;
 
         } catch (\Throwable $th) {
-            return null;
+            return [];
         }
     }
 
@@ -1103,6 +1100,49 @@ ORDER BY nomApplication;
         } catch (\Throwable $th) {
             return $th;
         }
+    }
+
+
+    /**
+     * Fusionne listeApplications avec listeApplicationUserSimple
+     * en appliquant les règles de statut :
+     * - présente dans userSimple → statut = 1 (authorized)
+     * - statut 1 mais absente de userSimple → statut = 2 (denied)
+     * - autres → inchangé
+     */
+    public function listeApplicationsMerged($matricule, $idFonction)
+    {
+        // Récupérer les deux listes
+        $listeApplications       = $this->listeApplications();
+        $listeApplicationUserSimple = $this->listeApplicationUserSimple($matricule, $idFonction);
+
+        if (empty($listeApplications) || !is_array($listeApplications)) {
+            return [];
+        }
+
+        // Indexer les apps accessibles par leur numéro pour lookup O(1)
+        $userSimpleIndex = [];
+        if (!empty($listeApplicationUserSimple) && is_array($listeApplicationUserSimple)) {
+            foreach ($listeApplicationUserSimple as $app) {
+                $userSimpleIndex[$app->numero] = $app;
+            }
+        }
+
+        // Appliquer les règles sur la liste complète
+        foreach ($listeApplications as $app) {
+            if (isset($userSimpleIndex[$app->numero])) {
+                // Présente dans userSimple → autorisée
+                $app->statutApplication = 1;
+                $app->statutLibelle     = 'authorized';
+            } elseif ($app->statutApplication === 1) {
+                // Statut 1 mais pas dans userSimple → refusée
+                $app->statutApplication = 2;
+                $app->statutLibelle     = 'denied';
+            }
+            // sinon → inchangé (pending, denied déjà, etc.)
+        }
+
+        return $listeApplications;
     }
 }
 
@@ -1619,274 +1659,363 @@ WHERE p.matricule = :matricule;";
                             if (password_verify(valid_donnees($password), $result->password) == 1) {
 
 
-                                $matricule = $result->matricule;
-                                $identifiant = $result->identifiant;
-                                $data_info_user = [
-                                    'identifiant' => $identifiant
-                                ];
 
-                                $sql_info_user = "SELECT * FROM etatCivil WHERE identifiant=:identifiant";
-                                $stmt_info_user = $bdP->prepare($sql_info_user);
-                                $stmt_info_user->execute($data_info_user);
-                                $result_info_user = $stmt_info_user->fetch(PDO::FETCH_OBJ);
-
-                                if($result_info_user)
+                                if($result->statutCreerPar == 0)
                                 {
 
-
-                                    $prenom = ucwords(mb_strtolower($result_info_user->prenom));
-                                    $nom= $authController->fctRetirerAccents(mb_strtoupper($result_info_user->nom));
-                                    $infoEntite = $authController->infoEntite($identifiant);
-
-
-                                    // session id utilisateur personnel
-                                    $_SESSION['tmpIdP'] = $result->id;
-                                    $_SESSION['tmpPrenom'] = $prenom;
-                                    $_SESSION['tmpNom'] =  $nom;
-                                    $_SESSION['tmpInitiales'] = $authController->getInitiales($prenom, $nom);
-                                    $_SESSION['tmpEntite'] = $infoEntite->entite;
-                                    $infoApplication = $authController->infoApplication();
+                                    echo "mdp/personnel/user-modification-mdp/".$authController->tokenencrypt($result->matricule);
+                                    die;
 
 
 
+                                }else if($result->statutCreerPar == 1)
+                                {
 
-                                    if($result->idTypeUtilisateur == 1)
-                                    {
-                                        //pour tous les utilisateurs admin = 1 et user simple = 2
-                                        $_SESSION['connectUser'] = 1;
-                                        $_SESSION['tmpNbrAppli'] = $infoApplication->total_applications;
-                                        $_SESSION['tmpNbrAppliEnAttente'] = $infoApplication->en_attente;
-                                        $_SESSION['tmpNbrAppliAutorisees'] = $infoApplication->total_applications - $infoApplication->en_attente;
-                                        $_SESSION['tmpNbrAppliRefusees'] = 0;
+                                    $matricule = $result->matricule;
+                                    $identifiant = $result->identifiant;
+                                    $data_info_user = [
+                                        'identifiant' => $identifiant
+                                    ];
 
-                                        //base de donnee criat
-                                        $resultVerifierUserCRIAT = $authController->verifierUserCRIAT($bd,$email,$matricule,$prenom,$nom);
+                                    $sql_info_user = "SELECT * FROM etatCivil WHERE identifiant=:identifiant";
+                                    $stmt_info_user = $bdP->prepare($sql_info_user);
+                                    $stmt_info_user->execute($data_info_user);
+                                    $result_info_user = $stmt_info_user->fetch(PDO::FETCH_OBJ);
 
-                                        if (is_object($resultVerifierUserCRIAT)) {
-                                            $tmpId = $resultVerifierUserCRIAT->id;
-                                            $_SESSION['tmpId'] = $tmpId;
-                                        } else {
-                                            session_destroy();
-                                            echo "erreur3";
-                                            die;
-                                        }
-
-                                        //base de donnee BASI
-                                        $resultVerifierUserBASI = $authController->verifierUserBASI($bdBASI,$email,$matricule,$prenom,$nom);
-
-                                        if (is_object($resultVerifierUserBASI)) {
-                                            $tmpIdBASI = $result->id;
-                                            $_SESSION['tmpIdBASI'] = $tmpIdBASI;
-                                        } else {
-                                            session_destroy();
-                                            echo "erreur2";
-                                            die;
-                                        }
-
-
-                                        // Liste des applications
-                                        $listeApplications = $authController->listeApplications();
-
-
-
-                                        if (!empty($listeApplications) && is_array($listeApplications)) {
-                                            $_SESSION['tmpListeApplication'] = $listeApplications;
-                                        } else {
-                                            session_destroy();
-                                            echo "erreur4";
-                                        die;
-                                        }
-
-
-                                        // liste des taches
-                                        $listeTachesParDefaut = $authController->listeTachesParDefaut();
-
-                                        if (is_array($listeTachesParDefaut)) {
-                                            $_SESSION['listeTachesParDefaut'] = $listeTachesParDefaut;
-                                        } else {
-                                            session_destroy();
-                                            echo "erreur3";
-                                            die;
-                                        }
-
-
-                                        $listeTachesIncarnes = $authController->listeTachesIncarnesAdmin();
-                                        if (is_array($listeTachesIncarnes)) {
-                                            $_SESSION['listeTachesIncarnes'] = $listeTachesIncarnes;
-                                        } else {
-                                            session_destroy();
-                                            echo "erreur2";
-                                            die;
-                                        }
-
-                                        $listeTachesStructures = $authController->listeTachesStructuresAdmin();
-                                        if (is_array($listeTachesStructures)) {
-                                            $_SESSION['listeTachesStructures'] = $listeTachesStructures;
-                                        } else {
-                                            session_destroy();
-                                            echo "erreur1";
-                                            die;
-                                        }
-
-
-
-                                        echo "succès/personnel/admin-accueil";
-                                        die;
-
-                                    }else
+                                    if($result_info_user)
                                     {
 
 
+                                        $prenom = ucwords(mb_strtolower($result_info_user->prenom));
+                                        $nom= $authController->fctRetirerAccents(mb_strtoupper($result_info_user->nom));
+                                        $infoEntite = $authController->infoEntite($identifiant);
 
-                                        //pour tous les utilisateurs admin = 1 et user simple = 2
-                                        $_SESSION['connectUser'] = 2;
 
-                                        $idFonction = $authController->infoPosteResponsable($identifiant);
-                                        $listeApplicationUserSimple = $authController->listeApplicationUserSimple(
-                                            $matricule,
-                                            $idFonction
-                                        );
+                                        // session id utilisateur personnel
+                                        $_SESSION['tmpIdP'] = $result->id;
+                                        $_SESSION['tmpPrenom'] = $prenom;
+                                        $_SESSION['tmpNom'] =  $nom;
+                                        $_SESSION['tmpInitiales'] = $authController->getInitiales($prenom, $nom);
+                                        $_SESSION['tmpEntite'] = $infoEntite->entite;
+                                        $infoApplication = $authController->infoApplication();
 
-                                        if (!empty($listeApplicationUserSimple) && is_array($listeApplicationUserSimple)) {
 
-                                            $_SESSION['tmpListeApplication'] = $listeApplicationUserSimple;
 
+
+                                        if($result->idTypeUtilisateur == 1)
+                                        {
+                                            //pour tous les utilisateurs admin = 1 et user simple = 2
+                                            $_SESSION['connectUser'] = 1;
                                             $_SESSION['tmpNbrAppli'] = $infoApplication->total_applications;
                                             $_SESSION['tmpNbrAppliEnAttente'] = $infoApplication->en_attente;
-                                            $_SESSION['tmpNbrAppliAutorisees'] = count($listeApplicationUserSimple);
+                                            $_SESSION['tmpNbrAppliAutorisees'] = $infoApplication->total_applications - $infoApplication->en_attente;
+                                            $_SESSION['tmpNbrAppliRefusees'] = 0;
 
-                                            $_SESSION['tmpNbrAppliRefusees'] = max(
-                                                0,
-                                                $infoApplication->total_applications
-                                                - $infoApplication->en_attente
-                                                - count($listeApplicationUserSimple)
-                                            );
+                                            //base de donnee criat
+                                            $resultVerifierUserCRIAT = $authController->verifierUserCRIAT($bd,$email,$matricule,$prenom,$nom);
 
-                                        } else {
+                                            if (is_object($resultVerifierUserCRIAT)) {
+                                                $tmpId = $resultVerifierUserCRIAT->id;
+                                                $_SESSION['tmpId'] = $tmpId;
+                                            } else {
+                                                session_destroy();
+                                                echo "erreur3";
+                                                die;
+                                            }
 
-                                            session_destroy();
-                                            echo "erreur";
+                                            //base de donnee BASI
+                                            $resultVerifierUserBASI = $authController->verifierUserBASI($bdBASI,$email,$matricule,$prenom,$nom);
+
+                                            if (is_object($resultVerifierUserBASI)) {
+                                                $tmpIdBASI = $result->id;
+                                                $_SESSION['tmpIdBASI'] = $tmpIdBASI;
+                                            } else {
+                                                session_destroy();
+                                                echo "erreur2";
+                                                die;
+                                            }
+
+
+                                            // Liste des applications
+                                            $listeApplications = $authController->listeApplications();
+
+
+
+                                            if (!empty($listeApplications) && is_array($listeApplications)) {
+                                                $_SESSION['tmpListeApplication'] = $listeApplications;
+                                            } else {
+                                                session_destroy();
+                                                echo "erreur4";
+                                                die;
+                                            }
+
+
+                                            // liste des taches
+                                            $listeTachesParDefaut = $authController->listeTachesParDefaut();
+
+                                            if (is_array($listeTachesParDefaut)) {
+                                                $_SESSION['listeTachesParDefaut'] = $listeTachesParDefaut;
+                                            } else {
+                                                session_destroy();
+                                                echo "erreur3";
+                                                die;
+                                            }
+
+
+                                            $listeTachesIncarnes = $authController->listeTachesIncarnesAdmin();
+                                            if (is_array($listeTachesIncarnes)) {
+                                                $_SESSION['listeTachesIncarnes'] = $listeTachesIncarnes;
+                                            } else {
+                                                session_destroy();
+                                                echo "erreur2";
+                                                die;
+                                            }
+
+                                            $listeTachesStructures = $authController->listeTachesStructuresAdmin();
+                                            if (is_array($listeTachesStructures)) {
+                                                $_SESSION['listeTachesStructures'] = $listeTachesStructures;
+                                            } else {
+                                                session_destroy();
+                                                echo "erreur1";
+                                                die;
+                                            }
+
+
+
+                                            echo "succès/personnel/admin-accueil";
                                             die;
-                                        }
+
+                                        }else
+                                        {
 
 
 
+                                            //pour tous les utilisateurs admin = 1 et user simple = 2
+                                            $_SESSION['connectUser'] = 2;
 
-                                        // creer utilisateurs
+                                            $infoPosteResponsable = $authController->infoPosteResponsable($identifiant);
 
-                                        $listeBaseDoneeUserSimple = $authController->listeBaseDoneeUserSimple(
-                                            $matricule,
-                                            $idFonction
-                                        );
+                                            $idFonction = null;
+                                            $statutPoste = null;
+                                            $nbrAppliGestTache = 0;
+                                            if (!empty($infoPosteResponsable) && is_array($infoPosteResponsable)) {
+
+                                                $idFonction = $infoPosteResponsable->id;
+                                                if($infoPosteResponsable->idStatutFonction == 1 && $infoPosteResponsable->statutGradePoste == 1)
+                                                {
+                                                    $statutPoste = 1;
+                                                    $nbrAppliGestTache = 1;
+
+
+                                                }else
+                                                {
+                                                    $statutPoste = 0;
+
+                                                }
+                                            }
+//                                        $listeApplicationUserSimple = $authController->listeApplicationUserSimple(
+//                                            $matricule,
+//                                            $idFonction
+//                                        );
+
+                                            $_SESSION['statutPoste'] = $statutPoste;
+
+//
+//                                        if (!empty($listeApplicationUserSimple) && is_array($listeApplicationUserSimple)) {
+//
+////                                            $_SESSION['tmpListeApplication'] = $listeApplicationUserSimple;
+//
+//                                            $tmpNbrAppli = $infoApplication->total_applications + $nbrAppliGestTache;
+//                                            $_SESSION['tmpNbrAppli'] = $tmpNbrAppli;
+//
+//                                            $tmpNbrAppliEnAttente =  $infoApplication->en_attente;
+//                                            $_SESSION['tmpNbrAppliEnAttente'] = $tmpNbrAppliEnAttente;
+//
+//                                            $tmpNbrAppliAutorisees = count($listeApplicationUserSimple) + $nbrAppliGestTache;
+//                                            $_SESSION['tmpNbrAppliAutorisees'] = $tmpNbrAppliAutorisees;
+//
+//                                            $tmpNbrAppliRefusees = $tmpNbrAppli - $tmpNbrAppliEnAttente - $tmpNbrAppliAutorisees;
+//                                            $_SESSION['tmpNbrAppliRefusees'] = max(
+//                                                0,$tmpNbrAppliRefusees
+//                                            );
+//
+//                                        } else {
+//
+//                                            session_destroy();
+//                                            echo "erreur";
+//                                            die;
+//                                        }
+
+
+                                            // Liste des applications avec règles de statut appliquées
 
 
 
+                                            $tmpNbrAppliEnAttente = 0;
+                                            $tmpNbrAppliAutorisees = 0;
+                                            $tmpNbrAppliRefusees = 0;
 
-                                        $tmp_nombre_bd = 0;
-                                        if (is_array($listeBaseDoneeUserSimple)) {
+                                            $listeApplicationsMerged = $authController->listeApplicationsMerged($matricule, $idFonction);
 
-                                            if(!empty($listeBaseDoneeUserSimple))
-                                            {
-                                                foreach ($listeBaseDoneeUserSimple as $base) {
-                                                    if($base->code_base_donnees == "criat_uahb"){
-                                                        //base de donnee criat
-                                                        $resultVerifierUserCRIAT = $authController->verifierUserCRIAT($bd,$email,$matricule,$prenom,$nom);
+                                            if (!empty($listeApplicationsMerged) && is_array($listeApplicationsMerged)) {
+                                                $_SESSION['tmpListeApplication'] = $listeApplicationsMerged;
 
-                                                        if (is_object($resultVerifierUserCRIAT)) {
-                                                            $tmpId = $resultVerifierUserCRIAT->id;
-                                                            $_SESSION['tmpId'] = $tmpId;
-                                                            ++$tmp_nombre_bd;
-                                                        } else {
-                                                            session_destroy();
-                                                            echo "erreur3";
-                                                            die;
-                                                        }
+                                                $tmpNbrAppli = count($listeApplicationsMerged) + $nbrAppliGestTache;
+                                                $_SESSION['tmpNbrAppli'] = $tmpNbrAppli;
 
+                                                foreach ($listeApplicationsMerged as $listeApplicationMerged) {
+
+                                                    if($listeApplicationMerged->statutApplication == 0)
+                                                    {
+                                                        ++$tmpNbrAppliEnAttente;
+
+                                                    }else if($listeApplicationMerged->statutApplication == 1)
+                                                    {
+                                                        ++$tmpNbrAppliAutorisees;
+
+                                                    }else if($listeApplicationMerged->statutApplication == 2)
+                                                    {
+                                                        ++$tmpNbrAppliRefusees;
                                                     }
-
-                                                    if($base->code_base_donnees == "basi") {
-
-                                                        //base de donnee BASI
-                                                        $resultVerifierUserBASI = $authController->verifierUserBASI($bdBASI,$email,$matricule,$prenom,$nom);
-
-                                                        if (is_object($resultVerifierUserBASI)) {
-                                                            $tmpIdBASI = $result->id;
-                                                            $_SESSION['tmpIdBASI'] = $tmpIdBASI;
-                                                            ++$tmp_nombre_bd;
-                                                        } else {
-                                                            session_destroy();
-                                                            echo "erreur2";
-                                                            die;
-                                                        }
-                                                    }
-
-
 
                                                 }
 
+                                                $_SESSION['tmpNbrAppliEnAttente'] = max(0,$tmpNbrAppliEnAttente);
+                                                $_SESSION['tmpNbrAppliAutorisees'] = max(0,$tmpNbrAppliAutorisees);
+                                                $_SESSION['tmpNbrAppliRefusees'] = max(
+                                                    0,$tmpNbrAppliRefusees
+                                                );
 
 
-                                                // importnat quand tout sera ok
+                                            } else {
+                                                session_destroy();
+                                                echo "erreur4";
+                                                die;
+                                            }
+
+
+
+                                            // creer utilisateurs
+
+                                            $listeBaseDoneeUserSimple = $authController->listeBaseDoneeUserSimple(
+                                                $matricule,
+                                                $idFonction
+                                            );
+
+
+
+
+                                            $tmp_nombre_bd = 0;
+                                            if (is_array($listeBaseDoneeUserSimple)) {
+
+                                                if(!empty($listeBaseDoneeUserSimple))
+                                                {
+                                                    foreach ($listeBaseDoneeUserSimple as $base) {
+                                                        if($base->code_base_donnees == "criat_uahb"){
+                                                            //base de donnee criat
+                                                            $resultVerifierUserCRIAT = $authController->verifierUserCRIAT($bd,$email,$matricule,$prenom,$nom);
+
+                                                            if (is_object($resultVerifierUserCRIAT)) {
+                                                                $tmpId = $resultVerifierUserCRIAT->id;
+                                                                $_SESSION['tmpId'] = $tmpId;
+                                                                ++$tmp_nombre_bd;
+                                                            } else {
+                                                                session_destroy();
+                                                                echo "erreur3";
+                                                                die;
+                                                            }
+
+                                                        }
+
+                                                        if($base->code_base_donnees == "basi") {
+
+                                                            //base de donnee BASI
+                                                            $resultVerifierUserBASI = $authController->verifierUserBASI($bdBASI,$email,$matricule,$prenom,$nom);
+
+                                                            if (is_object($resultVerifierUserBASI)) {
+                                                                $tmpIdBASI = $result->id;
+                                                                $_SESSION['tmpIdBASI'] = $tmpIdBASI;
+                                                                ++$tmp_nombre_bd;
+                                                            } else {
+                                                                session_destroy();
+                                                                echo "erreur2";
+                                                                die;
+                                                            }
+                                                        }
+
+
+
+                                                    }
+
+
+
+                                                    // importnat quand tout sera ok
 //                                                        if(count($listeBaseDoneeUserSimple) != $tmp_nombre_bd)
 //                                                        {
 //                                                            session_destroy();
 //                                                            echo "erreur9";
 //                                                            die;
 //                                                        }
+                                                }
+
+
+                                            } else {
+
+                                                session_destroy();
+                                                echo "erreur70";
+                                                die;
                                             }
 
 
-                                        } else {
 
-                                            session_destroy();
-                                            echo "erreur70";
+                                            // liste des taches
+                                            $listeTachesParDefaut = $authController->listeTachesParDefaut();
+                                            if (is_array($listeTachesParDefaut)) {
+                                                $_SESSION['listeTachesParDefaut'] = $listeTachesParDefaut;
+                                            } else {
+                                                session_destroy();
+                                                echo "erreur11";
+                                                die;
+                                            }
+
+
+                                            $listeTachesIncarnes = $authController->listeTachesIncarnes($idFonction);
+
+                                            if (is_array($listeTachesIncarnes)) {
+                                                $_SESSION['listeTachesIncarnes'] = $listeTachesIncarnes;
+                                            } else {
+                                                session_destroy();
+                                                echo "erreur12";
+                                                die;
+                                            }
+
+                                            $listeTachesStructures = $authController->listeTachesStructures($idFonction);
+                                            if (is_array($listeTachesStructures)) {
+                                                $_SESSION['listeTachesStructures'] = $listeTachesStructures;
+                                            } else {
+                                                session_destroy();
+                                                echo "erreur13";
+                                                die;
+                                            }
+
+
+
+
+                                            echo "succès/personnel/user-accueil";
                                             die;
                                         }
 
-
-
-                                        // liste des taches
-                                        $listeTachesParDefaut = $authController->listeTachesParDefaut();
-                                        if (is_array($listeTachesParDefaut)) {
-                                            $_SESSION['listeTachesParDefaut'] = $listeTachesParDefaut;
-                                        } else {
-                                            session_destroy();
-                                            echo "erreur11";
-                                            die;
-                                        }
-
-
-                                        $listeTachesIncarnes = $authController->listeTachesIncarnes($idFonction);
-
-                                        if (is_array($listeTachesIncarnes)) {
-                                            $_SESSION['listeTachesIncarnes'] = $listeTachesIncarnes;
-                                        } else {
-                                            session_destroy();
-                                            echo "erreur12";
-                                            die;
-                                        }
-
-                                        $listeTachesStructures = $authController->listeTachesStructures($idFonction);
-                                        if (is_array($listeTachesStructures)) {
-                                            $_SESSION['listeTachesStructures'] = $listeTachesStructures;
-                                        } else {
-                                            session_destroy();
-                                            echo "erreur13";
-                                            die;
-                                        }
-
-
-
-
-                                        echo "succès/personnel/user-accueil";
+                                    }else
+                                    {
+                                        echo "erreur";
                                         die;
                                     }
-
-                                }else
-                                {
+                                }else {
                                     echo "erreur";
                                     die;
+
                                 }
+
 
 
                             } else {

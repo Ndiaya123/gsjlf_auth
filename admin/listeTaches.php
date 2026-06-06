@@ -1,6 +1,7 @@
 <?php
 
-session_start();
+include_once('../sessions/admin.php');
+
 
 ?>
 <!DOCTYPE html>

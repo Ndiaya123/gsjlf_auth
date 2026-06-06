@@ -1371,8 +1371,36 @@ include_once('../sessions/userSimple.php');
     <?php endif; ?>
 </span>        </div>
 
+
         <!-- GRILLE APPLICATIONS -->
         <section class="ps_apps-grid" id="appsGrid">
+
+            <?php if($statutPoste == 1) {?>
+
+            <article class="ps_app ps_authorized" data-status="authorized" data-entity="gsjlf" data-name="Gestion des utilisateurs, sous-menus, tâches et taches qualifications.">
+                <div class="ps_app-stripe"></div>
+                <div class="ps_app-body">
+                    <div class="ps_app-top">
+                        <div class="ps_app-icon ps_gsjlf"><span class="material-symbols-outlined">
+linked_services
+</span></div>
+                        <div class="ps_status ps_authorized">Autorisée</div>
+                    </div>
+                    <div class="ps_app-meta">
+                        <h3>Gestion des taches</h3>
+                        <p class="ps_app-desc">Gestion des utilisateurs, sous-menus, tâches et qualifications.</p>
+                    </div>
+                    <div class="ps_tags"><div class="ps_tag">Tache</div><div class="ps_tag">Agent</div></div>
+                </div>
+                <div class="ps_app-sep"></div>
+                <div class="ps_app-footer">
+                    <button class="ps_open-btn" onclick="actionOuvrirApplication('gest-tache')"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
+                    <button class="ps_action-icon-btn" title="Détails" onclick="actionOuvrirApplication('gest-tache')"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
+                </div>
+            </article>
+
+            <?php }?>
+
 
             <?php
 

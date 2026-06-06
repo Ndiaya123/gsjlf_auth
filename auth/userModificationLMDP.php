@@ -7,179 +7,180 @@ include_once('../sessions/commun.php');
 
 
 <?php
-try {
-    include_once('../bd.php');
-
-    $bd  = new BD();
-    $bd  = $bd ->connect();
-
-    date_default_timezone_set('Africa/Dakar');
-
-
-
-    $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-    $bd->beginTransaction();
-
-    function tokendecrypt($data)
-    {
-        $secretKey = 'U@hbENTDRI@TCRI@T2022';
-        $secretIv = 'www.ent.uahb.sn';
-        $encryptMethod = "AES-256-CBC";
-        $key = hash('sha256', $secretKey);
-        $iv = substr(hash('sha256', $secretIv), 0, 16);
-        $result = openssl_decrypt(base64_decode($data), $encryptMethod, $key, 0, $iv);
-        return $result;
-    }
-
-    function valid_donnees($donnees)
-    {
-        $donnees = trim($donnees);
-        $donnees = stripslashes($donnees);
-        $donnees = htmlspecialchars($donnees);
-        return $donnees;
-    }
-    function dateFranc($date)
-    {
-        try {
-            $datetime = new DateTime($date);
-
-            $formatter = new IntlDateFormatter(
-                    'fr_FR',
-                    IntlDateFormatter::FULL,
-                    IntlDateFormatter::NONE
-            );
-
-            return $formatter->format($datetime);
-
-        } catch (Exception $e) {
-            return null;
-        }
-    }
-
-
-    function comparerDate($date)
-    {
-        try {
-            $dateParam = new DateTime($date);
-            $dateParam->modify('+24 hours');
-
-            $nowPlus24h = new DateTime();
-
-            if ($dateParam > $nowPlus24h) {
-                return true;
-            }
-
-            return false;
-
-        } catch (Exception $e) {
-            return false;
-        }
-    }
-
-
-
-
-    if(!empty($_GET['mat']) && !empty($_GET['code']))
-    {
-
-
-        $now = new DateTime();
-        $date_jour = $now->format('Y-m-d H:i:s');
-
-        $matricule = tokendecrypt($_GET['mat']);
-        $codeReset_encrypt = $_GET['code'];
-
-        $data = [
-                'matricule' => $matricule
-        ];
-
-        $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
-        $stmt = $bd ->prepare($sql);
-        $stmt->execute($data);
-        $result = $stmt->fetch(PDO::FETCH_OBJ);
-
-        if($result)
-        {
-
-
-            $data_reset_code = [
-                    'matricule' => $matricule,
-                'statut' => 1
-            ];
-
-            $sql_reset_code = "SELECT * FROM auth_reset_password WHERE matricule=:matricule AND statut=:statut";
-            $stmt_reset_code = $bd ->prepare($sql_reset_code);
-            $stmt_reset_code->execute($data_reset_code);
-            $result_reset_code = $stmt_reset_code->fetch(PDO::FETCH_OBJ);
-
-            if($result_reset_code)
-            {
-                if($result_reset_code->codeReset == $codeReset_encrypt)
-                {
-                    $email = $result->email;
-
-                    if($result->statutActivation == 0)
-                    {
-                        $statut = 1;
-                    }else
-                    {
-
-                        if($result->statutUtilisateur == 0)
-                        {
-
-                            if(comparerDate($result_reset_code->dateEnregistrement))
-                            {
-                                $statut = 4;
-                            }else
-                            {
-                                $statut = 3;
-                                $codeReset_encrypt = null;
-                            }
-                        }else
-                        {
-                            $statut = 2;
-                            $codeReset_encrypt = null;
-                        }
-
-                    }
-                }else
-                {
-                    $matricule = null;
-                    $statut = 0;
-                    $codeReset_encrypt = null;
-                }
-            }else
-            {
-                    $matricule = null;
-                    $statut = 0;
-                $codeReset_encrypt = null;
-            }
-
-        }else
-        {
-            $matricule = null;
-            $statut = 0;
-            $codeReset_encrypt = null;
-        }
-
-    }else
-    {
-        $matricule = null;
-        $statut = 0;
-        $codeReset_encrypt = null;
-    }
-
-
-
-
-}catch (Exception $e) {
-    header("Location: /personnel/erreur");
-    exit;
-}
-
-
+//try {
+//    include_once('../bd.php');
+//
+//    $bd  = new BD();
+//    $bd  = $bd ->connect();
+//
+//    date_default_timezone_set('Africa/Dakar');
+//
+//
+//
+//    $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+//    $bd->beginTransaction();
+//
+//    function tokendecrypt($data)
+//    {
+//        $secretKey = 'U@hbENTDRI@TCRI@T2022';
+//        $secretIv = 'www.ent.uahb.sn';
+//        $encryptMethod = "AES-256-CBC";
+//        $key = hash('sha256', $secretKey);
+//        $iv = substr(hash('sha256', $secretIv), 0, 16);
+//        $result = openssl_decrypt(base64_decode($data), $encryptMethod, $key, 0, $iv);
+//        return $result;
+//    }
+//
+//    function valid_donnees($donnees)
+//    {
+//        $donnees = trim($donnees);
+//        $donnees = stripslashes($donnees);
+//        $donnees = htmlspecialchars($donnees);
+//        return $donnees;
+//    }
+//    function dateFranc($date)
+//    {
+//        try {
+//            $datetime = new DateTime($date);
+//
+//            $formatter = new IntlDateFormatter(
+//                'fr_FR',
+//                IntlDateFormatter::FULL,
+//                IntlDateFormatter::NONE
+//            );
+//
+//            return $formatter->format($datetime);
+//
+//        } catch (Exception $e) {
+//            return null;
+//        }
+//    }
+//
+//
+//    function comparerDate($date)
+//    {
+//        try {
+//            $dateParam = new DateTime($date);
+//            $dateParam->modify('+24 hours');
+//
+//            $nowPlus24h = new DateTime();
+//
+//            if ($dateParam > $nowPlus24h) {
+//                return true;
+//            }
+//
+//            return false;
+//
+//        } catch (Exception $e) {
+//            return false;
+//        }
+//    }
+//
+//
+//
+//
+//    if(!empty($_GET['mat']) && !empty($_GET['code']))
+//    {
+//
+//
+//        $now = new DateTime();
+//        $date_jour = $now->format('Y-m-d H:i:s');
+//
+//        $matricule = tokendecrypt($_GET['mat']);
+//        $codeReset_encrypt = $_GET['code'];
+//
+//        $data = [
+//            'matricule' => $matricule
+//        ];
+//
+//        $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
+//        $stmt = $bd ->prepare($sql);
+//        $stmt->execute($data);
+//        $result = $stmt->fetch(PDO::FETCH_OBJ);
+//
+//        if($result)
+//        {
+//
+//
+//            $data_reset_code = [
+//                'matricule' => $matricule,
+//                'statut' => 1
+//            ];
+//
+//            $sql_reset_code = "SELECT * FROM auth_reset_password WHERE matricule=:matricule AND statut=:statut";
+//            $stmt_reset_code = $bd ->prepare($sql_reset_code);
+//            $stmt_reset_code->execute($data_reset_code);
+//            $result_reset_code = $stmt_reset_code->fetch(PDO::FETCH_OBJ);
+//
+//            if($result_reset_code)
+//            {
+//                if($result_reset_code->codeReset == $codeReset_encrypt)
+//                {
+//                    $email = $result->email;
+//
+//                    if($result->statutActivation == 0)
+//                    {
+//                        $statut = 1;
+//                    }else
+//                    {
+//
+//                        if($result->statutUtilisateur == 0)
+//                        {
+//
+//                            if(comparerDate($result_reset_code->dateEnregistrement))
+//                            {
+//                                $statut = 4;
+//                            }else
+//                            {
+//                                $statut = 3;
+//                                $codeReset_encrypt = null;
+//                            }
+//                        }else
+//                        {
+//                            $statut = 2;
+//                            $codeReset_encrypt = null;
+//                        }
+//
+//                    }
+//                }else
+//                {
+//                    $matricule = null;
+//                    $statut = 0;
+//                    $codeReset_encrypt = null;
+//                }
+//            }else
+//            {
+//                $matricule = null;
+//                $statut = 0;
+//                $codeReset_encrypt = null;
+//            }
+//
+//        }else
+//        {
+//            $matricule = null;
+//            $statut = 0;
+//            $codeReset_encrypt = null;
+//        }
+//
+//    }else
+//    {
+//        $matricule = null;
+//        $statut = 0;
+//        $codeReset_encrypt = null;
+//    }
+//
+//
+//
+//
+//}catch (Exception $e) {
+//    header("Location: /personnel/erreur");
+//    exit;
+//}
+//
+$statut = 4;
 
 ?>
+
 
 
 <!DOCTYPE html>
@@ -307,55 +308,55 @@ try {
             <?php }else if($statut == 4) { ?>
 
 
-            <form novalidate="novalidate" id="formReset" autocomplete="off">
-                <input type="hidden" name="option" value="5" />
-                <input type="hidden" name="matricule" id="matricule" value="<?=  $matricule ?>"/>
-                <input type="hidden" name="code" id="code" value="<?=  $codeReset_encrypt ?>"/>
+                <form novalidate="novalidate" id="formReset" autocomplete="off">
+                    <input type="hidden" name="option" value="5" />
+                    <input type="hidden" name="matricule" id="matricule" value="<?=  $matricule ?>"/>
+                    <input type="hidden" name="code" id="code" value="<?=  $codeReset_encrypt ?>"/>
 
 
-                <div id="phase3" >
-                    <div class="ps_form-icon"><span class="material-symbols-outlined">key</span></div>
-                    <h1 class="ps_form-title">Nouveau mot de passe</h1>
-                    <p class="ps_form-subtitle">Choisissez un nouveau mot de passe sécurisé pour votre compte ENT.</p>
-                    <div class="ps_field">
-                        <label>Nouveau mot de passe</label>
-                        <div class="ps_input-wrap">
-                            <span class="material-symbols-outlined ps_ico">lock</span>
-                            <input type="password" id="pw1" placeholder="Créer un mot de passe" oninput="checkStrength(this.value)" name="password" required>
-                            <button type="button" class="ps_eye-btn" onclick="togglePw('pw1','eye1')">
-                                <span class="material-symbols-outlined" style="font-size:18px" id="eye1">visibility</span>
-                            </button>
+                    <div id="phase3" >
+                        <div class="ps_form-icon"><span class="material-symbols-outlined">key</span></div>
+                        <h1 class="ps_form-title">Nouveau mot de passe</h1>
+                        <p class="ps_form-subtitle">Choisissez un nouveau mot de passe sécurisé pour votre compte ENT.</p>
+                        <div class="ps_field">
+                            <label>Nouveau mot de passe</label>
+                            <div class="ps_input-wrap">
+                                <span class="material-symbols-outlined ps_ico">lock</span>
+                                <input type="password" id="pw1" placeholder="Créer un mot de passe" oninput="checkStrength(this.value)" name="password" required>
+                                <button type="button" class="ps_eye-btn" onclick="togglePw('pw1','eye1')">
+                                    <span class="material-symbols-outlined" style="font-size:18px" id="eye1">visibility</span>
+                                </button>
+                            </div>
                         </div>
-                    </div>
-                    <div class="ps_strength-bar">
-                        <div class="ps_strength-track"><div class="ps_strength-fill" id="sfill"></div></div>
-                        <div class="ps_strength-label" id="slabel">—</div>
-                    </div>
-                    <div class="ps_field">
-                        <label>Confirmation du mot de passe</label>
-                        <div class="ps_input-wrap">
-                            <span class="material-symbols-outlined ps_ico">lock_clock</span>
-                            <input type="password" id="pw2" placeholder="Répéter le mot de passe" oninput="checkMatch()" name="confirm-password" required>
-                            <button type="button" class="ps_eye-btn" onclick="togglePw('pw2','eye2')">
-                                <span class="material-symbols-outlined" style="font-size:18px" id="eye2">visibility</span>
-                            </button>
+                        <div class="ps_strength-bar">
+                            <div class="ps_strength-track"><div class="ps_strength-fill" id="sfill"></div></div>
+                            <div class="ps_strength-label" id="slabel">—</div>
                         </div>
+                        <div class="ps_field">
+                            <label>Confirmation du mot de passe</label>
+                            <div class="ps_input-wrap">
+                                <span class="material-symbols-outlined ps_ico">lock_clock</span>
+                                <input type="password" id="pw2" placeholder="Répéter le mot de passe" oninput="checkMatch()" name="confirm-password" required>
+                                <button type="button" class="ps_eye-btn" onclick="togglePw('pw2','eye2')">
+                                    <span class="material-symbols-outlined" style="font-size:18px" id="eye2">visibility</span>
+                                </button>
+                            </div>
+                        </div>
+                        <p class="ps_match-error" id="match-err">
+                            <span class="material-symbols-outlined" style="font-size:13px">error</span>Les mots de passe ne correspondent pas.
+                        </p>
+                        <div class="ps_rules">
+                            <span><span class="material-symbols-outlined">check_circle</span>Minimum 8 caractères</span>
+                            <span><span class="material-symbols-outlined">check_circle</span>Au moins une majuscule et un chiffre</span>
+                            <span><span class="material-symbols-outlined">check_circle</span>Différent de votre ancien mot de passe</span>
+                        </div>
+                        <button class="ps_submit-btn" type="button" id="formReset_submit">
+                            <span class="material-symbols-outlined" style="font-size:18px">check_circle</span>Enregistrer le nouveau mot de passe
+                        </button>
                     </div>
-                    <p class="ps_match-error" id="match-err">
-                        <span class="material-symbols-outlined" style="font-size:13px">error</span>Les mots de passe ne correspondent pas.
-                    </p>
-                    <div class="ps_rules">
-                        <span><span class="material-symbols-outlined">check_circle</span>Minimum 8 caractères</span>
-                        <span><span class="material-symbols-outlined">check_circle</span>Au moins une majuscule et un chiffre</span>
-                        <span><span class="material-symbols-outlined">check_circle</span>Différent de votre ancien mot de passe</span>
-                    </div>
-                    <button class="ps_submit-btn" type="button" id="formReset_submit">
-                        <span class="material-symbols-outlined" style="font-size:18px">check_circle</span>Enregistrer le nouveau mot de passe
-                    </button>
-                </div>
 
 
-            </form>
+                </form>
 
                 <div id="success-state-reset" class="ps_success-banner" style="display:none">
                     <div class="ps_success-icon"><span class="material-symbols-outlined" style="font-size:34px">lock_open</span></div>
@@ -364,7 +365,7 @@ try {
                     <a href="/personnel/signin" class="ps_submit-btn" style="margin-top:20px;text-decoration:none;width:auto;padding:0 28px">Se connecter</a>
                 </div>
 
-                <?php }else{ ?>
+            <?php }else{ ?>
 
                 <div id="success-state" class="ps_success-banner">
                     <div class="ps_error-icon">
