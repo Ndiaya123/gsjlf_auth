@@ -2,182 +2,192 @@
 
 include_once('../sessions/commun.php');
 
+include_once('../bdP.php');
 
 ?>
 
 
 <?php
-//try {
-//    include_once('../bd.php');
-//
-//    $bd  = new BD();
-//    $bd  = $bd ->connect();
-//
-//    date_default_timezone_set('Africa/Dakar');
-//
-//
-//
-//    $bd->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-//    $bd->beginTransaction();
-//
-//    function tokendecrypt($data)
-//    {
-//        $secretKey = 'U@hbENTDRI@TCRI@T2022';
-//        $secretIv = 'www.ent.uahb.sn';
-//        $encryptMethod = "AES-256-CBC";
-//        $key = hash('sha256', $secretKey);
-//        $iv = substr(hash('sha256', $secretIv), 0, 16);
-//        $result = openssl_decrypt(base64_decode($data), $encryptMethod, $key, 0, $iv);
-//        return $result;
-//    }
-//
-//    function valid_donnees($donnees)
-//    {
-//        $donnees = trim($donnees);
-//        $donnees = stripslashes($donnees);
-//        $donnees = htmlspecialchars($donnees);
-//        return $donnees;
-//    }
-//    function dateFranc($date)
-//    {
-//        try {
-//            $datetime = new DateTime($date);
-//
-//            $formatter = new IntlDateFormatter(
-//                'fr_FR',
-//                IntlDateFormatter::FULL,
-//                IntlDateFormatter::NONE
-//            );
-//
-//            return $formatter->format($datetime);
-//
-//        } catch (Exception $e) {
-//            return null;
-//        }
-//    }
-//
-//
-//    function comparerDate($date)
-//    {
-//        try {
-//            $dateParam = new DateTime($date);
-//            $dateParam->modify('+24 hours');
-//
-//            $nowPlus24h = new DateTime();
-//
-//            if ($dateParam > $nowPlus24h) {
-//                return true;
-//            }
-//
-//            return false;
-//
-//        } catch (Exception $e) {
-//            return false;
-//        }
-//    }
-//
-//
-//
-//
-//    if(!empty($_GET['mat']) && !empty($_GET['code']))
-//    {
-//
-//
-//        $now = new DateTime();
-//        $date_jour = $now->format('Y-m-d H:i:s');
-//
-//        $matricule = tokendecrypt($_GET['mat']);
-//        $codeReset_encrypt = $_GET['code'];
-//
-//        $data = [
-//            'matricule' => $matricule
-//        ];
-//
-//        $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
-//        $stmt = $bd ->prepare($sql);
-//        $stmt->execute($data);
-//        $result = $stmt->fetch(PDO::FETCH_OBJ);
-//
-//        if($result)
-//        {
-//
-//
-//            $data_reset_code = [
-//                'matricule' => $matricule,
-//                'statut' => 1
-//            ];
-//
-//            $sql_reset_code = "SELECT * FROM auth_reset_password WHERE matricule=:matricule AND statut=:statut";
-//            $stmt_reset_code = $bd ->prepare($sql_reset_code);
-//            $stmt_reset_code->execute($data_reset_code);
-//            $result_reset_code = $stmt_reset_code->fetch(PDO::FETCH_OBJ);
-//
-//            if($result_reset_code)
-//            {
-//                if($result_reset_code->codeReset == $codeReset_encrypt)
-//                {
-//                    $email = $result->email;
-//
-//                    if($result->statutActivation == 0)
-//                    {
-//                        $statut = 1;
-//                    }else
-//                    {
-//
-//                        if($result->statutUtilisateur == 0)
-//                        {
-//
-//                            if(comparerDate($result_reset_code->dateEnregistrement))
-//                            {
-//                                $statut = 4;
-//                            }else
-//                            {
-//                                $statut = 3;
-//                                $codeReset_encrypt = null;
-//                            }
-//                        }else
-//                        {
-//                            $statut = 2;
-//                            $codeReset_encrypt = null;
-//                        }
-//
-//                    }
-//                }else
-//                {
-//                    $matricule = null;
-//                    $statut = 0;
-//                    $codeReset_encrypt = null;
-//                }
-//            }else
-//            {
-//                $matricule = null;
-//                $statut = 0;
-//                $codeReset_encrypt = null;
-//            }
-//
-//        }else
-//        {
-//            $matricule = null;
-//            $statut = 0;
-//            $codeReset_encrypt = null;
-//        }
-//
-//    }else
-//    {
-//        $matricule = null;
-//        $statut = 0;
-//        $codeReset_encrypt = null;
-//    }
-//
-//
-//
-//
-//}catch (Exception $e) {
-//    header("Location: /personnel/erreur");
-//    exit;
-//}
-//
-$statut = 4;
+try {
+
+    $bdP  = new BDP();
+    $bdP  = $bdP ->connect();
+
+    date_default_timezone_set('Africa/Dakar');
+
+
+
+    $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $bdP->beginTransaction();
+
+    function tokendecrypt($data)
+    {
+        $secretKey = 'U@hbENTDRI@TCRI@T2022';
+        $secretIv = 'www.ent.uahb.sn';
+        $encryptMethod = "AES-256-CBC";
+        $key = hash('sha256', $secretKey);
+        $iv = substr(hash('sha256', $secretIv), 0, 16);
+        $result = openssl_decrypt(base64_decode($data), $encryptMethod, $key, 0, $iv);
+        return $result;
+    }
+
+    function valid_donnees($donnees)
+    {
+        $donnees = trim($donnees);
+        $donnees = stripslashes($donnees);
+        $donnees = htmlspecialchars($donnees);
+        return $donnees;
+    }
+    function dateFranc($date)
+    {
+        try {
+            $datetime = new DateTime($date);
+
+            $formatter = new IntlDateFormatter(
+                    'fr_FR',
+                    IntlDateFormatter::FULL,
+                    IntlDateFormatter::NONE
+            );
+
+            return $formatter->format($datetime);
+
+        } catch (Exception $e) {
+            return null;
+        }
+    }
+
+
+    function comparerDate($date)
+    {
+        try {
+            $dateParam = new DateTime($date);
+            $dateParam->modify('+24 hours');
+
+            $nowPlus24h = new DateTime();
+
+            if ($dateParam > $nowPlus24h) {
+                return true;
+            }
+
+            return false;
+
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+
+
+
+    if(!empty($_GET['mat']) && !empty($_GET['code']))
+    {
+
+
+        $now = new DateTime();
+        $date_jour = $now->format('Y-m-d H:i:s');
+
+        $matricule = tokendecrypt($_GET['mat']);
+        $codeCreate_encrypt = $_GET['code'];
+
+
+        $data = [
+                'matricule' => $matricule
+        ];
+
+        $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
+        $stmt = $bdP ->prepare($sql);
+        $stmt->execute($data);
+        $result = $stmt->fetch(PDO::FETCH_OBJ);
+
+
+
+
+        if($result)
+        {
+
+
+            $data_reset_code = [
+                    'matricule' => $matricule,
+                    'statut' => 1
+            ];
+
+            $sql_reset_code = "SELECT * FROM auth_create_password WHERE matricule=:matricule AND statut=:statut";
+            $stmt_reset_code = $bdP ->prepare($sql_reset_code);
+            $stmt_reset_code->execute($data_reset_code);
+            $result_reset_code = $stmt_reset_code->fetch(PDO::FETCH_OBJ);
+
+            if($result_reset_code)
+            {
+                if($result_reset_code->codeCreate == $codeCreate_encrypt)
+                {
+
+                    if($result->statutUtilisateur == 0)
+                    {
+
+                        if(comparerDate($result_reset_code->dateEnregistrement))
+                        {
+                            if($result->statutCreerPar == 0 && $result->creerPar == "Admin")
+                            {
+
+                                $statut = 4;
+                                $codeCreate_encrypt = $result_reset_code->codeCreate;
+                            }else
+                            {
+
+                                $statut = 3;
+                                $codeCreate_encrypt = null;
+                            }
+                        }else
+                        {
+
+                            $statut = 2;
+                            $codeCreate_encrypt = null;
+                        }
+                    }else
+                    {
+                        $statut = 1;
+                        $codeCreate_encrypt = null;
+                    }
+                }else
+                {
+
+                    $matricule = null;
+                    $statut = 0;
+                    $codeCreate_encrypt = null;
+                }
+            }else
+            {
+
+                $matricule = null;
+                $statut = 0;
+                $codeCreate_encrypt = null;
+            }
+
+        }else
+        {
+
+            $matricule = null;
+            $statut = 0;
+            $codeCreate_encrypt = null;
+        }
+
+    }else
+    {
+
+        $matricule = null;
+        $statut = 0;
+        $codeCreate_encrypt = null;
+    }
+
+
+
+
+}catch (Exception $e) {
+    header("Location: /personnel/erreur");
+    exit;
+}
+
+
 
 ?>
 
@@ -212,9 +222,9 @@ $statut = 4;
                     <div><div class="ps_sb-name">Groupe Scolaire Jean de la Fontaine</div><div class="ps_sb-sub">Environnement Numérique de Travail</div></div>
                 </a></div>
             <div class="ps_sb-mid">
-                <div class="ps_sb-kicker"><span class="material-symbols-outlined" style="font-size:13px">lock_reset</span>Récupération d'accès</div>
-                <h2 class="ps_sb-headline">Réinitialisez<br>votre <span>mot de passe.</span></h2>
-                <p class="ps_sb-desc">Recevez un lien sécurisé pour créer un nouveau mot de passe et retrouver l'accès à votre espace ENT.</p>
+                <div class="ps_sb-kicker"><span class="material-symbols-outlined" style="font-size:13px">lock_reset</span>Sécurisation du compte</div>
+                <h2 class="ps_sb-headline">Créez votre<br><span>mot de passe.</span></h2>
+                <p class="ps_sb-desc">Votre compte a été créé par l'administration. Définissez maintenant votre mot de passe personnel pour sécuriser votre espace ENT.</p>
                 <div class="ps_sb-stats">
                     <div class="ps_sb-stat"><div class="ps_sb-stat-num">24h</div><div class="ps_sb-stat-lbl">Validité</div></div>
                     <div class="ps_sb-stat"><div class="ps_sb-stat-num">1x</div><div class="ps_sb-stat-lbl">Usage</div></div>
@@ -235,7 +245,9 @@ $statut = 4;
 
     <main class="ps_main-wrap">
         <div class="ps_auth-card">
-            <a href="/personnel/signin" class="ps_back-link"><span class="material-symbols-outlined" style="font-size:15px">arrow_back</span>Retour à la connexion</a>
+
+
+
 
 
             <?php
@@ -243,6 +255,8 @@ $statut = 4;
             if($statut == 0)
             {
                 ?>
+
+                <a href="/personnel/signin" class="ps_back-link"><span class="material-symbols-outlined" style="font-size:15px">arrow_back</span>Retour à la connexion</a>
 
                 <div id="success-state" class="ps_success-banner">
                     <div class="ps_error-icon">
@@ -256,23 +270,6 @@ $statut = 4;
 
 
             <?php }else if($statut == 1)
-            {?>
-
-                <div id="success-state" class="ps_success-banner">
-                    <div class="ps_warning-icon">
-    <span class="material-symbols-outlined" style="font-size:34px">
-        warning
-    </span>
-                    </div>                    <h3 style="color: #e0a800;">Compte non activé !</h3>
-                    <p>                            Votre compte n’a pas encore été activé. Veuillez vérifier le mail d’activation dans votre boîte Gmail pour procéder à l’activation. Sans cela, vous ne pourrez pas réinitialiser votre mot de passe en cas de problème. Contactez le service informatique à l’adresse <strong><em style="color: red;">criat@uahb.sn</em></strong>.
-
-                    </p>
-                </div>
-
-
-
-
-            <?php }else if($statut == 2)
             {
                 ?>
 
@@ -286,8 +283,7 @@ $statut = 4;
                     <p> Votre compte est bloqué. Veuillez vous rapprocher du service informatique pour plus d’informations.</p>
                 </div>
 
-
-            <?php }else if($statut == 3)
+            <?php }else if($statut == 2)
             {?>
 
 
@@ -303,19 +299,53 @@ $statut = 4;
                 </div>
 
 
+            <?php }else if($statut == 3)
+            {?>
+
+
+                <div id="warning-state" class="ps_success-banner">
+                    <div class="ps_warning-icon">
+    <span class="material-symbols-outlined" style="font-size:34px">
+        warning
+    </span>
+                    </div>                    <h3 style="color: #e0a800;">Mot de passe déjà modifié !</h3>
+                    <p>
+                        Votre mot de passe a déjà été modifié lors de votre première connexion.
+
+                        Veuillez vous connecter directement à votre espace personnel avec votre mot de passe actuel.
+
+                        Si vous l'avez oublié, utilisez l'option « Mot de passe oublié ? » pour le réinitialiser.
+
+                    </p>
+                    <a class="ps_warning-btn"  href="/personnel/" style="margin-top:20px;text-decoration:none;width:auto;padding:0 28px"  ><span class="material-symbols-outlined" style="font-size:18px">login</span> Se connecter</a>
+
+                </div>
+
 
 
             <?php }else if($statut == 4) { ?>
 
+                <!-- ALERTE OBLIGATOIRE -->
+                <div class="ps_alert-banner">
+                    <div class="ps_alert-icon">
+                        <span class="material-symbols-outlined" style="font-size:18px">warning</span>
+                    </div>
+                    <div class="ps_alert-txt">
+                        <h4>Action requise avant de continuer</h4>
+                        <p>Votre compte a été créé par l'administration avec un mot de passe provisoire. Vous devez définir un mot de passe personnel pour accéder à votre espace ENT.</p>
+                    </div>
+                </div>
 
                 <form novalidate="novalidate" id="formReset" autocomplete="off">
-                    <input type="hidden" name="option" value="5" />
+                    <input type="hidden" name="option" value="6" />
+                    <input type="hidden" name="code" id="code" value="<?=  $codeCreate_encrypt ?>"/>
                     <input type="hidden" name="matricule" id="matricule" value="<?=  $matricule ?>"/>
-                    <input type="hidden" name="code" id="code" value="<?=  $codeReset_encrypt ?>"/>
 
 
                     <div id="phase3" >
-                        <div class="ps_form-icon"><span class="material-symbols-outlined">key</span></div>
+                        <div class="ps_form-icon">
+                            <span class="material-symbols-outlined" style="font-size:28px">lock_reset</span>
+                        </div>
                         <h1 class="ps_form-title">Nouveau mot de passe</h1>
                         <p class="ps_form-subtitle">Choisissez un nouveau mot de passe sécurisé pour votre compte ENT.</p>
                         <div class="ps_field">
@@ -351,7 +381,7 @@ $statut = 4;
                             <span><span class="material-symbols-outlined">check_circle</span>Différent de votre ancien mot de passe</span>
                         </div>
                         <button class="ps_submit-btn" type="button" id="formReset_submit">
-                            <span class="material-symbols-outlined" style="font-size:18px">check_circle</span>Enregistrer le nouveau mot de passe
+                            <span class="material-symbols-outlined" style="font-size:18px">check_circle</span>Enregistrer et accéder à mon espace
                         </button>
                     </div>
 
@@ -360,9 +390,8 @@ $statut = 4;
 
                 <div id="success-state-reset" class="ps_success-banner" style="display:none">
                     <div class="ps_success-icon"><span class="material-symbols-outlined" style="font-size:34px">lock_open</span></div>
-                    <h3>Mot de passe mis à jour !</h3>
-                    <p>Votre mot de passe a été réinitialisé avec succès. Connectez-vous avec vos nouveaux identifiants.</p>
-                    <a href="/personnel/signin" class="ps_submit-btn" style="margin-top:20px;text-decoration:none;width:auto;padding:0 28px">Se connecter</a>
+                    <h3>Mot de passe défini !</h3>
+                    <p>Votre mot de passe a été enregistré avec succès. Vous allez être redirigé vers votre espace ENT.</p>
                 </div>
 
             <?php }else{ ?>
@@ -385,7 +414,7 @@ $statut = 4;
 
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/js/scripts.bundle.js"></script>
-<script src="/personnel/scripts.bundle.5.js"></script>
+<script src="/personnel/scripts.bundle.14.js"></script>
 <script>
 </script>
 </body>

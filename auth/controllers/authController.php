@@ -1098,7 +1098,7 @@ ORDER BY nomApplication;
             return $stmt->fetchAll(PDO::FETCH_OBJ);
 
         } catch (\Throwable $th) {
-            return $th;
+            return [];
         }
     }
 
@@ -1651,6 +1651,10 @@ WHERE p.matricule = :matricule;";
                 if ($result) {
 
 
+                    $matricule = $result->matricule;
+                    $identifiant = $result->identifiant;
+                    $idEtatCivil = $result->idEtatCivil;
+
                     if ($result->statutActivation == 1) {
 
 
@@ -1663,8 +1667,97 @@ WHERE p.matricule = :matricule;";
                                 if($result->statutCreerPar == 0)
                                 {
 
-                                    echo "mdp/personnel/user-modification-mdp/".$authController->tokenencrypt($result->matricule);
-                                    die;
+
+                                    $dateCreation = new DateTime();
+                                    $dateCreation = $dateCreation->format('Y-m-d H:i:s');
+
+                                    $codeActivation = $authController->genererCode6Chiffres();
+                                    $codeActivation_encrypt = $authController->tokenencrypt($codeActivation);
+
+                                    $dataCandidat = [
+                                        'matricule' => $matricule,
+                                        'statut1' => 0,
+                                        'statut2' => 1
+
+                                    ];
+
+                                    $sql = "UPDATE auth_create_password 
+                                                    SET
+                                                        statut = :statut1
+                                                    WHERE matricule = :matricule AND statut=:statut2";
+
+                                    $stmt = $bdP->prepare($sql);
+                                    $tmpStmt = $stmt->execute($dataCandidat);
+
+                                    if($tmpStmt)
+                                    {
+
+                                        $dateEnregistrement = new DateTime();
+                                        $dateEnregistrement = $dateEnregistrement->format('Y-m-d H:i:s');
+
+                                        $data_reset = [
+                                            'matricule' => $matricule,
+                                            'codeCreate' => $codeActivation_encrypt,
+                                            'statut' => 1,
+                                            'dateEnregistrement' => $dateEnregistrement,
+                                        ];
+                                        $sql_reset = "INSERT INTO auth_create_password(matricule,codeCreate,statut,dateEnregistrement) VALUES (:matricule,:codeCreate,:statut,:dateEnregistrement)";
+                                        $stmt_reset  = $bdP->prepare($sql_reset);
+                                        $tmpStmt_reset  = $stmt_reset ->execute($data_reset);
+
+                                        if ($tmpStmt_reset == 1) {
+
+
+                                            $table = "auth_create_password";
+                                            $motif = "Connexion apres creation du compte par l'admin.";
+                                            $dateEnregistrement = new DateTime();
+                                            $dateEnregistrement = $dateEnregistrement->format('Y-m-d H:i:s');
+                                            $dataHistorique = [
+                                                'identifiant' => $identifiant,
+                                                'matricule' => $matricule,
+                                                'tableHistorique' => $table,
+                                                'motif' => $motif,
+                                                'idEtatCivil' => $idEtatCivil,
+                                                'dateEnregistremenent' => $dateEnregistrement,
+                                            ];
+                                            $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
+                                            $stmtHistorique = $bdP->prepare($sqlHistorique);
+                                            $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
+
+                                            if ($tmpStmtHistorique) {
+
+                                                $bdP->commit();
+                                                echo "mdp/personnel/user-modification-mdp/".$authController->tokenencrypt($result->matricule)."/".$codeActivation_encrypt;
+                                                die;
+
+                                            } else {
+                                                if ($bdP->inTransaction()) {
+                                                    $bdP->rollBack();
+                                                }
+                                                echo "erreur";
+                                                die;
+                                            }
+
+
+                                        } else {
+                                            if ($bdP->inTransaction()) {
+                                                $bdP->rollBack();
+                                            }
+                                            echo "erreur";
+                                            die;
+                                        }
+
+                                    }else
+                                    {
+                                        if ($bdP->inTransaction()) {
+                                            $bdP->rollBack();
+                                        }
+                                        echo "erreur";
+                                        die;
+                                    }
+
+
+
 
 
 
@@ -1719,7 +1812,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['tmpId'] = $tmpId;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur3";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -1731,7 +1824,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['tmpIdBASI'] = $tmpIdBASI;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur2";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -1745,7 +1838,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['tmpListeApplication'] = $listeApplications;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur4";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -1757,7 +1850,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['listeTachesParDefaut'] = $listeTachesParDefaut;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur3";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -1767,7 +1860,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['listeTachesIncarnes'] = $listeTachesIncarnes;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur2";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -1776,7 +1869,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['listeTachesStructures'] = $listeTachesStructures;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur1";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -1889,7 +1982,7 @@ WHERE p.matricule = :matricule;";
 
                                             } else {
                                                 session_destroy();
-                                                echo "erreur4";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -1921,7 +2014,7 @@ WHERE p.matricule = :matricule;";
                                                                 ++$tmp_nombre_bd;
                                                             } else {
                                                                 session_destroy();
-                                                                echo "erreur3";
+                                                                echo "erreur";
                                                                 die;
                                                             }
 
@@ -1938,7 +2031,7 @@ WHERE p.matricule = :matricule;";
                                                                 ++$tmp_nombre_bd;
                                                             } else {
                                                                 session_destroy();
-                                                                echo "erreur2";
+                                                                echo "erreur";
                                                                 die;
                                                             }
                                                         }
@@ -1953,7 +2046,7 @@ WHERE p.matricule = :matricule;";
 //                                                        if(count($listeBaseDoneeUserSimple) != $tmp_nombre_bd)
 //                                                        {
 //                                                            session_destroy();
-//                                                            echo "erreur9";
+//                                                            echo "erreur";
 //                                                            die;
 //                                                        }
                                                 }
@@ -1962,7 +2055,7 @@ WHERE p.matricule = :matricule;";
                                             } else {
 
                                                 session_destroy();
-                                                echo "erreur70";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -1974,7 +2067,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['listeTachesParDefaut'] = $listeTachesParDefaut;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur11";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -1985,7 +2078,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['listeTachesIncarnes'] = $listeTachesIncarnes;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur12";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -1994,7 +2087,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['listeTachesStructures'] = $listeTachesStructures;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur13";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -3631,7 +3724,647 @@ WHERE p.matricule = :matricule;";
                 if ($bdP->inTransaction()) {
     $bdP->rollBack();
 }
-                echo "erreur2".$e;
+                echo "erreur".$e;
+                die;
+            }
+
+
+        } else {
+            echo "champsObligatoire";
+            die;
+        }
+        break;
+
+    case 6 :
+
+        if (!empty($_POST['matricule']) && !empty($_POST['code']) && !empty($_POST['password']) && !empty($_POST['confirm-password'])) {
+
+            try {
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+                $bdP->beginTransaction();
+
+
+                date_default_timezone_set('Africa/Dakar');
+                $date_jour = date('Y-m-d');
+
+                $matricule = valid_donnees($_POST['matricule']);
+                $code = valid_donnees($_POST['code']);
+                $password = valid_donnees($_POST['password']);
+                $confirmPassword = valid_donnees($_POST['confirm-password']);
+
+                if ($password !== $confirmPassword) {
+                    echo "pasCorrespondantPWD";
+                    die;
+
+                }
+
+                $password = password_hash($password, PASSWORD_DEFAULT);
+
+
+                if (strlen($password) < 8) {
+                    echo "passwordCourt";
+                    die;
+                }
+
+                $data = [
+                    'matricule' => $matricule
+                ];
+
+                $sql = "SELECT * FROM utilisateurs WHERE matricule=:matricule";
+                $stmt = $bdP->prepare($sql);
+                $stmt->execute($data);
+                $result = $stmt->fetch(PDO::FETCH_OBJ);
+
+                if ($result) {
+
+
+
+                    $data_reset_code = [
+                        'matricule' => $matricule,
+                        'statut' => 1
+                    ];
+
+                    $sql_reset_code = "SELECT * FROM auth_create_password WHERE matricule=:matricule AND statut=:statut";
+                    $stmt_reset_code = $bdP ->prepare($sql_reset_code);
+                    $stmt_reset_code->execute($data_reset_code);
+                    $result_reset_code = $stmt_reset_code->fetch(PDO::FETCH_OBJ);
+
+
+                    if($result_reset_code)
+                    {
+
+                        if($result_reset_code->codeCreate == $code)
+                        {
+
+                            if ($result->statutActivation == 1) {
+
+                                if ($result->statutUtilisateur == 0) {
+
+                                    if($result->statutCreerPar == 0 && $result->creerPar == "Admin" )
+                                    {
+
+                                        if (password_verify(valid_donnees($password), $result->password) == 1) {
+
+                                            echo "memeMotDePasse";
+                                            die;
+
+                                        }else
+                                        {
+
+                                            $data_perso = [
+                                                'matricule' => $matricule
+                                            ];
+                                            $sql_perso = "SELECT 
+                                    p.identifiant,
+                                    p.idEtatCivil,
+                                    ec.prenom,
+                                    ec.nom,
+                                    cg.email
+                                FROM personnels p
+                                INNER JOIN etatCivil ec 
+                                    ON p.idEtatCivil = ec.id
+                                LEFT JOIN compteGmail cg 
+                                    ON p.idCompteGmail = cg.id
+                                WHERE p.matricule = :matricule;";
+                                            $stmt_perso = $bdP->prepare($sql_perso);
+                                            $stmt_perso->execute($data_perso);
+                                            $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
+
+                                            if ($result_perso) {
+
+
+                                                $identifiant = $result_perso->identifiant;
+                                                $idEtatCivil = $result_perso->idEtatCivil;
+
+
+                                                $data_perso_contrat = [
+                                                    'matricule' => $matricule,
+                                                    'idTypeStatutContrat' => 1,
+
+                                                ];
+                                                $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
+                                                $stmt_perso_contrat = $bdP->prepare($sql_perso_contrat);
+                                                $stmt_perso_contrat->execute($data_perso_contrat);
+                                                $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
+
+                                                if ($result_perso_contrat) {
+
+                                                    $debutContrat = $result_perso_contrat->dateDebutContrat;
+                                                    $finContrat = $result_perso_contrat->dateFinContrat;
+
+                                                    if ($authController->comparerDateContrat($finContrat)) {
+
+
+
+                                                        $data_reset_up =
+                                                            [
+                                                                'matricule' => $matricule,
+                                                                'statut1' => 0,
+                                                                'statut2' => 1
+                                                            ];
+                                                        $sql_reset_up = "UPDATE auth_create_password 
+                                                    SET
+                                                        statut = :statut1
+                                                    WHERE matricule = :matricule AND statut=:statut2";
+
+                                                        $stmt_reset_up = $bdP->prepare($sql_reset_up);
+                                                        $tmpStmt_reset_up = $stmt_reset_up->execute($data_reset_up);
+
+                                                        if($tmpStmt_reset_up)
+                                                        {
+
+                                                            $data_utilisateur= [
+                                                                'matricule' => $matricule,
+                                                                'password' => $password,
+                                                                'statutCreerPar1' => 1,
+                                                                'statutCreerPar2' => 0,
+                                                                'creerPar' => "Admin"
+
+                                                            ];
+
+                                                            $sql_utilisateur = "UPDATE utilisateurs 
+                                                        SET
+                                                            password = :password,
+                                                            statutCreerPar = :statutCreerPar1                             
+                                                        WHERE matricule = :matricule AND statutCreerPar = :statutCreerPar2 AND creerPar = :creerPar";
+
+                                                            $stmt_utilisateur = $bdP->prepare($sql_utilisateur);
+                                                            $tmpStmt_utilisateur = $stmt_utilisateur->execute($data_utilisateur);
+
+                                                            if($tmpStmt_utilisateur)
+                                                            {
+
+                                                                $table = "auth_create_password,utilisateurs";
+                                                                $motif = "Mot de passe modifié après la création du compte par l'administrateur.";
+                                                                $dateEnregistrement = new DateTime();
+                                                                $dateEnregistrement = $dateEnregistrement->format('Y-m-d H:i:s');
+                                                                $dataHistorique = [
+                                                                    'identifiant' => $identifiant,
+                                                                    'matricule' => $matricule,
+                                                                    'tableHistorique' => $table,
+                                                                    'motif' => $motif,
+                                                                    'idEtatCivil' => $idEtatCivil,
+                                                                    'dateEnregistremenent' => $dateEnregistrement,
+                                                                ];
+                                                                $sqlHistorique = "INSERT INTO auth_personnel_historiques(identifiant,matricule,tableHistorique,motif,idEtatCivil,dateEnregistremenent) VALUES (:identifiant,:matricule,:tableHistorique,:motif,:idEtatCivil,:dateEnregistremenent)";
+                                                                $stmtHistorique = $bdP->prepare($sqlHistorique);
+                                                                $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
+
+                                                                if ($tmpStmtHistorique) {
+
+
+
+                                                                    $data_info_user = [
+                                                                        'identifiant' => $identifiant
+                                                                    ];
+
+                                                                    $sql_info_user = "SELECT * FROM etatCivil WHERE identifiant=:identifiant";
+                                                                    $stmt_info_user = $bdP->prepare($sql_info_user);
+                                                                    $stmt_info_user->execute($data_info_user);
+                                                                    $result_info_user = $stmt_info_user->fetch(PDO::FETCH_OBJ);
+
+                                                                    if($result_info_user)
+                                                                    {
+
+
+                                                                        $prenom = ucwords(mb_strtolower($result_info_user->prenom));
+                                                                        $nom= $authController->fctRetirerAccents(mb_strtoupper($result_info_user->nom));
+                                                                        $infoEntite = $authController->infoEntite($identifiant);
+
+
+                                                                        // session id utilisateur personnel
+                                                                        $_SESSION['tmpIdP'] = $result->id;
+                                                                        $_SESSION['tmpPrenom'] = $prenom;
+                                                                        $_SESSION['tmpNom'] =  $nom;
+                                                                        $_SESSION['tmpInitiales'] = $authController->getInitiales($prenom, $nom);
+                                                                        $_SESSION['tmpEntite'] = $infoEntite->entite;
+                                                                        $infoApplication = $authController->infoApplication();
+
+
+
+
+                                                                        if($result->idTypeUtilisateur == 1)
+                                                                        {
+                                                                            //pour tous les utilisateurs admin = 1 et user simple = 2
+                                                                            $_SESSION['connectUser'] = 1;
+                                                                            $_SESSION['tmpNbrAppli'] = $infoApplication->total_applications;
+                                                                            $_SESSION['tmpNbrAppliEnAttente'] = $infoApplication->en_attente;
+                                                                            $_SESSION['tmpNbrAppliAutorisees'] = $infoApplication->total_applications - $infoApplication->en_attente;
+                                                                            $_SESSION['tmpNbrAppliRefusees'] = 0;
+
+                                                                            //base de donnee criat
+                                                                            $resultVerifierUserCRIAT = $authController->verifierUserCRIAT($bd,$email,$matricule,$prenom,$nom);
+
+                                                                            if (is_object($resultVerifierUserCRIAT)) {
+                                                                                $tmpId = $resultVerifierUserCRIAT->id;
+                                                                                $_SESSION['tmpId'] = $tmpId;
+                                                                            } else {
+                                                                                session_destroy();
+                                                                                echo "erreur";
+                                                                                die;
+                                                                            }
+
+                                                                            //base de donnee BASI
+                                                                            $resultVerifierUserBASI = $authController->verifierUserBASI($bdBASI,$email,$matricule,$prenom,$nom);
+
+                                                                            if (is_object($resultVerifierUserBASI)) {
+                                                                                $tmpIdBASI = $result->id;
+                                                                                $_SESSION['tmpIdBASI'] = $tmpIdBASI;
+                                                                            } else {
+                                                                                session_destroy();
+                                                                                echo "erreur";
+                                                                                die;
+                                                                            }
+
+
+                                                                            // Liste des applications
+                                                                            $listeApplications = $authController->listeApplications();
+
+
+
+                                                                            if (!empty($listeApplications) && is_array($listeApplications)) {
+                                                                                $_SESSION['tmpListeApplication'] = $listeApplications;
+                                                                            } else {
+                                                                                session_destroy();
+                                                                                echo "erreur";
+                                                                                die;
+                                                                            }
+
+
+                                                                            // liste des taches
+                                                                            $listeTachesParDefaut = $authController->listeTachesParDefaut();
+
+                                                                            if (is_array($listeTachesParDefaut)) {
+                                                                                $_SESSION['listeTachesParDefaut'] = $listeTachesParDefaut;
+                                                                            } else {
+                                                                                session_destroy();
+                                                                                echo "erreur";
+                                                                                die;
+                                                                            }
+
+
+                                                                            $listeTachesIncarnes = $authController->listeTachesIncarnesAdmin();
+                                                                            if (is_array($listeTachesIncarnes)) {
+                                                                                $_SESSION['listeTachesIncarnes'] = $listeTachesIncarnes;
+                                                                            } else {
+                                                                                session_destroy();
+                                                                                echo "erreur";
+                                                                                die;
+                                                                            }
+
+                                                                            $listeTachesStructures = $authController->listeTachesStructuresAdmin();
+                                                                            if (is_array($listeTachesStructures)) {
+                                                                                $_SESSION['listeTachesStructures'] = $listeTachesStructures;
+                                                                            } else {
+                                                                                session_destroy();
+                                                                                echo "erreur";
+                                                                                die;
+                                                                            }
+
+
+
+                                                                            $bdP->commit();
+                                                                            echo "succès/personnel/admin-accueil";
+                                                                            die;
+
+                                                                        }else
+                                                                        {
+
+
+
+                                                                            //pour tous les utilisateurs admin = 1 et user simple = 2
+                                                                            $_SESSION['connectUser'] = 2;
+
+                                                                            $infoPosteResponsable = $authController->infoPosteResponsable($identifiant);
+
+                                                                            $idFonction = null;
+                                                                            $statutPoste = null;
+                                                                            $nbrAppliGestTache = 0;
+                                                                            if (!empty($infoPosteResponsable) && is_array($infoPosteResponsable)) {
+
+                                                                                $idFonction = $infoPosteResponsable->id;
+                                                                                if($infoPosteResponsable->idStatutFonction == 1 && $infoPosteResponsable->statutGradePoste == 1)
+                                                                                {
+                                                                                    $statutPoste = 1;
+                                                                                    $nbrAppliGestTache = 1;
+
+
+                                                                                }else
+                                                                                {
+                                                                                    $statutPoste = 0;
+
+                                                                                }
+                                                                            }
+//                                        $listeApplicationUserSimple = $authController->listeApplicationUserSimple(
+//                                            $matricule,
+//                                            $idFonction
+//                                        );
+
+                                                                            $_SESSION['statutPoste'] = $statutPoste;
+
+//
+//                                        if (!empty($listeApplicationUserSimple) && is_array($listeApplicationUserSimple)) {
+//
+////                                            $_SESSION['tmpListeApplication'] = $listeApplicationUserSimple;
+//
+//                                            $tmpNbrAppli = $infoApplication->total_applications + $nbrAppliGestTache;
+//                                            $_SESSION['tmpNbrAppli'] = $tmpNbrAppli;
+//
+//                                            $tmpNbrAppliEnAttente =  $infoApplication->en_attente;
+//                                            $_SESSION['tmpNbrAppliEnAttente'] = $tmpNbrAppliEnAttente;
+//
+//                                            $tmpNbrAppliAutorisees = count($listeApplicationUserSimple) + $nbrAppliGestTache;
+//                                            $_SESSION['tmpNbrAppliAutorisees'] = $tmpNbrAppliAutorisees;
+//
+//                                            $tmpNbrAppliRefusees = $tmpNbrAppli - $tmpNbrAppliEnAttente - $tmpNbrAppliAutorisees;
+//                                            $_SESSION['tmpNbrAppliRefusees'] = max(
+//                                                0,$tmpNbrAppliRefusees
+//                                            );
+//
+//                                        } else {
+//
+//                                            session_destroy();
+//                                            echo "erreur";
+//                                            die;
+//                                        }
+
+
+                                                                            // Liste des applications avec règles de statut appliquées
+
+
+
+                                                                            $tmpNbrAppliEnAttente = 0;
+                                                                            $tmpNbrAppliAutorisees = 0;
+                                                                            $tmpNbrAppliRefusees = 0;
+
+                                                                            $listeApplicationsMerged = $authController->listeApplicationsMerged($matricule, $idFonction);
+
+                                                                            if (!empty($listeApplicationsMerged) && is_array($listeApplicationsMerged)) {
+                                                                                $_SESSION['tmpListeApplication'] = $listeApplicationsMerged;
+
+                                                                                $tmpNbrAppli = count($listeApplicationsMerged) + $nbrAppliGestTache;
+                                                                                $_SESSION['tmpNbrAppli'] = $tmpNbrAppli;
+
+                                                                                foreach ($listeApplicationsMerged as $listeApplicationMerged) {
+
+                                                                                    if($listeApplicationMerged->statutApplication == 0)
+                                                                                    {
+                                                                                        ++$tmpNbrAppliEnAttente;
+
+                                                                                    }else if($listeApplicationMerged->statutApplication == 1)
+                                                                                    {
+                                                                                        ++$tmpNbrAppliAutorisees;
+
+                                                                                    }else if($listeApplicationMerged->statutApplication == 2)
+                                                                                    {
+                                                                                        ++$tmpNbrAppliRefusees;
+                                                                                    }
+
+                                                                                }
+
+                                                                                $_SESSION['tmpNbrAppliEnAttente'] = max(0,$tmpNbrAppliEnAttente);
+                                                                                $_SESSION['tmpNbrAppliAutorisees'] = max(0,$tmpNbrAppliAutorisees);
+                                                                                $_SESSION['tmpNbrAppliRefusees'] = max(
+                                                                                    0,$tmpNbrAppliRefusees
+                                                                                );
+
+
+                                                                            } else {
+                                                                                session_destroy();
+                                                                                echo "erreur";
+                                                                                die;
+                                                                            }
+
+
+
+                                                                            // creer utilisateurs
+
+                                                                            $listeBaseDoneeUserSimple = $authController->listeBaseDoneeUserSimple(
+                                                                                $matricule,
+                                                                                $idFonction
+                                                                            );
+
+
+
+
+                                                                            $tmp_nombre_bd = 0;
+                                                                            if (is_array($listeBaseDoneeUserSimple)) {
+
+                                                                                if(!empty($listeBaseDoneeUserSimple))
+                                                                                {
+                                                                                    foreach ($listeBaseDoneeUserSimple as $base) {
+                                                                                        if($base->code_base_donnees == "criat_uahb"){
+                                                                                            //base de donnee criat
+                                                                                            $resultVerifierUserCRIAT = $authController->verifierUserCRIAT($bd,$email,$matricule,$prenom,$nom);
+
+                                                                                            if (is_object($resultVerifierUserCRIAT)) {
+                                                                                                $tmpId = $resultVerifierUserCRIAT->id;
+                                                                                                $_SESSION['tmpId'] = $tmpId;
+                                                                                                ++$tmp_nombre_bd;
+                                                                                            } else {
+                                                                                                session_destroy();
+                                                                                                echo "erreur";
+                                                                                                die;
+                                                                                            }
+
+                                                                                        }
+
+                                                                                        if($base->code_base_donnees == "basi") {
+
+                                                                                            //base de donnee BASI
+                                                                                            $resultVerifierUserBASI = $authController->verifierUserBASI($bdBASI,$email,$matricule,$prenom,$nom);
+
+                                                                                            if (is_object($resultVerifierUserBASI)) {
+                                                                                                $tmpIdBASI = $result->id;
+                                                                                                $_SESSION['tmpIdBASI'] = $tmpIdBASI;
+                                                                                                ++$tmp_nombre_bd;
+                                                                                            } else {
+                                                                                                session_destroy();
+                                                                                                echo "erreur";
+                                                                                                die;
+                                                                                            }
+                                                                                        }
+
+
+
+                                                                                    }
+
+
+
+                                                                                    // importnat quand tout sera ok
+//                                                        if(count($listeBaseDoneeUserSimple) != $tmp_nombre_bd)
+//                                                        {
+//                                                            session_destroy();
+//                                                            echo "erreur";
+//                                                            die;
+//                                                        }
+                                                                                }
+
+
+                                                                            } else {
+
+                                                                                session_destroy();
+                                                                                echo "erreur";
+                                                                                die;
+                                                                            }
+
+
+
+                                                                            // liste des taches
+                                                                            $listeTachesParDefaut = $authController->listeTachesParDefaut();
+                                                                            if (is_array($listeTachesParDefaut)) {
+                                                                                $_SESSION['listeTachesParDefaut'] = $listeTachesParDefaut;
+                                                                            } else {
+                                                                                session_destroy();
+                                                                                echo "erreur";
+                                                                                die;
+                                                                            }
+
+
+                                                                            $listeTachesIncarnes = $authController->listeTachesIncarnes($idFonction);
+
+                                                                            if (is_array($listeTachesIncarnes)) {
+                                                                                $_SESSION['listeTachesIncarnes'] = $listeTachesIncarnes;
+                                                                            } else {
+                                                                                session_destroy();
+                                                                                echo "erreur";
+                                                                                die;
+                                                                            }
+
+                                                                            $listeTachesStructures = $authController->listeTachesStructures($idFonction);
+                                                                            if (is_array($listeTachesStructures)) {
+                                                                                $_SESSION['listeTachesStructures'] = $listeTachesStructures;
+                                                                            } else {
+                                                                                session_destroy();
+                                                                                echo "erreur";
+                                                                                die;
+                                                                            }
+
+
+
+                                                                            $bdP->commit();
+
+                                                                            echo "succès/personnel/user-accueil";
+                                                                            die;
+                                                                        }
+
+                                                                    }else
+                                                                    {
+                                                                        echo "erreur";
+                                                                        die;
+                                                                    }
+
+
+                                                                }else
+                                                                {
+                                                                    if ($bdP->inTransaction()) {
+                                                                        $bdP->rollBack();
+                                                                    }
+                                                                    echo "erreur";
+                                                                    die;
+                                                                }
+
+                                                            }else
+                                                            {
+                                                                if ($bdP->inTransaction()) {
+                                                                    $bdP->rollBack();
+                                                                }
+                                                                echo "erreur";
+                                                                die;
+                                                            }
+
+
+                                                        }else
+                                                        {
+                                                            if ($bdP->inTransaction()) {
+                                                                $bdP->rollBack();
+                                                            }
+                                                            echo "erreur";
+                                                            die;
+                                                        }
+
+
+                                                    } else {
+
+                                                        echo "finContrat";
+                                                        die;
+
+                                                    }
+
+
+                                                } else {
+                                                    echo "pasContrat";
+                                                    die;
+                                                }
+
+
+                                            } else {
+                                                echo "erreur";
+                                                die;
+
+                                            }
+
+                                        }
+
+
+
+
+                                    }else
+                                    {
+                                        echo "erreur";
+                                        die;
+
+                                    }
+
+
+                                }else
+                                {
+                                    echo "bloquer";
+                                    die;
+                                }
+
+
+                            } else {
+                                if ($bdP->inTransaction()) {
+                                    $bdP->rollBack();
+                                }
+                                echo "compteInactive";
+                                die;
+                            }
+
+
+                        }else
+                        {
+                            echo "erreur";
+                            die;
+                        }
+
+
+                    }else
+                    {
+                        if ($bdP->inTransaction()) {
+                            $bdP->rollBack();
+                        }
+                        echo "erreur";
+                        die;
+                    }
+
+
+
+                } else {
+                    if ($bdP->inTransaction()) {
+                        $bdP->rollBack();
+                    }
+                    echo "pasCompte";
+                    die;
+
+                }
+
+            } catch (Exception $e) {
+                if ($bdP->inTransaction()) {
+                    $bdP->rollBack();
+                }
+                echo "erreur";
                 die;
             }
 
@@ -3644,7 +4377,7 @@ WHERE p.matricule = :matricule;";
 
 
     default :
-        echo "erreur1";
+        echo "erreur";
         die;
 
 

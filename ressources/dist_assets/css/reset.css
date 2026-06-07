@@ -228,3 +228,25 @@ body{font-family:'Plus Jakarta Sans',sans-serif;min-height:100vh;color:var(--dar
     .ps_main-wrap{height:auto !important;min-height:100vh !important;overflow-y:visible !important;padding:22px 16px !important;align-items:flex-start !important}
     .ps_auth-card{padding:26px 22px !important;border-radius:24px !important;margin:0 !important}
 }
+
+/* ─── ALERTE OBLIGATOIRE ─── */
+.ps_alert-banner{
+    display:flex;align-items:flex-start;gap:12px;
+    padding:14px 16px;
+    border-radius:16px;
+    background:linear-gradient(135deg,rgba(240,204,106,.15),rgba(134,76,32,.08));
+    border:1.5px solid rgba(240,204,106,.35);
+    margin-bottom:24px;
+}
+.ps_alert-icon{
+    width:36px;height:36px;border-radius:11px;
+    background:rgba(240,204,106,.2);
+    display:grid;place-items:center;
+    color:var(--brown);flex-shrink:0;
+}
+.ps_alert-txt h4{
+    font-size:13px;font-weight:800;color:var(--brown);margin-bottom:3px;
+}
+.ps_alert-txt p{
+    font-size:12px;font-weight:600;color:#6b3c10;line-height:1.5;
+}

@@ -1,9 +1,56 @@
+<?php
+
+session_start();
+
+
+$tmpIdP = null;
+$connectUser = null;
+$tmp_accueil = 0;
+
+
+
+
+if (
+        !isset($_SESSION['tmpIdP']) ||
+        !isset($_SESSION['connectUser'])  ) {
+
+    session_unset();
+    session_destroy();
+    $tmp_accueil = 0;
+
+}else
+{
+
+
+    $connectUser = $_SESSION['connectUser'] ?? null;
+
+    if($connectUser == 1)
+    {
+        $tmp_accueil = 1;
+
+
+    }else if($connectUser == 2)
+    {
+
+        $tmp_accueil = 2;
+
+    }
+
+    $tmpIdP = $_SESSION['tmpIdP'] ?? null;
+
+
+}
+
+?>
+
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
-    <meta charset="UTF-8"/>
-    <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-    <title>GSJLF — Environnement Numérique de Travail</title>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>ENT — GSJLF</title>
+    <link rel="shortcut icon" href="/personnel/ressources/dist_assets/media/logos/logo_gsjlf.png" />
     <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" rel="stylesheet"/>
     <link rel="stylesheet" type="text/css" href="/personnel/ressources/dist_assets/css/index.css">
@@ -25,11 +72,36 @@
         <a href="#chiffres"      class="nav-link">En chiffres</a>
     </div>
     <div class="nav-actions">
-        <a href="/personnel/signin"  class="nav-btn-ghost">Se connecter</a>
-        <a href="/personnel/signup"  class="nav-btn-solid">
-            <span class="material-symbols-outlined" style="font-size:15px">person_add</span>
-            Créer un compte
-        </a>
+        <?php
+
+        if($tmp_accueil == 1)
+        {
+            ?>
+            <a href="/personnel/admin-accueil"  class="nav-btn-solid">
+                <span class="material-symbols-outlined" style="font-size:20px">login</span>
+                Accéder à mon espace
+            </a>
+
+
+       <?php }else if($tmp_accueil == 2)
+        { ?>
+
+            <a href="/personnel/user-accueil"  class="nav-btn-solid"><span class="material-symbols-outlined" style="font-size:20px">login</span>
+                Accéder à mon espace
+            </a>
+
+            <?php }else
+        { ?>
+            <a href="/personnel/signin"  class="nav-btn-ghost">Se connecter</a>
+            <a href="/personnel/signup"  class="nav-btn-solid">
+                <span class="material-symbols-outlined" style="font-size:15px">person_add</span>
+                Créer un compte
+            </a>
+
+
+       <?php }
+        ?>
+
     </div>
 </nav>
 
@@ -62,14 +134,42 @@
         </p>
 
         <div class="hero-actions">
-            <a href="/personnel/signin" class="btn-hero-primary">
-                <span class="material-symbols-outlined" style="font-size:20px">login</span>
-                Accéder à mon espace
-            </a>
-            <a href="/personnel/signup" class="btn-hero-ghost">
-                <span class="material-symbols-outlined" style="font-size:20px">arrow_forward</span>
-                Créer un compte
-            </a>
+
+            <?php
+
+            if($tmp_accueil == 1)
+            {
+                ?>
+
+                <a href="/personnel/admin-accueil" class="btn-hero-primary">
+                    <span class="material-symbols-outlined" style="font-size:20px">login</span>
+                    Accéder à mon espace
+                </a>
+
+            <?php }else if($tmp_accueil == 2)
+            { ?>
+
+                <a href="/personnel/user-accueil" class="btn-hero-primary">
+                    <span class="material-symbols-outlined" style="font-size:20px">login</span>
+                    Accéder à mon espace
+                </a>
+
+
+            <?php }else
+            { ?>
+                <a href="/personnel/signin" class="btn-hero-primary">
+                    <span class="material-symbols-outlined" style="font-size:20px">login</span>
+                    Accéder à mon espace
+                </a>
+                <a href="/personnel/signup" class="btn-hero-ghost">
+                    <span class="material-symbols-outlined" style="font-size:20px">arrow_forward</span>
+                    Créer un compte
+                </a>
+
+
+            <?php }
+            ?>
+
         </div>
 
         <div class="hero-stats">
@@ -275,14 +375,43 @@
                 <h2 class="cta-title">Prêt à accéder à<br>votre <span>espace</span> ?</h2>
                 <p class="cta-desc">Créez votre compte ou connectez-vous pour rejoindre la communauté numérique du Groupe Scolaire Jean de la Fontaine.</p>
                 <div class="cta-btns">
-                    <a href="/personnel/signup" class="cta-btn-primary">
-                        <span class="material-symbols-outlined" style="font-size:17px">person_add</span>
-                        Créer un compte
-                    </a>
-                    <a href="/personnel/signin" class="cta-btn-ghost">
-                        <span class="material-symbols-outlined" style="font-size:17px">login</span>
-                        Se connecter
-                    </a>
+
+                    <?php
+
+                    if($tmp_accueil == 1)
+                    {
+                        ?>
+
+
+
+                        <a href="/personnel/admin-accueil" class="cta-btn-primary">
+                            <span class="material-symbols-outlined" style="font-size:20px">login</span>
+                            Accéder à mon espace
+                        </a>
+                    <?php }else if($tmp_accueil == 2)
+                    { ?>
+
+                        <a href="/personnel/user-accueil" class="cta-btn-primary">
+                            <span class="material-symbols-outlined" style="font-size:20px">login</span>
+                            Accéder à mon espace
+                        </a>
+
+
+                    <?php }else
+                    { ?>
+                        <a href="/personnel/signup" class="cta-btn-primary">
+                            <span class="material-symbols-outlined" style="font-size:17px">person_add</span>
+                            Créer un compte
+                        </a>
+                        <a href="/personnel/signin" class="cta-btn-ghost">
+                            <span class="material-symbols-outlined" style="font-size:17px">login</span>
+                            Se connecter
+                        </a>
+
+
+                    <?php }
+                    ?>
+
                 </div>
             </div>
 

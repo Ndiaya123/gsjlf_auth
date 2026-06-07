@@ -94,8 +94,8 @@ RewriteRule ^scripts.bundle.4.js$ auth/js/reset.js [L]
 RewriteRule ^change-password/(.*)/(.*)$ auth/resetPassword.php?mat=$1&code=$2 [L]
 RewriteRule ^scripts.bundle.5.js$ auth/js/resetPassword.js [L]
 
-RewriteRule ^user-modification-mdp/(.*)$ auth/userModificationLMDP.php?mat=$1 [L]
-RewriteRule ^scripts.bundle.14.js$ auth/js/userModificationLMDP.js [L]
+RewriteRule ^user-modification-mdp/(.*)/(.*)$ auth/userCreerMDP.php?mat=$1&code=$2 [L]
+RewriteRule ^scripts.bundle.14.js$ auth/js/userCreerMDP.js [L]
 
 
 #admin
