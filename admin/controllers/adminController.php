@@ -360,6 +360,58 @@ WHERE p.matricule = :matricule;";
 
     }
 
+
+    /**
+     * Détermine la page d'accueil/dashboard à afficher en haut du menu
+     * Priorité : Incarnés → Structures → Par défaut → $page_par_defaut
+     */
+    function getPageAccueil(
+        $listeTachesIncarnes,
+        $listeTachesStructures,
+        $listeTachesParDefaut,
+        string $page_par_defaut
+    ): string {
+
+        $incarnes  = $listeTachesIncarnes  ?? [];
+        $structures = $listeTachesStructures ?? [];
+        $parDefaut  = $listeTachesParDefaut  ?? [];
+
+        // ── 1. Chercher dans Incarnés ──────────────────────────────────────────
+        foreach ($incarnes as $tache) {
+            if (
+                stripos($tache->nom, 'Accueil') === 0 ||
+                stripos($tache->nom, 'Dashboard') === 0
+            ) {
+                return $tache->url;
+            }
+        }
+
+        // ── 2. Chercher dans Structures ────────────────────────────────────────
+        foreach ($structures as $tache) {
+            if (
+                stripos($tache->nom, 'Accueil') === 0 ||
+                stripos($tache->nom, 'Dashboard') === 0
+            ) {
+                return $tache->url;
+            }
+        }
+
+        // ── 3. Chercher dans Par défaut ────────────────────────────────────────
+        foreach ($parDefaut as $tache) {
+            if (
+                stripos($tache->nom, 'Accueil') === 0 ||
+                stripos($tache->nom, 'Dashboard') === 0
+            ) {
+                return $tache->url;
+            }
+        }
+
+        // ── 4. Fallback → page par défaut globale ──────────────────────────────
+        return $page_par_defaut;
+
+    }
+
+
 }
 
 
@@ -568,7 +620,6 @@ FROM utilisateurs";
             foreach ($result as $user) {
 
 
-
                 if ($user->statutActivation == 0) {
 
                     ++$inactifs;
@@ -584,7 +635,6 @@ FROM utilisateurs";
                 }
 
 
-
             }
 
             echo json_encode([
@@ -595,11 +645,9 @@ FROM utilisateurs";
             ]);
 
 
-
         } catch (Exception $e) {
 
-            echo $e;
-            die;
+
             echo json_encode(['total' => 0, 'actifs' => 0, 'inactifs' => 0,'bloques' => 0]);
             die;
 
@@ -4198,6 +4246,168 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 
         break;
 
+    case 31 :
+        if(!empty($_POST['tmp']))
+        {
+
+
+            try {
+                $idAppli = valid_donnees($_POST['tmp']);
+
+                $idAppli = (int) $idAppli;
+
+
+                $tmpIdP = null;
+                $tmpMatricule = null;
+                $tmpPrenom = null;
+                $tmpNom = null;
+                $tmpPhoto = null;
+                $tmpEmail = null;
+                $tmpInitiales = null;
+                $tmpNbrAppli = null;
+                $tmpNbrAppliEnAttente = null;
+                $tmpNbrAppliAutorisees = null;
+                $tmpNbrAppliRefusees = null;
+                $connectUser = null;
+                $tmpId = null;
+                $tmpIdBASI = null;
+                $tmpListeApplication = null;
+                $tmpEntite = null;
+
+                $listeTachesStructures = null;
+                $listeTachesIncarnes = null;
+                $listeTachesParDefaut = null;
+                $statutPoste = null;
+
+                $lien_logo1 = null;
+                $lien_logo2 = null;
+
+
+                if (
+                    !isset($_SESSION['tmpIdP']) ||
+                    !isset($_SESSION['tmpMatricule']) ||
+                    !isset($_SESSION['tmpPrenom']) ||
+                    !isset($_SESSION['tmpNom']) ||
+                    !isset($_SESSION['tmpPhoto']) ||
+                    !isset($_SESSION['tmpEmail']) ||
+                    !isset($_SESSION['tmpInitiales']) ||
+                    !isset($_SESSION['tmpNbrAppli']) ||
+                    !isset($_SESSION['tmpNbrAppliEnAttente']) ||
+                    !isset($_SESSION['tmpNbrAppliAutorisees']) ||
+                    !isset($_SESSION['tmpNbrAppliRefusees']) ||
+                    !isset($_SESSION['connectUser']) ||
+                    !isset($_SESSION['tmpListeApplication']) ||
+                    !isset($_SESSION['tmpEntite']) ||
+                    !isset($_SESSION['listeTachesStructures']) ||
+                    !isset($_SESSION['listeTachesIncarnes']) ||
+                    !isset($_SESSION['listeTachesParDefaut']) ) {
+
+                    session_unset();
+                    session_destroy();
+
+                    echo "sesionExpired";
+                    die;
+//
+
+//    header("Location: /personnel/signin");
+//    exit();
+                }else
+                {
+
+
+                    $connectUser = $_SESSION['connectUser'] ?? null;
+
+                    if($connectUser == 1)
+                    {
+
+                        $lien_logo1 = "/personnel/admin-accueil";
+                        $lien_logo2 = "/personnel/admin-accueil";
+
+//                header("Location: /personnel/admin-accueil");
+//                exit();
+
+
+
+
+
+                    }else if($connectUser == 2)
+                    {
+
+                        $lien_logo1 = "/personnel/user-accueil";
+                        $lien_logo2 = "/personnel/user-accueil";
+
+//                header("Location: /personnel/user-accueil");
+//                exit();
+
+                    }
+
+                    $tmpIdP = $_SESSION['tmpIdP'] ?? null;
+                    $tmpMatricule = $_SESSION['tmpMatricule'] ?? null;
+                    $tmpPrenom = $_SESSION['tmpPrenom'] ?? null;
+                    $tmpNom = $_SESSION['tmpNom'] ?? null;
+                    $tmpPhoto = $_SESSION['tmpPhoto'] ?? null;
+                    $tmpEmail = $_SESSION['tmpPhoto'] ?? null;
+                    $tmpInitiales = $_SESSION['tmpInitiales'] ?? null;
+                    $tmpNbrAppli = $_SESSION['tmpNbrAppli'] ?? null;
+                    $tmpNbrAppliEnAttente = $_SESSION['tmpNbrAppliEnAttente'] ?? null;
+                    $tmpNbrAppliAutorisees = $_SESSION['tmpNbrAppliAutorisees'] ?? null;
+                    $tmpNbrAppliRefusees = $_SESSION['tmpNbrAppliRefusees'] ?? null;
+                    $tmpId = $_SESSION['tmpId'] ?? null;
+                    $tmpIdBASI = $_SESSION['tmpIdBASI'] ?? null;
+                    $tmpListeApplication = $_SESSION['tmpListeApplication'] ?? null;
+                    $tmpEntite = $_SESSION['tmpEntite'];
+
+
+                    $listeTachesStructures = $_SESSION['listeTachesStructures'];
+                    $listeTachesIncarnes = $_SESSION['listeTachesIncarnes'];
+                    $listeTachesParDefaut = $_SESSION['listeTachesParDefaut'];
+                    $statutPoste = $_SESSION['statutPoste'] ?? null;
+
+
+                }
+
+
+
+
+
+                $page_par_defaut = null;
+
+
+                foreach ($tmpListeApplication as $appli) {
+                    if ($appli->numero === $idAppli) {
+                        $page_par_defaut = $appli->page_defaut;
+                    }
+                }
+
+
+
+
+                // ── Après ──────────────────────────────────────
+                $page_accueil = $adminController->getPageAccueil(
+                    $listeTachesIncarnes,
+                    $listeTachesStructures,
+                    $listeTachesParDefaut,
+                    $page_par_defaut ?? 'http://localhost/personnel/signin'   // fallback ultime
+                );
+
+                echo "ac".$page_accueil;
+                die;
+
+
+
+            } catch (\Throwable $th) {
+                error_log($th->getMessage());
+                echo "erreur";
+                die;
+            }
+
+            break;
+
+        }else
+        {
+            echo "erreur";
+            die;
+        }
 
     default :
         echo "erreur";

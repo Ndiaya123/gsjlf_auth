@@ -397,6 +397,55 @@ class userSimpleController extends BDP
 
 
 
+    /**
+     * Détermine la page d'accueil/dashboard à afficher en haut du menu
+     * Priorité : Incarnés → Structures → Par défaut → $page_par_defaut
+     */
+    function getPageAccueil(
+        $listeTachesIncarnes,
+        $listeTachesStructures,
+        $listeTachesParDefaut,
+        string $page_par_defaut
+    ): string {
+
+        $incarnes  = $listeTachesIncarnes  ?? [];
+        $structures = $listeTachesStructures ?? [];
+        $parDefaut  = $listeTachesParDefaut  ?? [];
+
+        // ── 1. Chercher dans Incarnés ──────────────────────────────────────────
+        foreach ($incarnes as $tache) {
+            if (
+                stripos($tache->nom, 'Accueil') === 0 ||
+                stripos($tache->nom, 'Dashboard') === 0
+            ) {
+                return $tache->url;
+            }
+        }
+
+        // ── 2. Chercher dans Structures ────────────────────────────────────────
+        foreach ($structures as $tache) {
+            if (
+                stripos($tache->nom, 'Accueil') === 0 ||
+                stripos($tache->nom, 'Dashboard') === 0
+            ) {
+                return $tache->url;
+            }
+        }
+
+        // ── 3. Chercher dans Par défaut ────────────────────────────────────────
+        foreach ($parDefaut as $tache) {
+            if (
+                stripos($tache->nom, 'Accueil') === 0 ||
+                stripos($tache->nom, 'Dashboard') === 0
+            ) {
+                return $tache->url;
+            }
+        }
+
+        // ── 4. Fallback → page par défaut globale ──────────────────────────────
+        return $page_par_defaut;
+    }
+
 
 }
 
@@ -421,536 +470,170 @@ $BASE_URL = "http://localhost/personnel/";
 switch ($option) {
     case 1:
 
-        date_default_timezone_set('Africa/Dakar');
-        $dateNow = new DateTime();
-        $dateNow = $dateNow->format('Y-m-d');
 
-        if (!empty($_POST['matricule'])) {
+
+
+
+        if(!empty($_POST['tmp']))
+        {
+
 
             try {
-
-                if (count($userSimpleController->verificationMatricule(valid_donnees($_POST['matricule']))) == 1) {
-
-                    $identifiant = $userSimpleController->verificationMatricule(valid_donnees($_POST['matricule']))['0']->identifiant;
-
-                    if (count($userSimpleController->verificationInfosPersonnel(valid_donnees($_POST['matricule']))) == 1) {
-
-                        $infosPersonnel = $userSimpleController->verificationInfosPersonnel(valid_donnees($_POST['matricule']));
-                        if (count($userSimpleController->returnContratEnCours($identifiant)) == 1) {
-
-                            $returnContratEnCours = $userSimpleController->returnContratEnCours($identifiant);
-
-                            if ($returnContratEnCours['0']->idTypeStatutContrat == 1) {
-                                if ($returnContratEnCours['0']->dateFinContrat > $dateNow) {
-
-                                    if (count($userSimpleController->infoCompteGmail($identifiant)) == 1) {
-
-
-
-                                        $infosPosteAResponsabilite = NULL;
-
-
-                                        if (count($userSimpleController->infoCompteGmail($identifiant)) == 1) {
-
-
-
-                                            if (count($userSimpleController->infoAffectations($identifiant)) == 1) {
-
-                                                $infoAffectations = $userSimpleController->infoAffectations($identifiant);
-
-                                                if ($infoAffectations['0']->idUniteAdministrativeNiv1 != NULL) {
-
-                                                    echo "erreur";
-                                                    die;
-
-                                                } else if ($infoAffectations['0']->idUniteAdministrativeNiv2 != NULL) {
-
-
-                                                    $data =
-                                                        [
-                                                            'id' => $infoAffectations['0']->idUniteAdministrativeNiv2
-
-                                                        ];
-                                                    $stmt = $bdP->prepare("SELECT unite_administrative_niv2.idUniteAdministrativeNiv1  FROM unite_administrative_niv2 WHERE unite_administrative_niv2.id=:id");
-                                                    $stmt->execute($data);
-                                                    $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
-
-
-                                                    if (count($listes) == 1) {
-
-
-                                                        $data =
-                                                            [
-                                                                'id' => $listes['0']->idUniteAdministrativeNiv1
-
-                                                            ];
-                                                        $stmt = $bdP->prepare("SELECT unite_administrative_niv2.id FROM unite_administrative_niv2 WHERE unite_administrative_niv2.idUniteAdministrativeNiv1=:id");
-                                                        $stmt->execute($data);
-                                                        $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
-
-
-
-                                                        $infosApi[] = array();
-                                                        foreach ($listes as $tmp) {
-                                                            // actuel
-
-                                                            $infoPersonnelsNiveau2 = $userSimpleController->infoPersonnelsNiveau2($tmp->id);
-
-                                                            foreach ($infoPersonnelsNiveau2 as $tmp2) {
-
-                                                                $email = NULL;
-                                                                if (count($userSimpleController->infoCompteGmail($tmp2->identifiant)) == 1) {
-                                                                    $email = $userSimpleController->infoCompteGmail($tmp2->identifiant)['0']->email;
-                                                                }
-
-                                                                $grade = NULL;
-                                                                $statutPoste = NULL;
-                                                                if (count($userSimpleController->infoPosteAReponsabilite($tmp2->identifiant)) == 1) {
-                                                                    $infosPosteAResponsabilite = "OUI";
-                                                                    $grade = $userSimpleController->infoPosteAReponsabilite($tmp2->identifiant)['0']->statutGradePoste;
-                                                                    $statutPoste = $userSimpleController->infoPosteAReponsabilite($tmp2->identifiant)['0']->idStatutFonction;
-                                                                } else {
-                                                                    $infosPosteAResponsabilite = "NON";
-                                                                    $statutPoste = 3;
-                                                                    $grade = NULL;
-                                                                }
-
-                                                                $sans = NULL;
-                                                                //
-                                                                if ($tmp2->idUniteAdministrativeNiv1 != NULL || $tmp2->idUniteAdministrativeNiv1 != "") {
-
-
-                                                                    $infoUniteAdministrativeNiv1 = $userSimpleController->infoUniteAdministrativeNiv1($tmp2->idUniteAdministrativeNiv1);
-
-                                                                    if ($infoUniteAdministrativeNiv1 != "erreur") {
-                                                                        $sans = $infoUniteAdministrativeNiv1;
-
-                                                                    } else {
-                                                                        $infosApi[] = array(
-                                                                            'statut' => "Error",
-                                                                            'Message' => "Une erreur est survenue. Veuillez vous rapprocher de la CRIAT.",
-                                                                            'option' => valid_donnees($_POST['option'])
-
-                                                                        );
-                                                                        echo json_encode($infosApi);
-                                                                        die;
-                                                                    }
-
-
-                                                                } else if ($tmp2->idUniteAdministrativeNiv2 != NULL || $tmp2->idUniteAdministrativeNiv2 != "") {
-                                                                    $infoUniteAdministrativeNiv2 = $userSimpleController->infoUniteAdministrativeNiv2($tmp2->idUniteAdministrativeNiv2);
-
-                                                                    if ($infoUniteAdministrativeNiv2 != "erreur") {
-                                                                        $sans = $infoUniteAdministrativeNiv2;
-
-                                                                    } else {
-                                                                        $infosApi[] = array(
-                                                                            'statut' => "Error",
-                                                                            'Message' => "Une erreur est survenue. Veuillez vous rapprocher de la CRIAT.",
-                                                                            'option' => valid_donnees($_POST['option'])
-
-                                                                        );
-                                                                        echo json_encode($infosApi);
-                                                                        die;
-                                                                    }
-
-                                                                } else if ($tmp2->idUniteAdministrativeNiv3 != NULL || $tmp2->idUniteAdministrativeNiv3 != "") {
-
-
-                                                                    $infoUniteAdministrativeNiv3 = $userSimpleController->infoUniteAdministrativeNiv3($tmp2->idUniteAdministrativeNiv3);
-
-                                                                    if ($infoUniteAdministrativeNiv3 != "erreur") {
-                                                                        $sans = $infoUniteAdministrativeNiv3;
-
-                                                                    } else {
-                                                                        $infosApi[] = array(
-                                                                            'statut' => "Error",
-                                                                            'Message' => "Une erreur est survenue. Veuillez vous rapprocher de la CRIAT.",
-                                                                            'option' => valid_donnees($_POST['option'])
-
-                                                                        );
-                                                                        echo json_encode($infosApi);
-                                                                        die;
-                                                                    }
-                                                                } else {
-
-                                                                    $infosApi[] = array(
-                                                                        'statut' => "Error",
-                                                                        'Message' => "Une erreur est survenue. Veuillez vous rapprocher de la CRIAT.",
-                                                                        'option' => valid_donnees($_POST['option'])
-
-                                                                    );
-                                                                    echo json_encode($infosApi);
-                                                                    die;
-
-                                                                }
-                                                                //
-
-                                                                if ($tmp2->identifiant != $identifiant) {
-                                                                    $infosApi[] = array(
-                                                                        'statut' => "succès",
-                                                                        'Message' => "Successful",
-                                                                        'option' => valid_donnees($_POST['option']),
-                                                                        'matricule' => $tmp2->matricule,
-                                                                        'prenom' => $tmp2->prenom,
-                                                                        'nom' => $tmp2->nom,
-                                                                        'email' => $email,
-                                                                        'qualification' => $tmp2->qualification,
-                                                                        'idQualification' => $tmp2->idQualification,
-                                                                        'statutPoste' => $statutPoste,
-                                                                        'sans' => $sans,
-                                                                        'grade' => $grade,
-                                                                        'idUniteAdministrativeNiv1' => $tmp2->idUniteAdministrativeNiv1,
-                                                                        'idUniteAdministrativeNiv2' => $tmp2->idUniteAdministrativeNiv2,
-                                                                        'idUniteAdministrativeNiv3' => $tmp2->idUniteAdministrativeNiv3,
-
-                                                                    );
-                                                                }
-
-
-                                                                $data =
-                                                                    [
-                                                                        'id' => $tmp->id
-
-                                                                    ];
-                                                                $stmt = $bdP->prepare("SELECT unite_administrative_niv3.id FROM unite_administrative_niv3 WHERE unite_administrative_niv3.idUniteAdministrativeNiv2=:id");
-                                                                $stmt->execute($data);
-                                                                $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
-
-
-                                                                foreach ($listes as $tmp4) {
-
-                                                                    $infoPersonnelsNiveau3 = $userSimpleController->infoPersonnelsNiveau3($tmp4->id);
-                                                                    foreach ($infoPersonnelsNiveau3 as $tmp3) {
-
-
-                                                                        $email = NULL;
-                                                                        if (count($userSimpleController->infoCompteGmail($tmp3->identifiant)) == 1) {
-                                                                            $email = $userSimpleController->infoCompteGmail($tmp3->identifiant)['0']->email;
-                                                                        }
-
-                                                                        $grade = NULL;
-                                                                        $statutPoste = NULL;
-                                                                        if (count($userSimpleController->infoPosteAReponsabilite($tmp3->identifiant)) == 1) {
-                                                                            $infosPosteAResponsabilite = "OUI";
-                                                                            $grade = $userSimpleController->infoPosteAReponsabilite($tmp3->identifiant)['0']->statutGradePoste;
-                                                                            $statutPoste = $userSimpleController->infoPosteAReponsabilite($tmp3->identifiant)['0']->idStatutFonction;
-                                                                        } else {
-                                                                            $infosPosteAResponsabilite = "NON";
-                                                                            $statutPoste = 3;
-                                                                            $grade = NULL;
-                                                                        }
-
-                                                                        $sans = NULL;
-                                                                        //
-                                                                        if ($tmp3->idUniteAdministrativeNiv1 != NULL || $tmp3->idUniteAdministrativeNiv1 != "") {
-
-
-                                                                            $infoUniteAdministrativeNiv1 = $userSimpleController->infoUniteAdministrativeNiv1($tmp3->idUniteAdministrativeNiv1);
-
-                                                                            if ($infoUniteAdministrativeNiv1 != "erreur") {
-                                                                                $sans = $infoUniteAdministrativeNiv1;
-
-                                                                            } else {
-                                                                                $infosApi[] = array(
-                                                                                    'statut' => "Error",
-                                                                                    'Message' => "Une erreur est survenue. Veuillez vous rapprocher de la CRIAT.",
-                                                                                    'option' => valid_donnees($_POST['option'])
-
-                                                                                );
-                                                                                echo json_encode($infosApi);
-                                                                                die;
-                                                                            }
-
-
-                                                                        } else if ($tmp3->idUniteAdministrativeNiv2 != NULL || $tmp3->idUniteAdministrativeNiv2 != "") {
-                                                                            $infoUniteAdministrativeNiv2 = $userSimpleController->infoUniteAdministrativeNiv2($tmp3->idUniteAdministrativeNiv2);
-
-                                                                            if ($infoUniteAdministrativeNiv2 != "erreur") {
-                                                                                $sans = $infoUniteAdministrativeNiv2;
-
-                                                                            } else {
-                                                                                $infosApi[] = array(
-                                                                                    'statut' => "Error",
-                                                                                    'Message' => "Une erreur est survenue. Veuillez vous rapprocher de la CRIAT.",
-                                                                                    'option' => valid_donnees($_POST['option'])
-
-                                                                                );
-                                                                                echo json_encode($infosApi);
-                                                                                die;
-                                                                            }
-
-                                                                        } else if ($tmp3->idUniteAdministrativeNiv3 != NULL || $tmp3->idUniteAdministrativeNiv3 != "") {
-
-
-                                                                            $infoUniteAdministrativeNiv3 = $userSimpleController->infoUniteAdministrativeNiv3($tmp3->idUniteAdministrativeNiv3);
-
-                                                                            if ($infoUniteAdministrativeNiv3 != "erreur") {
-                                                                                $sans = $infoUniteAdministrativeNiv3;
-
-                                                                            } else {
-                                                                                $infosApi[] = array(
-                                                                                    'statut' => "Error",
-                                                                                    'Message' => "Une erreur est survenue. Veuillez vous rapprocher de la CRIAT.",
-                                                                                    'option' => valid_donnees($_POST['option'])
-
-                                                                                );
-                                                                                echo json_encode($infosApi);
-                                                                                die;
-                                                                            }
-                                                                        } else {
-
-                                                                            $infosApi[] = array(
-                                                                                'statut' => "Error",
-                                                                                'Message' => "Une erreur est survenue. Veuillez vous rapprocher de la CRIAT.",
-                                                                                'option' => valid_donnees($_POST['option'])
-
-                                                                            );
-                                                                            echo json_encode($infosApi);
-                                                                            die;
-
-                                                                        }
-                                                                        //
-
-                                                                        if ($tmp3->identifiant != $identifiant) {
-                                                                            $infosApi[] = array(
-                                                                                'statut' => "succès",
-                                                                                'Message' => "Successful",
-                                                                                'option' => valid_donnees($_POST['option']),
-                                                                                'matricule' => $tmp3->matricule,
-                                                                                'prenom' => $tmp3->prenom,
-                                                                                'nom' => $tmp3->nom,
-                                                                                'email' => $email,
-                                                                                'qualification' => $tmp3->qualification,
-                                                                                'idQualification' => $tmp3->idQualification,
-                                                                                'statutPoste' => $statutPoste,
-                                                                                'sans' => $sans,
-                                                                                'grade' => $grade,
-                                                                                'idUniteAdministrativeNiv1' => $tmp3->idUniteAdministrativeNiv1,
-                                                                                'idUniteAdministrativeNiv2' => $tmp3->idUniteAdministrativeNiv2,
-                                                                                'idUniteAdministrativeNiv3' => $tmp3->idUniteAdministrativeNiv3,
-
-                                                                            );
-                                                                        }
-                                                                    }
-                                                                }
-
-                                                            }
-
-                                                        }
-
-
-//                                                        echo json_encode($infosApi);
-//                                                        die;
-
-
-                                                        echo '<option></option><option value="">Choisir...</option>';
-
-
-                                                        $prenom = null;
-                                                        $nom = null;
-
-                                                        foreach ($infosApi as $info) {
-                                                            $prenom = ucwords(mb_strtolower($info['prenom']));
-                                                            $nom = $userSimpleController->fctRetirerAccents(mb_strtoupper($info['nom']));
-                                                            echo '<option value="' . $info['matricule'] . '">' . $prenom .' '.$nom. '</option>';
-
-                                                            $prenom = null;
-                                                            $nom = null;
-
-                                                        }
-
-//            echo '<option value="vide" hidden="">VIDE</option>';
-
-                                                        if (count($listes) > 0) {
-                                                            foreach ($listes as $tmp) {
-                                                            }
-                                                        } else {
-                                                            echo '<option value="">-- Qualification --</option>';
-                                                        }
-
-                                                        die;
-
-
-                                                    } else {
-                                                        echo "erreur";
-                                                        die;
-                                                    }
-
-
-
-                                                } else if ($infoAffectations['0']->idUniteAdministrativeNiv3 != NULL) {
-
-
-                                                    echo "erreur";
-                                                    die;
-//                                                    $infosApi[] = array(
-//                                                        'statut' => "Error",
-//                                                        'Message' => "Une erreur est survenue.",
-//                                                        'option' => valid_donnees($_POST['option']),
-//                                                    );
-//                                                    echo json_encode($infosApi);
-//                                                    die;
-                                                } else {
-
-                                                    echo "erreur";
-                                                    die;
-//                                                    $infosApi[] = array(
-//                                                        'statut' => "Error",
-//                                                        'Message' => "Une erreur est survenue. ",
-//                                                        'option' => valid_donnees($_POST['option']),
-//                                                    );
-//                                                    echo json_encode($infosApi);
-//                                                    die;
-                                                }
-
-
-
-                                            } else {
-
-
-                                                echo "erreur";
-                                                die;
+            $idAppli = valid_donnees($_POST['tmp']);
+                $idAppli = (int) $idAppli;
+
+
+
+            $tmpIdP = null;
+            $tmpMatricule = null;
+            $tmpPrenom = null;
+            $tmpNom = null;
+            $tmpPhoto = null;
+            $tmpEmail = null;
+            $tmpInitiales = null;
+            $tmpNbrAppli = null;
+            $tmpNbrAppliEnAttente = null;
+            $tmpNbrAppliAutorisees = null;
+            $tmpNbrAppliRefusees = null;
+            $connectUser = null;
+            $tmpId = null;
+            $tmpIdBASI = null;
+            $tmpListeApplication = null;
+            $tmpEntite = null;
+
+            $listeTachesStructures = null;
+            $listeTachesIncarnes = null;
+            $listeTachesParDefaut = null;
+            $statutPoste = null;
+
+            $lien_logo1 = null;
+            $lien_logo2 = null;
+
+
+            if (
+                !isset($_SESSION['tmpIdP']) ||
+                !isset($_SESSION['tmpMatricule']) ||
+                !isset($_SESSION['tmpPrenom']) ||
+                !isset($_SESSION['tmpNom']) ||
+                !isset($_SESSION['tmpPhoto']) ||
+                !isset($_SESSION['tmpEmail']) ||
+                !isset($_SESSION['tmpInitiales']) ||
+                !isset($_SESSION['tmpNbrAppli']) ||
+                !isset($_SESSION['tmpNbrAppliEnAttente']) ||
+                !isset($_SESSION['tmpNbrAppliAutorisees']) ||
+                !isset($_SESSION['tmpNbrAppliRefusees']) ||
+                !isset($_SESSION['connectUser']) ||
+                !isset($_SESSION['tmpListeApplication']) ||
+                !isset($_SESSION['tmpEntite']) ||
+                !isset($_SESSION['listeTachesStructures']) ||
+                !isset($_SESSION['listeTachesIncarnes']) ||
+                !isset($_SESSION['listeTachesParDefaut']) ) {
+
+                session_unset();
+                session_destroy();
+
+                echo "sesionExpired";
+                die;
 //
-//                                                $infosApi[] = array(
-//                                                    'statut' => "Error",
-//                                                    'Message' => "Une erreur est survenue. ",
-//                                                    'option' => valid_donnees($_POST['option']),
-//                                                );
-//                                                echo json_encode($infosApi);
-//                                                die;
 
-                                            }
+//    header("Location: /personnel/signin");
+//    exit();
+            }else
+            {
 
-                                        } else {
 
-                                            echo "erreur";
-                                            die;
-//                                            $infosApi[] = array(
-//                                                'statut' => "Error",
-//                                                'Message' => "Une erreur est survenue.",
-//                                                'option' => valid_donnees($_POST['option']),
-//                                            );
-//                                            echo json_encode($infosApi);
-//                                            die;
+                $connectUser = $_SESSION['connectUser'] ?? null;
 
-                                        }
+                if($connectUser == 1)
+                {
 
-                                    } else {
+                    $lien_logo1 = "/personnel/admin-accueil";
+                    $lien_logo2 = "/personnel/admin-accueil";
 
-                                        echo "erreur";
-                                        die;
-//                                        $infosApi[] = array(
-//                                            'statut' => "Error",
-//                                            'Message' => "Le courriel institutionnel est introuvable. Veuillez vérifier le matricule saisi ou vous rapprocher de la CRIAT.",
-//                                            'option' => valid_donnees($_POST['option'])
-//
-//                                        );
-//                                        echo json_encode($infosApi);
-//                                        die;
-
-                                    }
+//                header("Location: /personnel/admin-accueil");
+//                exit();
 
 
 
-                                } else {
-                                    echo "erreur";
-                                    die;
-//                                    $infosApi[] = array(
-//                                        'statut' => "Error",
-//                                        'Message' => "En fin de contrat, l'employé doit se rapprocher du DRH.",
-//                                        'option' => valid_donnees($_POST['option'])
-//
-//                                    );
-//                                    echo json_encode($infosApi);
-//                                    die;
-                                }
-                            } else {
-                                echo "erreur";
-                                die;
-//                                $infosApi[] = array(
-//                                    'statut' => "Error",
-//                                    'Message' => "En fin de contrat, l'employé doit se rapprocher du DRH",
-//                                    'option' => valid_donnees($_POST['option'])
-//
-//                                );
-//                                echo json_encode($infosApi);
-//                                die;
-                            }
-                        } else {
-
-                            echo "erreur";
-                            die;
-
-//                            $infosApi[] = array(
-//                                'statut' => "Error",
-//                                'Message' => "Pas de contrat en cours, l'employé doit se rapprocher du DRH.",
-//                                'option' => valid_donnees($_POST['option'])
-//
-//                            );
-//                            echo json_encode($infosApi);
-//                            die;
-
-                        }
-                    } else {
-
-                        echo "erreur";
-                        die;
-//                        $infosApi[] = array(
-//                            'statut' => "Error",
-//                            'Message' => "Une erreur est survenue. Veuillez vous rapprocher de la CRIAT.",
-//                            'option' => valid_donnees($_POST['option'])
-//
-//                        );
-//                        echo json_encode($infosApi);
-//                        die;
-                    }
 
 
-                } else {
+                }else if($connectUser == 2)
+                {
 
-                    echo "erreur";
-                    die;
-//                    $infosApi[] = array(
-//                        'statut' => "Error",
-//                        'Message' => "Ce matricule est introuvable.",
-//                        'option' => valid_donnees($_POST['option']),
-//
-//                    );
-//                    echo json_encode($infosApi);
-//                    die;
+                    $lien_logo1 = "/personnel/user-accueil";
+                    $lien_logo2 = "/personnel/user-accueil";
+
+//                header("Location: /personnel/user-accueil");
+//                exit();
 
                 }
-            } catch (\Throwable $th) {
 
-                echo "erreur";
-                die;
-//                $infosApi[] = array(
-//                    'statut' => "Error",
-//                    'Message' => "Une erreur est survenue.",
-//                    'option' => valid_donnees($_POST['option']),
-//                );
-//                echo json_encode($infosApi);
-//                die;
+                $tmpIdP = $_SESSION['tmpIdP'] ?? null;
+                $tmpMatricule = $_SESSION['tmpMatricule'] ?? null;
+                $tmpPrenom = $_SESSION['tmpPrenom'] ?? null;
+                $tmpNom = $_SESSION['tmpNom'] ?? null;
+                $tmpPhoto = $_SESSION['tmpPhoto'] ?? null;
+                $tmpEmail = $_SESSION['tmpPhoto'] ?? null;
+                $tmpInitiales = $_SESSION['tmpInitiales'] ?? null;
+                $tmpNbrAppli = $_SESSION['tmpNbrAppli'] ?? null;
+                $tmpNbrAppliEnAttente = $_SESSION['tmpNbrAppliEnAttente'] ?? null;
+                $tmpNbrAppliAutorisees = $_SESSION['tmpNbrAppliAutorisees'] ?? null;
+                $tmpNbrAppliRefusees = $_SESSION['tmpNbrAppliRefusees'] ?? null;
+                $tmpId = $_SESSION['tmpId'] ?? null;
+                $tmpIdBASI = $_SESSION['tmpIdBASI'] ?? null;
+                $tmpListeApplication = $_SESSION['tmpListeApplication'] ?? null;
+                $tmpEntite = $_SESSION['tmpEntite'];
+
+
+                $listeTachesStructures = $_SESSION['listeTachesStructures'];
+                $listeTachesIncarnes = $_SESSION['listeTachesIncarnes'];
+                $listeTachesParDefaut = $_SESSION['listeTachesParDefaut'];
+                $statutPoste = $_SESSION['statutPoste'] ?? null;
+
 
             }
 
-        } else {
-            // echo $_POST['matricule'];
-            // die;
+
+
+
+
+            $page_par_defaut = null;
+
+            foreach ($tmpListeApplication as $appli) {
+                if ($appli->numero === $idAppli) {
+                    $page_par_defaut = $appli->page_defaut;
+                }
+            }
+
+
+
+            // ── Après ──────────────────────────────────────
+            $page_accueil = $userSimpleController->getPageAccueil(
+                $listeTachesIncarnes,
+                $listeTachesStructures,
+                $listeTachesParDefaut,
+                $page_par_defaut ?? 'http://localhost/personnel/signin'   // fallback ultime
+            );
+
+            echo "ac".$page_accueil;
+            die;
+
+
+
+            } catch (\Throwable $th) {
+                error_log($th->getMessage());
+               echo "erreur";
+               die;
+            }
+
+            break;
+
+        }else
+        {
             echo "erreur";
             die;
-//            $infosApi[] = array(
-//                'statut' => "Error",
-//                'Message' => "Une erreur est survenue. Veuillez revoir les paramètres envoyés.",
-//                'option' => valid_donnees($_POST['option']),
-//            );
-//            echo json_encode($infosApi);
-//            die;
         }
-
-
-
+        break;
 
     default :
         echo "erreur";

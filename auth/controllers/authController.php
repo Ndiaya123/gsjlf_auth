@@ -99,6 +99,34 @@ class authController extends BDP
         return $varMaChaine;
     }
 
+    function imageExiste($url)
+    {
+
+//        if($url != NULL  && $url != "")
+//        {
+//            return true;
+//
+//        }else{
+//            return false;
+//
+//        }
+        // Vérifie si l'URL est vide ou invalide
+        if (empty($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
+            return false; // Retourne false si l'URL est vide ou invalide
+        }
+
+        // Essayer de récupérer les en-têtes de l'URL
+        $headers = @get_headers($url, 1);
+
+        // Vérifie si l'en-tête a été récupéré et si le code de statut est 200
+        if ($headers && strpos($headers[0], '200') !== false) {
+            return true; // L'image existe
+        } else {
+            return false; // L'image n'existe pas ou il y a un autre problème
+        }
+    }
+
+
 
     public function sendEmail($to, $name, $subject, $body)
     {
@@ -400,6 +428,7 @@ WHERE affectations.identifiant = :identifiant;
         la.icon,
     la.description AS descriptionApplication,
     la.statut AS statutApplication,
+            la.page_defaut,
     CASE la.statut
         WHEN 0 THEN 'pending'
         WHEN 1 THEN 'authorized'
@@ -470,7 +499,11 @@ GROUP BY la.id, la.nomApplication, la.description, la.statut;
     CASE
         WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 1
         ELSE 0
-    END AS statut
+    END AS statut,
+    la.nomApplication,
+                    la.id as idAppli
+
+    
 
 FROM tache t
 
@@ -482,6 +515,10 @@ LEFT JOIN icons ic_t
 
 LEFT JOIN icons ic_sm
     ON ic_sm.id = sm.idIcon
+    
+    
+LEFT JOIN listeApplications la
+    ON la.id = t.idAppli
 
 WHERE t.idTypeTache = :idTypeTache
   AND t.active = :active
@@ -532,7 +569,11 @@ ORDER BY
     CASE
         WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 1
         ELSE 0
-    END AS statut
+    END AS statut,
+                 la.nomApplication,
+                                 la.id as idAppli
+
+
 
 FROM tache t
 
@@ -544,7 +585,9 @@ LEFT JOIN icons ic_t
 
 LEFT JOIN icons ic_sm
     ON ic_sm.id = sm.idIcon
-
+    
+LEFT JOIN listeApplications la
+    ON la.id = t.idAppli
 WHERE t.idTypeTache = :idTypeTache
   AND t.idFonction = :idFonction
   AND t.active = :active
@@ -595,7 +638,11 @@ SELECT
     CASE
         WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 1
         ELSE 0
-    END AS statut
+    END AS statut,
+        la.nomApplication,
+                        la.id as idAppli
+
+
 
 FROM tache t
 
@@ -608,6 +655,9 @@ LEFT JOIN icons ic_t
 LEFT JOIN icons ic_sm
     ON ic_sm.id = sm.idIcon
 
+    
+LEFT JOIN listeApplications la
+    ON la.id = t.idAppli
 WHERE t.idTypeTache = :idTypeTache
   AND t.active = :active
 
@@ -658,7 +708,11 @@ SELECT
     CASE
         WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 1
         ELSE 0
-    END AS statut
+    END AS statut,
+        la.nomApplication,
+                la.id as idAppli
+
+
 
 FROM tache t
 
@@ -673,6 +727,10 @@ LEFT JOIN icons ic_t
 
 LEFT JOIN icons ic_sm
     ON ic_sm.id = sm.idIcon
+
+
+LEFT JOIN listeApplications la
+    ON la.id = t.idAppli
 
 WHERE t.idTypeTache = :idTypeTache
   AND t.active = :active
@@ -721,7 +779,11 @@ SELECT
     CASE
         WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 1
         ELSE 0
-    END AS statut
+    END AS statut,
+        la.nomApplication,
+                        la.id as idAppli
+
+
 
 FROM tache t
 
@@ -733,6 +795,9 @@ LEFT JOIN icons ic_t
 
 LEFT JOIN icons ic_sm
     ON ic_sm.id = sm.idIcon
+    
+LEFT JOIN listeApplications la
+    ON la.id = t.idAppli
 
 WHERE t.idTypeTache = :idTypeTache
   AND t.active = :active
@@ -912,6 +977,7 @@ FROM (
         la.icon,
         la.description AS descriptionApplication,
         la.statut AS statutApplication,
+        la.page_defaut,
         CASE la.statut
             WHEN 0 THEN 'pending'
             WHEN 1 THEN 'authorized'
@@ -941,6 +1007,7 @@ FROM (
         la.icon,
         la.description,
         la.statut,
+        la.page_defaut
         CASE la.statut
             WHEN 0 THEN 'pending'
             WHEN 1 THEN 'authorized'
@@ -971,6 +1038,7 @@ FROM (
         la.icon,
         la.description,
         la.statut,
+                la.page_defaut
         CASE la.statut
             WHEN 0 THEN 'pending'
             WHEN 1 THEN 'authorized'
@@ -1783,11 +1851,31 @@ WHERE p.matricule = :matricule;";
                                         $nom= $authController->fctRetirerAccents(mb_strtoupper($result_info_user->nom));
                                         $infoEntite = $authController->infoEntite($identifiant);
 
+                                        $photo = NULL;
+                                        if ($authController->imageExiste($result_info_user->photo)) {
+                                            $photo = $result_info_user->photo;
+                                        } else {
+                                            $photo = "/personnel/ressources/dist_assets/media/avatars/150-26.jpg";
+
+                                            if ($result_info_user->sexe == "Féminin") {
+                                                $photo = "/personnel/includes/fpdf/template/avatar1.png";
+                                            } else if ($result_info_user->sexe == "Masculin") {
+                                                $photo = "/personnel/ressources/dist_assets/media/avatars/150-26.jpg";
+                                            } else {
+                                                $photo = "/personnel/ressources/dist_assets/media/avatars/150-26.jpg";
+                                            }
+
+
+                                        }
+
 
                                         // session id utilisateur personnel
                                         $_SESSION['tmpIdP'] = $result->id;
+                                        $_SESSION['tmpMatricule'] = $matricule;
                                         $_SESSION['tmpPrenom'] = $prenom;
                                         $_SESSION['tmpNom'] =  $nom;
+                                        $_SESSION['tmpPhoto'] =  $photo;
+                                        $_SESSION['tmpEmail'] =  $email;
                                         $_SESSION['tmpInitiales'] = $authController->getInitiales($prenom, $nom);
                                         $_SESSION['tmpEntite'] = $infoEntite->entite;
                                         $infoApplication = $authController->infoApplication();
@@ -1812,7 +1900,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['tmpId'] = $tmpId;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur";
+                                                echo "erreur1";
                                                 die;
                                             }
 
@@ -1824,7 +1912,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['tmpIdBASI'] = $tmpIdBASI;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur";
+                                                echo "erreur2";
                                                 die;
                                             }
 
@@ -1834,11 +1922,13 @@ WHERE p.matricule = :matricule;";
 
 
 
+
+
                                             if (!empty($listeApplications) && is_array($listeApplications)) {
                                                 $_SESSION['tmpListeApplication'] = $listeApplications;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur";
+                                                echo "erreur3";
                                                 die;
                                             }
 
@@ -1846,11 +1936,12 @@ WHERE p.matricule = :matricule;";
                                             // liste des taches
                                             $listeTachesParDefaut = $authController->listeTachesParDefaut();
 
+
                                             if (is_array($listeTachesParDefaut)) {
                                                 $_SESSION['listeTachesParDefaut'] = $listeTachesParDefaut;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur";
+                                                echo "erreur3";
                                                 die;
                                             }
 
@@ -1982,7 +2073,7 @@ WHERE p.matricule = :matricule;";
 
                                             } else {
                                                 session_destroy();
-                                                echo "erreur";
+                                                echo "erreur4";
                                                 die;
                                             }
 
@@ -2031,7 +2122,7 @@ WHERE p.matricule = :matricule;";
                                                                 ++$tmp_nombre_bd;
                                                             } else {
                                                                 session_destroy();
-                                                                echo "erreur";
+                                                                echo "erreur5";
                                                                 die;
                                                             }
                                                         }
@@ -2055,7 +2146,7 @@ WHERE p.matricule = :matricule;";
                                             } else {
 
                                                 session_destroy();
-                                                echo "erreur";
+                                                echo "erreur6";
                                                 die;
                                             }
 
@@ -2067,7 +2158,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['listeTachesParDefaut'] = $listeTachesParDefaut;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur";
+                                                echo "erreur7";
                                                 die;
                                             }
 
@@ -2078,7 +2169,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['listeTachesIncarnes'] = $listeTachesIncarnes;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur";
+                                                echo "erreur8";
                                                 die;
                                             }
 
@@ -2087,7 +2178,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['listeTachesStructures'] = $listeTachesStructures;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur";
+                                                echo "erreur9";
                                                 die;
                                             }
 
@@ -3778,6 +3869,7 @@ WHERE p.matricule = :matricule;";
                 if ($result) {
 
 
+                    $email = $result->email;
 
                     $data_reset_code = [
                         'matricule' => $matricule,
@@ -3932,10 +4024,30 @@ WHERE p.matricule = :matricule;";
                                                                         $infoEntite = $authController->infoEntite($identifiant);
 
 
+                                                                        $photo = NULL;
+                                                                        if ($authController->imageExiste($result_info_user->photo)) {
+                                                                            $photo = $result_info_user->photo;
+                                                                        } else {
+                                                                            $photo = "/personnel/ressources/dist_assets/media/avatars/150-26.jpg";
+
+                                                                            if ($result_info_user->sexe == "Féminin") {
+                                                                                $photo = "/personnel/includes/fpdf/template/avatar1.png";
+                                                                            } else if ($result_info_user->sexe == "Masculin") {
+                                                                                $photo = "/personnel/ressources/dist_assets/media/avatars/150-26.jpg";
+                                                                            } else {
+                                                                                $photo = "/personnel/ressources/dist_assets/media/avatars/150-26.jpg";
+                                                                            }
+
+
+                                                                        }
+
                                                                         // session id utilisateur personnel
                                                                         $_SESSION['tmpIdP'] = $result->id;
+                                                                        $_SESSION['tmpMatricule'] = $matricule;
                                                                         $_SESSION['tmpPrenom'] = $prenom;
                                                                         $_SESSION['tmpNom'] =  $nom;
+                                                                        $_SESSION['tmpPhoto'] =  $photo;
+                                                                        $_SESSION['tmpEmail'] =  $result_perso->email;
                                                                         $_SESSION['tmpInitiales'] = $authController->getInitiales($prenom, $nom);
                                                                         $_SESSION['tmpEntite'] = $infoEntite->entite;
                                                                         $infoApplication = $authController->infoApplication();

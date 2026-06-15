@@ -1884,6 +1884,9 @@ linked_services
     heroTimer = setInterval(() => heroGoSlide(heroCur + 1, false), 5000);
 </script>
 
+<script src="/uahb/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>
+<script src="/uahb/ressources/dist_assets/js/scripts.bundle.js"></script>
+
 <script src="/personnel/scripts.bundle.12.js"></script>
 
 </body>

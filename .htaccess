@@ -148,6 +148,17 @@ RewriteRule ^scripts.bundle.13.js$ userSimple/js/gestionTaches.js [L]
 
 
 
+#menus
+
+RewriteRule ^menu-controller$ menus/controllers/menuController.php [L]
+RewriteRule ^scripts.bundle.gs.js$ menus/js/menu.js [L]
+
+
+
+
+
+
+
 
 
 
