@@ -49,8 +49,8 @@ include_once('../sessions/admin.php');
                                       d="M14.2657 11.4343L18.45 7.25C18.8642 6.83579 18.8642 6.16421 18.45 5.75C18.0358 5.33579 17.3642 5.33579 16.95 5.75L11.4071 11.2929C11.0166 11.6834 11.0166 12.3166 11.4071 12.7071L16.95 18.25C17.3642 18.6642 18.0358 18.6642 18.45 18.25C18.8642 17.8358 18.8642 17.1642 18.45 16.75L14.2657 12.5657C13.9533 12.2533 13.9533 11.7467 14.2657 11.4343Z"
                                       fill="black"/>
                                 <path
-                                    d="M8.2657 11.4343L12.45 7.25C12.8642 6.83579 12.8642 6.16421 12.45 5.75C12.0358 5.33579 11.3642 5.33579 10.95 5.75L5.40712 11.2929C5.01659 11.6834 5.01659 12.3166 5.40712 12.7071L10.95 18.25C11.3642 18.6642 12.0358 18.6642 12.45 18.25C12.8642 17.8358 12.8642 17.1642 12.45 16.75L8.2657 12.5657C7.95328 12.2533 7.95328 11.7467 8.2657 11.4343Z"
-                                    fill="black"/>
+                                        d="M8.2657 11.4343L12.45 7.25C12.8642 6.83579 12.8642 6.16421 12.45 5.75C12.0358 5.33579 11.3642 5.33579 10.95 5.75L5.40712 11.2929C5.01659 11.6834 5.01659 12.3166 5.40712 12.7071L10.95 18.25C11.3642 18.6642 12.0358 18.6642 12.45 18.25C12.8642 17.8358 12.8642 17.1642 12.45 16.75L8.2657 12.5657C7.95328 12.2533 7.95328 11.7467 8.2657 11.4343Z"
+                                        fill="black"/>
                             </svg>
                         </span>
                 </div>
@@ -185,8 +185,8 @@ include_once('../sessions/admin.php');
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                          fill="none">
                                         <path
-                                            d="M21 7H3C2.4 7 2 6.6 2 6V4C2 3.4 2.4 3 3 3H21C21.6 3 22 3.4 22 4V6C22 6.6 21.6 7 21 7Z"
-                                            fill="black"/>
+                                                d="M21 7H3C2.4 7 2 6.6 2 6V4C2 3.4 2.4 3 3 3H21C21.6 3 22 3.4 22 4V6C22 6.6 21.6 7 21 7Z"
+                                                fill="black"/>
                                         <path opacity="0.3"
                                               d="M21 14H3C2.4 14 2 13.6 2 13V11C2 10.4 2.4 10 3 10H21C21.6 10 22 10.4 22 11V13C22 13.6 21.6 14 21 14ZM22 20V18C22 17.4 21.6 17 21 17H3C2.4 17 2 17.4 2 18V20C2 20.6 2.4 21 3 21H21C21.6 21 22 20.6 22 20Z"
                                               fill="black"/>
@@ -228,36 +228,21 @@ include_once('../sessions/admin.php');
                                     <div class="cursor-pointer symbol symbol-30px symbol-md-40px"
                                          data-kt-menu-trigger="click" data-kt-menu-attach="parent"
                                          data-kt-menu-placement="bottom-end">
-                                        <img src="<?php if (!empty($_SESSION['tmpPhoto'])) {
-                                            echo "/personnel/assets/images/ent/" . strtolower($_SESSION['tmpPhoto']);
-                                        } else {
-                                            echo "/personnel/ressources/dist_assets/media/avatars/150-26.jpg";
-                                        } ?>"/>
+                                        <img src="<?= !empty($tmpPhoto) ? $tmpPhoto : '/personnel/ressources/dist_assets/media/avatars/150-26.jpg' ?>"/>
                                     </div>
                                     <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg menu-state-primary fw-bold py-4 fs-6 w-275px"
                                          data-kt-menu="true">
                                         <div class="menu-item px-3">
                                             <div class="menu-content d-flex align-items-center px-3">
                                                 <div class="symbol symbol-50px me-5">
-                                                    <img alt="admin" src="<?php if (!empty($_SESSION['tmpPhoto'])) {
-                                                        echo "/personnel/assets/images/ent/" . strtolower($_SESSION['tmpPhoto']);
-                                                    } else {
-                                                        echo "/personnel/ressources/dist_assets/media/avatars/150-26.jpg";
-                                                    } ?>"/>
+                                                    <img alt="admin"
+                                                         src="<?= !empty($tmpPhoto) ? $tmpPhoto : '/personnel/ressources/dist_assets/media/avatars/150-26.jpg' ?>"/>
                                                 </div>
                                                 <div class="d-flex flex-column">
-                                                    <div class="fw-bolder d-flex align-items-center fs-5"><?php if (!empty($_SESSION['tmpPrenom'])) {
-                                                            echo ucwords(strtolower($_SESSION['tmpPrenom'])) . ' ' . strtoupper($_SESSION['tmpNom']);
-                                                        } else {
-                                                            echo "test";
-                                                        } ?>
+                                                    <div class="fw-bolder d-flex align-items-center fs-5"> <?= $tmpPrenom . ' ' . $tmpNom ?>
                                                     </div>
                                                     <a href="#"
-                                                       class="fw-bold text-muted text-hover-primary fs-7"><?php if (!empty($_SESSION['tmpEmail'])) {
-                                                            echo strtolower($_SESSION['tmpEmail']);
-                                                        } else {
-                                                            echo "test";
-                                                        } ?></a>
+                                                       class="fw-bold text-muted text-hover-primary fs-7"><?= $tmpEmail ?></a>
                                                 </div>
                                             </div>
                                         </div>
@@ -269,15 +254,16 @@ include_once('../sessions/admin.php');
                                         <div class="separator my-2"></div>
                                         <div class="menu-item px-5">
                                             <div class="menu-content px-5">
-                                                <label
-                                                    class="form-check form-switch form-check-custom form-check-solid pulse pulse-success"
-                                                    for="kt_user_menu_dark_mode_toggle">
-                                                    <input class="form-check-input w-30px h-20px" type="checkbox"
-                                                           value="1" name="mode" id="kt_user_menu_dark_mode_toggle"
-                                                           data-kt-url="/personnel/quitter"/>
-                                                    <span class="pulse-ring ms-n1"></span>
-                                                    <span class="form-check-label text-gray-600 fs-7">Se
-                                                            déconnecter</span>
+                                                <label class="form-check form-switch form-check-custom form-check-solid pulse pulse-success"
+                                                       for="kt_user_menu_dark_mode_toggle">
+                                                    <a href="/personnel/signout">
+                                                        <input class="form-check-input w-30px h-20px" checked="checked"
+                                                               type="checkbox" value="1" name="mode"
+                                                               id="kt_user_menu_dark_mode_toggle"
+                                                               data-kt-url="/quitter"/>
+                                                        <span class="pulse-ring ms-n1"></span>
+                                                        <span class="form-check-label text-gray-600 fs-7">se déconnecter</span>
+                                                    </a>
                                                 </label>
                                             </div>
                                         </div>
@@ -291,8 +277,8 @@ include_once('../sessions/admin.php');
                                                 <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                      viewBox="0 0 24 24" fill="none">
                                                     <path
-                                                        d="M13 11H3C2.4 11 2 10.6 2 10V9C2 8.4 2.4 8 3 8H13C13.6 8 14 8.4 14 9V10C14 10.6 13.6 11 13 11ZM22 5V4C22 3.4 21.6 3 21 3H3C2.4 3 2 3.4 2 4V5C2 5.6 2.4 6 3 6H21C21.6 6 22 5.6 22 5Z"
-                                                        fill="black"/>
+                                                            d="M13 11H3C2.4 11 2 10.6 2 10V9C2 8.4 2.4 8 3 8H13C13.6 8 14 8.4 14 9V10C14 10.6 13.6 11 13 11ZM22 5V4C22 3.4 21.6 3 21 3H3C2.4 3 2 3.4 2 4V5C2 5.6 2.4 6 3 6H21C21.6 6 22 5.6 22 5Z"
+                                                            fill="black"/>
                                                     <path opacity="0.3"
                                                           d="M21 16H3C2.4 16 2 15.6 2 15V14C2 13.4 2.4 13 3 13H21C21.6 13 22 13.4 22 14V15C22 15.6 21.6 16 21 16ZM14 20V19C14 18.4 13.6 18 13 18H3C2.4 18 2 18.4 2 19V20C2 20.6 2.4 21 3 21H13C13.6 21 14 20.6 14 20Z"
                                                           fill="black"/>
@@ -329,14 +315,13 @@ include_once('../sessions/admin.php');
                     <div class="container-xxl">
 
 
-
                     </div>
 
                 </div>
             </div>
             <div class="footer py-4 d-flex flex-lg-column" id="kt_footer">
                 <div
-                    class="container-fluid d-flex flex-column flex-md-row align-items-center justify-content-between">
+                        class="container-fluid d-flex flex-column flex-md-row align-items-center justify-content-between">
                     <div class="text-dark order-2 order-md-1">
                             <span class="text-muted fw-bold me-1">
                                 <script type="text/javascript">
@@ -353,20 +338,17 @@ include_once('../sessions/admin.php');
 </div>
 
 
-
-
 <div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
         <span class="svg-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <rect opacity="0.5" x="13" y="6" width="13" height="2" rx="1" transform="rotate(90 13 6)"
                       fill="black"/>
                 <path
-                    d="M12.5657 8.56569L16.75 12.75C17.1642 13.1642 17.8358 13.1642 18.25 12.75C18.6642 12.3358 18.6642 11.6642 18.25 11.25L12.7071 5.70711C12.3166 5.31658 11.6834 5.31658 11.2929 5.70711L5.75 11.25C5.33579 11.6642 5.33579 12.3358 5.75 12.75C6.16421 13.1642 6.83579 13.1642 7.25 12.75L11.4343 8.56569C11.7467 8.25327 12.2533 8.25327 12.5657 8.56569Z"
-                    fill="black"/>
+                        d="M12.5657 8.56569L16.75 12.75C17.1642 13.1642 17.8358 13.1642 18.25 12.75C18.6642 12.3358 18.6642 11.6642 18.25 11.25L12.7071 5.70711C12.3166 5.31658 11.6834 5.31658 11.2929 5.70711L5.75 11.25C5.33579 11.6642 5.33579 12.3358 5.75 12.75C6.16421 13.1642 6.83579 13.1642 7.25 12.75L11.4343 8.56569C11.7467 8.25327 12.2533 8.25327 12.5657 8.56569Z"
+                        fill="black"/>
             </svg>
         </span>
 </div>
-
 
 
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>

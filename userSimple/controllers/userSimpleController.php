@@ -522,7 +522,7 @@ switch ($option) {
                 !isset($_SESSION['tmpNbrAppliEnAttente']) ||
                 !isset($_SESSION['tmpNbrAppliAutorisees']) ||
                 !isset($_SESSION['tmpNbrAppliRefusees']) ||
-                !isset($_SESSION['connectUser']) ||
+                !isset($_SESSION['connectUserGSJLF_ENT']) ||
                 !isset($_SESSION['tmpListeApplication']) ||
                 !isset($_SESSION['tmpEntite']) ||
                 !isset($_SESSION['listeTachesStructures']) ||
@@ -542,7 +542,7 @@ switch ($option) {
             {
 
 
-                $connectUser = $_SESSION['connectUser'] ?? null;
+                $connectUser = $_SESSION['connectUserGSJLF_ENT'] ?? null;
 
                 if($connectUser == 1)
                 {

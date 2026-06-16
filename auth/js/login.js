@@ -148,6 +148,7 @@ t.addEventListener('click', function (e) {
                 url:  '/personnel/auth-controller',
                 data: $("#formSignIn").serialize(),
                 success: function (resp) {
+                    console.log(resp);
 
                     if (resp === "erreurConnexion") {
                         showAlert("Erreur de connexion. Veuillez réessayer ultérieurement.", "error", null, false, t);

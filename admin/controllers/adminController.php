@@ -295,6 +295,46 @@ class adminController extends BDP
 //
 //    }
 
+
+    public function returnPosteResponsabilite($identifiant)
+    {
+        try {
+
+            $bdP = $this->connect();
+
+            $data = [
+                'identifiant' => $identifiant,
+                'statutPoste' => 1
+            ];
+
+            $stmt = $bdP->prepare("
+            SELECT *
+            FROM postesAResponsabilite, fonction
+            WHERE postesAResponsabilite.idFonction=fonction.id 	AND postesAResponsabilite.identifiant = :identifiant
+              AND postesAResponsabilite.statutPoste = :statutPoste
+        ");
+
+            $stmt->execute($data);
+
+            $result =  $stmt->fetch(PDO::FETCH_OBJ);
+
+            if($result)
+            {
+                return $result->fonction;
+
+            }else
+            {
+                return null;
+            }
+
+
+
+        } catch (\Throwable $th) {
+            return null;
+        }
+    }
+
+
     function get_info($matricule)
     {
 
@@ -412,6 +452,11 @@ WHERE p.matricule = :matricule;";
     }
 
 
+    function genererMotDePasseDefaut(): string
+    {
+        return 'GSJLF@' . random_int(100000, 999999);
+    }
+
 }
 
 
@@ -507,7 +552,7 @@ ORDER BY utilisateurs.dateCreation ASC;";
 
                 foreach ($result as $user) {
 
-                    $posteAResponsabilite = $adminController->returnPosteResponsabilite($user->identifiant);
+                    $posteAResponsabilit = $adminController->returnPosteResponsabilite($user->identifiant);
 
                     if ($adminController->imageExiste($user->photo)) {
                         $photo = $user->photo;
@@ -987,7 +1032,7 @@ break;
 FROM personnels p
 INNER JOIN etatCivil ec 
     ON p.idEtatCivil = ec.id
-LEFT JOIN compteGmail cg 
+INNER JOIN compteGmail cg 
     ON p.idCompteGmail = cg.id
 WHERE p.matricule = :matricule;";
                     $stmt_perso = $bdP->prepare($sql_perso);
@@ -995,6 +1040,7 @@ WHERE p.matricule = :matricule;";
                     $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
 
                     if ($result_perso) {
+
 
 
 $photo = NULL;
@@ -1015,13 +1061,15 @@ $photo = NULL;
                         }
 
 
+                        $pwd = $adminController->genererMotDePasseDefaut();
+
                         echo json_encode([
                             'matricule' => $result_perso->matricule,
                             'prenom' => ucwords(mb_strtolower($result_perso->prenom)),
                             'nom' => $adminController->fctRetirerAccents(mb_strtoupper($result_perso->nom)),
                             'email' => $result_perso->email,
                             'photo' => $photo,
-                            'pwd' => "GSJLF@2006"
+                            'pwd' => $pwd
                         ]);
                         die;
 
@@ -1204,6 +1252,9 @@ WHERE p.matricule = :matricule;";
 
 
                                     if ($tmpStmtHistorique) {
+
+
+                                        $email = "ndiaya.ndao@uahb.sn";
 
                                         $message = "<html>
 <head>
@@ -4295,7 +4346,7 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
                     !isset($_SESSION['tmpNbrAppliEnAttente']) ||
                     !isset($_SESSION['tmpNbrAppliAutorisees']) ||
                     !isset($_SESSION['tmpNbrAppliRefusees']) ||
-                    !isset($_SESSION['connectUser']) ||
+                    !isset($_SESSION['connectUserGSJLF_ENT']) ||
                     !isset($_SESSION['tmpListeApplication']) ||
                     !isset($_SESSION['tmpEntite']) ||
                     !isset($_SESSION['listeTachesStructures']) ||
@@ -4315,7 +4366,7 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
                 {
 
 
-                    $connectUser = $_SESSION['connectUser'] ?? null;
+                    $connectUser = $_SESSION['connectUserGSJLF_ENT'] ?? null;
 
                     if($connectUser == 1)
                     {

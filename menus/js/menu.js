@@ -32,7 +32,7 @@ function testJSON(text) {
 $(document).ready(function () {
 
     // ⚠️ pathname uniquement, pas href complet
-    const url_page = window.location.pathname;
+    const url_page = window.location.href;
     console.log("url_page =>", url_page);
 
     changeFavicon(logo_gsjlf);

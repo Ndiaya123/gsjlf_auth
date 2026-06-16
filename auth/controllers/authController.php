@@ -822,6 +822,8 @@ ORDER BY
 
 
 
+
+
     public function infoPosteResponsable($identifiant)
     {
         try {
@@ -835,24 +837,22 @@ ORDER BY
 
             $stmt = $bdP->prepare("
             SELECT *
-            FROM postesAResponsabilite
-            WHERE identifiant = :identifiant
-              AND statutPoste = :statutPoste
+            FROM postesAResponsabilite, fonction
+            WHERE postesAResponsabilite.idFonction=fonction.id 	AND postesAResponsabilite.identifiant = :identifiant
+              AND postesAResponsabilite.statutPoste = :statutPoste
         ");
 
             $stmt->execute($data);
 
-                $result =  $stmt->fetch(PDO::FETCH_OBJ);
+            $result =  $stmt->fetch(PDO::FETCH_OBJ);
 
-                return $result;
+            return $result;
 
 
         } catch (\Throwable $th) {
             return [];
         }
     }
-
-
 
 //    public function listeApplicationUserSimple($matricule)
 //    {
@@ -968,6 +968,7 @@ ORDER BY
     statutApplication,
     statutLibelle,
     entite,
+    page_defaut,
     GROUP_CONCAT(DISTINCT hashtags SEPARATOR ',') AS hashtags
 FROM (
 
@@ -1007,7 +1008,7 @@ FROM (
         la.icon,
         la.description,
         la.statut,
-        la.page_defaut
+        la.page_defaut,
         CASE la.statut
             WHEN 0 THEN 'pending'
             WHEN 1 THEN 'authorized'
@@ -1038,7 +1039,7 @@ FROM (
         la.icon,
         la.description,
         la.statut,
-                la.page_defaut
+                la.page_defaut,
         CASE la.statut
             WHEN 0 THEN 'pending'
             WHEN 1 THEN 'authorized'
@@ -1163,6 +1164,7 @@ ORDER BY nomApplication;
             $stmt = $bdP->prepare($sql);
             $stmt->execute($params);
 
+
             return $stmt->fetchAll(PDO::FETCH_OBJ);
 
         } catch (\Throwable $th) {
@@ -1183,6 +1185,7 @@ ORDER BY nomApplication;
         // Récupérer les deux listes
         $listeApplications       = $this->listeApplications();
         $listeApplicationUserSimple = $this->listeApplicationUserSimple($matricule, $idFonction);
+
 
         if (empty($listeApplications) || !is_array($listeApplications)) {
             return [];
@@ -1886,10 +1889,10 @@ WHERE p.matricule = :matricule;";
                                         if($result->idTypeUtilisateur == 1)
                                         {
                                             //pour tous les utilisateurs admin = 1 et user simple = 2
-                                            $_SESSION['connectUser'] = 1;
-                                            $_SESSION['tmpNbrAppli'] = $infoApplication->total_applications;
+                                            $_SESSION['connectUserGSJLF_ENT'] = 1;
+                                            $_SESSION['tmpNbrAppli'] = $infoApplication->total_applications + 1;
                                             $_SESSION['tmpNbrAppliEnAttente'] = $infoApplication->en_attente;
-                                            $_SESSION['tmpNbrAppliAutorisees'] = $infoApplication->total_applications - $infoApplication->en_attente;
+                                            $_SESSION['tmpNbrAppliAutorisees'] = $infoApplication->total_applications - $infoApplication->en_attente + 1;
                                             $_SESSION['tmpNbrAppliRefusees'] = 0;
 
                                             //base de donnee criat
@@ -1908,7 +1911,7 @@ WHERE p.matricule = :matricule;";
                                             $resultVerifierUserBASI = $authController->verifierUserBASI($bdBASI,$email,$matricule,$prenom,$nom);
 
                                             if (is_object($resultVerifierUserBASI)) {
-                                                $tmpIdBASI = $result->id;
+                                                $tmpIdBASI = $resultVerifierUserBASI->id;
                                                 $_SESSION['tmpIdBASI'] = $tmpIdBASI;
                                             } else {
                                                 session_destroy();
@@ -1955,6 +1958,7 @@ WHERE p.matricule = :matricule;";
                                                 die;
                                             }
 
+
                                             $listeTachesStructures = $authController->listeTachesStructuresAdmin();
                                             if (is_array($listeTachesStructures)) {
                                                 $_SESSION['listeTachesStructures'] = $listeTachesStructures;
@@ -1975,21 +1979,21 @@ WHERE p.matricule = :matricule;";
 
 
                                             //pour tous les utilisateurs admin = 1 et user simple = 2
-                                            $_SESSION['connectUser'] = 2;
+                                            $_SESSION['connectUserGSJLF_ENT'] = 2;
 
                                             $infoPosteResponsable = $authController->infoPosteResponsable($identifiant);
 
                                             $idFonction = null;
                                             $statutPoste = null;
                                             $nbrAppliGestTache = 0;
-                                            if (!empty($infoPosteResponsable) && is_array($infoPosteResponsable)) {
+if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
-                                                $idFonction = $infoPosteResponsable->id;
+
+                                                $idFonction = $infoPosteResponsable->idFonction;
                                                 if($infoPosteResponsable->idStatutFonction == 1 && $infoPosteResponsable->statutGradePoste == 1)
                                                 {
                                                     $statutPoste = 1;
                                                     $nbrAppliGestTache = 1;
-
 
                                                 }else
                                                 {
@@ -1997,6 +2001,8 @@ WHERE p.matricule = :matricule;";
 
                                                 }
                                             }
+
+
 //                                        $listeApplicationUserSimple = $authController->listeApplicationUserSimple(
 //                                            $matricule,
 //                                            $idFonction
@@ -2041,6 +2047,8 @@ WHERE p.matricule = :matricule;";
 
                                             $listeApplicationsMerged = $authController->listeApplicationsMerged($matricule, $idFonction);
 
+
+
                                             if (!empty($listeApplicationsMerged) && is_array($listeApplicationsMerged)) {
                                                 $_SESSION['tmpListeApplication'] = $listeApplicationsMerged;
 
@@ -2065,7 +2073,7 @@ WHERE p.matricule = :matricule;";
                                                 }
 
                                                 $_SESSION['tmpNbrAppliEnAttente'] = max(0,$tmpNbrAppliEnAttente);
-                                                $_SESSION['tmpNbrAppliAutorisees'] = max(0,$tmpNbrAppliAutorisees);
+                                                $_SESSION['tmpNbrAppliAutorisees'] = max(0,$tmpNbrAppliAutorisees + $nbrAppliGestTache);
                                                 $_SESSION['tmpNbrAppliRefusees'] = max(
                                                     0,$tmpNbrAppliRefusees
                                                 );
@@ -2095,7 +2103,9 @@ WHERE p.matricule = :matricule;";
                                                 if(!empty($listeBaseDoneeUserSimple))
                                                 {
                                                     foreach ($listeBaseDoneeUserSimple as $base) {
-                                                        if($base->code_base_donnees == "criat_uahb"){
+
+
+                                                        if(trim($base->code_base_donnees) == "criat_uahb"){
                                                             //base de donnee criat
                                                             $resultVerifierUserCRIAT = $authController->verifierUserCRIAT($bd,$email,$matricule,$prenom,$nom);
 
@@ -2111,13 +2121,14 @@ WHERE p.matricule = :matricule;";
 
                                                         }
 
-                                                        if($base->code_base_donnees == "basi") {
+                                                        if(trim($base->code_base_donnees) == "basi") {
+
 
                                                             //base de donnee BASI
                                                             $resultVerifierUserBASI = $authController->verifierUserBASI($bdBASI,$email,$matricule,$prenom,$nom);
 
                                                             if (is_object($resultVerifierUserBASI)) {
-                                                                $tmpIdBASI = $result->id;
+                                                                $tmpIdBASI = $resultVerifierUserBASI->id;
                                                                 $_SESSION['tmpIdBASI'] = $tmpIdBASI;
                                                                 ++$tmp_nombre_bd;
                                                             } else {
@@ -2130,6 +2141,8 @@ WHERE p.matricule = :matricule;";
 
 
                                                     }
+
+
 
 
 
@@ -2163,6 +2176,7 @@ WHERE p.matricule = :matricule;";
                                             }
 
 
+
                                             $listeTachesIncarnes = $authController->listeTachesIncarnes($idFonction);
 
                                             if (is_array($listeTachesIncarnes)) {
@@ -2172,6 +2186,10 @@ WHERE p.matricule = :matricule;";
                                                 echo "erreur8";
                                                 die;
                                             }
+
+
+
+
 
                                             $listeTachesStructures = $authController->listeTachesStructures($idFonction);
                                             if (is_array($listeTachesStructures)) {
@@ -4058,7 +4076,7 @@ WHERE p.matricule = :matricule;";
                                                                         if($result->idTypeUtilisateur == 1)
                                                                         {
                                                                             //pour tous les utilisateurs admin = 1 et user simple = 2
-                                                                            $_SESSION['connectUser'] = 1;
+                                                                            $_SESSION['connectUserGSJLF_ENT'] = 1;
                                                                             $_SESSION['tmpNbrAppli'] = $infoApplication->total_applications;
                                                                             $_SESSION['tmpNbrAppliEnAttente'] = $infoApplication->en_attente;
                                                                             $_SESSION['tmpNbrAppliAutorisees'] = $infoApplication->total_applications - $infoApplication->en_attente;
@@ -4145,7 +4163,7 @@ WHERE p.matricule = :matricule;";
 
 
                                                                             //pour tous les utilisateurs admin = 1 et user simple = 2
-                                                                            $_SESSION['connectUser'] = 2;
+                                                                            $_SESSION['connectUserGSJLF_ENT'] = 2;
 
                                                                             $infoPosteResponsable = $authController->infoPosteResponsable($identifiant);
 

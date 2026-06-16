@@ -137,7 +137,7 @@ RewriteRule ^page_par_defaut_finance_stats$ default/default_finance_stats.php [L
 
 
 #user simple
-RewriteRule ^user-controller$ admin/controllers/userSimpleController.php [L]
+RewriteRule ^user-controller$ userSimple/controllers/userSimpleController.php [L]
 
 
 RewriteRule ^user-accueil$ userSimple/accueil.php [L]

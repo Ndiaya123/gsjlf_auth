@@ -17,6 +17,8 @@ function actionOuvrirApplication(e)
             tmp : e},
             success: function (resp) {
 
+
+
                 console.log("Réponse brute =>", resp);
 
                 if (resp === "sesionExpired") {

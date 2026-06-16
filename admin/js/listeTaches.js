@@ -431,10 +431,14 @@ function type_tache(value) {
     $('#idUA').html('<option value="">Sélectionner une unité administrative</option>');
 
     if (value == 1) {
-        box_fonction.classList.remove('d-none');
-    } else if (value == 2) {
+
         box_niv.classList.remove('d-none');
         box_ua.classList.remove('d-none');
+
+    } else if (value == 2) {
+
+        box_fonction.classList.remove('d-none');
+
     }
 
     if (typeof validator1 !== 'undefined') {
@@ -749,10 +753,13 @@ function edit_type_tache(value) {
     $('#edit_idUA').html('<option value="">Sélectionner une unité administrative</option>');
 
     if (value == 1) {
-        box_fonction.classList.remove('d-none');
-    } else if (value == 2) {
         box_niv.classList.remove('d-none');
         box_ua.classList.remove('d-none');
+    } else if (value == 2) {
+
+
+        box_fonction.classList.remove('d-none');
+
     }
 
     if (typeof validator2 !== 'undefined') {

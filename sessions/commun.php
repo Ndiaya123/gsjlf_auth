@@ -4,8 +4,11 @@ session_start();
 
 
 $tmpIdP = null;
+$tmpMatricule = null;
 $tmpPrenom = null;
 $tmpNom = null;
+$tmpEmail = null;
+$tmpPhoto = null;
 $tmpInitiales = null;
 $tmpNbrAppli = null;
 $tmpNbrAppliEnAttente = null;
@@ -27,14 +30,17 @@ $statutPoste = null;
 
 if (
     !isset($_SESSION['tmpIdP']) ||
+    !isset($_SESSION['tmpMatricule']) ||
     !isset($_SESSION['tmpPrenom']) ||
     !isset($_SESSION['tmpNom']) ||
+    !isset($_SESSION['tmpEmail']) ||
+    !isset($_SESSION['tmpPhoto']) ||
     !isset($_SESSION['tmpInitiales']) ||
     !isset($_SESSION['tmpNbrAppli']) ||
     !isset($_SESSION['tmpNbrAppliEnAttente']) ||
     !isset($_SESSION['tmpNbrAppliAutorisees']) ||
     !isset($_SESSION['tmpNbrAppliRefusees']) ||
-    !isset($_SESSION['connectUser']) ||
+    !isset($_SESSION['connectUserGSJLF_ENT']) ||
     !isset($_SESSION['tmpListeApplication']) ||
     !isset($_SESSION['tmpEntite']) ||
     !isset($_SESSION['listeTachesStructures']) ||
@@ -50,7 +56,7 @@ if (
 {
 
 
-    $connectUser = $_SESSION['connectUser'] ?? null;
+    $connectUser = $_SESSION['connectUserGSJLF_ENT'] ?? null;
 
     if($connectUser == 1)
     {
@@ -67,8 +73,17 @@ if (
     }
 
     $tmpIdP = $_SESSION['tmpIdP'] ?? null;
-    $tmpPrenom = $_SESSION['tmpPrenom'] ?? null;
-    $tmpNom = $_SESSION['tmpNom'] ?? null;
+    $tmpMatricule = $_SESSION['tmpMatricule'] ?? null;
+
+    $tmpPrenom = !empty($_SESSION['tmpPrenom'])
+        ? ucwords(strtolower($_SESSION['tmpPrenom']))
+        : null;
+
+    $tmpNom = !empty($_SESSION['tmpNom'])
+        ? strtoupper($_SESSION['tmpNom'])
+        : null;
+    $tmpEmail = $_SESSION['tmpEmail'] ?? null;
+    $tmpPhoto = $_SESSION['tmpPhoto'] ?? null;
     $tmpInitiales = $_SESSION['tmpInitiales'] ?? null;
     $tmpNbrAppli = $_SESSION['tmpNbrAppli'] ?? null;
     $tmpNbrAppliEnAttente = $_SESSION['tmpNbrAppliEnAttente'] ?? null;
