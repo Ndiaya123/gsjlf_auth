@@ -547,7 +547,7 @@ var validator1 = FormValidation.formValidation(form1, {
                     callback: function () {
                         var type     = document.getElementById('idTypeTache').value;
                         var fonction = document.getElementById('id_fonction').value;
-                        if (type == 1) return fonction && fonction !== '';
+                        if (type == 2) return fonction && fonction !== '';
                         return true;
                     }
                 }
@@ -560,7 +560,7 @@ var validator1 = FormValidation.formValidation(form1, {
                     callback: function () {
                         var type   = document.getElementById('idTypeTache').value;
                         var niveau = document.getElementById('nivUA').value;
-                        if (type == 2) return niveau && niveau !== '';
+                        if (type == 1) return niveau && niveau !== '';
                         return true;
                     }
                 }
@@ -573,7 +573,7 @@ var validator1 = FormValidation.formValidation(form1, {
                     callback: function () {
                         var type = document.getElementById('idTypeTache').value;
                         var ua   = document.getElementById('idUA').value;
-                        if (type == 2) return ua && ua !== '';
+                        if (type == 1) return ua && ua !== '';
                         return true;
                     }
                 }
@@ -606,15 +606,24 @@ var validator1 = FormValidation.formValidation(form1, {
 var submitButton1 = document.getElementById('formAddTache_submit');
 
 submitButton1.addEventListener('click', function (e) {
+
+    console.log("1");
     e.preventDefault();
     if (!validator1) return;
+    console.log(2);
 
     validator1.validate().then(function (status) {
+
+
+        console.log(e);
+
+
         if (status !== 'Valid') return;
 
         submitButton1.disabled  = true;
         var originalText        = submitButton1.innerHTML;
         submitButton1.innerHTML = '<span class="indicator-progress d-inline">Veuillez patienter... <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>';
+        console.log(2);
 
         $.ajax({
             type: 'POST',
@@ -629,7 +638,7 @@ submitButton1.addEventListener('click', function (e) {
                 if (trimmed === 'sessionExpired') {
                     window.location.href = '/personnel/signin';
 
-                } else if (trimmed === 'succes') {
+                } else if (trimmed === 'succès' || trimmed === 'succes') {
                     $('#kt_modal_add_tache').modal('hide');
                     Swal.fire({
                         icon:               'success',
@@ -1023,7 +1032,7 @@ var validator2 = FormValidation.formValidation(form2, {
                     callback: function () {
                         var type     = document.getElementById('edit_idTypeTache').value;
                         var fonction = document.getElementById('edit_id_fonction').value;
-                        if (type == 1) return fonction && fonction !== '';
+                        if (type == 2) return fonction && fonction !== '';
                         return true;
                     }
                 }
@@ -1036,7 +1045,7 @@ var validator2 = FormValidation.formValidation(form2, {
                     callback: function () {
                         var type   = document.getElementById('edit_idTypeTache').value;
                         var niveau = document.getElementById('edit_nivUA').value;
-                        if (type == 2) return niveau && niveau !== '';
+                        if (type == 1) return niveau && niveau !== '';
                         return true;
                     }
                 }
@@ -1049,7 +1058,7 @@ var validator2 = FormValidation.formValidation(form2, {
                     callback: function () {
                         var type = document.getElementById('edit_idTypeTache').value;
                         var ua   = document.getElementById('edit_idUA').value;
-                        if (type == 2) return ua && ua !== '';
+                        if (type == 1) return ua && ua !== '';
                         return true;
                     }
                 }

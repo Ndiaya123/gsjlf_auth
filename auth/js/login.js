@@ -171,8 +171,6 @@ t.addEventListener('click', function (e) {
 
                     } else if (resp.startsWith("succès")) {
 
-                        alert(resp);
-                        alert(resp.substr(0, 6));
                         setTimeout(() => {
                             document.getElementById('main-form').style.display   = 'none';
                             document.getElementById('success-state').style.display = 'flex';

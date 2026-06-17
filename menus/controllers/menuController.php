@@ -519,7 +519,7 @@ switch ($option) {
 
             foreach ($tmpListeApplication as $appli) {
                 if ($appli->numero === $idAppli) {
-                    $page_par_defaut = $appli->page_defaut;
+                    $page_par_defaut = $BASE_URL .$appli->page_defaut;
                 }
             }
 

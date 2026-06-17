@@ -1101,6 +1101,78 @@ ORDER BY nomApplication;
         }
     }
 
+//    public function listeBaseDoneeUserSimple($matricule, $idFonction)
+//    {
+//        try {
+//
+//            $bdP = $this->connect();
+//
+//            $params = [
+//                'idTypeTache1' => 1,
+//                'idTypeTache2' => 2,
+//                'idTypeTache3' => 3,
+//                'idFonction'   => $idFonction,
+//                'matricule'    => $matricule,
+//                'access'       => 1,
+//                'active'       => 1
+//            ];
+//
+//            $sql = "
+//            SELECT DISTINCT base_donnees, code_base_donnees
+//            FROM (
+//
+//                -- Type 3 : accès par défaut
+//                SELECT
+//                    bd.nom AS base_donnees,
+//                    bd.code AS code_base_donnees
+//                FROM tache t
+//                INNER JOIN base_donnees bd ON bd.id = t.idDB
+//                WHERE t.idTypeTache = :idTypeTache3
+//                  AND t.active = :active
+//
+//                UNION ALL
+//
+//                -- Type 2 : accès par fonction
+//                SELECT
+//                    bd.nom AS base_donnees,
+//                    bd.code AS code_base_donnees
+//                FROM tache t
+//                INNER JOIN base_donnees bd ON bd.id = t.idDB
+//                WHERE t.idTypeTache = :idTypeTache2
+//                  AND t.active = :active
+//                  AND t.idFonction = :idFonction
+//
+//                UNION ALL
+//
+//                -- Type 1 : accès utilisateur
+//                SELECT
+//                    bd.nom AS base_donnees,
+//                    bd.code AS code_base_donnees
+//                FROM tache t
+//                INNER JOIN base_donnees bd ON bd.id = t.idDB
+//                INNER JOIN tache_utilisateur tu ON tu.idTache = t.id
+//                WHERE t.idTypeTache = :idTypeTache1
+//                  AND t.active = :active
+//                  AND tu.matricule = :matricule
+//                  AND tu.access = :access
+//
+//            ) data
+//
+//            ORDER BY base_donnees, code_base_donnees
+//        ";
+//
+//            $stmt = $bdP->prepare($sql);
+//            $stmt->execute($params);
+//
+//
+//            return $stmt->fetchAll(PDO::FETCH_OBJ);
+//
+//        } catch (\Throwable $th) {
+//            return [];
+//        }
+//    }
+
+
     public function listeBaseDoneeUserSimple($matricule, $idFonction)
     {
         try {
@@ -1118,56 +1190,50 @@ ORDER BY nomApplication;
             ];
 
             $sql = "
-            SELECT DISTINCT base_donnees, code_base_donnees
+            SELECT DISTINCT
+            bd.nom AS base_donnees,
+            bd.code AS code_base_donnees
             FROM (
-
-                -- Type 3 : accès par défaut
-                SELECT
-                    bd.nom AS base_donnees,
-                    bd.code AS code_base_donnees
+                SELECT la.id AS idAppli
                 FROM tache t
-                INNER JOIN base_donnees bd ON bd.id = t.idDB
+                INNER JOIN listeApplications la ON la.id = t.idAppli
                 WHERE t.idTypeTache = :idTypeTache3
                   AND t.active = :active
 
                 UNION ALL
 
-                -- Type 2 : accès par fonction
-                SELECT
-                    bd.nom AS base_donnees,
-                    bd.code AS code_base_donnees
+                SELECT la.id AS idAppli
                 FROM tache t
-                INNER JOIN base_donnees bd ON bd.id = t.idDB
+                INNER JOIN listeApplications la ON la.id = t.idAppli
                 WHERE t.idTypeTache = :idTypeTache2
                   AND t.active = :active
                   AND t.idFonction = :idFonction
 
                 UNION ALL
 
-                -- Type 1 : accès utilisateur
-                SELECT
-                    bd.nom AS base_donnees,
-                    bd.code AS code_base_donnees
+                SELECT la.id AS idAppli
                 FROM tache t
-                INNER JOIN base_donnees bd ON bd.id = t.idDB
+                INNER JOIN listeApplications la ON la.id = t.idAppli
                 INNER JOIN tache_utilisateur tu ON tu.idTache = t.id
                 WHERE t.idTypeTache = :idTypeTache1
                   AND t.active = :active
                   AND tu.matricule = :matricule
                   AND tu.access = :access
-
-            ) data
-
-            ORDER BY base_donnees, code_base_donnees
+            ) apps
+            INNER JOIN appli_bd ab
+                ON ab.idAppli = apps.idAppli
+            INNER JOIN base_donnees bd
+                ON bd.id = ab.idBD
+            ORDER BY bd.nom
         ";
 
             $stmt = $bdP->prepare($sql);
             $stmt->execute($params);
 
-
             return $stmt->fetchAll(PDO::FETCH_OBJ);
 
         } catch (\Throwable $th) {
+
             return [];
         }
     }
@@ -2097,6 +2163,10 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
 
 
+
+
+
+
                                             $tmp_nombre_bd = 0;
                                             if (is_array($listeBaseDoneeUserSimple)) {
 
@@ -2146,6 +2216,9 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
 
 
+
+
+
                                                     // importnat quand tout sera ok
 //                                                        if(count($listeBaseDoneeUserSimple) != $tmp_nombre_bd)
 //                                                        {
@@ -2162,6 +2235,7 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
                                                 echo "erreur6";
                                                 die;
                                             }
+
 
 
 

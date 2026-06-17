@@ -4448,7 +4448,7 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 
             } catch (\Throwable $th) {
                 error_log($th->getMessage());
-                echo "erreur";
+                echo "erreur".$th;
                 die;
             }
 
