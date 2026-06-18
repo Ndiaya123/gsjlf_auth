@@ -1281,6 +1281,39 @@ ORDER BY nomApplication;
 
         return $listeApplications;
     }
+
+
+    public function infoDirection($bdBASI,$idFonction)
+    {
+        try {
+
+
+            $params = [
+                'idFonction' => $idFonction
+            ];
+
+            $sql = "SELECT * FROM Direction WHERE Direction.idFonction=:idFonction";
+
+            $stmt = $bdBASI->prepare($sql);
+            $stmt->execute($params);
+
+            $tmp = $stmt->fetch(PDO::FETCH_OBJ);
+
+            if($tmp)
+            {
+
+                return $tmp;
+
+            }else
+            {
+                return [];
+            }
+
+        } catch (\Throwable $th) {
+            return [];
+        }
+    }
+
 }
 
 
@@ -2274,7 +2307,19 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
                                                 die;
                                             }
 
+                                            // session direction si tmp
 
+
+                                            $infoDirection = $authController->infoDirection($bdBASI,$idFonction);
+
+
+                                            if (!empty($infoDirection) && is_object($infoDirection)) {
+                                                $_SESSION['tmpIdDirection'] = $infoDirection->id;
+                                            } else {
+                                                session_destroy();
+                                                echo "erreur";
+                                                die;
+                                            }
 
 
                                             echo "succès/personnel/user-accueil";
@@ -4438,6 +4483,17 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
                                                                             $listeTachesStructures = $authController->listeTachesStructures($idFonction);
                                                                             if (is_array($listeTachesStructures)) {
                                                                                 $_SESSION['listeTachesStructures'] = $listeTachesStructures;
+                                                                            } else {
+                                                                                session_destroy();
+                                                                                echo "erreur";
+                                                                                die;
+                                                                            }
+
+
+
+                                                                            $infoDirection = $authController->infoDirection($bdBASI,$idFonction);
+                                                                            if (!empty($infoDirection) && is_array($infoDirection)) {
+                                                                                $_SESSION['tmpIdDirection'] = $infoDirection->id;
                                                                             } else {
                                                                                 session_destroy();
                                                                                 echo "erreur";
