@@ -328,15 +328,15 @@ WHERE affectations.identifiant = :identifiant;
         ");
 
             $stmt->execute([
-'matricule' => $matricule,
-'prenom' => $prenom,
-'nom' => $nom,
-'email' => $email,
-'password' => $password,
-'photo' => '1.png',
-'statut' => 1,
-'idRole' => 20,
-'idDepartement' => NULL
+                'matricule' => $matricule,
+                'prenom' => $prenom,
+                'nom' => $nom,
+                'email' => $email,
+                'password' => $password,
+                'photo' => '1.png',
+                'statut' => 1,
+                'idRole' => 20,
+                'idDepartement' => NULL
             ]);
 
             $id = $bd->lastInsertId();
@@ -608,7 +608,7 @@ ORDER BY
 
         } catch (\Throwable $th) {
             return [];
-                    }
+        }
     }
 
     public function listeTachesIncarnesAdmin()
@@ -1292,7 +1292,7 @@ ORDER BY nomApplication;
                 'idFonction' => $idFonction
             ];
 
-            $sql = "SELECT * FROM Direction WHERE Direction.idFonction=:idFonction";
+            $sql = "SELECT * FROM direction WHERE direction.idFonction=:idFonction";
 
             $stmt = $bdBASI->prepare($sql);
             $stmt->execute($params);
@@ -1707,8 +1707,8 @@ WHERE p.matricule = :matricule;";
 
                                         if (!$emailSent) {
                                             if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                                                $bdP->rollBack();
+                                            }
                                             echo "erreurMail";
                                             die;
                                         } else {
@@ -1721,8 +1721,8 @@ WHERE p.matricule = :matricule;";
 
                                     } else {
                                         if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                                            $bdP->rollBack();
+                                        }
                                         echo "erreur";
                                         die;
                                     }
@@ -1730,8 +1730,8 @@ WHERE p.matricule = :matricule;";
 
                                 } else {
                                     if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                                        $bdP->rollBack();
+                                    }
 
                                     echo "erreur";
                                     die;
@@ -1740,8 +1740,8 @@ WHERE p.matricule = :matricule;";
 
                             } else {
                                 if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                                    $bdP->rollBack();
+                                }
 
                                 echo "finContrat";
                                 die;
@@ -1751,8 +1751,8 @@ WHERE p.matricule = :matricule;";
 
                         } else {
                             if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                                $bdP->rollBack();
+                            }
                             echo "pasContrat";
                             die;
                         }
@@ -1760,8 +1760,8 @@ WHERE p.matricule = :matricule;";
 
                     } else {
                         if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                            $bdP->rollBack();
+                        }
                         echo "matriculeExistsPas";
                         die;
 
@@ -1769,8 +1769,8 @@ WHERE p.matricule = :matricule;";
 
                 } else {
                     if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                        $bdP->rollBack();
+                    }
                     echo "dejaCompte";
                     die;
 
@@ -1778,8 +1778,8 @@ WHERE p.matricule = :matricule;";
 
             } catch (Exception $e) {
                 if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                    $bdP->rollBack();
+                }
                 echo "erreur";
                 die;
             }
@@ -2085,7 +2085,7 @@ WHERE p.matricule = :matricule;";
                                             $idFonction = null;
                                             $statutPoste = null;
                                             $nbrAppliGestTache = 0;
-if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
+                                            if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
 
                                                 $idFonction = $infoPosteResponsable->idFonction;
@@ -2218,7 +2218,7 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
                                                                 ++$tmp_nombre_bd;
                                                             } else {
                                                                 session_destroy();
-                                                                echo "erreur";
+                                                                echo "erreur2";
                                                                 die;
                                                             }
 
@@ -2313,11 +2313,12 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
                                             $infoDirection = $authController->infoDirection($bdBASI,$idFonction);
 
 
+
                                             if (!empty($infoDirection) && is_object($infoDirection)) {
                                                 $_SESSION['tmpIdDirection'] = $infoDirection->id;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur";
+                                                echo "erreur22";
                                                 die;
                                             }
 
@@ -2365,8 +2366,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
             } catch (Exception $e) {
                 if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                    $bdP->rollBack();
+                }
                 echo "erreur".$e;
                 die;
             }
@@ -2411,8 +2412,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
                     if ($result->statutActivation == 1) {
 
-                       echo "dejaActive";
-                       die;
+                        echo "dejaActive";
+                        die;
 
                     } else {
 
@@ -2740,8 +2741,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
                                             if (!$emailSent) {
                                                 if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                                                    $bdP->rollBack();
+                                                }
 
                                                 echo "erreurMail";
                                                 die;
@@ -2755,8 +2756,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
                                         } else {
                                             if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                                                $bdP->rollBack();
+                                            }
                                             echo "erreur";
                                             die;
                                         }
@@ -2797,8 +2798,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
             }catch (Exception $e) {
                 if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                    $bdP->rollBack();
+                }
                 echo "erreur";
                 die;
             }
@@ -3590,8 +3591,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
                                                     if (!$emailSent) {
                                                         if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                                                            $bdP->rollBack();
+                                                        }
 
                                                         echo "erreurMail";
                                                         die;
@@ -3605,8 +3606,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
                                                 } else {
                                                     if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                                                        $bdP->rollBack();
+                                                    }
                                                     echo "erreur";
                                                     die;
                                                 }
@@ -3620,8 +3621,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
                                         }else
                                         {
                                             if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                                                $bdP->rollBack();
+                                            }
                                             echo "erreur";
                                             die;
                                         }
@@ -3673,8 +3674,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
             } catch (Exception $e) {
                 if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                    $bdP->rollBack();
+                }
                 echo "erreur";
                 die;
             }
@@ -3859,8 +3860,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
                                                         }else
                                                         {
                                                             if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                                                                $bdP->rollBack();
+                                                            }
                                                             echo "erreur";
                                                             die;
                                                         }
@@ -3868,8 +3869,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
                                                     }else
                                                     {
                                                         if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                                                            $bdP->rollBack();
+                                                        }
                                                         echo "erreur";
                                                         die;
                                                     }
@@ -3878,8 +3879,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
                                                 }else
                                                 {
                                                     if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                                                        $bdP->rollBack();
+                                                    }
                                                     echo "erreur";
                                                     die;
                                                 }
@@ -3914,8 +3915,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
                             } else {
                                 if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                                    $bdP->rollBack();
+                                }
                                 echo "compteInactive";
                                 die;
                             }
@@ -3931,8 +3932,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
                     }else
                     {
                         if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                            $bdP->rollBack();
+                        }
                         echo "erreur";
                         die;
                     }
@@ -3941,8 +3942,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
                 } else {
                     if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                        $bdP->rollBack();
+                    }
                     echo "pasCompte";
                     die;
 
@@ -3950,8 +3951,8 @@ if (!empty($infoPosteResponsable) && is_object($infoPosteResponsable)) {
 
             } catch (Exception $e) {
                 if ($bdP->inTransaction()) {
-    $bdP->rollBack();
-}
+                    $bdP->rollBack();
+                }
                 echo "erreur".$e;
                 die;
             }

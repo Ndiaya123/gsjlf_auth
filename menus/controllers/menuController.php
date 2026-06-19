@@ -540,10 +540,12 @@ switch ($option) {
             }
 
 
-            if ($tmp_tache_url_page != "oui") {
-                echo "sesionExpired";
-                die;
-            }
+
+            //  a decommneter le moment au tu aura gferer,
+//            if ($tmp_tache_url_page != "oui") {
+//                echo "sesionExpired";
+//                die;
+//            }
 
 
             $infoAppi = '
