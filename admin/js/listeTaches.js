@@ -506,6 +506,29 @@ $('#idSousMenu').on('select2:select select2:unselect', function () {
     if (typeof validator1 !== 'undefined') validator1.revalidateField('idIcon');
 });
 
+
+
+function actionOrder(e)
+{
+alert(e);
+
+
+    $.ajax({
+        type: 'POST',
+        url:  '/personnel/admin-controller',
+        data: { option: 20, idAppli: e },
+        success: function (data) {
+            var html = (typeof data === 'string' && data.substr(0, 7) === '<option')
+                ? data : '<option value="">Sélectionner l\'ordre d\'affichage </option>';
+            $('#order').html(html);
+            if (typeof validator1 !== 'undefined') validator1.revalidateField('order');
+        },
+        error: function () {
+            Swal.fire('Erreur', "Impossible de charger les unités administratives.", 'error');
+        }
+    });
+}
+
 // ==================================================
 // VALIDATION FORMULAIRE ADD
 // ==================================================

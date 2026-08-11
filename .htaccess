@@ -118,6 +118,9 @@ RewriteRule ^scripts.bundle.10.js$ admin/js/tacheQualification.js [L]
 RewriteRule ^admin-accueil$ admin/accueil.php [L]
 RewriteRule ^scripts.bundle.11.js$ admin/js/accueil.js [L]
 
+RewriteRule ^admin-ordre-d-affichage-menu$ admin/ordreMenu.php [L]
+RewriteRule ^scripts.bundle.15.js$ admin/js/ordreMenu.js [L]
+
 
 
 

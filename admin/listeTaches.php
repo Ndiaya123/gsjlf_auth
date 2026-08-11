@@ -606,7 +606,7 @@ include_once('../sessions/admin.php');
                                 id="idAppli"
                                 class="form-control"
                                 data-control="select2"
-                                data-placeholder="Choisir...">
+                                data-placeholder="Choisir..." onclick="actionOrder(this.value)">
                             <option value="">Sélectionner l'application</option>
                         </select>
                         <div class="invalid-feedback"></div>

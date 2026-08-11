@@ -1983,6 +1983,11 @@ WHERE p.matricule = :matricule;";
                                         $infoApplication = $authController->infoApplication();
 
 
+                                        // A faire apres pour avoir l'id Direction
+
+                                        $_SESSION['user_direction'] = 1;
+
+
 
 
                                         if($result->idTypeUtilisateur == 1)
@@ -2317,9 +2322,9 @@ WHERE p.matricule = :matricule;";
                                             if (!empty($infoDirection) && is_object($infoDirection)) {
                                                 $_SESSION['tmpIdDirection'] = $infoDirection->id;
                                             } else {
-                                                session_destroy();
-                                                echo "erreur22";
-                                                die;
+//                                                session_destroy();
+//                                                echo "erreur22";
+//                                                die;
                                             }
 
 
@@ -4189,6 +4194,10 @@ WHERE p.matricule = :matricule;";
                                                                         $_SESSION['tmpInitiales'] = $authController->getInitiales($prenom, $nom);
                                                                         $_SESSION['tmpEntite'] = $infoEntite->entite;
                                                                         $infoApplication = $authController->infoApplication();
+// A faire apres pour avoir l'id Direction
+
+                                                                        $_SESSION['user_direction'] = 1;
+
 
 
 
@@ -4496,9 +4505,9 @@ WHERE p.matricule = :matricule;";
                                                                             if (!empty($infoDirection) && is_array($infoDirection)) {
                                                                                 $_SESSION['tmpIdDirection'] = $infoDirection->id;
                                                                             } else {
-                                                                                session_destroy();
-                                                                                echo "erreur";
-                                                                                die;
+//                                                                                session_destroy();
+//                                                                                echo "erreur";
+//                                                                                die;
                                                                             }
 
 

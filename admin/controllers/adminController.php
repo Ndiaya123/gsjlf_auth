@@ -4459,6 +4459,253 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
             echo "erreur";
             die;
         }
+        break;
+
+    // ==================================================
+    // CASE 32 — GESTION DE L'ORDRE D'AFFICHAGE DU MENU
+    // ==================================================
+    case 32 :
+
+        date_default_timezone_set('Africa/Dakar');
+
+        $idUtilisateur = 1;
+//        $idUtilisateur = null;
+//        if (!empty($_SESSION['tmpIdP'])) {
+//            $idUtilisateur = $_SESSION['tmpIdP'];
+//        } else {
+//            echo "sessionExpired";
+//            die;
+//        }
+
+        $sousAction = $_POST['sousAction'] ?? '';
+        $idAppli    = isset($_POST['idAppli']) ? (int) $_POST['idAppli'] : 0;
+
+        if ($idAppli <= 0) {
+            echo json_encode(['success' => false, 'message' => 'idAppliManquant']);
+            die;
+        }
+
+        // ────────────────────────────────────────────────────────────────
+        // RÉCUPÉRATION DE L'ARBRE (sous-menus + tâches) POUR L'APPLICATION
+        // ────────────────────────────────────────────────────────────────
+        if ($sousAction === 'get') {
+
+            try {
+                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+                // Sous-menus utilisés par au moins une tâche active de cette application
+                $stmtSM = $bdP->prepare("
+                    SELECT sm.id, sm.nom, sm.idIcon, i.icon AS iconSvg, COALESCE(sm.ordre, 0) AS ordre
+                    FROM sous_menu sm
+                    JOIN icons i ON i.id = sm.idIcon
+                    WHERE sm.statut = 0
+                      AND EXISTS (
+                          SELECT 1 FROM tache t
+                          WHERE t.idSousMenu = sm.id AND t.idAppli = :idAppli AND t.active = 1
+                      )
+                    ORDER BY COALESCE(sm.ordre, 0) ASC, sm.nom ASC
+                ");
+                $stmtSM->execute(['idAppli' => $idAppli]);
+                $sousMenus = $stmtSM->fetchAll(PDO::FETCH_ASSOC);
+
+                $stmtTachesSM = $bdP->prepare("
+                    SELECT id, nom, url, idIcon, COALESCE(ordre, 0) AS ordre
+                    FROM tache
+                    WHERE idSousMenu = :idSousMenu AND idAppli = :idAppli AND active = 1
+                    ORDER BY COALESCE(ordre, 0) ASC, nom ASC
+                ");
+
+                $listeSousMenus = [];
+                foreach ($sousMenus as $sm) {
+                    $stmtTachesSM->execute(['idSousMenu' => $sm['id'], 'idAppli' => $idAppli]);
+                    $listeSousMenus[] = [
+                        'type'   => 'sousMenu',
+                        'id'     => (int) $sm['id'],
+                        'nom'    => $sm['nom'],
+                        'icon'   => $sm['iconSvg'],
+                        'ordre'  => (int) $sm['ordre'],
+                        'taches' => $stmtTachesSM->fetchAll(PDO::FETCH_ASSOC),
+                    ];
+                }
+
+                // Tâches affichées directement dans le menu (idSousMenu NULL)
+                $stmtTachesLibres = $bdP->prepare("
+                    SELECT id, nom, url, idIcon, COALESCE(ordre, 0) AS ordre
+                    FROM tache
+                    WHERE idSousMenu IS NULL AND idAppli = :idAppli AND active = 1
+                    ORDER BY COALESCE(ordre, 0) ASC, nom ASC
+                ");
+                $stmtTachesLibres->execute(['idAppli' => $idAppli]);
+                $tachesLibres = $stmtTachesLibres->fetchAll(PDO::FETCH_ASSOC);
+
+                $items = $listeSousMenus;
+                foreach ($tachesLibres as $t) {
+                    $items[] = [
+                        'type'  => 'tache',
+                        'id'    => (int) $t['id'],
+                        'nom'   => $t['nom'],
+                        'url'   => $t['url'],
+                        'ordre' => (int) $t['ordre'],
+                    ];
+                }
+
+                // Tri final : tous les éléments de premier niveau mélangés par ordre
+                usort($items, function ($a, $b) {
+                    return $a['ordre'] <=> $b['ordre'];
+                });
+
+                echo json_encode(['success' => true, 'items' => $items]);
+                die;
+
+            } catch (Exception $e) {
+                error_log("Erreur getOrdreMenu: " . $e->getMessage());
+                echo json_encode(['success' => false, 'items' => []]);
+                die;
+            }
+
+            // ────────────────────────────────────────────────────────────────
+            // ENREGISTREMENT DU NOUVEL ORDRE
+            // ────────────────────────────────────────────────────────────────
+        } elseif ($sousAction === 'save') {
+
+            $items = json_decode($_POST['items'] ?? '', true);
+
+            if (!is_array($items) || count($items) === 0) {
+                echo "erreur";
+                die;
+            }
+
+            $dateModification = date('Y-m-d H:i:s');
+
+            // Historise une tâche dans historiqueTache à partir de son état courant
+            // (lu APRÈS mise à jour de son ordre, comme pour changeEtatTache au case 24)
+            $insererHistoriqueTache = function ($tache) use ($bdP, $idUtilisateur, $dateModification) {
+                $stmtHist = $bdP->prepare("
+                    INSERT INTO historiqueTache (
+                        idUtilisateur, idTache, nom, autre_ressource, url,
+                        idTypeTache, commentaire, idSousMenu, idIcon,
+                        idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3,
+                        dateEnregistrement, active, idFonction, createdBy, idDB, idAppli, ordre, lastDateModification
+                    ) VALUES (
+                        ?, ?, ?, ?, ?,
+                        ?, ?, ?, ?,
+                        ?, ?, ?,
+                        ?, ?, ?, ?, ?, ?, ?, ?
+                    )
+                ");
+                $stmtHist->execute([
+                    $idUtilisateur,
+                    $tache['id'],
+                    $tache['nom']                       ?? null,
+                    $tache['autre_ressource']            ?? null,
+                    $tache['url']                        ?? null,
+                    $tache['idTypeTache']                ?? null,
+                    $tache['commentaire']                ?? null,
+                    $tache['idSousMenu']                 ?? null,
+                    $tache['idIcon']                     ?? null,
+                    $tache['idUniteAdministrativeNiv1']  ?? null,
+                    $tache['idUniteAdministrativeNiv2']  ?? null,
+                    $tache['idUniteAdministrativeNiv3']  ?? null,
+                    $dateModification,
+                    $tache['active']                     ?? null,
+                    $tache['idFonction']                 ?? null,
+                    $tache['createdBy']                  ?? null,
+                    $tache['idDB']                        ?? null,
+                    $tache['idAppli']                     ?? null,
+                    $tache['ordre']                        ?? null,
+                    $dateModification,
+                ]);
+            };
+
+            try {
+                $bdP->beginTransaction();
+
+                // Tâche "libre" (idSousMenu NULL) : on ne touche que celles qui le
+                // sont déjà, pour ne jamais dérattacher une tâche par erreur.
+                $stmtUpdateTacheLibre = $bdP->prepare("
+                    UPDATE tache SET ordre = ?, lastDateModification = ?
+                    WHERE id = ? AND idAppli = ? AND idSousMenu IS NULL
+                ");
+                // Tâche rattachée à un sous-menu précis : on vérifie le rattachement
+                // pour ne jamais réordonner une tâche en dehors de son sous-menu.
+                $stmtUpdateTacheGroupee = $bdP->prepare("
+                    UPDATE tache SET ordre = ?, lastDateModification = ?
+                    WHERE id = ? AND idAppli = ? AND idSousMenu = ?
+                ");
+                $stmtUpdateSousMenu = $bdP->prepare("UPDATE sous_menu SET ordre = ? WHERE id = ?");
+                $stmtGetTache       = $bdP->prepare("SELECT * FROM tache WHERE id = ?");
+
+                $ordreTopLevel = 10;
+
+                foreach ($items as $item) {
+
+                    $type = $item['type'] ?? '';
+
+                    if ($type === 'sousMenu') {
+
+                        $idSousMenu = (int) ($item['id'] ?? 0);
+                        if ($idSousMenu <= 0) {
+                            continue;
+                        }
+
+                        $stmtUpdateSousMenu->execute([$ordreTopLevel, $idSousMenu]);
+
+                        $ordreTache = 10;
+                        foreach (($item['taches'] ?? []) as $idTache) {
+                            $idTache = (int) $idTache;
+                            if ($idTache <= 0) {
+                                continue;
+                            }
+
+                            $stmtUpdateTacheGroupee->execute([$ordreTache, $dateModification, $idTache, $idAppli, $idSousMenu]);
+
+                            $stmtGetTache->execute([$idTache]);
+                            $tacheActuelle = $stmtGetTache->fetch(PDO::FETCH_ASSOC);
+                            if ($tacheActuelle) {
+                                $insererHistoriqueTache($tacheActuelle);
+                            }
+
+                            $ordreTache += 10;
+                        }
+
+                    } elseif ($type === 'tache') {
+
+                        $idTache = (int) ($item['id'] ?? 0);
+                        if ($idTache <= 0) {
+                            continue;
+                        }
+
+                        $stmtUpdateTacheLibre->execute([$ordreTopLevel, $dateModification, $idTache, $idAppli]);
+
+                        $stmtGetTache->execute([$idTache]);
+                        $tacheActuelle = $stmtGetTache->fetch(PDO::FETCH_ASSOC);
+                        if ($tacheActuelle) {
+                            $insererHistoriqueTache($tacheActuelle);
+                        }
+                    }
+
+                    $ordreTopLevel += 10;
+                }
+
+                $bdP->commit();
+                echo "succès";
+                die;
+
+            } catch (Exception $e) {
+                if ($bdP->inTransaction()) {
+                    $bdP->rollBack();
+                }
+                error_log("Erreur saveOrdreMenu: " . $e->getMessage());
+                echo "erreur";
+                die;
+            }
+
+        } else {
+            echo "erreur";
+            die;
+        }
+
+        break;
 
     default :
         echo "erreur";
