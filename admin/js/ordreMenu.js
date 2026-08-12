@@ -12,7 +12,7 @@
 
 // TODO: remplacer par l'URL réelle de votre controller.php
 // (celle utilisée par les autres pages admin, ex : ajouterSousMenu(), etc.)
-const CONTROLLER_URL = "/personnel/admin/controller.php";
+const CONTROLLER_URL = "/personnel/admin-controller";
 
 let sortableTopLevel = null;
 let sortablesSousMenu = [];

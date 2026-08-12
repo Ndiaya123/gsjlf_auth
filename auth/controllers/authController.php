@@ -473,6 +473,31 @@ GROUP BY la.id, la.nomApplication, la.description, la.statut;
     }
 
 
+
+    /**
+     * ============================================================================
+     *  Tri des menus/tâches selon le champ `ordre` (au lieu du tri alphabétique)
+     * ============================================================================
+     *  Seul le ORDER BY change dans les 5 fonctions ci-dessous — SELECT/JOIN/WHERE
+     *  restent identiques. Nouvelle logique de tri :
+     *
+     *   1) Accueil/Dashboard toujours en premier (filet de sécurité conservé,
+     *      utilisé aussi par getPageAccueil() ailleurs dans le code)
+     *   2) COALESCE(sm.ordre, t.ordre, 0) → position de premier niveau :
+     *        - si la tâche appartient à un sous-menu, c'est l'ordre DU SOUS-MENU
+     *          qui détermine sa position au premier niveau (toutes les tâches
+     *          d'un même sous-menu restent groupées à la place de leur sous-menu)
+     *        - si la tâche est "libre" (idSousMenu NULL), c'est son propre ordre
+     *   3) t.ordre → position de la tâche à l'intérieur de son sous-menu
+     *   4) t.nom → repli alphabétique si l'ordre n'a pas encore été configuré
+     *      (valeur par défaut 0 pour tout le monde)
+     *
+     *  ⚠️ Prérequis : la colonne sous_menu.ordre doit exister
+     *  (voir alter_sous_menu_ordre.sql fourni précédemment).
+     * ============================================================================
+     */
+
+
     public function listeTachesParDefaut()
     {
         try {
@@ -503,7 +528,7 @@ GROUP BY la.id, la.nomApplication, la.description, la.statut;
     la.nomApplication,
                     la.id as idAppli
 
-    
+
 
 FROM tache t
 
@@ -515,8 +540,8 @@ LEFT JOIN icons ic_t
 
 LEFT JOIN icons ic_sm
     ON ic_sm.id = sm.idIcon
-    
-    
+
+
 LEFT JOIN listeApplications la
     ON la.id = t.idAppli
 
@@ -528,7 +553,8 @@ ORDER BY
         WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 0
         ELSE 1
     END,
-    COALESCE(sm.nom, ''),
+    COALESCE(sm.ordre, t.ordre, 0),
+    t.ordre,
     t.nom;
         ";
 
@@ -585,7 +611,7 @@ LEFT JOIN icons ic_t
 
 LEFT JOIN icons ic_sm
     ON ic_sm.id = sm.idIcon
-    
+
 LEFT JOIN listeApplications la
     ON la.id = t.idAppli
 WHERE t.idTypeTache = :idTypeTache
@@ -597,7 +623,8 @@ ORDER BY
         WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 0
         ELSE 1
     END,
-    COALESCE(sm.nom, ''),
+    COALESCE(sm.ordre, t.ordre, 0),
+    t.ordre,
     t.nom;
         ";
 
@@ -655,7 +682,7 @@ LEFT JOIN icons ic_t
 LEFT JOIN icons ic_sm
     ON ic_sm.id = sm.idIcon
 
-    
+
 LEFT JOIN listeApplications la
     ON la.id = t.idAppli
 WHERE t.idTypeTache = :idTypeTache
@@ -666,7 +693,8 @@ ORDER BY
         WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 0
         ELSE 1
     END,
-    COALESCE(sm.nom, ''),
+    COALESCE(sm.ordre, t.ordre, 0),
+    t.ordre,
     t.nom;        ";
 
             $stmt = $bdP->prepare($sql);
@@ -742,7 +770,8 @@ ORDER BY
         WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 0
         ELSE 1
     END,
-    COALESCE(sm.nom, ''),
+    COALESCE(sm.ordre, t.ordre, 0),
+    t.ordre,
     t.nom;        ";
 
             $stmt = $bdP->prepare($sql);
@@ -795,7 +824,7 @@ LEFT JOIN icons ic_t
 
 LEFT JOIN icons ic_sm
     ON ic_sm.id = sm.idIcon
-    
+
 LEFT JOIN listeApplications la
     ON la.id = t.idAppli
 
@@ -807,7 +836,8 @@ ORDER BY
         WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 0
         ELSE 1
     END,
-    COALESCE(sm.nom, ''),
+    COALESCE(sm.ordre, t.ordre, 0),
+    t.ordre,
     t.nom;        ";
 
             $stmt = $bdP->prepare($sql);
@@ -819,7 +849,6 @@ ORDER BY
             return [];
         }
     }
-
 
 
 
@@ -1313,6 +1342,57 @@ ORDER BY nomApplication;
             return [];
         }
     }
+
+
+    public function retourDirectionUser($matricule)
+    {
+
+        try {
+
+            $bdP = $this->connect();
+
+            $data = [
+                'identifiant' => $matricule,
+                'statutAffectation' => 1
+            ];
+
+            $stmt = $bdP->prepare("SELECT affectations.idUniteAdministrativeNiv1,affectations.idUniteAdministrativeNiv2,affectations.idUniteAdministrativeNiv3 FROM personnels,affectations WHERE personnels.idAffectation=affectations.id AND affectations.statutAffectation=:statutAffectation AND personnels.matricule=:matricule");
+
+            $stmt->execute($data);
+
+            $result =  $stmt->fetch(PDO::FETCH_OBJ);
+
+            if($result)
+            {
+
+                if($result->idUniteAdministrativeNiv1 != null && $result->idUniteAdministrativeNiv1 != "")
+                {
+
+                }else if($result->idUniteAdministrativeNiv2 != null && $result->idUniteAdministrativeNiv2 != "")
+                {
+
+                }else if($result->idUniteAdministrativeNiv3 != null && $result->idUniteAdministrativeNiv3 != "")
+                {
+
+                }else
+                {
+                    return "erreur";
+
+                }
+
+
+            }else
+            {
+                return "erreur";
+            }
+
+
+
+        } catch (\Throwable $th) {
+            return "erreur";
+        }
+
+}
 
 }
 

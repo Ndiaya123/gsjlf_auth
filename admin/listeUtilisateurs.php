@@ -170,6 +170,24 @@ include_once('../sessions/admin.php');
                         </div>
 
 
+                        <div class="menu-item">
+                            <a class="menu-link" href="/personnel/admin-ordre-d-affichage-menu">
+                                    <span class="menu-icon">
+                                        <span class="svg-icon svg-icon-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <path d="M4 2L7 6H5V18H7L4 22L1 18H3V6H1L4 2Z" fill="black"/>
+    <rect opacity="0.3" x="10" y="3" width="11" height="2" rx="1" fill="black"/>
+    <rect opacity="0.3" x="10" y="11" width="8" height="2" rx="1" fill="black"/>
+    <rect opacity="0.3" x="10" y="19" width="11" height="2" rx="1" fill="black"/>
+</svg>
+                                        </span>
+                                    </span>Ordre d'affichage du menu
+                                <span class="menu-title"></span>
+                            </a>
+                        </div>
+
+
+
                     </div>
                 </div>
             </div>

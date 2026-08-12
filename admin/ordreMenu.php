@@ -170,6 +170,31 @@ include_once('../sessions/admin.php');
                         </div>
 
                         <div class="menu-item">
+                            <div class="menu-content pb-2">
+                                <span class="menu-section text-muted text-uppercase fs-8 ls-1">Dashboard</span>
+                            </div>
+                        </div>
+                        <div class="menu-item">
+                            <a class="menu-link" href="/personnel/admin-liste-utilisateurs">
+                                    <span class="menu-icon">
+                                        <span class="svg-icon svg-icon-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                                 viewBox="0 0 24 24" fill="none">
+                                              <path d="M16.0173 9H15.3945C14.2833 9 13.263 9.61425 12.7431 10.5963L12.154 11.7091C12.0645 11.8781 12.1072 12.0868 12.2559 12.2071L12.6402 12.5183C13.2631 13.0225 13.7556 13.6691 14.0764 14.4035L14.2321 14.7601C14.2957 14.9058 14.4396 15 14.5987 15H18.6747C19.7297 15 20.4057 13.8774 19.912 12.945L18.6686 10.5963C18.1487 9.61425 17.1285 9 16.0173 9Z"
+                                                    fill="black"/>
+<rect opacity="0.3" x="14" y="4" width="4" height="4" rx="2" fill="black"/>
+<path d="M4.65486 14.8559C5.40389 13.1224 7.11161 12 9 12C10.8884 12 12.5961 13.1224 13.3451 14.8559L14.793 18.2067C15.3636 19.5271 14.3955 21 12.9571 21H5.04292C3.60453 21 2.63644 19.5271 3.20698 18.2067L4.65486 14.8559Z"
+      fill="black"/>
+<rect opacity="0.3" x="6" y="5" width="6" height="6" rx="3" fill="black"/>
+
+                                            </svg>
+                                        </span>
+                                    </span>Liste des utilisateurs
+                                <span class="menu-title"></span>
+                            </a>
+                        </div>
+
+                        <div class="menu-item">
                             <a class="menu-link" href="/personnel/admin-liste-sous-menus">
                                     <span class="menu-icon">
                                         <span class="svg-icon svg-icon-2">
@@ -209,18 +234,36 @@ include_once('../sessions/admin.php');
                         </div>
 
                         <div class="menu-item">
-                            <a class="menu-link active" href="/personnel/admin-ordre-menu">
+                            <a class="menu-link" href="/personnel/admin-liste-tache_qualification">
                                     <span class="menu-icon">
                                         <span class="svg-icon svg-icon-2">
                                             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
                                                  viewBox="0 0 24 24" fill="none">
-                                                <path opacity="0.3" d="M3 5C3 4.4 3.4 4 4 4H20C20.6 4 21 4.4 21 5C21 5.6 20.6 6 20 6H4C3.4 6 3 5.6 3 5Z" fill="black"/>
-                                                <path d="M3 12C3 11.4 3.4 11 4 11H14C14.6 11 15 11.4 15 12C15 12.6 14.6 13 14 13H4C3.4 13 3 12.6 3 12Z" fill="black"/>
-                                                <path opacity="0.3" d="M3 19C3 18.4 3.4 18 4 18H17C17.6 18 18 18.4 18 19C18 19.6 17.6 20 17 20H4C3.4 20 3 19.6 3 19Z" fill="black"/>
-                                                <path d="M18 9L21 12L18 15V9Z" fill="black"/>
+                                                <path opacity="0.3"
+                                                      d="M8.9 21L7.19999 22.6999C6.79999 23.0999 6.2 23.0999 5.8 22.6999L4.1 21H8.9ZM4 16.0999L2.3 17.8C1.9 18.2 1.9 18.7999 2.3 19.1999L4 20.9V16.0999ZM19.3 9.1999L15.8 5.6999C15.4 5.2999 14.8 5.2999 14.4 5.6999L9 11.0999V21L19.3 10.6999C19.7 10.2999 19.7 9.5999 19.3 9.1999Z"
+                                                      fill="black"/>
+<path d="M21 15V20C21 20.6 20.6 21 20 21H11.8L18.8 14H20C20.6 14 21 14.4 21 15ZM10 21V4C10 3.4 9.6 3 9 3H4C3.4 3 3 3.4 3 4V21C3 21.6 3.4 22 4 22H9C9.6 22 10 21.6 10 21ZM7.5 18.5C7.5 19.1 7.1 19.5 6.5 19.5C5.9 19.5 5.5 19.1 5.5 18.5C5.5 17.9 5.9 17.5 6.5 17.5C7.1 17.5 7.5 17.9 7.5 18.5Z"
+      fill="black"/>
+
                                             </svg>
                                         </span>
-                                    </span>Ordre du menu
+                                    </span>Liste des taches post
+                                <span class="menu-title"></span>
+                            </a>
+                        </div>
+
+                        <div class="menu-item">
+                            <a class="menu-link active " href="/personnel/admin-ordre-d-affichage-menu">
+                                    <span class="menu-icon">
+                                        <span class="svg-icon svg-icon-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+    <path d="M4 2L7 6H5V18H7L4 22L1 18H3V6H1L4 2Z" fill="black"/>
+    <rect opacity="0.3" x="10" y="3" width="11" height="2" rx="1" fill="black"/>
+    <rect opacity="0.3" x="10" y="11" width="8" height="2" rx="1" fill="black"/>
+    <rect opacity="0.3" x="10" y="19" width="11" height="2" rx="1" fill="black"/>
+</svg>
+                                        </span>
+                                    </span>Ordre d'affichage du menu
                                 <span class="menu-title"></span>
                             </a>
                         </div>
