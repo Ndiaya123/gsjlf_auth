@@ -515,6 +515,9 @@ GROUP BY la.id, la.nomApplication, la.description, la.statut;
     t.nom,
     t.url,
     sm.nom AS sousMenu,
+        t.estVisible,
+
+        t.estVisibleUrl,
 
     CASE
         WHEN sm.id IS NOT NULL THEN ic_sm.icon
@@ -586,6 +589,10 @@ ORDER BY
     t.nom,
         t.url,
     sm.nom AS sousMenu,
+        t.estVisible,
+                t.estVisibleUrl,
+
+
 
     CASE
         WHEN sm.id IS NOT NULL THEN ic_sm.icon
@@ -656,6 +663,9 @@ SELECT
     t.nom,
         t.url,
     sm.nom AS sousMenu,
+        t.estVisible,
+        t.estVisibleUrl,
+
 
     CASE
         WHEN sm.id IS NOT NULL THEN ic_sm.icon
@@ -727,6 +737,8 @@ SELECT
     t.nom,
         t.url,
     sm.nom AS sousMenu,
+    t.estVisible,
+        t.estVisibleUrl,
 
     CASE
         WHEN sm.id IS NOT NULL THEN ic_sm.icon
@@ -802,6 +814,9 @@ SELECT
     t.nom,
     t.url,
     sm.nom AS sousMenu,
+        t.estVisible,
+        t.estVisibleUrl,
+
 
     COALESCE(ic_sm.icon, ic_t.icon) AS icon,
 
@@ -1352,7 +1367,7 @@ ORDER BY nomApplication;
             $bdP = $this->connect();
 
             $data = [
-                'identifiant' => $matricule,
+                'matricule' => $matricule,
                 'statutAffectation' => 1
             ];
 
@@ -1364,15 +1379,25 @@ ORDER BY nomApplication;
 
             if($result)
             {
+                $niveau = NULL;
+                $idUniteAdministrative = NULL;
 
                 if($result->idUniteAdministrativeNiv1 != null && $result->idUniteAdministrativeNiv1 != "")
                 {
+                    $niveau = 1;
+
+                    $idUniteAdministrative = $result->idUniteAdministrativeNiv1;
 
                 }else if($result->idUniteAdministrativeNiv2 != null && $result->idUniteAdministrativeNiv2 != "")
                 {
+                    $niveau = 2;
+
+                    $idUniteAdministrative = $result->idUniteAdministrativeNiv2;
 
                 }else if($result->idUniteAdministrativeNiv3 != null && $result->idUniteAdministrativeNiv3 != "")
                 {
+                    $niveau = 3;
+                    $idUniteAdministrative = $result->idUniteAdministrativeNiv3;
 
                 }else
                 {
@@ -1380,6 +1405,25 @@ ORDER BY nomApplication;
 
                 }
 
+
+
+                $dataD = [
+                    'niveau' => $niveau,
+                    'idUniteAdministrative' => $idUniteAdministrative
+                ];
+
+                $stmtD = $bdP->prepare("SELECT * FROM direction_employe_chef WHERE direction_employe_chef.niveau=:niveau AND direction_employe_chef.idUniteAdministrative=:idUniteAdministrative");
+                $stmtD->execute($dataD);
+                $resultD =  $stmtD->fetch(PDO::FETCH_OBJ);
+
+                if($resultD)
+                {
+                    return $resultD->idChefDirection;
+
+                }else
+                {
+                    return "erreur";
+                }
 
             }else
             {
@@ -1393,6 +1437,43 @@ ORDER BY nomApplication;
         }
 
 }
+
+
+
+    public function retourInfoDirecteur($idFonction)
+    {
+
+        try {
+
+            $bdP = $this->connect();
+
+            $data = [
+                'idFonction' => $idFonction
+            ];
+
+            $stmt = $bdP->prepare("SELECT * FROM direction WHERE direction.idFonction=:idFonction");
+
+            $stmt->execute($data);
+
+            $result =  $stmt->fetch(PDO::FETCH_OBJ);
+
+            if($result)
+            {
+
+                return "oui";
+
+            }else
+            {
+                return "erreur";
+            }
+
+
+
+        } catch (\Throwable $th) {
+            return "erreur";
+        }
+
+    }
 
 }
 
@@ -2065,7 +2146,17 @@ WHERE p.matricule = :matricule;";
 
                                         // A faire apres pour avoir l'id Direction
 
-                                        $_SESSION['user_direction'] = 1;
+                                        $retourDirectionUser = $authController->retourDirectionUser($matricule);
+
+
+
+                                        if($retourDirectionUser == "erreur")
+                                        {
+                                            echo "erreur";
+                                            die;
+                                        }
+
+                                        $_SESSION['user_direction'] = $retourDirectionUser;
 
 
 
@@ -2174,7 +2265,10 @@ WHERE p.matricule = :matricule;";
 
 
                                                 $idFonction = $infoPosteResponsable->idFonction;
-                                                if($infoPosteResponsable->idStatutFonction == 1 && $infoPosteResponsable->statutGradePoste == 1)
+
+                                                $retourInfoDirecteur = $authController->retourInfoDirecteur($idFonction);
+
+                                                if($retourInfoDirecteur == "oui")
                                                 {
                                                     $statutPoste = 1;
                                                     $nbrAppliGestTache = 1;
@@ -4276,8 +4370,15 @@ WHERE p.matricule = :matricule;";
                                                                         $infoApplication = $authController->infoApplication();
 // A faire apres pour avoir l'id Direction
 
-                                                                        $_SESSION['user_direction'] = 1;
+                                                                        $retourDirectionUser = $authController->retourDirectionUser($matricule);
 
+                                                                        if($retourDirectionUser == "erreur")
+                                                                        {
+                                                                            echo "erreur";
+                                                                            die;
+                                                                        }
+
+                                                                        $_SESSION['user_direction'] = $retourDirectionUser;
 
 
 
@@ -4382,11 +4483,12 @@ WHERE p.matricule = :matricule;";
                                                                             if (!empty($infoPosteResponsable) && is_array($infoPosteResponsable)) {
 
                                                                                 $idFonction = $infoPosteResponsable->id;
-                                                                                if($infoPosteResponsable->idStatutFonction == 1 && $infoPosteResponsable->statutGradePoste == 1)
+                                                                                $retourInfoDirecteur = $authController->retourInfoDirecteur($idFonction);
+
+                                                                                if($retourInfoDirecteur == "oui")
                                                                                 {
                                                                                     $statutPoste = 1;
                                                                                     $nbrAppliGestTache = 1;
-
 
                                                                                 }else
                                                                                 {
@@ -4530,7 +4632,7 @@ WHERE p.matricule = :matricule;";
 
 
 
-                                                                                    // importnat quand tout sera ok
+                                                                                    // important quand tout sera ok
 //                                                        if(count($listeBaseDoneeUserSimple) != $tmp_nombre_bd)
 //                                                        {
 //                                                            session_destroy();
@@ -4655,8 +4757,6 @@ WHERE p.matricule = :matricule;";
                                             }
 
                                         }
-
-
 
 
                                     }else

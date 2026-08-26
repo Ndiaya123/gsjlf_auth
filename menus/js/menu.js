@@ -51,7 +51,7 @@ $(document).ready(function () {
             console.log("Réponse brute =>", data);
 
             if (data === "sesionExpired") {
-                window.location.href = "http://localhost/personnel/signin";
+                //window.location.href = "http://localhost/personnel/signin";
                 return;
             }
 

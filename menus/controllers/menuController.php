@@ -11,7 +11,7 @@ class menuController extends BDP
     function tokenencrypt($data)
     {
         $secretKey = 'U@hbENTDRI@TCRI@T2022';
-        $secretIv = 'www.ent.uahb.sn';
+        $secretIv = '[www.ent.uahb.sn](https://www.ent.uahb.sn)';
         $encryptMethod = "AES-256-CBC";
         $key = hash('sha256', $secretKey);
         $iv = substr(hash('sha256', $secretIv), 0, 16);
@@ -22,7 +22,7 @@ class menuController extends BDP
     function tokendecrypt($data)
     {
         $secretKey = 'U@hbENTDRI@TCRI@T2022';
-        $secretIv = 'www.ent.uahb.sn';
+        $secretIv = '[www.ent.uahb.sn](https://www.ent.uahb.sn)';
         $encryptMethod = "AES-256-CBC";
         $key = hash('sha256', $secretKey);
         $iv = substr(hash('sha256', $secretIv), 0, 16);
@@ -89,11 +89,18 @@ class menuController extends BDP
     /**
      * Génère le HTML du menu latéral à partir des 3 listes de tâches
      *
+     * Seules les tâches dont estVisible == 1 sont incluses dans le menu.
+     * Les tâches avec estVisible == 0 (ou absent) sont exclues du HTML généré.
+     *
      * @param array|null $listeTachesStructures Tâches structurées (avec sous-menus)
      * @param array|null $listeTachesIncarnes Tâches incarnées
      * @param array|null $listeTachesParDefaut Tâches par défaut
      * @param string|null $page_par_defaut URL de la page par défaut
-     * @param string $url_page URL de la page active
+     * @param string $url_page URL à comparer pour l'état "actif" du menu.
+     *        Normalement l'URL de la page courante ; mais si la tâche
+     *        courante a estVisible == 0, l'appelant doit ici passer sa
+     *        colonne estVisibleUrl à la place, pour que l'élément visible
+     *        correspondant soit surligné comme actif.
      * @return string    HTML du menu
      */
     function genererMenu(
@@ -105,10 +112,17 @@ class menuController extends BDP
     ): string
     {
 
-        // Normaliser les listes (null => tableau vide)
-        $structures = $listeTachesStructures ?? [];
-        $incarnes = $listeTachesIncarnes ?? [];
-        $parDefaut = $listeTachesParDefaut ?? [];
+        // ── Ne garder que les tâches visibles (estVisible == 1) pour le menu ──
+        // (si la colonne estVisible est absente sur une ligne, on la considère visible
+        //  par défaut pour ne pas casser des données existantes sans cette colonne)
+        $filtreVisible = function ($t) {
+            return isset($t->estVisible) ? ((int)$t->estVisible === 1) : true;
+        };
+
+        // Normaliser les listes (null => tableau vide) + filtrer par estVisible
+        $structures = array_values(array_filter($listeTachesStructures ?? [], $filtreVisible));
+        $incarnes = array_values(array_filter($listeTachesIncarnes ?? [], $filtreVisible));
+        $parDefaut = array_values(array_filter($listeTachesParDefaut ?? [], $filtreVisible));
 
         // Si tout est vide → page par défaut uniquement
         $toutVide = empty($structures) && empty($incarnes) && empty($parDefaut);
@@ -384,6 +398,7 @@ switch ($option) {
             $url_page = null;
             if (!empty($_POST["url_page"])) {
                 $url_page = $_POST["url_page"];
+//                $url_page = dirname($url_page);
             } else {
                 echo "erreur";
                 die;
@@ -486,6 +501,12 @@ switch ($option) {
             $nomTache = null;
             $idTache = null;
             $idAppli = null;
+            $estVisible = 0;
+            // URL de repli à utiliser pour activer un élément du menu quand
+            // la tâche courante a estVisible == 0 (elle ne s'affiche pas
+            // elle-même dans le menu, mais estVisibleUrl pointe vers l'item
+            // visible du menu qui doit être surligné comme actif à sa place)
+            $estVisibleUrlTache = null;
 
             foreach ($listeTachesStructures as $tache) {
                 if ($tache->url === $url_page) {
@@ -493,6 +514,12 @@ switch ($option) {
                     $nomApplication = $tache->nomApplication;
                     $nomTache = $tache->nom;
                     $idAppli = $tache->idAppli;
+
+                    if($tache->estVisible == 1){
+                        $estVisible = 1;
+                    } else {
+                        $estVisibleUrlTache = $tache->estVisibleUrl ?? null;
+                    }
                 }
             }
 
@@ -502,7 +529,15 @@ switch ($option) {
                     $nomApplication = $tache->nomApplication;
                     $nomTache = $tache->nom;
                     $idAppli = $tache->idAppli;
+
+                    if($tache->estVisible == 1){
+                        $estVisible = 1;
+                    } else {
+                        $estVisibleUrlTache = $tache->estVisibleUrl ?? null;
+                    }
                 }
+
+
             }
 
             foreach ($listeTachesParDefaut as $tache) {
@@ -511,6 +546,11 @@ switch ($option) {
                     $nomApplication = $tache->nomApplication;
                     $nomTache = $tache->nom;
                     $idAppli = $tache->idAppli;
+                    if($tache->estVisible == 1){
+                        $estVisible = 1;
+                    } else {
+                        $estVisibleUrlTache = $tache->estVisibleUrl ?? null;
+                    }
                 }
             }
 
@@ -528,24 +568,44 @@ switch ($option) {
 
                 $chemin = parse_url($url_page, PHP_URL_PATH);
                 $chemin = preg_replace('#^/personnel/#', '', $chemin);
+                $chemin = preg_replace('#^/uahb/#', '', $chemin);
+               $chemin = explode('/', $chemin)[0];
+
+
                 foreach ($tmpListeApplication as $appli) {
                     if ($appli->page_defaut === $chemin) {
                         $page_par_defaut = $BASE_URL . $appli->page_defaut;
                         $nomApplication = $appli->nomApplication;
                         $nomTache = "Dashboard";
                         $tmp_tache_url_page = "oui";
+
+                        $estVisible = 1;
                     }
                 }
 
             }
 
 
+            // ── Vérification d'accès : l'URL demandée doit correspondre à une
+            //    tâche attribuée (présente dans une des 3 listes), quelle que
+            //    soit sa valeur estVisible (estVisible ne pilote que l'affichage
+            //    dans le menu, pas l'autorisation d'accès à la page).
+            if ($tmp_tache_url_page != "oui") {
+                echo "sesionExpired";
+                die;
+            }
 
-            //  a decommneter le moment au tu aura gferer,
-//            if ($tmp_tache_url_page != "oui") {
-//                echo "sesionExpired";
-//                die;
-//            }
+            // ── URL à utiliser pour l'état "actif" du menu ──────────────────
+            // Si la tâche courante n'est pas visible dans le menu (estVisible == 0),
+            // on utilise sa colonne estVisibleUrl pour retrouver, parmi les
+            // éléments réellement affichés dans le menu (estVisible == 1),
+            // celui qui doit être marqué actif à sa place.
+            $url_page_pour_menu = $url_page;
+            if ($estVisible == 0 && !empty($estVisibleUrlTache)) {
+                $url_page_pour_menu = $estVisibleUrlTache;
+            }
+
+
 
 
             $infoAppi = '
@@ -557,8 +617,10 @@ switch ($option) {
     ' . $nomTache . '
                                 </li>
 
-                            </ul>                  
+                            </ul>
     ';
+
+
 
 
             $menuHtml = $menuController->genererMenu(
@@ -566,7 +628,7 @@ switch ($option) {
                 $listeTachesIncarnes,
                 $listeTachesParDefaut,
                 $page_par_defaut,
-                $url_page
+                $url_page_pour_menu
             );
 
             $listeInfo[] = array(
