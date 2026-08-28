@@ -259,7 +259,7 @@
 
                                                     <div class="col-auto d-flex align-items-start justify-content-center">
                                                         <div>
-                                                            <label for="agentSelectForTask">Agent</label>
+                                                            <label for="Select">Agent</label>
                                                             <select class="form-control form-control-solid w-250px m-2 bg-primary text-center text-light" id="agentSelectForTask" name="id_utilisateur">
                                                                 <option value="">Selectionner un Agent</option>
                                                             </select>

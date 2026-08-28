@@ -5,7 +5,7 @@ $(document).ready(function () {
         success: function (data) {
             var html = (typeof data === 'string' && data.substr(0, 7) === '<option')
                 ? data : '<option value="">Sélectionner un agent</option>';
-            $('#idQualification').html(html);
+            $('#agentSelectForTask').html(html);
 
         },
         error: function () {
@@ -14,4 +14,7 @@ $(document).ready(function () {
         }
     });
 });
+
+
+
 

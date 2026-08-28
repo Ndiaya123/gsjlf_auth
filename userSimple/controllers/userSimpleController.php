@@ -635,6 +635,221 @@ switch ($option) {
         }
         break;
 
+
+    case 2:
+
+
+
+        $idDirection = NULL;
+
+        if(!empty($_SESSION['user_direction']))
+        {
+            $idDirection = $_SESSION['user_direction'];
+
+
+
+        }else
+        {
+            echo "sessionExpired";
+            die;
+        }
+
+            try {
+
+
+
+                $stmt = $bdP->prepare("SELECT * FROM direction_employe_chef WHERE idChefDirection = ?");
+                $stmt->execute([$idDirection]);
+                $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+                if(count($listes) > 0)
+                {
+
+                    $listeAgents = array();
+
+
+                    foreach ($listes as $tmp) {
+
+                        if($tmp->niveau == 1)
+                        {
+                            $stmtN1 = $bdP->prepare("SELECT etatCivil.identifiant,etatCivil.prenom,etatCivil.nom,personnels.matricule FROM personnels,affectations,etatCivil WHERE personnels.idEtatCivil=etatCivil.id AND personnels.idAffectation=affectations.id AND affectations.idUniteAdministrativeNiv1=:idUniteAdministrativeNiv1 AND affectations.statutAffectation=:statutAffectation");
+                            $stmtN1->execute([$idDirection]);
+                            $listesN1 = $stmtN1->fetchAll(PDO::FETCH_OBJ);
+
+
+                            foreach ($listesN1 as $tmp1) {
+
+                                $listeAgents[] = array(
+                                    'matricule' => $tmp1->matricule,
+                                    'prenom' => ucwords(mb_strtolower($tmp1->prenom)),
+                                    'nom' => $userSimpleController->fctRetirerAccents(mb_strtoupper($tmp1->nom)),
+                                    'prenomNom' => ucfirst(mb_strtolower($tmp1["prenom"])) . " " . $userSimpleController->fctRetirerAccents(mb_strtoupper($tmp1["nom"]))
+
+                                );
+
+                            }
+
+
+
+                        }
+
+
+                        if($tmp->niveau == 2)
+                        {
+
+                            $stmtN2 = $bdP->prepare("SELECT etatCivil.identifiant,etatCivil.prenom,etatCivil.nom,personnels.matricule FROM personnels,affectations,etatCivil WHERE personnels.idEtatCivil=etatCivil.id AND personnels.idAffectation=affectations.id AND affectations.idUniteAdministrativeNiv2=:idUniteAdministrativeNiv2 AND affectations.statutAffectation=:statutAffectation");
+                            $stmtN2->execute([$idDirection]);
+                            $listesN2 = $stmtN2->fetchAll(PDO::FETCH_OBJ);
+
+
+                            foreach ($listesN2 as $tmp2) {
+
+                                $listeAgents[] = array(
+                                    'matricule' => $tmp2->matricule,
+                                    'prenom' => ucwords(mb_strtolower($tmp2->prenom)),
+                                    'nom' => $userSimpleController->fctRetirerAccents(mb_strtoupper($tmp2->nom)),
+                                    'prenomNom' => ucfirst(mb_strtolower($tmp2["prenom"])) . " " . $userSimpleController->fctRetirerAccents(mb_strtoupper($tmp2["nom"]))
+
+                                );
+
+
+                            }
+
+
+                        }
+
+
+                        if($tmp->niveau == 3)
+                        {
+
+
+                            $stmtN3 = $bdP->prepare("SELECT etatCivil.identifiant,etatCivil.prenom,etatCivil.nom,personnels.matricule FROM personnels,affectations,etatCivil WHERE personnels.idEtatCivil=etatCivil.id AND personnels.idAffectation=affectations.id AND affectations.idUniteAdministrativeNiv3=:idUniteAdministrativeNiv3 AND affectations.statutAffectation=:statutAffectation");
+                            $stmtN3->execute([$idDirection]);
+                            $listesN3 = $stmtN3->fetchAll(PDO::FETCH_OBJ);
+
+
+                            foreach ($listesN3 as $tmp3) {
+
+
+                                $listeAgents[] = array(
+                                    'matricule' => $tmp3->matricule,
+                                    'prenom' => ucwords(mb_strtolower($tmp3->prenom)),
+                                    'nom' => $userSimpleController->fctRetirerAccents(mb_strtoupper($tmp3->nom)),
+                                    'prenomNom' => ucfirst(mb_strtolower($tmp3["prenom"])) . " " . $userSimpleController->fctRetirerAccents(mb_strtoupper($tmp3["nom"]))
+
+                                );
+
+                            }
+
+
+                        }
+
+
+                    }
+
+
+                    echo '<option></option><option value="" >Choisir...</option>';
+
+                    $listeAgents = json_decode(json_encode($listeAgents), true);
+
+                    foreach ($listeAgents as $tmp4) {
+                        echo '<option value="' . $tmp4->identifiant . '">' . $tmp4->prenomNom . '</option>';
+                    }
+
+                    die;
+
+                }else
+                {
+                    echo "erreur";
+                    die;
+                }
+
+                die;
+
+
+            } catch (\Throwable $th) {
+                echo "erreur";
+                die;
+            }
+            break;
+
+
+    case 3 :
+
+
+        $matricule = NULL;
+
+        if(!empty($_SESSION['tmpMatricule']))
+        {
+            $matricule = $_SESSION['tmpMatricule'];
+
+
+
+        }else
+        {
+            echo "sessionExpired";
+            die;
+        }
+
+        try {
+
+
+
+
+            $stmt = $bdP->prepare("SELECT  etatCivil.identifiant,etatCivil.prenom,etatCivil.nom,personnels.matricule FROM direction_employe_chef,direction,postesAResponsabilite,personnels,etatCivil WHERE direction_employe_chef.idChefDirection=direction.id AND direction.idFonction=postesAResponsabilite.idFonction AND postesAResponsabilite.idPersonnel=personnels.id AND personnels.idEtatCivil=etatCivil.id and postesAResponsabilite.statutPoste=:statutPoste");
+            $stmt->execute([1]);
+            $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            if(count($listes) > 0)
+            {
+
+                $listeAgents = array();
+
+
+                foreach ($listes as $tmp) {
+
+
+                    if($matricule != $tmp->matricule)
+                    {
+                        $listeAgents[] = array(
+                            'matricule' => $tmp->matricule,
+                            'prenom' => ucwords(mb_strtolower($tmp->prenom)),
+                            'nom' => $userSimpleController->fctRetirerAccents(mb_strtoupper($tmp->nom)),
+                            'prenomNom' => ucfirst(mb_strtolower($tmp["prenom"])) . " " . $userSimpleController->fctRetirerAccents(mb_strtoupper($tmp["nom"]))
+
+                        );
+                    }
+                }
+
+
+                echo '<option></option><option value="" >Choisir...</option>';
+
+                $listeAgents = json_decode(json_encode($listeAgents), true);
+
+                foreach ($listeAgents as $tmp4) {
+                    echo '<option value="' . $tmp4->identifiant . '">' . $tmp4->prenomNom . '</option>';
+                }
+
+                die;
+
+            }else
+            {
+                echo "erreur";
+                die;
+            }
+
+            die;
+
+
+        } catch (\Throwable $th) {
+            echo "erreur";
+            die;
+        }
+        break;
+
+
+
+    break;
     default :
         echo "erreur";
         die;
