@@ -1,4 +1,11 @@
 <?php
+/* =============================================================================
+ *  admin-controller
+ *
+ *  ... cases 1 à 32 existants ...
+ *  case 33 : liste des tâches invisibles associées à une tâche   (JSON)
+ *  case 34 : retirer une association — estVisible passe à 3
+ * ========================================================================== */
 
 ini_set('session.gc_maxlifetime', 36000);
 session_set_cookie_params(36000);
@@ -39,6 +46,7 @@ class adminController extends BDP
         $result = openssl_decrypt(base64_decode($data), $encryptMethod, $key, 0, $iv);
         return $result;
     }
+
     function decode($s)
     {
         if (version_compare(PHP_VERSION, '8.1.999', 'le')) {
@@ -139,9 +147,6 @@ class adminController extends BDP
     }
 
 
-
-
-
     function dateFranc($date)
     {
         try {
@@ -199,19 +204,8 @@ class adminController extends BDP
     }
 
 
-
-
     function imageExiste($url)
     {
-
-//        if($url != NULL  && $url != "")
-//        {
-//            return true;
-//
-//        }else{
-//            return false;
-//
-//        }
         // Vérifie si l'URL est vide ou invalide
         if (empty($url) || !filter_var($url, FILTER_VALIDATE_URL)) {
             return false; // Retourne false si l'URL est vide ou invalide
@@ -229,73 +223,6 @@ class adminController extends BDP
     }
 
 
-
-//    function get_info($matricule)
-//    {
-//
-//        $bdP = $this->connect();
-//
-//        $listes =  array();
-//        foreach ($matricule as $matricule)
-//       {
-//
-//
-//
-//           $data_perso = [
-//               'matricule' => $matricule
-//           ];
-//           $sql_perso = "SELECT
-//    p.identifiant,
-//    p.matricule,
-//    p.idQualification
-//FROM personnels p
-//WHERE p.matricule = :matricule;";
-//           $stmt_perso = $bdP->prepare($sql_perso);
-//           $stmt_perso->execute($data_perso);
-//           $result_perso = $stmt_perso->fetch(PDO::FETCH_OBJ);
-//
-//           if ($result_perso) {
-//
-//
-//               $data_perso_contrat = [
-//                   'matricule' => $matricule,
-//                   'idTypeStatutContrat' => 1,
-//
-//               ];
-//               $sql_perso_contrat = "SELECT * FROM contrat WHERE matricule=:matricule AND idTypeStatutContrat=:idTypeStatutContrat";
-//               $stmt_perso_contrat = $bdP->prepare($sql_perso_contrat);
-//               $stmt_perso_contrat->execute($data_perso_contrat);
-//               $result_perso_contrat = $stmt_perso_contrat->fetch(PDO::FETCH_OBJ);
-//
-//               if ($result_perso_contrat) {
-//
-//                   $debutContrat = $result_perso_contrat->dateDebutContrat;
-//                   $finContrat = $result_perso_contrat->dateFinContrat;
-//
-//
-//                   if ($this->comparerDateContrat($finContrat)) {
-//
-//
-//
-//                       $listes[] = array(
-//                           'matricule' => $result_perso->matricule,
-//                           'idQualification' => $result_perso->idQualification,
-//
-//                       );
-//
-//                   }
-//
-//
-//               }
-//
-//           }
-//       }
-//
-//        return $listes;
-//
-//    }
-
-
     public function returnPosteResponsabilite($identifiant)
     {
         try {
@@ -310,7 +237,7 @@ class adminController extends BDP
             $stmt = $bdP->prepare("
             SELECT *
             FROM postesAResponsabilite, fonction
-            WHERE postesAResponsabilite.idFonction=fonction.id 	AND postesAResponsabilite.identifiant = :identifiant
+            WHERE postesAResponsabilite.idFonction=fonction.id  AND postesAResponsabilite.identifiant = :identifiant
               AND postesAResponsabilite.statutPoste = :statutPoste
         ");
 
@@ -326,7 +253,6 @@ class adminController extends BDP
             {
                 return null;
             }
-
 
 
         } catch (\Throwable $th) {
@@ -345,11 +271,10 @@ class adminController extends BDP
         {
 
 
-
             $data_perso = [
                 'matricule' => $matricule
             ];
-            $sql_perso = "SELECT 
+            $sql_perso = "SELECT
     p.identifiant,
     p.matricule,
     p.idQualification
@@ -379,7 +304,6 @@ WHERE p.matricule = :matricule;";
 
 
                     if ($this->comparerDateContrat($finContrat)) {
-
 
 
                         $listes[] = array(
@@ -478,17 +402,18 @@ $option = (!empty($_POST['option'])) ? $_POST['option'] : '';
 $BASE_URL = "http://localhost/personnel/";
 
 switch ($option) {
+
+    // =========================================================================
+    //  case 1 — Liste des utilisateurs
+    // =========================================================================
     case 1:
 
+        try {
+
+            $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 
-
-            try {
-
-                $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-
-                $sql = "SELECT 
+            $sql = "SELECT
     utilisateurs.id,
     utilisateurs.matricule,
     utilisateurs.identifiant,
@@ -511,20 +436,20 @@ switch ($option) {
 
 FROM utilisateurs
 
-INNER JOIN personnels 
+INNER JOIN personnels
     ON utilisateurs.matricule = personnels.matricule
     AND utilisateurs.identifiant = personnels.identifiant
 
-INNER JOIN etatCivil 
+INNER JOIN etatCivil
     ON personnels.idEtatCivil = etatCivil.id
 
-INNER JOIN qualifications 
+INNER JOIN qualifications
     ON personnels.idQualification = qualifications.id
 
-INNER JOIN compteGmail 
+INNER JOIN compteGmail
     ON personnels.idCompteGmail = compteGmail.id
 
-INNER JOIN affectations 
+INNER JOIN affectations
     ON personnels.idAffectation = affectations.id
 
 LEFT JOIN unite_administrative_niv1
@@ -537,102 +462,105 @@ LEFT JOIN unite_administrative_niv3
     ON affectations.idUniteAdministrativeNiv3 = unite_administrative_niv3.id
 
 ORDER BY utilisateurs.dateCreation ASC;";
-                $stmt = $bdP->prepare($sql);
-                $stmt->execute();
-                $result = $stmt->fetchAll(PDO::FETCH_OBJ);
+            $stmt = $bdP->prepare($sql);
+            $stmt->execute();
+            $result = $stmt->fetchAll(PDO::FETCH_OBJ);
 
-                $listeUsers =  array();
+            $listeUsers =  array();
 
-                $posteAResponsabilite = null;
-                $photo = null;
-                $numero = 1;
-                $etat = NULL;
-                $etat1 = null;
-                $etat2 = null;
+            $posteAResponsabilite = null;
+            $photo = null;
+            $numero = 1;
+            $etat = NULL;
+            $etat1 = null;
+            $etat2 = null;
 
-                foreach ($result as $user) {
+            foreach ($result as $user) {
 
-                    $posteAResponsabilit = $adminController->returnPosteResponsabilite($user->identifiant);
+                $posteAResponsabilit = $adminController->returnPosteResponsabilite($user->identifiant);
 
-                    if ($adminController->imageExiste($user->photo)) {
-                        $photo = $user->photo;
+                if ($adminController->imageExiste($user->photo)) {
+                    $photo = $user->photo;
+                } else {
+                    $photo = "/personnel/ressources/dist_assets/media/avatars/150-26.jpg";
+
+                    if ($user->sexe == "Féminin") {
+                        $photo = "/personnel/includes/fpdf/template/avatar1.png";
+                    } else if ($user->sexe == "Masculin") {
+                        $photo = "/personnel/ressources/dist_assets/media/avatars/150-26.jpg";
                     } else {
                         $photo = "/personnel/ressources/dist_assets/media/avatars/150-26.jpg";
-
-                        if ($user->sexe == "Féminin") {
-                            $photo = "/personnel/includes/fpdf/template/avatar1.png";
-                        } else if ($user->sexe == "Masculin") {
-                            $photo = "/personnel/ressources/dist_assets/media/avatars/150-26.jpg";
-                        } else {
-                            $photo = "/personnel/ressources/dist_assets/media/avatars/150-26.jpg";
-                        }
-
-
                     }
 
-                    if ($user->statutActivation == 0) {
-
-                        $etat = '<span class="badge badge-warning">En attente d\'activation</span>';
-                        $etat1 = 0;
-
-                    } elseif ($user->statutUtilisateur == 0) {
-
-                        $etat = '<span class="badge badge-success">Compte actif</span>';
-                        $etat1 = 1;
-
-
-                    } elseif ($user->statutUtilisateur == 1) {
-
-                        $etat = '<span class="badge badge-danger">Compte bloqué</span>';
-                        $etat1 = 2;
-
-                    } else {
-
-                        $etat = '<span class="badge badge-dark">Erreur</span>';
-                        $etat1 = 0;
-
-                    }
-
-                    if($user->idTypeUtilisateur == 2)
-                    {
-                        $etat2 = 1;
-                    }else
-                    {
-                        $etat2 = 0;
-                    }
-
-                    $listeUsers[] = array(
-                        'numero' => $numero,
-                        'tmp' => $adminController->tokenencrypt($user->id),
-                        'matricule' => $user->matricule,
-                        'prenom' => ucwords(mb_strtolower($user->prenom)),
-                        'nom' => $adminController->fctRetirerAccents(mb_strtoupper($user->nom)),
-                        'dateCreation' => date("d/m/Y H:i:s", strtotime($user->dateCreation)),
-                        'photo' => $photo,
-                        'email' => $user->email,
-                        'qualification' => $user->qualification,
-                        'affectation' => $user->affectation,
-                        'poste' => $posteAResponsabilite,
-                        'etat' => $etat,
-                        'etat1' => $etat1,
-                    'etat2' => $etat2
-                    );
-                    ++$numero;
 
                 }
 
-                echo json_encode($listeUsers);
-                die;
+                if ($user->statutActivation == 0) {
+
+                    $etat = '<span class="badge badge-warning">En attente d\'activation</span>';
+                    $etat1 = 0;
+
+                } elseif ($user->statutUtilisateur == 0) {
+
+                    $etat = '<span class="badge badge-success">Compte actif</span>';
+                    $etat1 = 1;
 
 
-            } catch (Exception $e) {
-                echo json_encode(array());
-                die;
+                } elseif ($user->statutUtilisateur == 1) {
+
+                    $etat = '<span class="badge badge-danger">Compte bloqué</span>';
+                    $etat1 = 2;
+
+                } else {
+
+                    $etat = '<span class="badge badge-dark">Erreur</span>';
+                    $etat1 = 0;
+
+                }
+
+                if($user->idTypeUtilisateur == 2)
+                {
+                    $etat2 = 1;
+                }else
+                {
+                    $etat2 = 0;
+                }
+
+                $listeUsers[] = array(
+                    'numero' => $numero,
+                    'tmp' => $adminController->tokenencrypt($user->id),
+                    'matricule' => $user->matricule,
+                    'prenom' => ucwords(mb_strtolower($user->prenom)),
+                    'nom' => $adminController->fctRetirerAccents(mb_strtoupper($user->nom)),
+                    'dateCreation' => date("d/m/Y H:i:s", strtotime($user->dateCreation)),
+                    'photo' => $photo,
+                    'email' => $user->email,
+                    'qualification' => $user->qualification,
+                    'affectation' => $user->affectation,
+                    'poste' => $posteAResponsabilite,
+                    'etat' => $etat,
+                    'etat1' => $etat1,
+                    'etat2' => $etat2
+                );
+                ++$numero;
+
             }
+
+            echo json_encode($listeUsers);
+            die;
+
+
+        } catch (Exception $e) {
+            echo json_encode(array());
+            die;
+        }
 
         break;
 
 
+    // =========================================================================
+    //  case 2 — Statistiques utilisateurs
+    // =========================================================================
     case 2:
 
         $actifs = 0;
@@ -645,7 +573,7 @@ ORDER BY utilisateurs.dateCreation ASC;";
             $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 
-            $sql = "SELECT 
+            $sql = "SELECT
     utilisateurs.id,
     utilisateurs.matricule,
     utilisateurs.identifiant,
@@ -700,12 +628,15 @@ FROM utilisateurs";
 
         break;
 
+
+    // =========================================================================
+    //  case 3 — Bloquer un compte
+    // =========================================================================
     case 3:
 
         if(!empty($_POST['tmp']))
         {
             $id = $adminController->tokendecrypt(valid_donnees($_POST['tmp']));
-
 
 
             $idUtilisateur = 1;
@@ -718,7 +649,6 @@ FROM utilisateurs";
 //                echo "sessionExpired";
 //                die;
 //            }
-
 
 
             try {
@@ -745,13 +675,12 @@ FROM utilisateurs";
                     if($result->statutUtilisateur == 0) {
 
 
-
                         $data_up_user = [
                             'statutUtilisateur' => 1,
                             'id' => $id
                         ];
 
-                        $sql_up_user = "UPDATE utilisateurs 
+                        $sql_up_user = "UPDATE utilisateurs
                 SET statutUtilisateur = :statutUtilisateur
                 WHERE id = :id";
 
@@ -794,21 +723,21 @@ FROM utilisateurs";
                                 }
 
 
-
-
                             } else {
                                 if ($bdP->inTransaction()) {
                                     $bdP->rollBack();
                                 }
                                 echo "erreur";
-                                die;                            }
+                                die;
+                            }
 
                         } else {
                             if ($bdP->inTransaction()) {
                                 $bdP->rollBack();
                             }
                             echo "erreur";
-                            die;                        }
+                            die;
+                        }
 
                     }else
                     {
@@ -843,16 +772,19 @@ FROM utilisateurs";
             echo "erreur";
             die;
         }
-break;
+
+        break;
 
 
+    // =========================================================================
+    //  case 4 — Débloquer un compte
+    // =========================================================================
     case 4 :
 
 
         if(!empty($_POST['tmp']))
         {
             $id = $adminController->tokendecrypt(valid_donnees($_POST['tmp']));
-
 
 
             $idUtilisateur = 1;
@@ -865,7 +797,6 @@ break;
 //                echo "sessionExpired";
 //                die;
 //            }
-
 
 
             try {
@@ -891,13 +822,12 @@ break;
                     if($result->statutUtilisateur == 1) {
 
 
-
                         $data_up_user = [
                             'statutUtilisateur' => 0,
                             'id' => $id
                         ];
 
-                        $sql_up_user = "UPDATE utilisateurs 
+                        $sql_up_user = "UPDATE utilisateurs
                 SET statutUtilisateur = :statutUtilisateur
                 WHERE id = :id";
 
@@ -945,14 +875,16 @@ break;
                                     $bdP->rollBack();
                                 }
                                 echo "erreur";
-                                die;                            }
+                                die;
+                            }
 
                         } else {
                             if ($bdP->inTransaction()) {
                                 $bdP->rollBack();
                             }
                             echo "erreur";
-                            die;                        }
+                            die;
+                        }
 
                     }else
                     {
@@ -989,6 +921,10 @@ break;
         }
         break;
 
+
+    // =========================================================================
+    //  case 5 — Pré-remplissage création de compte à partir d'un matricule
+    // =========================================================================
     case 5 :
 
         if (!empty($_POST['matricule'])) {
@@ -1005,7 +941,6 @@ break;
                 $infoPerso = array();
 
 
-
                 $data = [
                     'matricule' => $matricule
                 ];
@@ -1020,7 +955,7 @@ break;
                     $data_perso = [
                         'matricule' => $matricule
                     ];
-                    $sql_perso = "SELECT 
+                    $sql_perso = "SELECT
     p.identifiant,
     p.matricule,
     p.idEtatCivil,
@@ -1030,9 +965,9 @@ break;
     ec.sexe,
     cg.email
 FROM personnels p
-INNER JOIN etatCivil ec 
+INNER JOIN etatCivil ec
     ON p.idEtatCivil = ec.id
-INNER JOIN compteGmail cg 
+INNER JOIN compteGmail cg
     ON p.idCompteGmail = cg.id
 WHERE p.matricule = :matricule;";
                     $stmt_perso = $bdP->prepare($sql_perso);
@@ -1042,8 +977,7 @@ WHERE p.matricule = :matricule;";
                     if ($result_perso) {
 
 
-
-$photo = NULL;
+                        $photo = NULL;
                         if ($adminController->imageExiste($result_perso->photo)) {
                             $photo = $result_perso->photo;
                         } else {
@@ -1101,12 +1035,14 @@ $photo = NULL;
         }
         break;
 
+
+    // =========================================================================
+    //  case 6 — Création du compte + envoi des identifiants par e-mail
+    // =========================================================================
     case 6:
 
 
         if (!empty($_POST['matricule2']) && !empty($_POST['email']) && !empty($_POST['password']) && !empty($_POST['prenom']) && !empty($_POST['nom'])) {
-
-
 
 
             $idUtilisateur = 1;
@@ -1157,16 +1093,16 @@ $photo = NULL;
                     $data_perso = [
                         'matricule' => $matricule
                     ];
-                    $sql_perso = "SELECT 
+                    $sql_perso = "SELECT
     p.identifiant,
     p.idEtatCivil,
     ec.prenom,
     ec.nom,
     cg.email
 FROM personnels p
-INNER JOIN etatCivil ec 
+INNER JOIN etatCivil ec
     ON p.idEtatCivil = ec.id
-LEFT JOIN compteGmail cg 
+LEFT JOIN compteGmail cg
     ON p.idCompteGmail = cg.id
 WHERE p.matricule = :matricule;";
                     $stmt_perso = $bdP->prepare($sql_perso);
@@ -1233,7 +1169,6 @@ WHERE p.matricule = :matricule;";
                                 if ($tmpStmt == 1) {
 
 
-
                                     $table = "utilisateurs";
                                     $motif = "Création de compte par l'admin";
                                     $dateEnregistrement = date('Y-m-d H:i:s');
@@ -1250,10 +1185,12 @@ WHERE p.matricule = :matricule;";
                                     $tmpStmtHistorique = $stmtHistorique->execute($dataHistorique);
 
 
-
                                     if ($tmpStmtHistorique) {
 
 
+                                        // ⚠️ ATTENTION — cette ligne écrase le destinataire réel :
+                                        // tous les identifiants partent vers cette adresse.
+                                        // À supprimer avant la mise en production.
                                         $email = "ndiaya.ndao@uahb.sn";
 
                                         $message = "<html>
@@ -1549,7 +1486,8 @@ WHERE p.matricule = :matricule;";
   </div>
 
 </body>
-</html>";                                        // Envoyer l'e-mail
+</html>";
+                                        // Envoyer l'e-mail
                                         $emailSent = $adminController->sendEmail($email, $prenom, "Activez votre compte maintenant !", $message);
 
                                         if (!$emailSent) {
@@ -1637,6 +1575,11 @@ WHERE p.matricule = :matricule;";
             die;
         }
         break;
+
+
+    // =========================================================================
+    //  case 7 — Liste des sous-menus
+    // =========================================================================
     case 7 :
 
         try {
@@ -1648,12 +1591,12 @@ WHERE p.matricule = :matricule;";
                     'statut' => 0
                 ];
 
-            $sql = "SELECT 
+            $sql = "SELECT
     sous_menu.id,
     sous_menu.nom as nom_s,
     sous_menu.dateEnregistrement,
     i.icon,
-    CASE 
+    CASE
         WHEN EXISTS (
             SELECT 1
             FROM tache t
@@ -1664,7 +1607,7 @@ WHERE p.matricule = :matricule;";
         ELSE 0
     END AS tmp
 FROM sous_menu
-JOIN icons i 
+JOIN icons i
     ON i.id = sous_menu.idIcon
 WHERE sous_menu.statut = :statut;";
             $stmt = $bdP->prepare($sql);
@@ -1675,11 +1618,16 @@ WHERE sous_menu.statut = :statut;";
             die;
 
         }catch (Exception $e) {
-               echo json_encode(array());
-               die;
-            }
+            echo json_encode(array());
+            die;
+        }
 
-            break;
+        break;
+
+
+    // =========================================================================
+    //  case 8 — Liste des icônes (dropdown)
+    // =========================================================================
     case 8:
 
         try {
@@ -1691,38 +1639,43 @@ WHERE sous_menu.statut = :statut;";
             $stmt->execute();
             $results = $stmt->fetchAll(PDO::FETCH_OBJ);
 
-$boxIcons = NULL;
+            $boxIcons = NULL;
 
-if(count($results) > 0){
-    $boxIcons = 'icon';
+            if(count($results) > 0){
+                $boxIcons = 'icon';
 
-    foreach ($results as $result) {
+                foreach ($results as $result) {
 
 
-        $boxIcons .= '<li>
+                    $boxIcons .= '<li>
                                         <div class="dropdown-item btn btn-outline-primary" onclick="selectIcon('.$result->id.',this)">
                                             '.$result->icon.'
                                         </div>
                                     </li>';
 
 
-    }
+                }
 
-    echo $boxIcons;
-    die;
-}else
-{
-    echo $boxIcons;
-    die;
+                echo $boxIcons;
+                die;
+            }else
+            {
+                echo $boxIcons;
+                die;
 
-}
+            }
 
         }catch (Exception $e) {
             echo "erreur".$e;
             die;
         }
-break;
 
+        break;
+
+
+    // =========================================================================
+    //  case 9 — Détail d'un sous-menu
+    // =========================================================================
     case 9 :
 
 
@@ -1739,13 +1692,13 @@ break;
                         'statut' => 0
                     ];
 
-            $sql = "SELECT 
+                $sql = "SELECT
     sous_menu.id,
     sous_menu.nom as nom,
     sous_menu.dateEnregistrement,
     i.id as idIcon,
     i.icon,
-    CASE 
+    CASE
         WHEN EXISTS (
             SELECT 1
             FROM tache t
@@ -1756,29 +1709,26 @@ break;
         ELSE 0
     END AS tmp
 FROM sous_menu
-JOIN icons i 
+JOIN icons i
     ON i.id = sous_menu.idIcon
 WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
-            $stmt = $bdP->prepare($sql);
-            $stmt->execute($data);
-            $result = $stmt->fetch(PDO::FETCH_OBJ);
+                $stmt = $bdP->prepare($sql);
+                $stmt->execute($data);
+                $result = $stmt->fetch(PDO::FETCH_OBJ);
 
-            if($result)
-            {
-                echo json_encode($result);
-                die;
+                if($result)
+                {
+                    echo json_encode($result);
+                    die;
 
-            }else
-            {
-                echo "erreur";
-                die;
-            }
-
-
+                }else
+                {
+                    echo "erreur";
+                    die;
+                }
 
 
-
-        }catch (Exception $e) {
+            }catch (Exception $e) {
                 echo "erreur".$e;
                 die;
             }
@@ -1791,6 +1741,10 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
 
         break;
 
+
+    // =========================================================================
+    //  case 10 — Ajout d'un sous-menu
+    // =========================================================================
     case 10 :
 
         date_default_timezone_set('Africa/Dakar');
@@ -1808,7 +1762,6 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
 
         if(!empty($_POST['nom']) && !empty($_POST['idIcon']))
         {
-
 
 
             $nom = $_POST['nom'];
@@ -1841,36 +1794,46 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                         'dateEnregistrement' => $dateEnregistrement
 
                     ];
-                $sql_insert = "INSERT INTO sous_menu(nom, idIcon,idUtilisateur,statut,dateEnregistrement) VALUES (:nom, :idIcon,:idUtilisateur,:statut,:dateEnregistrement)";
-                $stmt_insert = $bdP->prepare($sql_insert);
-                $tmp_insert = $stmt_insert->execute($data_insert);
+                    $sql_insert = "INSERT INTO sous_menu(nom, idIcon,idUtilisateur,statut,dateEnregistrement) VALUES (:nom, :idIcon,:idUtilisateur,:statut,:dateEnregistrement)";
+                    $stmt_insert = $bdP->prepare($sql_insert);
+                    $tmp_insert = $stmt_insert->execute($data_insert);
 
-                if($tmp_insert)
-                {
-                    $idSousMenu = $bdP->lastInsertId();
-
-                    $data_insert_his = [
-                        'idSousMenu' => $idSousMenu,
-                        'nom' => $nom,
-                        'idIcon' => $idIcon,
-                        'idUtilisateur' => $idUtilisateur,
-                        'statut' => 0,
-                        'dateEnregistrement' => $dateEnregistrement
-                    ];
-                    $sql_insert_his = "INSERT INTO sous_menu_historiques(idSousMenu,nom,idIcon,idUtilisateur,statut,dateEnregistrement) VALUES (:idSousMenu,:nom, :idIcon,:idUtilisateur,:statut,:dateEnregistrement)";
-                    $stmt_insert_his = $bdP->prepare($sql_insert_his);
-                    $tmp_insert_his = $stmt_insert_his->execute($data_insert_his);
-
-                    if($tmp_insert_his)
+                    if($tmp_insert)
                     {
-                        if ($bdP->inTransaction()) {
-                            $bdP->commit();
+                        $idSousMenu = $bdP->lastInsertId();
+
+                        $data_insert_his = [
+                            'idSousMenu' => $idSousMenu,
+                            'nom' => $nom,
+                            'idIcon' => $idIcon,
+                            'idUtilisateur' => $idUtilisateur,
+                            'statut' => 0,
+                            'dateEnregistrement' => $dateEnregistrement
+                        ];
+                        $sql_insert_his = "INSERT INTO sous_menu_historiques(idSousMenu,nom,idIcon,idUtilisateur,statut,dateEnregistrement) VALUES (:idSousMenu,:nom, :idIcon,:idUtilisateur,:statut,:dateEnregistrement)";
+                        $stmt_insert_his = $bdP->prepare($sql_insert_his);
+                        $tmp_insert_his = $stmt_insert_his->execute($data_insert_his);
+
+                        if($tmp_insert_his)
+                        {
+                            if ($bdP->inTransaction()) {
+                                $bdP->commit();
+                            }
+                            echo "succès";
+                            die;
+
+                        }else
+                        {
+                            if ($bdP->inTransaction()) {
+                                $bdP->rollBack();
+                            }
+                            echo "erreur";
+                            die;
                         }
-                        echo "succès";
-                        die;
 
                     }else
                     {
+
                         if ($bdP->inTransaction()) {
                             $bdP->rollBack();
                         }
@@ -1878,19 +1841,8 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                         die;
                     }
 
+
                 }else
-                {
-
-                    if ($bdP->inTransaction()) {
-                        $bdP->rollBack();
-                    }
-                    echo "erreur";
-                    die;
-                }
-
-
-
-            }else
                 {
 
                     if ($bdP->inTransaction()) {
@@ -1899,9 +1851,6 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                     echo "nomExiste";
                     die;
                 }
-
-
-
 
 
             }catch (Exception $e) {
@@ -1923,8 +1872,11 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
 
         break;
 
-    case 11 :
 
+    // =========================================================================
+    //  case 11 — Suppression logique d'un sous-menu
+    // =========================================================================
+    case 11 :
 
 
         date_default_timezone_set('Africa/Dakar');
@@ -1942,7 +1894,6 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
 
         if(!empty($_POST['id']))
         {
-
 
 
             $id = $_POST['id'];
@@ -1973,7 +1924,7 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                         'id' => $id
                     ];
 
-                    $sql_up_sm = "UPDATE sous_menu 
+                    $sql_up_sm = "UPDATE sous_menu
                 SET statut = :statut1
                 WHERE id = :id AND statut = :statut2;";
 
@@ -2025,7 +1976,6 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                         }
 
 
-
                     }else
                     {
 
@@ -2037,7 +1987,6 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                     }
 
 
-
                 }else
                 {
 
@@ -2047,9 +1996,6 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                     echo "erreur1";
                     die;
                 }
-
-
-
 
 
             }catch (Exception $e) {
@@ -2071,8 +2017,11 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
 
         break;
 
-    case 12 :
 
+    // =========================================================================
+    //  case 12 — Modification d'un sous-menu
+    // =========================================================================
+    case 12 :
 
 
         date_default_timezone_set('Africa/Dakar');
@@ -2090,7 +2039,6 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
 
         if(!empty($_POST['id']) && !empty($_POST['nom']) && !empty($_POST['idIcon']))
         {
-
 
 
             $id = $_POST['id'];
@@ -2130,7 +2078,7 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                         'id' => $id
                     ];
 
-                    $sql_up_sm = "UPDATE sous_menu 
+                    $sql_up_sm = "UPDATE sous_menu
                 SET  nom=:nom, idIcon=:idIcon
                 WHERE id = :id AND statut = :statut;";
 
@@ -2182,7 +2130,6 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                         }
 
 
-
                     }else
                     {
 
@@ -2194,7 +2141,6 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                     }
 
 
-
                 }else
                 {
 
@@ -2204,9 +2150,6 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
                     echo "erreur1";
                     die;
                 }
-
-
-
 
 
             }catch (Exception $e) {
@@ -2228,20 +2171,23 @@ WHERE sous_menu.id = :id AND sous_menu.statut = :statut;";
 
         break;
 
+
+    // =========================================================================
+    //  case 13 — Liste des tâches visibles (DataTable)
+    // =========================================================================
     case 13 :
 
 
         try {
 
 
-
-            $sql = "SELECT 
-    t.id AS id, 
+            $sql = "SELECT
+    t.id AS id,
     t.nom AS nom,
     tt.typeTache AS type,
     t.url AS url,
     t.autre_ressource AS autre_ressource,
-	t.commentaire AS commentaire,
+    t.commentaire AS commentaire,
 COALESCE(
         ua1.codeNiv1,
         ua2.codeNiv2,
@@ -2255,7 +2201,7 @@ COALESCE(
     ) AS id_structure,
 
     COUNT(tu.idUtilisateur) AS nombre_utilisateurs,
-	active
+    active
 
 FROM tache t
 
@@ -2276,8 +2222,11 @@ LEFT JOIN unite_administrative_niv1 ua1_from_niv3 ON ua2_from_niv3.idUniteAdmini
 -- Utilisateurs liés à la tâche
 LEFT JOIN tache_utilisateur tu ON t.id = tu.idTache AND tu.access = 1
 
-GROUP BY 
-    t.id, 
+
+WHERE t.estVisible=1
+
+GROUP BY
+    t.id,
     t.nom,
     tt.typeTache,
     t.url,
@@ -2294,16 +2243,18 @@ ORDER BY t.nom ASC;";
             die;
 
 
-
-
         }catch (Exception $e) {
 
-           echo json_encode(array());
-           die;
+            echo json_encode(array());
+            die;
         }
 
         break;
 
+
+    // =========================================================================
+    //  case 14 — Types de tâche
+    // =========================================================================
     case 14 :
 
         try {
@@ -2314,7 +2265,6 @@ ORDER BY t.nom ASC;";
             $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
             echo '<option></option><option value="" >Choisir...</option>';
-//            echo '<option value="vide" hidden="">VIDE</option>';
 
             if (count($listes) > 0) {
                 foreach ($listes as $tmp) {
@@ -2332,6 +2282,9 @@ ORDER BY t.nom ASC;";
         break;
 
 
+    // =========================================================================
+    //  case 15 — Fonctions
+    // =========================================================================
     case 15 :
         try {
 
@@ -2341,7 +2294,6 @@ ORDER BY t.nom ASC;";
             $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
             echo '<option></option><option value="" >Choisir...</option>';
-//            echo '<option value="vide" hidden="">VIDE</option>';
 
             if (count($listes) > 0) {
                 foreach ($listes as $tmp) {
@@ -2358,84 +2310,70 @@ ORDER BY t.nom ASC;";
         }
         break;
 
-        case 16 :
-           try {
+
+    // =========================================================================
+    //  case 16 — Sous-menus
+    // =========================================================================
+    case 16 :
+        try {
 
 
-               $stmt = $bdP->prepare("SELECT * FROM sous_menu");
-               $stmt->execute();
-               $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
+            $stmt = $bdP->prepare("SELECT * FROM sous_menu");
+            $stmt->execute();
+            $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
-               echo '<option></option><option value="" >Choisir...</option>';
-//            echo '<option value="vide" hidden="">VIDE</option>';
+            echo '<option></option><option value="" >Choisir...</option>';
 
-               if (count($listes) > 0) {
-                   foreach ($listes as $tmp) {
-                       echo '<option value="' . $tmp->id . '">' . $tmp->nom . '</option>';
-                   }
-               } else {
-                   echo '<option value="">--Sous-menu--</option>';
-               }
+            if (count($listes) > 0) {
+                foreach ($listes as $tmp) {
+                    echo '<option value="' . $tmp->id . '">' . $tmp->nom . '</option>';
+                }
+            } else {
+                echo '<option value="">--Sous-menu--</option>';
+            }
 
-               die;
-           } catch (\Throwable $th) {
-               echo "erreur";
-               die;
-           }
+            die;
+        } catch (\Throwable $th) {
+            echo "erreur";
+            die;
+        }
         break;
 
-           case 17 :
 
-               try {
-
-
-
-//                   $data =
-//                       [
-//                           'adminAcceuilIcone' => 1
-//                       ];
-//                   $stmt = $bdP->prepare("SELECT * FROM icons WHERE adminAcceuilIcone != :adminAcceuilIcone");
-//                   $stmt->execute($data);
-//                   $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
-//
-//                   echo '<option></option><option value="">Choisir...</option>';
-////            echo '<option value="vide" hidden="">VIDE</option>';
-//
-//                   if (count($listes) > 0) {
-//                       foreach ($listes as $tmp) {
-//                           echo '<option value="' . $tmp->id . '">' . $tmp->icon . '</option>';
-//                       }
-//                   } else {
-//                       echo '<option value="">--icon--</option>';
-//                   }
-//
-//                   die;
-
-                   // option 17
-                   $sql = "SELECT id, icon FROM icons ORDER BY id ASC";
-                   $stmt = $bdP->prepare($sql);
-                   $stmt->execute();
-                   $icons = $stmt->fetchAll(PDO::FETCH_OBJ);
-
-                   $html = '<option value="">Sélectionner une icône</option>';
-                   foreach ($icons as $icon) {
-                       // Encoder le SVG en attribut data
-                       $iconEncoded = htmlspecialchars($icon->icon, ENT_QUOTES, 'UTF-8');
-                       $html .= '<option value="' . $icon->id . '" data-icon="' . $iconEncoded . '"></option>';
-                   }
-
-                   echo $html;
-                   die;
-               } catch (\Throwable $th) {
-                   echo "erreur";
-                   die;
-               }
-               break;
-
-    case 18 :
+    // =========================================================================
+    //  case 17 — Icônes (options avec data-icon pour select2)
+    // =========================================================================
+    case 17 :
 
         try {
 
+            $sql = "SELECT id, icon FROM icons ORDER BY id ASC";
+            $stmt = $bdP->prepare($sql);
+            $stmt->execute();
+            $icons = $stmt->fetchAll(PDO::FETCH_OBJ);
+
+            $html = '<option value="">Sélectionner une icône</option>';
+            foreach ($icons as $icon) {
+                // Encoder le SVG en attribut data
+                $iconEncoded = htmlspecialchars($icon->icon, ENT_QUOTES, 'UTF-8');
+                $html .= '<option value="' . $icon->id . '" data-icon="' . $iconEncoded . '"></option>';
+            }
+
+            echo $html;
+            die;
+        } catch (\Throwable $th) {
+            echo "erreur";
+            die;
+        }
+        break;
+
+
+    // =========================================================================
+    //  case 18 — Bases de données
+    // =========================================================================
+    case 18 :
+
+        try {
 
 
             $stmt = $bdP->prepare("SELECT * FROM base_donnees");
@@ -2443,7 +2381,6 @@ ORDER BY t.nom ASC;";
             $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
             echo '<option></option><option value="">Choisir...</option>';
-//            echo '<option value="vide" hidden="">VIDE</option>';
 
             if (count($listes) > 0) {
                 foreach ($listes as $tmp) {
@@ -2460,210 +2397,21 @@ ORDER BY t.nom ASC;";
         }
         break;
 
-    case 19 :
-//
-//        date_default_timezone_set('Africa/Dakar');
-//
-//
-//
-//
-//        $idUtilisateur = 1;
-////            $idUtilisateur = null;
-////            if(!empty($_SESSION['tmpIdP']))
-////            {
-////                $idUtilisateur = $_SESSION['tmpIdP'];
-////            }else
-////            {
-////                echo "sessionExpired";
-////                die;
-////            }
-//
-//
-//        // Récupération des données
-//        $nom = $_POST['nom'];
-//        $idTypeTache = $_POST['idTypeTache'];
-//        $url = $_POST['url'];
-//        $idSousMenu = $_POST['idSousMenu'] ?? null;
-//        $idIcon = $_POST['idIcon'] ?? null;
-//        $autre_ressource = $_POST['autre_ressource'] ?? null;
-//        $commentaire = $_POST['commentaire'] ?? null;
-//        $id_UA = $_POST['idUA'];
-//        $niveau_UA = $_POST['nivUA'];
-//        $id_fonction = $_POST['id_fonction'] ?? null;
-//        $idAppli = $_POST['idAppli'] ?? null;
-//        $dateEnregistrement = date('Y-m-d H:i:s');
-//        if ($id_fonction === '' || $id_fonction === '0' || $id_fonction === 0) {
-//            $id_fonction = null;
-//        }
-//        if (!isset($_POST['idDB']) || $_POST['idDB'] == '') {
-//            $_POST['idDB'] = null;
-//        }
-//        $idDB = $_POST['idDB'] ?? null;
-//        // Ajout de la tâche
-//
-//
-//        try {
-//            $bdP->beginTransaction();
-//
-//            // Vérifier si l'URL existe déjà
-//            $stmtCheck = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE url = ?");
-//            $stmtCheck->execute([$url]);
-//            if ($stmtCheck->fetchColumn() > 0) {
-//                $bdP->rollBack();
-//
-//                echo "existeTache";
-//                die;
-////                return [
-////                    'success' => false,
-////                    'message' => "Une tâche avec cette URL existe déjà."
-////                ];
-//            }
-//
-//            // Initialisation des niveaux
-//            $idNiv1 = null;
-//            $idNiv2 = null;
-//            $idNiv3 = null;
-//
-//            if (empty($idSousMenu) || $idSousMenu == 0) {
-//                $idSousMenu = null;
-//            }
-//            if (empty($idIcon) || $idIcon == 0) {
-//                $idIcon = null;
-//            }
-//            if ($niveau_UA == 1) {
-//                $idNiv1 = $id_UA;
-//            } elseif ($niveau_UA == 2) {
-//                $idNiv2 = $id_UA;
-//            } elseif ($niveau_UA == 3) {
-//                $idNiv3 = $id_UA;
-//            }
-//
-//            // Vérifier si une tâche avec le même nom, même type et même UA existe déjà
-//            $whereUA = '';
-//            $paramsUA = [];
-//            if ($niveau_UA == 1) {
-//                $whereUA = 'idUniteAdministrativeNiv1 = ?';
-//                $paramsUA[] = $idNiv1;
-//            } elseif ($niveau_UA == 2) {
-//                $whereUA = 'idUniteAdministrativeNiv2 = ?';
-//                $paramsUA[] = $idNiv2;
-//            } elseif ($niveau_UA == 3) {
-//                $whereUA = 'idUniteAdministrativeNiv3 = ?';
-//                $paramsUA[] = $idNiv3;
-//            }
-//
-//            if ($whereUA) {
-//                $stmtCheckNom = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND $whereUA");
-//                $params = array_merge([$nom, $idTypeTache], $paramsUA);
-//                $stmtCheckNom->execute($params);
-//                if ($stmtCheckNom->fetchColumn() > 0) {
-//                    $bdP->rollBack();
-//
-//                    echo "tacheExisteUnite";
-//                    die;
-////                    return [
-////                        'success' => false,
-////                        'message' => "Une tâche avec ce nom, ce type et cette unité administrative existe déjà."
-////                    ];
-//                }
-//            }
-//
-//            $stmt = $bdP->prepare("
-//            INSERT INTO tache (nom, idTypeTache, url, idSousMenu, idIcon, autre_ressource, commentaire, idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3, dateEnregistrement, idFonction, createdBy, idDB,idAppli)
-//            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, NULLIF(?, 0), ?, ?,?)
-//        ");
-//            // Si id_fonction n'est pas null, récupérer ses unités administratives et les affecter à la tâche
-//            if (!empty($id_fonction)) {
-//                // Récupérer les unités administratives liées à la fonction
-//                $stmtUA = $bdP->prepare("SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3 FROM fonction WHERE id = ?");
-//                $stmtUA->execute([$id_fonction]);
-//                $ua = $stmtUA->fetch(PDO::FETCH_ASSOC);
-//
-//                if ($ua) {
-//                    if (!empty($ua['idUniteAdministrativeNiv1'])) {
-//                        $idNiv1 = $ua['idUniteAdministrativeNiv1'];
-//                        $idNiv2 = null;
-//                        $idNiv3 = null;
-//                    } elseif (!empty($ua['idUniteAdministrativeNiv2'])) {
-//                        $idNiv1 = null;
-//                        $idNiv2 = $ua['idUniteAdministrativeNiv2'];
-//                        $idNiv3 = null;
-//                    } elseif (!empty($ua['idUniteAdministrativeNiv3'])) {
-//                        $idNiv1 = null;
-//                        $idNiv2 = null;
-//                        $idNiv3 = $ua['idUniteAdministrativeNiv3'];
-//                    }
-//                }
-//            }
-//            $id_fonction = (int)$id_fonction;
-//
-//            if ($stmt->execute([$nom, $idTypeTache, $url, $idSousMenu, $idIcon, $autre_ressource, $commentaire, $idNiv1, $idNiv2, $idNiv3, $dateEnregistrement, $id_fonction, $idUtilisateur, $idDB,$idAppli])) {
-//                // Récupérer l'id de la tâche insérée
-//                $idTache = $bdP->lastInsertId();
-//
-//                // Insertion dans la table historiqueTache
-//                $stmtHist = $bdP->prepare("INSERT INTO historiqueTache (
-//                idUtilisateur, idTache, nom, autre_ressource, url, idTypeTache, commentaire, idSousMenu, idIcon, idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3, dateEnregistrement, active, idFonction, createdBy, idDB,idAppli
-//            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?,?)");
-//                $stmtHist->execute([
-//                    $idUtilisateur ?? null,
-//                    $idTache,
-//                    $nom,
-//                    $autre_ressource,
-//                    $url,
-//                    $idTypeTache,
-//                    $commentaire,
-//                    $idSousMenu,
-//                    $idIcon,
-//                    $idNiv1,
-//                    $idNiv2,
-//                    $idNiv3,
-//                    $dateEnregistrement,
-//                    1,
-//                    ($id_fonction === null || $id_fonction == 0) ? null : $id_fonction,
-//                    $idUtilisateur ?? null,
-//                    $idDB
-//                ]);
-//
-//                $bdP->commit();
-//
-//                echo "succès";
-//                die;
-////                echo json_encode([
-////                    'success' => true,
-////                    'message' => 'Tâche ajoutée avec succès'
-////                ]);
-//                die;
-//            } else {
-//                $bdP->rollBack();
-//                echo "erreur";
-////                echo json_encode([
-////                    'success' => false,
-////                    'message' => "Erreur lors de l'ajout de la tâche"
-////                ]);
-//                die;
-//            }
-//        } catch (PDOException $e) {
-//            if ($bdP->inTransaction()) {
-//                $bdP->rollBack();
-//            }
-//
-//            echo "erreur";
-//            die;
-////            error_log("Erreur add_tache: " . $e->getMessage());
-////            echo json_encode([
-////                'success' => false,
-////                'message' => "Erreur add_tache: " . $e->getMessage()
-////            ]);
-//            die;
-//        }
-//
-//        break;
 
+    // =========================================================================
+    //  case 19 — Ajout d'une tâche (visible OU associée / invisible)
+    //
+    //  Corrigé : INSERT tache 18 colonnes / 18 placeholders (15 auparavant)
+    //            INSERT historiqueTache 21 / 21 (18 auparavant)
+    //            NULLIF(?, NULL) retiré (sans effet : une comparaison avec NULL
+    //            n'est jamais vraie, la fonction renvoyait toujours sa valeur)
+    //
+    //  Mode association : estVisible = 0, estVisibleId = id de la tâche visible
+    //  parente. L'URL du parent est relue en base, jamais reprise du POST.
+    // =========================================================================
+    case 19 :
 
         date_default_timezone_set('Africa/Dakar');
-
-// ── Session ─────────────────────────────────────────────────
 
         $idUtilisateur = 1;
 //        $idUtilisateur = null;
@@ -2674,7 +2422,7 @@ ORDER BY t.nom ASC;";
 //            die;
 //        }
 
-// ── Récupération des données POST ───────────────────────────
+        // ── Récupération des données POST ───────────────────────────
         $nom             = trim($_POST['nom']          ?? '');
         $idTypeTache     = $_POST['idTypeTache']       ?? null;
         $url             = trim($_POST['url']          ?? '');
@@ -2686,10 +2434,18 @@ ORDER BY t.nom ASC;";
         $niveau_UA       = $_POST['nivUA']             ?? null;
         $id_fonction     = $_POST['id_fonction']       ?? null;
         $idAppli         = $_POST['idAppli']           ?? null;
-        $idDB            = $_POST['idDB']              ?? null;
+        // Le select du formulaire d'ajout porte name="idBD" (et non "idDB") :
+        // en ne lisant que $_POST['idDB'], idDB était systématiquement NULL.
+        $idDB            = $_POST['idBD'] ?? ($_POST['idDB'] ?? null);
         $dateEnregistrement = date('Y-m-d H:i:s');
 
-// ── Nettoyage des valeurs vides ──────────────────────────────
+        // ── Mode association (tâche invisible) ──────────────────────
+        $estVisible    = isset($_POST['estVisible']) && $_POST['estVisible'] !== ''
+            ? (int) $_POST['estVisible'] : 1;
+        $estVisibleId  = !empty($_POST['estVisibleId']) ? (int) $_POST['estVisibleId'] : null;
+        $estVisibleUrl = null;
+
+        // ── Nettoyage des valeurs vides ──────────────────────────────
         if (empty($idSousMenu)  || $idSousMenu  == '0') $idSousMenu  = null;
         if (empty($idIcon)      || $idIcon      == '0') $idIcon      = null;
         if (empty($id_fonction) || $id_fonction == '0') $id_fonction = null;
@@ -2697,7 +2453,7 @@ ORDER BY t.nom ASC;";
         if (empty($idAppli)     || $idAppli     == '0') $idAppli     = null;
         if (empty($id_UA)       || $id_UA       == '0') $id_UA       = null;
 
-// ── Initialisation des niveaux UA ───────────────────────────
+        // ── Initialisation des niveaux UA ───────────────────────────
         $idNiv1 = null;
         $idNiv2 = null;
         $idNiv3 = null;
@@ -2712,6 +2468,34 @@ ORDER BY t.nom ASC;";
 
         try {
             $bdP->beginTransaction();
+
+            // ── Validation du mode association ──────────────────────
+            if ($estVisible === 0) {
+
+                if (!$estVisibleId) {
+                    $bdP->rollBack();
+                    echo "parentManquant";
+                    die;
+                }
+
+                $stmtParent = $bdP->prepare("SELECT url FROM tache WHERE id = ? AND estVisible = 1");
+                $stmtParent->execute([$estVisibleId]);
+                $urlParent = $stmtParent->fetchColumn();
+
+                if ($urlParent === false) {
+                    $bdP->rollBack();
+                    echo "parentIntrouvable";
+                    die;
+                }
+
+                $estVisibleUrl = $urlParent;
+
+            } else {
+                // Toute autre valeur retombe sur une tâche visible normale.
+                $estVisible    = 1;
+                $estVisibleId  = null;
+                $estVisibleUrl = null;
+            }
 
             // ── Vérifier si l'URL existe déjà ───────────────────────
             $stmtCheck = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE url = ?");
@@ -2750,8 +2534,8 @@ ORDER BY t.nom ASC;";
             // ── Si fonction → récupérer ses UA ──────────────────────
             if (!empty($id_fonction)) {
                 $stmtUA = $bdP->prepare("
-            SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3 
-            FROM fonction 
+            SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3
+            FROM fonction
             WHERE id = ?
         ");
                 $stmtUA->execute([$id_fonction]);
@@ -2772,18 +2556,20 @@ ORDER BY t.nom ASC;";
                 }
             }
 
-            // ── Insertion tache ─────────────────────────────────────
+            // ── Insertion tache — 18 colonnes / 18 placeholders ─────
             $stmtInsert = $bdP->prepare("
         INSERT INTO tache (
             nom, idTypeTache, url, idSousMenu, idIcon,
             autre_ressource, commentaire,
             idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3,
-            dateEnregistrement, idFonction, createdBy, idDB, idAppli
+            dateEnregistrement, idFonction, createdBy, idDB, idAppli,
+            estVisible, estVisibleId, estVisibleUrl
         ) VALUES (
             ?, ?, ?, ?, ?,
             ?, ?,
             ?, ?, ?,
-            ?, NULLIF(?, NULL), ?, ?, ?
+            ?, ?, ?, ?, ?,
+            ?, ?, ?
         )
     ");
 
@@ -2791,23 +2577,26 @@ ORDER BY t.nom ASC;";
                 $nom, $idTypeTache, $url, $idSousMenu, $idIcon,
                 $autre_ressource, $commentaire,
                 $idNiv1, $idNiv2, $idNiv3,
-                $dateEnregistrement, $id_fonction, $idUtilisateur, $idDB, $idAppli
+                $dateEnregistrement, $id_fonction, $idUtilisateur, $idDB, $idAppli,
+                $estVisible, $estVisibleId, $estVisibleUrl
             ]);
 
             $idTache = $bdP->lastInsertId();
 
-            // ── Insertion historique ─────────────────────────────────
+            // ── Insertion historique — 21 colonnes / 21 placeholders ─
             $stmtHist = $bdP->prepare("
         INSERT INTO historiqueTache (
             idUtilisateur, idTache, nom, autre_ressource, url,
             idTypeTache, commentaire, idSousMenu, idIcon,
             idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3,
-            dateEnregistrement, active, idFonction, createdBy, idDB, idAppli
+            dateEnregistrement, active, idFonction, createdBy, idDB, idAppli,
+            estVisible, estVisibleId, estVisibleUrl
         ) VALUES (
             ?, ?, ?, ?, ?,
             ?, ?, ?, ?,
             ?, ?, ?,
-            ?, ?, NULLIF(?, NULL), ?, ?, ?
+            ?, ?, ?, ?, ?, ?,
+            ?, ?, ?
         )
     ");
 
@@ -2815,7 +2604,8 @@ ORDER BY t.nom ASC;";
                 $idUtilisateur, $idTache, $nom, $autre_ressource, $url,
                 $idTypeTache, $commentaire, $idSousMenu, $idIcon,
                 $idNiv1, $idNiv2, $idNiv3,
-                $dateEnregistrement, 1, $id_fonction, $idUtilisateur, $idDB, $idAppli
+                $dateEnregistrement, 1, $id_fonction, $idUtilisateur, $idDB, $idAppli,
+                $estVisible, $estVisibleId, $estVisibleUrl
             ]);
 
             $bdP->commit();
@@ -2833,11 +2623,22 @@ ORDER BY t.nom ASC;";
 
         break;
 
+
+    // =========================================================================
+    //  case 20 — Unités administratives d'un niveau
+    //  Le niveau est casté et borné à 1-3 : il est concaténé dans le nom de
+    //  table, un paramètre PDO ne peut pas le protéger.
+    // =========================================================================
     case 20 :
 
 
         try {
-            $niveau = $_POST['nivUA'];
+            $niveau = isset($_POST['nivUA']) ? (int) $_POST['nivUA'] : 0;
+
+            if ($niveau < 1 || $niveau > 3) {
+                echo '<option value="">--tâche--</option>';
+                die;
+            }
 
             $stmt = $bdP->prepare('SELECT id,niveau'.$niveau.' as niveau FROM unite_administrative_niv' . $niveau);
             $stmt->execute();
@@ -2845,7 +2646,6 @@ ORDER BY t.nom ASC;";
 
 
             echo '<option></option><option value="" >Choisir...</option>';
-//            echo '<option value="vide" hidden="">VIDE</option>';
 
             if (count($listes) > 0) {
                 foreach ($listes as $tmp) {
@@ -2858,12 +2658,16 @@ ORDER BY t.nom ASC;";
             die;
 
         }catch (PDOException $e) {
-           echo json_encode(array());
-           die;
+            echo json_encode(array());
+            die;
         }
 
-break;
+        break;
 
+
+    // =========================================================================
+    //  case 21 — Détail d'une tâche
+    // =========================================================================
     case 21 :
 
 
@@ -2871,7 +2675,7 @@ break;
 
         $stmt = $bdP->prepare('SELECT t.id as id, t.nom as nom,t.idFonction, tt.typeTache as type,tt.id as idTypeTache
     , t.url as url, t.autre_ressource as autre_ressource, t.idSousMenu as idSousMenu, t.idIcon as idIcon, sm.nom as nom_sous_menu, i.icon as icon
-	    , t.commentaire as commentaire, t.idUniteAdministrativeNiv1 as idUniteAdministrativeNiv1, t.idUniteAdministrativeNiv2 as idUniteAdministrativeNiv2, t.idUniteAdministrativeNiv3 as idUniteAdministrativeNiv3,
+        , t.commentaire as commentaire, t.idUniteAdministrativeNiv1 as idUniteAdministrativeNiv1, t.idUniteAdministrativeNiv2 as idUniteAdministrativeNiv2, t.idUniteAdministrativeNiv3 as idUniteAdministrativeNiv3,
         q.qualification as qualification, q.id as idQualification, t.idDB as idDB
      FROM tache t
 LEFT JOIN typetache tt ON tt.id = t.idTypeTache
@@ -2884,175 +2688,15 @@ LEFT JOIN qualifications q ON q.id = tq.idQualification
         $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         echo json_encode($result);
-die;
+        die;
 
+        break;
+
+
+    // =========================================================================
+    //  case 22 — Modification d'une tâche
+    // =========================================================================
     case 22 :
-
-
-//        $idUtilisateur = 1;
-////            $idUtilisateur = null;
-////            if(!empty($_SESSION['tmpIdP']))
-////            {
-////                $idUtilisateur = $_SESSION['tmpIdP'];
-////            }else
-////            {
-////                echo "sessionExpired";
-////                die;
-////            }
-//
-//
-//
-//        $id = $_POST['id'];
-//        $nom = $_POST['nom'];
-//        $type = $_POST['idTypeTache'];
-//        $idSousMenu = $_POST['idSousMenu'] ?? null;
-//        $nivUA = $_POST['niveau_UA'] ?? null;
-//        $idUA = $_POST['id_UA'] ?? null;
-//        $idIcon = $_POST['idIcon'] ?? null;
-//        if (!isset($_POST['id_fonction']) || $_POST['id_fonction'] == '' || $_POST['id_fonction'] == 0) {
-//            $_POST['id_fonction'] = null;
-//        }
-//        $id_fonction = $_POST['id_fonction'];
-//        $url = $_POST['url'];
-//        $autre_ressource = $_POST['autre_ressource'];
-//
-//        $idDB = $_POST['idDB'] ?? null;
-//        $commentaire = $_POST['commentaire'] ?? null;
-//
-//
-//
-//
-//        try {
-//            $bdP->beginTransaction();
-//
-//            // Vérifier si l'URL existe déjà pour une autre tâche
-//            $stmtCheck = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE url = ? AND id != ?");
-//            $stmtCheck->execute([$url, $id]);
-//            if ($stmtCheck->fetchColumn() > 0) {
-//                $bdP->rollBack();
-//                return [
-//                    'success' => false,
-//                    'message' => "Une tâche avec cette URL existe déjà."
-//                ];
-//            }
-//
-//            // Vérifier si une tâche avec le même nom, même type et même UA existe déjà (hors celle en cours d'édition)
-//            $stmtCheckNom = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE nom = ? AND idTypeTache = ? AND id != ?");
-//            $params = array_merge([$nom, $type], [$id]);
-//            $stmtCheckNom->execute($params);
-//            if ($stmtCheckNom->fetchColumn() > 0) {
-//                $bdP->rollBack();
-//                return [
-//                    'success' => false,
-//                    'message' => "Une tâche avec ce nom et ce type existe déjà."
-//                ];
-//            }
-//
-//            $idUA = ($idUA === '' || $idUA === 0) ? null : $idUA;
-//            // Préparer les valeurs des niveaux administratifs
-//            $idNiv1 = null;
-//            $idNiv2 = null;
-//            $idNiv3 = null;
-//            if ($nivUA == 1) {
-//                $idNiv1 = $idUA;
-//            } elseif ($nivUA == 2) {
-//                $idNiv2 = $idUA;
-//            } elseif ($nivUA == 3) {
-//                $idNiv3 = $idUA;
-//            }
-//
-//            if ($type != 2) {
-//                $id_fonction = null;
-//            } elseif ($type == 2) {
-//                // Si id_fonction n'est pas null, récupérer ses unités administratives et les affecter à la tâche
-//                if (!empty($id_fonction)) {
-//                    // Récupérer les unités administratives liées à la fonction
-//                    $stmtUA = $bdP->prepare("SELECT idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3 FROM fonction WHERE id = ?");
-//                    $stmtUA->execute([$id_fonction]);
-//                    $ua = $stmtUA->fetch(PDO::FETCH_ASSOC);
-//
-//                    if ($ua) {
-//                        if (!empty($ua['idUniteAdministrativeNiv1'])) {
-//                            $idNiv1 = $ua['idUniteAdministrativeNiv1'];
-//                            $idNiv2 = null;
-//                            $idNiv3 = null;
-//                        } elseif (!empty($ua['idUniteAdministrativeNiv2'])) {
-//                            $idNiv1 = null;
-//                            $idNiv2 = $ua['idUniteAdministrativeNiv2'];
-//                            $idNiv3 = null;
-//                        } elseif (!empty($ua['idUniteAdministrativeNiv3'])) {
-//                            $idNiv1 = null;
-//                            $idNiv2 = null;
-//                            $idNiv3 = $ua['idUniteAdministrativeNiv3'];
-//                        }
-//                    }
-//                }
-//            }
-//
-//            $sql = "UPDATE tache SET nom = ?, idTypeTache = ?,commentaire = ?, url = ?, autre_ressource = ?, idSousMenu = ?, idIcon = ?, idFonction = ?, idUniteAdministrativeNiv1 = ?, idUniteAdministrativeNiv2 = ?, idUniteAdministrativeNiv3 = ?, idDB = ? WHERE id = ?";
-//            $params = [
-//                $nom,
-//                $type,
-//                $commentaire,
-//                $url,
-//                $autre_ressource,
-//                $idSousMenu,
-//                $idIcon,
-//                $id_fonction,
-//                $idNiv1,
-//                $idNiv2,
-//                $idNiv3,
-//                $idDB,
-//                $id
-//            ];
-//            $stmt = $bdP->prepare($sql);
-//            if ($stmt->execute($params)) {
-//                // Récupérer l'attribut createdBy de la tâche avant modification
-//                $stmtGetCreatedBy = $bdP->prepare("SELECT createdBy FROM tache WHERE id = ?");
-//                $stmtGetCreatedBy->execute([$id]);
-//                $createdBy = $stmtGetCreatedBy->fetchColumn();
-//
-//                // Insertion dans la table historiqueTache
-//                $stmtHist = $bdP->prepare("INSERT INTO historiqueTache (
-//                idUtilisateur, idTache, nom, autre_ressource, url, idTypeTache, commentaire, idSousMenu, idIcon, idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3, dateEnregistrement, active, idFonction, createdBy, idDB
-//            ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)");
-//                $stmtHist->execute([
-//                    $idUtilisateur ?? null,
-//                    $id,
-//                    $nom,
-//                    $autre_ressource,
-//                    $url,
-//                    $type,
-//                    $commentaire, // commentaire non fourni ici
-//                    $idSousMenu,
-//                    $idIcon,
-//                    $idNiv1,
-//                    $idNiv2,
-//                    $idNiv3,
-//                    $dateEnregistrement,
-//                    1,
-//                    $id_fonction,
-//                    $createdBy,
-//                    $idDB
-//                ]);
-//                $bdP->commit();
-//                echo json_encode(['success' => true, 'message' => 'Tâche modifiée avec succès']);
-//                die;
-//            } else {
-//                $bdP->rollBack();
-//                 echo json_encode(['success' => false, 'message' => 'Erreur lors de la modification de la tâche']);
-//                 die;
-//            }
-//        } catch (Exception $e) {
-//            if ($bdP->inTransaction()) {
-//                $bdP->rollBack();
-//            }
-//             echo json_encode(['success' => false, 'message' => 'Erreur lors de la modification de la tâche : ' . $e->getMessage()]);
-//            die;
-//        }
-//
-//        break;
-
 
         date_default_timezone_set('Africa/Dakar');
 
@@ -3176,10 +2820,10 @@ die;
                 idUniteAdministrativeNiv1  = ?,
                 idUniteAdministrativeNiv2  = ?,
                 idUniteAdministrativeNiv3  = ?,
-                idFonction                 = NULLIF(?, NULL),
+                idFonction                 = ?,
                 idDB                       = ?,
                 idAppli                    = ?,
-                lastDateModification           = ?
+                lastDateModification       = ?
             WHERE id = ?
         ");
 
@@ -3203,7 +2847,7 @@ die;
                 ?, ?, ?, ?, ?,
                 ?, ?, ?, ?,
                 ?, ?, ?,
-                ?, ?, NULLIF(?, NULL), ?, ?, ?
+                ?, ?, ?, ?, ?, ?
             )
         ");
 
@@ -3228,10 +2872,14 @@ die;
         }
 
         break;
+
+
+    // =========================================================================
+    //  case 23 — Applications
+    // =========================================================================
     case 23 :
 
         try {
-
 
 
             $data = [
@@ -3242,7 +2890,6 @@ die;
             $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
             echo '<option></option><option value="">Choisir...</option>';
-//            echo '<option value="vide" hidden="">VIDE</option>';
 
             if (count($listes) > 0) {
                 foreach ($listes as $tmp) {
@@ -3259,13 +2906,16 @@ die;
         }
         break;
 
+
+    // =========================================================================
+    //  case 24 — Activer / désactiver une tâche
+    // =========================================================================
     case 24:
 
         date_default_timezone_set('Africa/Dakar');
 
 
-            $idUtilisateur = 1;
-
+        $idUtilisateur = 1;
 //        $idUtilisateur = null;
 //        if (!empty($_SESSION['tmpIdP'])) {
 //            $idUtilisateur = $_SESSION['tmpIdP'];
@@ -3301,8 +2951,8 @@ die;
 
             // Mettre à jour
             $stmtUpdate = $bdP->prepare("
-            UPDATE tache 
-            SET active = ?, lastDateModification = ? 
+            UPDATE tache
+            SET active = ?, lastDateModification = ?
             WHERE id = ?
         ");
             $stmtUpdate->execute([$nouvelEtat, $dateModification, $id_tache]);
@@ -3329,7 +2979,7 @@ die;
                 ?, ?, ?, ?, ?,
                 ?, ?, ?, ?,
                 ?, ?, ?,
-                ?, ?, NULLIF(?, NULL), ?
+                ?, ?, ?, ?
             )
         ");
 
@@ -3367,6 +3017,10 @@ die;
 
         break;
 
+
+    // =========================================================================
+    //  case 25 — Statistiques tâches
+    // =========================================================================
     case 25 :
         $actifs = 0;
         $inactifs = 0;
@@ -3378,7 +3032,7 @@ die;
             $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
 
-            $sql = "SELECT 
+            $sql = "SELECT
     tache.id,
     tache.active
 FROM tache";
@@ -3393,7 +3047,6 @@ FROM tache";
             foreach ($result as $user) {
 
 
-
                 if ($user->active == 0) {
 
                     ++$inactifs;
@@ -3405,7 +3058,6 @@ FROM tache";
                 }
 
 
-
             }
 
             echo json_encode([
@@ -3413,7 +3065,6 @@ FROM tache";
                 'actifs' => (int)$actifs,
                 'inactifs' => (int)$inactifs
             ]);
-
 
 
         } catch (Exception $e) {
@@ -3426,6 +3077,10 @@ FROM tache";
 
         break;
 
+
+    // =========================================================================
+    //  case 26 — Liste des associations tâche / qualification
+    // =========================================================================
     case 26 :
 
 
@@ -3457,10 +3112,12 @@ FROM tache";
         break;
 
 
+    // =========================================================================
+    //  case 27 — Qualifications
+    // =========================================================================
     case 27 :
 
         try {
-
 
 
             $stmt = $bdP->prepare("SELECT * FROM qualifications");
@@ -3468,7 +3125,6 @@ FROM tache";
             $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
             echo '<option></option><option value="">Choisir...</option>';
-//            echo '<option value="vide" hidden="">VIDE</option>';
 
             if (count($listes) > 0) {
                 foreach ($listes as $tmp) {
@@ -3485,26 +3141,32 @@ FROM tache";
         }
         break;
 
-    case 28 :
 
+    // =========================================================================
+    //  case 28 — Tâches de structure d'une unité administrative
+    //  Corrigé : le paramètre nommé s'écrivait « : idTypeTache » (espace après
+    //  les deux-points). PDO ne le reconnaissait pas, la requête partait en
+    //  exception et le catch renvoyait silencieusement une liste vide.
+    // =========================================================================
+    case 28 :
 
 
         try {
             $idUniteAd = $_POST['idUniteAd'];
-            $idNiv = $_POST['idNiv'];
+            $idNiv     = isset($_POST['idNiv']) ? (int) $_POST['idNiv'] : 0;
 
-            $tmp = NULL;
+            $colonneUA = NULL;
             if($idNiv == 1)
             {
-                $tmp = "idUniteAdministrativeNiv1";
+                $colonneUA = "idUniteAdministrativeNiv1";
 
             }else if($idNiv == 2)
             {
-                $tmp = "idUniteAdministrativeNiv2";
+                $colonneUA = "idUniteAdministrativeNiv2";
 
             }else if($idNiv == 3)
             {
-                $tmp = "idUniteAdministrativeNiv3";
+                $colonneUA = "idUniteAdministrativeNiv3";
 
             }else
             {
@@ -3528,15 +3190,12 @@ FROM tache";
 FROM tache
 LEFT JOIN sous_menu
     ON sous_menu.id = tache.idSousMenu
-WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
+WHERE tache.'.$colonneUA.' = :idUniteAd AND tache.idTypeTache = :idTypeTache');
             $stmt->execute($data);
             $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
 
-
-
             echo '<option></option><option value="" >Choisir...</option>';
-//            echo '<option value="vide" hidden="">VIDE</option>';
 
             if (count($listes) > 0) {
                 foreach ($listes as $tmp) {
@@ -3563,283 +3222,11 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 
         break;
 
+
+    // =========================================================================
+    //  case 29 — Associer une qualification à une tâche
+    // =========================================================================
     case 29 :
-
-
-
-//
-//
-//        $idUtilisateur = 1;
-////            $idUtilisateur = null;
-////            if(!empty($_SESSION['tmpIdP']))
-////            {
-////                $idUtilisateur = $_SESSION['tmpIdP'];
-////            }else
-////            {
-////                echo "sessionExpired";
-////                die;
-////            }
-//
-//        date_default_timezone_set('Africa/Dakar');
-//        $dateEnregistrement = date('Y-m-d H:i:s');
-//
-//
-//
-//
-//
-//        $idTache = $_POST['idTache'];
-//        $idQualification = $_POST['idQualification'];
-//        if ($idTache <= 0 || $idQualification <= 0) {
-//
-//            echo "erreur";
-//
-//        }
-//
-//        try {
-//            // On démarre une transaction
-//            $bdP->beginTransaction();
-//
-//            // 1. Vérifier si l'association existe déjà
-//            $stmt = $bdP->prepare("SELECT 1 FROM tache_qualification
-//                               WHERE idTache = ? AND idQualification = ? AND valide = 1 LIMIT 1");
-//            $stmt->execute([$idTache, $idQualification]);
-//
-//            if ($stmt->fetch()) {
-//                // Si l'association existe, on annule la transaction et on quitte
-//                $bdP->rollBack();
-//
-//                echo "existe";
-//                die;
-////                echo ['success' => false, 'message' => 'Cette association existe déjà'];
-//            }
-//
-//            // 2. Récupérer les qualifications déjà associées à la tâche
-//            $stmt = $bdP->prepare("SELECT idQualification FROM tache_qualification
-//                               WHERE idTache = ? AND valide = 1");
-//            $stmt->execute([$idTache]);
-//            $qualificationsExistantes = $stmt->fetchAll(PDO::FETCH_COLUMN);
-//
-//            // Ajouter la nouvelle qualification à la liste
-//            $qualificationsExistantes[] = $idQualification;
-//
-//            // 3. Récupérer les utilisateurs associés à la tâche
-//            $stmt = $bdP->prepare("SELECT u.id, u.matricule, u.email
-//                               FROM tache_utilisateur tu
-//                               JOIN utilisateur u ON tu.idUtilisateur = u.id
-//                               WHERE tu.idTache = ? AND tu.access = 1");
-//            $stmt->execute([$idTache]);
-//            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-//
-//            // 4. Appel API batch pour récupérer les qualifications des utilisateurs
-//            $matricules = array_column($users, 'matricule');
-//            $usersInfo = get_info($matricules);
-//
-//            // 5. Préparer les requêtes
-//            $stmtGetLast = $bdP->prepare("
-//    SELECT id
-//    FROM tache_utilisateur
-//    WHERE idTache = ? AND idUtilisateur = ?
-//    ORDER BY id DESC
-//    LIMIT 1
-//");
-//
-//            $updateStmt = $bdP->prepare("
-//    UPDATE tache_utilisateur
-//    SET access = 0,
-//        idUtilisateurSupRetrait = ?,
-//        dateRetrait = ?
-//    WHERE id = ?
-//");
-//
-//            foreach ($users as $user) {
-//                $userQualifications = [];
-//
-//                if (isset($usersInfo[$user['matricule']])) {
-//                    foreach ($usersInfo[$user['matricule']] as $qualificationData) {
-//                        if (isset($qualificationData['idQualification'])) {
-//                            $userQualifications[] = $qualificationData['idQualification'];
-//                        }
-//                    }
-//                }
-//
-//                // Vérifier si l'utilisateur a au moins une des qualifications de la tâche
-//                $hasRequiredQualification = false;
-//                foreach ($userQualifications as $qualif) {
-//                    if (in_array($qualif, $qualificationsExistantes)) {
-//                        $hasRequiredQualification = true;
-//                        break;
-//                    }
-//                }
-//
-//                // Si l'utilisateur n'a aucune des qualifications, on lui retire l'accès
-//                if (!$hasRequiredQualification) {
-//                    // 1. Récupérer la dernière ligne correspondante
-//                    $stmtGetLast->execute([$idTache, $user['id']]);
-//                    $lastId = $stmtGetLast->fetchColumn();
-//
-//                    // 2. Faire la mise à jour uniquement si une ligne est trouvée
-//                    if ($lastId) {
-//                        $updateStmt->execute([$idUtilisateur, $dateEnregistrement, $lastId]);
-//                    }
-//                }
-//            }
-//            // 6. Créer la nouvelle association
-//            $bdP->prepare("INSERT INTO tache_qualification
-//                      (idTache, idQualification, dateEnregistrement, createdBy)
-//                      VALUES (?, ?, ?, ?)")
-//                ->execute([$idTache, $idQualification, $dateEnregistrement,$idUtilisateur]);
-//
-//            // 7. Valider la transaction
-//            $bdP->commit();
-//
-//            echo "succès";
-//            die;
-////            echo  ['success' => true, 'message' => 'Association réussie !!'];
-//
-//        } catch (Exception $e) {
-//            // Si une erreur survient, on annule tout
-//            if ($bdP->inTransaction()) {
-//                $bdP->rollBack();
-//            }
-//            error_log("Erreur addTacheQualification: " . $e->getMessage());
-//            echo "erreur";
-//            die;
-////            echo  ['success' => false, 'message' => $e->getMessage()];
-//        }
-//
-//        break;
-
-
-//        $idUtilisateur = 1;
-
-//    $idUtilisateur = null;
-//        if (!empty($_SESSION['tmpIdP'])) {
-//            $idUtilisateur = $_SESSION['tmpIdP'];
-//        } else {
-//            echo "sessionExpired";
-//            die;
-//        }
-//
-//        date_default_timezone_set('Africa/Dakar');
-//        $dateEnregistrement = date('Y-m-d H:i:s');
-//
-//        $idTache         = $_POST['idTache']         ?? null;
-//        $idQualification = $_POST['idQualification'] ?? null;
-//
-//        // Validation des données
-//        if (empty($idTache) || empty($idQualification) || $idTache <= 0 || $idQualification <= 0) {
-//            echo "erreur";
-//            die;
-//        }
-//
-//        try {
-//            $bdP->beginTransaction();
-//
-//            // 1. Vérifier si l'association existe déjà
-//            $stmtCheck = $bdP->prepare("
-//            SELECT 1 FROM tache_qualification
-//            WHERE idTache = ? AND idQualification = ? AND valide = 1
-//            LIMIT 1
-//        ");
-//            $stmtCheck->execute([$idTache, $idQualification]);
-//
-//            if ($stmtCheck->fetch()) {
-//                $bdP->rollBack();
-//                echo "existe";
-//                die;
-//            }
-//
-//            // 2. Récupérer les qualifications déjà associées à la tâche
-//            $stmtQualifs = $bdP->prepare("
-//            SELECT idQualification FROM tache_qualification
-//            WHERE idTache = ? AND valide = 1
-//        ");
-//            $stmtQualifs->execute([$idTache]);
-//            $qualificationsExistantes = $stmtQualifs->fetchAll(PDO::FETCH_COLUMN);
-//
-//            // Ajouter la nouvelle qualification à la liste
-//            $qualificationsExistantes[] = $idQualification;
-//
-//            // 3. Récupérer les utilisateurs associés à la tâche
-//            $stmtUsers = $bdP->prepare("
-//            SELECT u.id, u.matricule, u.email
-//            FROM tache_utilisateur tu
-//            JOIN utilisateurs u ON tu.idUtilisateur = u.id
-//            WHERE tu.idTache = ? AND tu.access = 1
-//        ");
-//            $stmtUsers->execute([$idTache]);
-//            $users = $stmtUsers->fetchAll(PDO::FETCH_ASSOC);
-//
-//            // 4. Appel API batch pour récupérer les qualifications des utilisateurs
-//            $matricules = array_column($users, 'matricule');
-//            $usersInfo  = $adminController->get_info($matricules);
-//
-//            // 5. Préparer les requêtes de retrait d'accès
-//            $stmtGetLast = $bdP->prepare("
-//            SELECT id FROM tache_utilisateur
-//            WHERE idTache = ? AND idUtilisateur = ?
-//            ORDER BY id DESC LIMIT 1
-//        ");
-//
-//            $stmtUpdate = $bdP->prepare("
-//            UPDATE tache_utilisateur
-//            SET access = 0,
-//                idUtilisateurSupRetrait = ?,
-//                dateRetrait = ?
-//            WHERE id = ?
-//        ");
-//
-//            foreach ($users as $user) {
-//                $userQualifications = [];
-//
-//                if (isset($usersInfo[$user['matricule']])) {
-//                    foreach ($usersInfo[$user['matricule']] as $qualificationData) {
-//                        if (isset($qualificationData['idQualification'])) {
-//                            $userQualifications[] = $qualificationData['idQualification'];
-//                        }
-//                    }
-//                }
-//
-//                // Vérifier si l'utilisateur a au moins une des qualifications requises
-//                $hasRequiredQualification = false;
-//                foreach ($userQualifications as $qualif) {
-//                    if (in_array($qualif, $qualificationsExistantes)) {
-//                        $hasRequiredQualification = true;
-//                        break;
-//                    }
-//                }
-//
-//                // Si l'utilisateur n'a aucune qualification requise → retirer l'accès
-//                if (!$hasRequiredQualification) {
-//                    $stmtGetLast->execute([$idTache, $user['id']]);
-//                    $lastId = $stmtGetLast->fetchColumn();
-//                    if ($lastId) {
-//                        $stmtUpdate->execute([$idUtilisateur, $dateEnregistrement, $lastId]);
-//                    }
-//                }
-//            }
-//
-//            // 6. Créer la nouvelle association
-//            $stmtInsert = $bdP->prepare("
-//            INSERT INTO tache_qualification (idTache, idQualification, dateEnregistrement, createdBy)
-//            VALUES (?, ?, ?, ?)
-//        ");
-//            $stmtInsert->execute([$idTache, $idQualification, $dateEnregistrement, $idUtilisateur]);
-//
-//            $bdP->commit();
-//            echo "succes";
-//            die;
-//
-//        } catch (Exception $e) {
-//            if ($bdP->inTransaction()) {
-//                $bdP->rollBack();
-//            }
-//            error_log("Erreur addTacheQualification: " . $e->getMessage());
-//            echo "erreur".$e;
-//            die;
-//        }
-//
-//        break;
 
         $idUtilisateur = 1;
 //        $idUtilisateur = null;
@@ -3966,180 +3353,14 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 
         break;
 
-// ==================================================
-// CASE 30 — SUPPRIMER ASSOCIATION TACHE QUALIFICATION
-// ==================================================
+
+    // =========================================================================
+    //  case 30 — Retirer une association tâche / qualification
+    //  Le fichier d'origine portait deux fois l'étiquette « case 30: » dans le
+    //  même switch (la première suivie uniquement de code commenté). Fusionné
+    //  en une seule étiquette.
+    // =========================================================================
     case 30:
-
-
-//                date_default_timezone_set('Africa/Dakar');
-//        $dateModification = date('Y-m-d H:i:s');
-//
-//
-//        $idUtilisateur = null;
-//        if (!empty($_SESSION['tmpIdP'])) {
-//            $idUtilisateur = $_SESSION['tmpIdP'];
-//        } else {
-//            echo "sessionExpired";
-//            die;
-//        }
-//
-//        $idTacheQualification = $_POST['id'] ?? null;
-//
-//        if (!$idTacheQualification) {
-//            echo "erreur";
-//            die;
-//        }
-//
-//
-//        try {
-//            // Démarrer la transaction
-//            $bdP->beginTransaction();
-//
-//            // 1. Récupérer la tâche et la qualification liées
-//            $stmt = $bdP->prepare('SELECT idTache, idQualification FROM tache_qualification WHERE id = ?');
-//            $stmt->execute([$idTacheQualification]);
-//            $association = $stmt->fetch(PDO::FETCH_ASSOC);
-//
-//            if (!$association) {
-//                $bdP->rollBack(); // Annuler la transaction si pas d'association
-//                return [
-//                    'success' => false,
-//                    'message' => 'Association tâche-qualification introuvable.',
-//                    'matricules' => []
-//                ];
-//            }
-//
-//            $idTache = $association['idTache'];
-//            $idQualification = $association['idQualification'];
-//
-//            // 2. Vérifier le nombre de qualifications restantes valides pour la tâche
-//            $stmt = $bdP->prepare('SELECT COUNT(*) FROM tache_qualification WHERE idTache = ? AND valide = 1');
-//            $stmt->execute([$idTache]);
-//            $remainingQualifications = (int) $stmt->fetchColumn();
-//
-//            // 3. Désactiver la validité
-//            $stmt = $bdP->prepare('UPDATE tache_qualification SET valide = 0, updatedBy = ?, dateUpdate = ? WHERE id = ?');
-//            $stmt->execute([$_SESSION['id'],$dateModification, $idTacheQualification]);
-//
-//            // Si c'était la dernière qualification valide
-//            if ($remainingQualifications == 1) {
-//                $bdP->commit(); // Valider la transaction
-//                return [
-//                    'success' => true,
-//                    'message' => 'Validité changée. Dernière qualification restante.',
-//                    'matricules' => []
-//                ];
-//            }
-//
-//            // 4. Récupérer les utilisateurs ayant cette tâche
-//            $stmt = $bdP->prepare('
-//            SELECT u.id AS idUtilisateur, u.matricule
-//            FROM tache_utilisateur tu
-//            JOIN utilisateur u ON tu.idUtilisateur = u.id
-//            WHERE tu.idTache = ?
-//        ');
-//            $stmt->execute([$idTache]);
-//            $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
-//
-//            if (empty($users)) {
-//                $bdP->commit(); // Valider la transaction
-//                echo "sucess";
-//                die;
-////                return [
-////                    'success' => true,
-////                    'message' => 'Aucun utilisateur lié à cette tâche.',
-////                    'matricules' => []
-////                ];
-//            }
-//
-//            // 5. Préparer la liste des matricules
-//            $matricules = array_column($users, 'matricule');
-//
-//            // 6. Récupérer les informations utilisateurs via API
-//            $infos = $adminController->get_info($matricules);
-//
-//            $updatedMatricules = [];
-//
-//// 7. Mise à jour des accès pour les utilisateurs qualifiés
-//            $stmtGetLast = $bdP->prepare('
-//    SELECT id FROM tache_utilisateur
-//    WHERE idUtilisateur = ? AND idTache = ?
-//    ORDER BY id DESC
-//    LIMIT 1
-//');
-//
-//            $stmtUpdate = $bdP->prepare('
-//    UPDATE tache_utilisateur
-//    SET access = 0, idUtilisateurSupRetrait = ?, dateRetrait = ?
-//    WHERE id = ?
-//');
-//
-//            foreach ($users as $user) {
-//                $matricule = $user['matricule'];
-//                $idUtilisateur = $user['idUtilisateur'];
-//
-//                if (!isset($infos[$matricule]) || !is_array($infos[$matricule])) {
-//                    continue;
-//                }
-//
-//                $qualifications = $infos[$matricule];
-//                $isQualified = array_filter($qualifications, function ($qualif) use ($idQualification) {
-//                    return isset($qualif['idQualification']) && $qualif['idQualification'] == $idQualification;
-//                });
-//
-//                if (!empty($isQualified)) {
-//                    // Récupère la dernière ligne correspondante
-//                    $stmtGetLast->execute([$idUtilisateur, $idTache]);
-//                    $lastId = $stmtGetLast->fetchColumn();
-//
-//                    if ($lastId) {
-//                        $stmtUpdate->execute([$_SESSION['id'], $dateModification, $lastId]);
-//                        $updatedMatricules[] = $matricule;
-//                    }
-//                }
-//            }
-//            // Valider la transaction après toutes les mises à jour
-//            $bdP->commit();
-//
-//
-//            echo "succes";
-//            die;
-////            return [
-////                'success' => true,
-////                'message' => 'Validité changée. Accès mis à jour pour les utilisateurs qualifiés.',
-////                'matricules' => $updatedMatricules
-////            ];
-//
-//        } catch (PDOException $e) {
-//            $bdP->rollBack(); // Annuler la transaction en cas d'erreur PDO
-//            error_log('Erreur PDO : ' . $e->getMessage());
-//
-//            echo "erreur";
-//            die;
-////            return [
-////                'success' => false,
-////                'message' => 'Erreur lors de la mise à jour : ' . $e->getMessage(),
-////                'matricules' => []
-////            ];
-//        } catch (Exception $e) {
-//            $bdP->rollBack(); // Annuler la transaction en cas d'erreur générale
-//            error_log('Erreur : ' . $e->getMessage());
-//
-//            echo "erreur";
-//            die;
-////            return [
-////                'success' => false,
-////                'message' => 'Erreur inattendue : ' . $e->getMessage(),
-////                'matricules' => []
-////            ];
-//        }
-//
-//        break;
-//
-
-
-        case 30:
 
         date_default_timezone_set('Africa/Dakar');
         $dateModification = date('Y-m-d H:i:s');
@@ -4164,8 +3385,8 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 
             // 1. Récupérer la tâche et la qualification liées
             $stmtAssoc = $bdP->prepare("
-            SELECT idTache, idQualification 
-            FROM tache_qualification 
+            SELECT idTache, idQualification
+            FROM tache_qualification
             WHERE id = ? AND valide = 1
         ");
             $stmtAssoc->execute([$idTacheQualification]);
@@ -4182,7 +3403,7 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 
             // 2. Compter les qualifications valides restantes pour cette tâche
             $stmtCount = $bdP->prepare("
-            SELECT COUNT(*) FROM tache_qualification 
+            SELECT COUNT(*) FROM tache_qualification
             WHERE idTache = ? AND valide = 1
         ");
             $stmtCount->execute([$idTache]);
@@ -4190,8 +3411,8 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 
             // 3. Désactiver la validité de l'association
             $stmtDisable = $bdP->prepare("
-            UPDATE tache_qualification 
-            SET valide = 0, updatedBy = ?, dateUpdate = ? 
+            UPDATE tache_qualification
+            SET valide = 0, updatedBy = ?, dateUpdate = ?
             WHERE id = ?
         ");
             $stmtDisable->execute([$idUtilisateur, $dateModification, $idTacheQualification]);
@@ -4241,7 +3462,7 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 
             // 7. Pour chaque utilisateur, vérifier s'il a UNIQUEMENT la qualification supprimée
             foreach ($users as $user) {
-                $matricule           = $user['matricule'];
+                $matricule            = $user['matricule'];
                 $idUtilisateurCourant = $user['idUtilisateur'];
 
                 // Si pas d'info pour cet utilisateur → ignorer
@@ -4260,8 +3481,8 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
                     // Vérifier si l'utilisateur a une autre qualification valide pour cette tâche
                     $stmtCheckOtherQualif = $bdP->prepare("
                     SELECT COUNT(*) FROM tache_qualification tq
-                    WHERE tq.idTache = ? 
-                    AND tq.valide = 1 
+                    WHERE tq.idTache = ?
+                    AND tq.valide = 1
                     AND tq.idQualification = ?
                 ");
                     $stmtCheckOtherQualif->execute([$idTache, $userIdQualification]);
@@ -4297,7 +3518,12 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 
         break;
 
+
+    // =========================================================================
+    //  case 31 — Page d'accueil de l'application
+    // =========================================================================
     case 31 :
+
         if(!empty($_POST['tmp']))
         {
 
@@ -4358,10 +3584,7 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 
                     echo "sesionExpired";
                     die;
-//
 
-//    header("Location: /personnel/signin");
-//    exit();
                 }else
                 {
 
@@ -4374,21 +3597,12 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
                         $lien_logo1 = "/personnel/admin-accueil";
                         $lien_logo2 = "/personnel/admin-accueil";
 
-//                header("Location: /personnel/admin-accueil");
-//                exit();
-
-
-
-
 
                     }else if($connectUser == 2)
                     {
 
                         $lien_logo1 = "/personnel/user-accueil";
                         $lien_logo2 = "/personnel/user-accueil";
-
-//                header("Location: /personnel/user-accueil");
-//                exit();
 
                     }
 
@@ -4418,9 +3632,6 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
                 }
 
 
-
-
-
                 $page_par_defaut = null;
 
 
@@ -4431,9 +3642,6 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
                 }
 
 
-
-
-                // ── Après ──────────────────────────────────────
                 $page_accueil = $adminController->getPageAccueil(
                     $listeTachesIncarnes,
                     $listeTachesStructures,
@@ -4445,14 +3653,11 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
                 die;
 
 
-
             } catch (\Throwable $th) {
                 error_log($th->getMessage());
                 echo "erreur".$th;
                 die;
             }
-
-            break;
 
         }else
         {
@@ -4461,9 +3666,10 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
         }
         break;
 
-    // ==================================================
-    // CASE 32 — GESTION DE L'ORDRE D'AFFICHAGE DU MENU
-    // ==================================================
+
+    // =========================================================================
+    //  case 32 — Ordre d'affichage du menu
+    // =========================================================================
     case 32 :
 
         date_default_timezone_set('Africa/Dakar');
@@ -4707,12 +3913,307 @@ WHERE tache.'.$tmp.' = :idUniteAd AND tache.idTypeTache = : idTypeTache');
 
         break;
 
+
+    // =========================================================================
+    //  case 33 — Liste des tâches invisibles associées à une tâche visible
+    //            POST { option:33, id:<id de la tâche sélectionnée> }
+    //            -> JSON { success, parent:{id,nom,url}, taches:[...] }
+    // =========================================================================
+    case 33 :
+
+        $idParent = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+
+        if ($idParent <= 0) {
+            echo json_encode(['success' => false, 'message' => 'idManquant', 'taches' => []]);
+            die;
+        }
+
+        try {
+            $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            // ── La tâche sélectionnée doit exister et être visible ──
+            $stmtParent = $bdP->prepare("SELECT id, nom, url FROM tache WHERE id = ? AND estVisible = 1");
+            $stmtParent->execute([$idParent]);
+            $parent = $stmtParent->fetch(PDO::FETCH_ASSOC);
+
+            if (!$parent) {
+                echo json_encode(['success' => false, 'message' => 'parentIntrouvable', 'taches' => []]);
+                die;
+            }
+
+            // ── Tâches invisibles rattachées ────────────────────────
+            $stmt = $bdP->prepare("
+                SELECT
+                    t.id            AS id,
+                    t.nom           AS nom,
+                    t.url           AS url,
+                    t.commentaire   AS commentaire,
+                    t.active        AS active,
+                    t.estVisibleUrl AS estVisibleUrl,
+                    tt.typeTache    AS type,
+                    sm.nom          AS sousMenu
+                FROM tache t
+                JOIN typetache tt      ON tt.id = t.idTypeTache
+                LEFT JOIN sous_menu sm ON sm.id = t.idSousMenu
+                WHERE t.estVisible   = 0
+                  AND t.estVisibleId = ?
+                ORDER BY t.nom ASC
+            ");
+            $stmt->execute([$idParent]);
+            $taches = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            echo json_encode([
+                'success' => true,
+                'parent'  => [
+                    'id'  => (int) $parent['id'],
+                    'nom' => $parent['nom'],
+                    'url' => $parent['url'],
+                ],
+                'taches'  => $taches,
+            ]);
+            die;
+
+        } catch (Exception $e) {
+            error_log("Erreur listeTachesInvisibles: " . $e->getMessage());
+            echo json_encode(['success' => false, 'message' => 'erreur', 'taches' => []]);
+            die;
+        }
+
+        break;
+
+
+    // =========================================================================
+    //  case 34 — Retirer une association : estVisible passe à 3
+    //            POST { option:34, id:<id de la tâche associée> }
+    // =========================================================================
+    case 34 :
+
+        date_default_timezone_set('Africa/Dakar');
+
+        $idUtilisateur = 1;
+//        $idUtilisateur = null;
+//        if (!empty($_SESSION['tmpIdP'])) {
+//            $idUtilisateur = $_SESSION['tmpIdP'];
+//        } else {
+//            echo "sessionExpired";
+//            die;
+//        }
+
+        $idTache          = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+        $dateModification = date('Y-m-d H:i:s');
+
+        if ($idTache <= 0) {
+            echo "erreur";
+            die;
+        }
+
+        try {
+            $bdP->beginTransaction();
+
+            // ── La tâche doit bien être une tâche associée ──────────
+            $stmtTache = $bdP->prepare("SELECT * FROM tache WHERE id = ? AND estVisible = 0");
+            $stmtTache->execute([$idTache]);
+            $tache = $stmtTache->fetch(PDO::FETCH_ASSOC);
+
+            if (!$tache) {
+                $bdP->rollBack();
+                echo "nonAssociee";
+                die;
+            }
+
+            // ── Aucun agent ne doit détenir la tâche ────────────────
+            $stmtUsers = $bdP->prepare("
+                SELECT COUNT(*) FROM tache_utilisateur
+                WHERE idTache = ? AND access = 1
+            ");
+            $stmtUsers->execute([$idTache]);
+            if ((int) $stmtUsers->fetchColumn() > 0) {
+                $bdP->rollBack();
+                echo "tacheAffectee";
+                die;
+            }
+
+            // ── Suppression logique ─────────────────────────────────
+            $stmtUpdate = $bdP->prepare("
+                UPDATE tache
+                SET estVisible = 3, active = 0, lastDateModification = ?
+                WHERE id = ? AND estVisible = 0
+            ");
+            $stmtUpdate->execute([$dateModification, $idTache]);
+
+            if ($stmtUpdate->rowCount() === 0) {
+                $bdP->rollBack();
+                echo "erreur";
+                die;
+            }
+
+            // ── Historique ──────────────────────────────────────────
+            $stmtHist = $bdP->prepare("
+                INSERT INTO historiqueTache (
+                    idUtilisateur, idTache, nom, autre_ressource, url,
+                    idTypeTache, commentaire, idSousMenu, idIcon,
+                    idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3,
+                    dateEnregistrement, active, idFonction, createdBy, idDB, idAppli,
+                    estVisible, estVisibleId, estVisibleUrl
+                ) VALUES (
+                    ?, ?, ?, ?, ?,
+                    ?, ?, ?, ?,
+                    ?, ?, ?,
+                    ?, ?, ?, ?, ?, ?,
+                    ?, ?, ?
+                )
+            ");
+
+            $stmtHist->execute([
+                $idUtilisateur,
+                $idTache,
+                $tache['nom']                       ?? null,
+                $tache['autre_ressource']           ?? null,
+                $tache['url']                       ?? null,
+                $tache['idTypeTache']               ?? null,
+                $tache['commentaire']               ?? null,
+                $tache['idSousMenu']                ?? null,
+                $tache['idIcon']                    ?? null,
+                $tache['idUniteAdministrativeNiv1'] ?? null,
+                $tache['idUniteAdministrativeNiv2'] ?? null,
+                $tache['idUniteAdministrativeNiv3'] ?? null,
+                $dateModification,
+                0,
+                $tache['idFonction']                ?? null,
+                $tache['createdBy']                 ?? null,
+                $tache['idDB']                      ?? null,
+                $tache['idAppli']                   ?? null,
+                3,
+                $tache['estVisibleId']              ?? null,
+                $tache['estVisibleUrl']             ?? null
+            ]);
+
+            $bdP->commit();
+            echo "succès";
+            die;
+
+        } catch (Exception $e) {
+            if ($bdP->inTransaction()) {
+                $bdP->rollBack();
+            }
+            error_log("Erreur retirerTacheInvisible: " . $e->getMessage());
+            echo "erreur";
+            die;
+        }
+
+        break;
+
+
+    // =========================================================================
+    //  case 35 — Utilisateurs détenant une tâche
+    //            POST { option:35, id:<id de la tâche> }
+    //            -> JSON [ { idUtilisateur, matricule, email, prenom, nom,
+    //                        prenomNom, photo, etat, etatClasse, access } ]
+    //
+    //  Remplace l'ancienne route api/voirUtilisateur/{id}.
+    //  La table s'appelle « utilisateurs » (pluriel) dans cette base ; le nom,
+    //  le prénom et la photo viennent de etatCivil via utilisateurs.idEtatCivil.
+    //
+    //  NB : imageExiste() n'est pas appelée ici — elle fait une requête HTTP
+    //  par utilisateur, ce qui rendrait le modal très lent. Le repli sur
+    //  l'avatar par défaut est fait côté navigateur (attribut onerror).
+    // =========================================================================
+    case 35 :
+
+        $idTache = isset($_POST['id']) ? (int) $_POST['id'] : 0;
+
+        if ($idTache <= 0) {
+            echo json_encode(array());
+            die;
+        }
+
+        try {
+            $bdP->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+            $sql = "SELECT
+                        u.id                AS idUtilisateur,
+                        u.matricule         AS matricule,
+                        u.email             AS email,
+                        u.statutUtilisateur AS statutUtilisateur,
+                        u.statutActivation  AS statutActivation,
+                        ec.prenom           AS prenom,
+                        ec.nom              AS nom,
+                        ec.photo            AS photo,
+                        ec.sexe             AS sexe
+                    FROM tache_utilisateur tu
+                    JOIN utilisateurs u   ON u.id = tu.idUtilisateur
+                    LEFT JOIN etatCivil ec ON ec.id = u.idEtatCivil
+                    WHERE tu.idTache = :idTache
+                      AND tu.access  = 1
+                      AND tu.idUtilisateurSupRetrait IS NULL
+                    GROUP BY u.id
+                    ORDER BY ec.nom ASC, ec.prenom ASC";
+
+            $stmt = $bdP->prepare($sql);
+            $stmt->execute([':idTache' => $idTache]);
+            $result = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $liste = array();
+
+            foreach ($result as $u) {
+
+                // ── Photo : repli par sexe si la colonne est vide ───────
+                $photo = trim((string) ($u['photo'] ?? ''));
+                if ($photo === '') {
+                    if (($u['sexe'] ?? '') === "Féminin") {
+                        $photo = "/personnel/includes/fpdf/template/avatar1.png";
+                    } else {
+                        $photo = "/personnel/ressources/dist_assets/media/avatars/150-26.jpg";
+                    }
+                }
+
+                // ── État du compte — même logique qu'au case 1 ──────────
+                if ($u['statutActivation'] == 0) {
+                    $etat       = "En attente d'activation";
+                    $etatClasse = "badge badge-light-warning";
+                } elseif ($u['statutUtilisateur'] == 0) {
+                    $etat       = "Compte actif";
+                    $etatClasse = "badge badge-light-success";
+                } elseif ($u['statutUtilisateur'] == 1) {
+                    $etat       = "Compte bloqué";
+                    $etatClasse = "badge badge-light-danger";
+                } else {
+                    $etat       = "Erreur";
+                    $etatClasse = "badge badge-light-dark";
+                }
+
+                $prenom = ucwords(mb_strtolower($u['prenom'] ?? ''));
+                $nom    = $adminController->fctRetirerAccents(mb_strtoupper($u['nom'] ?? ''));
+
+                $liste[] = array(
+                    'idUtilisateur' => (int) $u['idUtilisateur'],
+                    'matricule'     => $u['matricule'],
+                    'email'         => $u['email'],
+                    'prenom'        => $prenom,
+                    'nom'           => $nom,
+                    'prenomNom'     => trim($prenom . ' ' . $nom),
+                    'photo'         => $photo,
+                    'etat'          => $etat,
+                    'etatClasse'    => $etatClasse,
+                    'access'        => 1
+                );
+            }
+
+            echo json_encode($liste);
+            die;
+
+        } catch (Exception $e) {
+            error_log("Erreur voirUtilisateur: " . $e->getMessage());
+            echo json_encode(array());
+            die;
+        }
+
+        break;
+
+
     default :
         echo "erreur";
         die;
-
-
-
 
 
 }

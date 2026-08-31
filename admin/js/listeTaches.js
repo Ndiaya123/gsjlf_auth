@@ -62,6 +62,14 @@ function _resetLoaderSync() {
 }
 
 // ==================================================
+// ETAT — ASSOCIATION DE TACHES INVISIBLES
+// Tâche visible actuellement ouverte dans le modal des associations,
+// et drapeau indiquant que le formulaire d'ajout sert à associer.
+// ==================================================
+var parentCourant   = null;   // { id, nom, url }
+var modeAssociation = false;
+
+// ==================================================
 // UTILS
 // ==================================================
 function testJSON(text) {
@@ -194,10 +202,11 @@ var KTDatatablesServerSide = function () {
                     data:      null,
                     orderable: false,
                     render: function (data, type, row) {
-                        var urlencoded      = btoa(row.id_struture);
+                        var urlencoded       = btoa(row.id_struture);
                         var activateBtnText  = row.active == 1 ? 'Déactiver' : 'Activer';
                         var activateBtnColor = row.active == 1 ? 'svg-icon-danger' : 'svg-icon-warning';
                         var nomEscaped       = row.nom.replace(/'/g, "\\'");
+                        var urlEscaped       = (row.url || '').replace(/'/g, "\\'");
 
                         return '<div class="d-flex flex-wrap gap-2 justify-content-center align-items-center">' +
 
@@ -220,6 +229,18 @@ var KTDatatablesServerSide = function () {
                             '<rect x="0" y="0" width="24" height="24"/>' +
                             '<path d="M8,17.9148182 L8,5.96685884 C8,5.56391781 8.16211443,5.17792052 8.44982609,4.89581508 L10.965708,2.42895648 C11.5426798,1.86322723 12.4640974,1.85620921 13.0496196,2.41308426 L15.5337377,4.77566479 C15.8314604,5.0588212 16,5.45170806 16,5.86258077 L16,17.9148182 C16,18.7432453 15.3284271,19.4148182 14.5,19.4148182 L9.5,19.4148182 C8.67157288,19.4148182 8,18.7432453 8,17.9148182 Z" fill="#000000" fill-rule="nonzero" transform="translate(12.000000, 10.707409) rotate(-135.000000) translate(-12.000000, -10.707409)"/>' +
                             '<rect fill="#000000" opacity="0.3" x="5" y="20" width="15" height="2" rx="1"/>' +
+                            '</g></svg></span>' +
+
+                            // ── Associer une tâche invisible ──────────────────
+                            '<span class="svg-icon svg-icon-success svg-icon-2x"' +
+                            ' style="cursor:pointer;"' +
+                            ' onclick="associerTacheInvisible(' + row.id + ', \'' + nomEscaped + '\', \'' + urlEscaped + '\')"' +
+                            ' title="Associer une tâche invisible.">' +
+                            '<svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24" version="1.1">' +
+                            '<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">' +
+                            '<rect x="0" y="0" width="24" height="24"/>' +
+                            '<path d="M8.5,13 L15.5,13 C16.0522847,13 16.5,13.4477153 16.5,14 C16.5,14.5522847 16.0522847,15 15.5,15 L8.5,15 C7.94771525,15 7.5,14.5522847 7.5,14 C7.5,13.4477153 7.94771525,13 8.5,13 Z" fill="#000000" opacity="0.3"/>' +
+                            '<path d="M10.9,2 L10.9,4 L6.5,4 C5.11928813,4 4,5.11928813 4,6.5 C4,7.88071187 5.11928813,9 6.5,9 L10.9,9 L10.9,11 L6.5,11 C4.01471863,11 2,8.98528137 2,6.5 C2,4.01471863 4.01471863,2 6.5,2 L10.9,2 Z M13.1,2 L17.5,2 C19.9852814,2 22,4.01471863 22,6.5 C22,8.98528137 19.9852814,11 17.5,11 L13.1,11 L13.1,9 L17.5,9 C18.8807119,9 20,7.88071187 20,6.5 C20,5.11928813 18.8807119,4 17.5,4 L13.1,4 L13.1,2 Z" fill="#000000" fill-rule="nonzero" transform="translate(12.000000, 6.500000) rotate(-45.000000) translate(-12.000000, -6.500000)"/>' +
                             '</g></svg></span>' +
 
                             '<span class="svg-icon ' + activateBtnColor + ' svg-icon-2x"' +
@@ -507,12 +528,12 @@ $('#idSousMenu').on('select2:select select2:unselect', function () {
 });
 
 
-
+// L'alert() de debug a été retiré.
+// NB : cette fonction envoie option 20 avec idAppli, alors que le case 20 du
+// contrôleur attend nivUA, et remplit #order qui n'existe pas dans la page.
+// Elle est appelée par onclick sur #idAppli — à revoir ou à supprimer.
 function actionOrder(e)
 {
-alert(e);
-
-
     $.ajax({
         type: 'POST',
         url:  '/personnel/admin-controller',
@@ -630,23 +651,16 @@ var submitButton1 = document.getElementById('formAddTache_submit');
 
 submitButton1.addEventListener('click', function (e) {
 
-    console.log("1");
     e.preventDefault();
     if (!validator1) return;
-    console.log(2);
 
     validator1.validate().then(function (status) {
-
-
-        console.log(e);
-
 
         if (status !== 'Valid') return;
 
         submitButton1.disabled  = true;
         var originalText        = submitButton1.innerHTML;
         submitButton1.innerHTML = '<span class="indicator-progress d-inline">Veuillez patienter... <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>';
-        console.log(2);
 
         $.ajax({
             type: 'POST',
@@ -666,7 +680,9 @@ submitButton1.addEventListener('click', function (e) {
                     Swal.fire({
                         icon:               'success',
                         title:              'Succès !',
-                        text:               'La tâche a été enregistrée avec succès.',
+                        text:               modeAssociation
+                            ? 'La tâche invisible a été associée avec succès.'
+                            : 'La tâche a été enregistrée avec succès.',
                         confirmButtonColor: '#113B26',
                         timer:              2000,
                         timerProgressBar:   true,
@@ -683,6 +699,10 @@ submitButton1.addEventListener('click', function (e) {
 
                 } else if (trimmed === 'tacheExisteUnite') {
                     showSwal('warning', 'Doublon', 'Une tâche avec ce nom, ce type et cette unité administrative existe déjà.');
+
+                } else if (trimmed === 'parentManquant' || trimmed === 'parentIntrouvable') {
+                    $('#kt_modal_add_tache').modal('hide');
+                    showSwal('error', 'Erreur', "La tâche à laquelle rattacher cette tâche invisible est introuvable.");
 
                 } else if (trimmed === 'erreur') {
                     $('#kt_modal_add_tache').modal('hide');
@@ -707,6 +727,9 @@ submitButton1.addEventListener('click', function (e) {
 // ==================================================
 // VIDER / FERMER FORMULAIRE ADD
 // ==================================================
+// NB : form1.reset() restaure aussi les champs cachés estVisible / estVisibleId
+// / estVisibleUrl à leur valeur HTML par défaut (1 / vide / vide), donc le
+// formulaire repart toujours en mode « tâche visible ».
 function videAddTache() {
     type_tache('');
 
@@ -730,7 +753,18 @@ function closeAddTache() {
 }
 
 function ajouterTaches() {
+    // Ajout depuis la barre d'outils : toujours en mode « tâche visible ».
+    modeAssociation = false;
+    parentCourant   = null;
+
     videAddTache();
+
+    $('#estVisible').val('1');
+    $('#estVisibleId').val('');
+    $('#estVisibleUrl').val('');
+    $('#bandeauAssociation').addClass('d-none');
+    $('.modal-title', '#kt_modal_add_tache').text('Tâche');
+
     $('#kt_modal_add_tache').modal('show');
 }
 
@@ -788,7 +822,6 @@ function edit_type_tache(value) {
         box_niv.classList.remove('d-none');
         box_ua.classList.remove('d-none');
     } else if (value == 2) {
-
 
         box_fonction.classList.remove('d-none');
 
@@ -1137,7 +1170,7 @@ submitButton2.addEventListener('click', function (e) {
                 if (trimmed === 'sessionExpired') {
                     window.location.href = '/personnel/signin';
 
-                } else if (trimmed === 'succes') {
+                } else if (trimmed === 'succès' || trimmed === 'succes') {
                     $('#kt_modal_edit_tache').modal('hide');
                     Swal.fire({
                         icon:               'success',
@@ -1222,7 +1255,7 @@ async function changeEtatTache(id, nombreUtilisateurs) {
         if (trimmed === 'sessionExpired') {
             window.location.href = '/personnel/signin';
 
-        } else if (trimmed === 'succes') {
+        } else if (trimmed === 'succès' || trimmed === 'succes') {
             showSwal('success', 'Succès !', "L'état de la tâche a été modifié avec succès.", function () {
                 reloadAll();
             });
@@ -1302,5 +1335,377 @@ function loadStats() {
         error: function () {
             setStatsFallback('—');
         }
+    });
+}
+
+
+// =============================================================================
+//  VOIR LES UTILISATEURS D'UNE TÂCHE  (option 35)
+//
+//  Appelée depuis la colonne « actions » du DataTable. Le modal
+//  #voirUtilisateur est ouvert par data-bs-toggle, cette fonction ne fait
+//  que remplir le titre et le corps.
+//
+//  Selon le type de tâche :
+//    Structure  -> tableau des agents détenant la tâche, avec recherche
+//    Incarnée   -> message : réservée aux agents du poste
+//    autre      -> message : accessible à tout le monde
+// =============================================================================
+
+var AVATAR_DEFAUT = '/personnel/ressources/dist_assets/media/avatars/150-26.jpg';
+
+function voirUtilisateur(id, nomTache, type) {
+
+    var titre = document.getElementById('voirUtilisateurLabel');
+    if (titre) {
+        titre.innerHTML = 'Liste des utilisateurs de la tâche ' +
+            '<span class="text-primary">' + tiEchapper(nomTache) + '</span>';
+    }
+
+    var liste = document.getElementById('utilisateurTache');
+    if (!liste) return;
+
+    // ── Types sans liste nominative : pas d'appel réseau ──────────────
+    if (type === 'Incarnée') {
+        liste.innerHTML =
+            '<div class="alert alert-info mb-0">' +
+            'Seuls les agents du poste ont accès à cette tâche.' +
+            '</div>';
+        return;
+    }
+
+    if (type !== 'Structure') {
+        liste.innerHTML =
+            '<div class="alert alert-success mb-0">' +
+            'Tout le monde a accès à cette tâche.' +
+            '</div>';
+        return;
+    }
+
+    liste.innerHTML =
+        '<div class="text-center text-muted py-10">Chargement…</div>';
+
+    $.ajax({
+        type:     'POST',
+        url:      '/personnel/admin-controller',
+        dataType: 'json',
+        data:     { option: 35, id: id },
+
+        success: function (data) {
+            rendreUtilisateursTache(data || []);
+        },
+
+        error: function () {
+            liste.innerHTML =
+                '<div class="alert alert-danger mb-0">' +
+                'Impossible de charger les utilisateurs de cette tâche.' +
+                '</div>';
+        }
+    });
+}
+
+function rendreUtilisateursTache(utilisateurs) {
+
+    var liste = document.getElementById('utilisateurTache');
+    if (!liste) return;
+
+    if (!utilisateurs.length) {
+        liste.innerHTML =
+            '<div class="alert alert-warning mb-0">' +
+            "Aucun agent ne détient actuellement cette tâche." +
+            '</div>';
+        return;
+    }
+
+    var html = '';
+
+    // ── Barre de recherche ───────────────────────────────────────────
+    html += '<div class="d-flex flex-stack mb-4">' +
+        '<span class="text-muted fs-7">' +
+        utilisateurs.length + ' agent' + (utilisateurs.length > 1 ? 's' : '') +
+        ' détient' + (utilisateurs.length > 1 ? 'nent' : '') + ' cette tâche' +
+        '</span>' +
+        '<input type="text" id="rechercheUtilisateurTache"' +
+        ' class="form-control form-control-solid w-250px"' +
+        ' placeholder="Rechercher un agent...">' +
+        '</div>';
+
+    // ── Tableau ──────────────────────────────────────────────────────
+    html += '<div class="table-responsive">' +
+        '<table class="table align-middle table-row-dashed fs-6 gy-4 mb-0">' +
+        '<thead>' +
+        '<tr class="text-start text-gray-400 fw-bolder fs-7 text-uppercase gs-0">' +
+        '<th>Agent</th><th>Matricule</th><th>État du compte</th>' +
+        '</tr>' +
+        '</thead>' +
+        '<tbody class="text-gray-600 fw-bold" id="utilisateurTacheBody">';
+
+    utilisateurs.forEach(function (u) {
+        var nomAffiche = u.prenomNom && u.prenomNom !== '' ? u.prenomNom : u.email;
+
+        html += '<tr>' +
+            '<td>' +
+            '<div class="d-flex align-items-center">' +
+            '<img src="' + tiEchapper(u.photo) + '" alt="avatar"' +
+            ' class="rounded-circle me-3"' +
+            ' style="width:36px;height:36px;object-fit:cover;"' +
+            ' onerror="this.onerror=null;this.src=\'' + AVATAR_DEFAUT + '\';">' +
+            '<div class="d-flex flex-column">' +
+            '<span class="fw-bolder text-gray-800">' + tiEchapper(nomAffiche) + '</span>' +
+            '<span class="text-muted fs-7">' + tiEchapper(u.email) + '</span>' +
+            '</div>' +
+            '</div>' +
+            '</td>' +
+            '<td>' + tiEchapper(u.matricule) + '</td>' +
+            '<td><span class="' + tiEchapper(u.etatClasse) + '">' + tiEchapper(u.etat) + '</span></td>' +
+            '</tr>';
+    });
+
+    html += '</tbody></table></div>';
+
+    liste.innerHTML = html;
+
+    // ── Recherche ────────────────────────────────────────────────────
+    $('#rechercheUtilisateurTache').on('input', function () {
+        var recherche = this.value.toLowerCase().trim();
+        $('#utilisateurTacheBody tr').each(function () {
+            var texte = this.textContent.toLowerCase();
+            this.style.display = texte.indexOf(recherche) !== -1 ? '' : 'none';
+        });
+    });
+}
+
+
+// =============================================================================
+// =============================================================================
+//
+//   TÂCHES INVISIBLES — associer / retirer
+//
+//   Flux :
+//     clic action « Associer »     -> ouvre #kt_modal_taches_invisibles (opt 33)
+//     clic « Associer une tâche »  -> ferme ce modal, ouvre #kt_modal_add_tache
+//                                     en mode association (estVisible = 0)
+//     fermeture de #kt_modal_add_tache -> rouvre le modal des associations
+//     clic « Retirer »             -> option 34, estVisible passe à 3
+//
+// =============================================================================
+// =============================================================================
+
+// ==================================================
+// UTILITAIRES
+// ==================================================
+function tiEchapper(texte) {
+    return $('<div>').text(texte === null || texte === undefined ? '' : texte).html();
+}
+
+function tiLigneMessage(texte) {
+    return '<tr><td colspan="5" class="text-center text-muted py-10">' +
+        tiEchapper(texte) + '</td></tr>';
+}
+
+// ==================================================
+// OUVERTURE DU MODAL DES ASSOCIATIONS
+// Appelée depuis la colonne « actions » du DataTable.
+// ==================================================
+function associerTacheInvisible(id, nom, url) {
+    parentCourant = { id: id, nom: nom, url: url };
+
+    $('#ti_parent_nom').text(nom || '');
+    $('#ti_parent_url').text(url || '');
+    $('#ti_tbody').html(tiLigneMessage('Chargement…'));
+
+    $('#kt_modal_taches_invisibles').modal('show');
+    chargerTachesInvisibles();
+}
+
+function fermerTachesInvisibles() {
+    modeAssociation = false;
+    parentCourant   = null;
+    $('#kt_modal_taches_invisibles').modal('hide');
+}
+
+// ==================================================
+// CHARGEMENT DE LA LISTE (option 33)
+// ==================================================
+function chargerTachesInvisibles() {
+    if (!parentCourant) return;
+
+    $.ajax({
+        type:     'POST',
+        url:      '/personnel/admin-controller',
+        dataType: 'json',
+        data:     { option: 33, id: parentCourant.id },
+
+        success: function (rep) {
+            if (!rep || !rep.success) {
+                $('#ti_tbody').html(tiLigneMessage("Impossible de charger les tâches associées."));
+                return;
+            }
+
+            if (rep.parent) {
+                parentCourant.nom = rep.parent.nom;
+                parentCourant.url = rep.parent.url;
+                $('#ti_parent_nom').text(rep.parent.nom || '');
+                $('#ti_parent_url').text(rep.parent.url || '');
+            }
+
+            rendreTachesInvisibles(rep.taches || []);
+        },
+
+        error: function () {
+            $('#ti_tbody').html(tiLigneMessage("Impossible de charger les tâches associées."));
+        }
+    });
+}
+
+function rendreTachesInvisibles(taches) {
+    if (!taches.length) {
+        $('#ti_tbody').html(tiLigneMessage("Aucune tâche associée pour l'instant."));
+        return;
+    }
+
+    var html = '';
+
+    taches.forEach(function (t) {
+        var badge = (t.active == 1)
+            ? '<span class="badge badge-light-success ms-2">Active</span>'
+            : '<span class="badge badge-light-danger ms-2">Inactive</span>';
+
+        html += '<tr>' +
+            '<td><span class="fw-bolder text-gray-800">' + tiEchapper(t.nom) + '</span>' + badge + '</td>' +
+            '<td>' + tiEchapper(t.type) + '</td>' +
+            '<td>' + (t.sousMenu ? tiEchapper(t.sousMenu) : '<span class="text-muted">—</span>') + '</td>' +
+            '<td><span class="text-muted fs-7">' + tiEchapper(t.url) + '</span></td>' +
+            '<td class="text-center">' +
+            '<span class="svg-icon svg-icon-danger svg-icon-2x" style="cursor:pointer;"' +
+            ' onclick="retirerTacheInvisible(' + parseInt(t.id, 10) + ')"' +
+            ' title="Retirer l\'association.">' +
+            '<svg xmlns="http://www.w3.org/2000/svg" width="24px" height="24px" viewBox="0 0 24 24">' +
+            '<g stroke="none" stroke-width="1" fill="none" fill-rule="evenodd">' +
+            '<rect x="0" y="0" width="24" height="24"/>' +
+            '<path d="M6,8 L18,8 L17.1,19.1 C17.05,19.6 16.6,20 16.1,20 L7.9,20 C7.4,20 6.95,19.6 6.9,19.1 L6,8 Z" fill="#000000"/>' +
+            '<path d="M14,4.5 L14,4 C14,3.4 13.6,3 13,3 L11,3 C10.4,3 10,3.4 10,4 L10,4.5 L5.5,4.5 C5.2,4.5 5,4.7 5,5 L5,5.5 C5,5.8 5.2,6 5.5,6 L18.5,6 C18.8,6 19,5.8 19,5.5 L19,5 C19,4.7 18.8,4.5 18.5,4.5 L14,4.5 Z" fill="#000000" opacity="0.3"/>' +
+            '</g></svg></span>' +
+            '</td>' +
+            '</tr>';
+    });
+
+    $('#ti_tbody').html(html);
+}
+
+// ==================================================
+// OUVERTURE DU FORMULAIRE D'AJOUT EN MODE ASSOCIATION
+// ==================================================
+function ouvrirFormAssociation() {
+    if (!parentCourant) return;
+
+    modeAssociation = true;
+
+    // videAddTache() remet les champs cachés à leur valeur HTML par défaut
+    // (estVisible = 1), on renseigne donc le mode APRÈS l'appel.
+    videAddTache();
+
+    $('#estVisible').val('0');
+    $('#estVisibleId').val(parentCourant.id);
+    $('#estVisibleUrl').val(parentCourant.url || '');
+
+    $('.modal-title', '#kt_modal_add_tache')
+        .text('Associer une tâche invisible à « ' + (parentCourant.nom || '') + ' »');
+
+    $('#bandeauAssociationNom').text(parentCourant.nom || '');
+    $('#bandeauAssociation').removeClass('d-none');
+
+    // On ferme d'abord le modal des associations pour ne pas empiler
+    // deux modals ; il sera rouvert à la fermeture du formulaire.
+    $('#kt_modal_taches_invisibles').modal('hide');
+
+    setTimeout(function () {
+        $('#kt_modal_add_tache').modal('show');
+    }, 350);
+}
+
+// ==================================================
+// RETOUR DU FORMULAIRE → ON ROUVRE LE MODAL DES ASSOCIATIONS
+// ==================================================
+$(document).on('hidden.bs.modal', '#kt_modal_add_tache', function () {
+
+    // Titre et bandeau remis à l'état normal dans tous les cas
+    $('.modal-title', '#kt_modal_add_tache').text('Tâche');
+    $('#bandeauAssociation').addClass('d-none');
+
+    if (!modeAssociation) return;
+
+    modeAssociation = false;
+
+    $('#estVisible').val('1');
+    $('#estVisibleId').val('');
+    $('#estVisibleUrl').val('');
+
+    if (parentCourant) {
+        setTimeout(function () {
+            $('#kt_modal_taches_invisibles').modal('show');
+            chargerTachesInvisibles();
+        }, 350);
+    }
+});
+
+// ==================================================
+// RETRAIT D'UNE ASSOCIATION (option 34) — estVisible passe à 3
+// ==================================================
+function retirerTacheInvisible(id) {
+
+    Swal.fire({
+        title:              'Confirmation',
+        text:               "Voulez-vous vraiment retirer cette tâche invisible ? Elle ne sera plus rattachée à la tâche courante.",
+        icon:               'warning',
+        showCancelButton:   true,
+        confirmButtonColor: '#113B26',
+        cancelButtonColor:  '#b81c2c',
+        confirmButtonText:  'Oui, retirer',
+        cancelButtonText:   'Annuler',
+        reverseButtons:     true
+    }).then(function (res) {
+
+        if (!res.isConfirmed) return;
+
+        showLoader('Retrait en cours…');
+
+        $.ajax({
+            type: 'POST',
+            url:  '/personnel/admin-controller',
+            data: { option: 34, id: id },
+
+            success: function (resp) {
+                hideLoader();
+                var trimmed = (resp || '').trim();
+
+                if (trimmed === 'sessionExpired') {
+                    window.location.href = '/personnel/signin';
+
+                } else if (trimmed === 'succès' || trimmed === 'succes') {
+                    showSwal('success', 'Succès !', "L'association a été retirée.", function () {
+                        chargerTachesInvisibles();
+                    });
+
+                } else if (trimmed === 'tacheAffectee') {
+                    showSwal('warning', 'Impossible de retirer',
+                        "Cette tâche est encore affectée à au moins un agent.");
+
+                } else if (trimmed === 'nonAssociee') {
+                    showSwal('warning', 'Déjà retirée',
+                        "Cette tâche n'est plus associée.", function () {
+                            chargerTachesInvisibles();
+                        });
+
+                } else {
+                    showSwal('error', 'Erreur', "Impossible de retirer l'association.");
+                }
+            },
+
+            error: function () {
+                hideLoader();
+                showSwal('error', 'Erreur', "Impossible de retirer l'association.");
+            }
+        });
     });
 }

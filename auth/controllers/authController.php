@@ -571,28 +571,173 @@ ORDER BY
         }
     }
 
-    public function listeTachesIncarnes($idFonction)
+//    public function listeTachesIncarnes($idFonction)
+//    {
+//        try {
+//
+//            $bdP = $this->connect();
+//
+//            $params = [
+//                'idTypeTache' => 2,
+//                'idFonction' => $idFonction,
+//                'active' => 1
+//            ];
+//
+//            $sql = "
+//         SELECT
+//    t.id,
+//    t.nom,
+//        t.url,
+//    sm.nom AS sousMenu,
+//        t.estVisible,
+//                t.estVisibleUrl,
+//
+//
+//
+//    CASE
+//        WHEN sm.id IS NOT NULL THEN ic_sm.icon
+//        ELSE ic_t.icon
+//    END AS icon,
+//
+//    CASE
+//        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 1
+//        ELSE 0
+//    END AS statut,
+//                 la.nomApplication,
+//                                 la.id as idAppli
+//FROM tache t
+//
+//LEFT JOIN sous_menu sm
+//    ON sm.id = t.idSousMenu
+//
+//LEFT JOIN icons ic_t
+//    ON ic_t.id = t.idIcon
+//
+//LEFT JOIN icons ic_sm
+//    ON ic_sm.id = sm.idIcon
+//
+//LEFT JOIN listeApplications la
+//    ON la.id = t.idAppli
+//WHERE t.idTypeTache = :idTypeTache
+//  AND t.idFonction = :idFonction
+//  AND t.active = :active
+//
+//ORDER BY
+//    CASE
+//        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 0
+//        ELSE 1
+//    END,
+//    COALESCE(sm.ordre, t.ordre, 0),
+//    t.ordre,
+//    t.nom;
+//        ";
+//
+//            $stmt = $bdP->prepare($sql);
+//            $stmt->execute($params);
+//
+//            return $stmt->fetchAll(PDO::FETCH_OBJ);
+//
+//        } catch (\Throwable $th) {
+//            return [];
+//        }
+//    }
+//
+//
+//    public function listeTachesStructures($matricule)
+//    {
+//        try {
+//
+//            $bdP = $this->connect();
+//
+//            $params = [
+//                'idTypeTache' => 1,
+//                'matricule' => $matricule,
+//                'access' => 1,
+//                'active' => 1
+//
+//            ];
+//
+//            $sql = "
+//SELECT
+//    t.id,
+//    t.nom,
+//        t.url,
+//    sm.nom AS sousMenu,
+//    t.estVisible,
+//        t.estVisibleUrl,
+//
+//    CASE
+//        WHEN sm.id IS NOT NULL THEN ic_sm.icon
+//        ELSE ic_t.icon
+//    END AS icon,
+//
+//    CASE
+//        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 1
+//        ELSE 0
+//    END AS statut,
+//        la.nomApplication,
+//                la.id as idAppli
+//
+//
+//
+//FROM tache t
+//
+//INNER JOIN tache_utilisateur tu
+//    ON tu.idTache = t.id
+//
+//LEFT JOIN sous_menu sm
+//    ON sm.id = t.idSousMenu
+//
+//LEFT JOIN icons ic_t
+//    ON ic_t.id = t.idIcon
+//
+//LEFT JOIN icons ic_sm
+//    ON ic_sm.id = sm.idIcon
+//
+//
+//LEFT JOIN listeApplications la
+//    ON la.id = t.idAppli
+//
+//WHERE t.idTypeTache = :idTypeTache
+//  AND t.active = :active
+//  AND tu.matricule = :matricule
+//  AND tu.access = :access
+//
+//ORDER BY
+//    CASE
+//        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 0
+//        ELSE 1
+//    END,
+//    COALESCE(sm.ordre, t.ordre, 0),
+//    t.ordre,
+//    t.nom;        ";
+//
+//            $stmt = $bdP->prepare($sql);
+//            $stmt->execute($params);
+//
+//            return $stmt->fetchAll(PDO::FETCH_OBJ);
+//
+//        } catch (\Throwable $th) {
+//            return [];
+//        }
+//    }
+//
+
+
+
+
+
+
+    private function selectTachesSql($condition)
     {
-        try {
-
-            $bdP = $this->connect();
-
-            $params = [
-                'idTypeTache' => 2,
-                'idFonction' => $idFonction,
-                'active' => 1
-            ];
-
-            $sql = "
-         SELECT
+        return "
+SELECT
     t.id,
     t.nom,
-        t.url,
+    t.url,
     sm.nom AS sousMenu,
-        t.estVisible,
-                t.estVisibleUrl,
-
-
+    t.estVisible,
+    t.estVisibleUrl,
 
     CASE
         WHEN sm.id IS NOT NULL THEN ic_sm.icon
@@ -603,10 +748,13 @@ ORDER BY
         WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 1
         ELSE 0
     END AS statut,
-                 la.nomApplication,
-                                 la.id as idAppli
 
+    la.nomApplication,
+    la.id AS idAppli,
 
+    -- colonnes de tri uniquement, retirées par fusionnerTaches()
+    COALESCE(sm.ordre, t.ordre, 0) AS ordreTri,
+    t.ordre                        AS ordreTache
 
 FROM tache t
 
@@ -621,24 +769,169 @@ LEFT JOIN icons ic_sm
 
 LEFT JOIN listeApplications la
     ON la.id = t.idAppli
+
 WHERE t.idTypeTache = :idTypeTache
-  AND t.idFonction = :idFonction
-  AND t.active = :active
+  AND t.active      = :active
+  AND (" . $condition . ")
+";
+    }
 
-ORDER BY
-    CASE
-        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 0
-        ELSE 1
-    END,
-    COALESCE(sm.ordre, t.ordre, 0),
-    t.ordre,
-    t.nom;
-        ";
 
-            $stmt = $bdP->prepare($sql);
-            $stmt->execute($params);
+    /**
+     * Clause « affectée via tache_utilisateur ».
+     * EXISTS plutôt qu'un INNER JOIN : une tâche octroyée, retirée puis
+     * ré-octroyée a plusieurs lignes dans tache_utilisateur et le join la
+     * renvoyait autant de fois, ce qui la dupliquait dans le menu.
+     */
+    private function conditionTacheAffectee()
+    {
+        return "EXISTS (
+            SELECT 1
+            FROM tache_utilisateur tu
+            WHERE tu.idTache = t.id
+              AND tu.matricule = :matricule
+              AND tu.access = :access
+              AND tu.idUtilisateurSupRetrait IS NULL
+        )";
+    }
 
-            return $stmt->fetchAll(PDO::FETCH_OBJ);
+
+    /**
+     * Fusionne les ensembles reçus, supprime les doublons par id,
+     * applique l'ordre d'affichage puis nettoie les colonnes de tri.
+     */
+    private function fusionnerTaches(array $ensembles)
+    {
+        $parId = [];
+
+        foreach ($ensembles as $ensemble) {
+            foreach ($ensemble as $tache) {
+                if (!isset($parId[$tache->id])) {
+                    $parId[$tache->id] = $tache;
+                }
+            }
+        }
+
+        $taches = array_values($parId);
+
+        // Même tri que l'ancien ORDER BY :
+        //   1. Accueil / Dashboard en tête
+        //   2. COALESCE(sm.ordre, t.ordre, 0)
+        //   3. t.ordre
+        //   4. t.nom
+        usort($taches, function ($a, $b) {
+
+            $sa = ((int) $a->statut === 1) ? 0 : 1;
+            $sb = ((int) $b->statut === 1) ? 0 : 1;
+            if ($sa !== $sb) {
+                return $sa - $sb;
+            }
+
+            $ta = (int) $a->ordreTri;
+            $tb = (int) $b->ordreTri;
+            if ($ta !== $tb) {
+                return $ta - $tb;
+            }
+
+            $oa = (int) $a->ordreTache;
+            $ob = (int) $b->ordreTache;
+            if ($oa !== $ob) {
+                return $oa - $ob;
+            }
+
+            return strcasecmp((string) $a->nom, (string) $b->nom);
+        });
+
+        foreach ($taches as $tache) {
+            unset($tache->ordreTri, $tache->ordreTache);
+        }
+
+        return $taches;
+    }
+
+
+    public function listeTachesIncarnes($idFonction, $matricule = null)
+    {
+        try {
+
+            $bdP = $this->connect();
+
+            // ── Étape 1 : les tâches allouées à la fonction de la personne ──
+            $allouees = [];
+
+            if (!empty($idFonction)) {
+                $stmt = $bdP->prepare($this->selectTachesSql("t.idFonction = :idFonction"));
+                $stmt->execute([
+                    'idTypeTache' => 2,
+                    'active'      => 1,
+                    'idFonction'  => $idFonction
+                ]);
+                $allouees = $stmt->fetchAll(PDO::FETCH_OBJ);
+            }
+
+            // ── Étape 2 : les tâches incarnées affectées à la personne ──────
+            $affectees = [];
+
+            if (!empty($matricule)) {
+                $stmt = $bdP->prepare($this->selectTachesSql($this->conditionTacheAffectee()));
+                $stmt->execute([
+                    'idTypeTache' => 2,
+                    'active'      => 1,
+                    'matricule'   => $matricule,
+                    'access'      => 1
+                ]);
+                $affectees = $stmt->fetchAll(PDO::FETCH_OBJ);
+            }
+
+            return $this->fusionnerTaches([$allouees, $affectees]);
+
+        } catch (\Throwable $th) {
+            return [];
+        }
+    }
+
+
+    public function listeTachesStructures($matricule)
+    {
+        try {
+
+            $bdP = $this->connect();
+
+            // ── Étape 1 : les tâches de structure allouées ──────────────────
+            //
+            // Pour ce type il n'existe aujourd'hui aucune allocation
+            // automatique : une tâche de structure n'arrive à une personne
+            // que par affectation. L'étape 1 est donc vide, et c'est l'étape 2
+            // qui porte tout.
+            //
+            // Si une règle d'allocation par unité administrative est ajoutée
+            // plus tard, elle se branche ici, sur le modèle de l'étape 1 de
+            // listeTachesIncarnes() :
+            //
+            //     $stmt = $bdP->prepare($this->selectTachesSql(
+            //         "t.idUniteAdministrativeNiv2 = :idUA"));
+            //     $stmt->execute([
+            //         'idTypeTache' => 1, 'active' => 1, 'idUA' => $idUA
+            //     ]);
+            //     $allouees = $stmt->fetchAll(PDO::FETCH_OBJ);
+            //
+            $allouees = [];
+
+            // ── Étape 2 : les tâches de structure affectées à la personne ───
+            $affectees = [];
+
+            if (!empty($matricule)) {
+                $stmt = $bdP->prepare($this->selectTachesSql($this->conditionTacheAffectee()));
+                $stmt->execute([
+                    'idTypeTache' => 1,
+                    'active'      => 1,
+                    'matricule'   => $matricule,
+                    'access'      => 1
+                ]);
+                $affectees = $stmt->fetchAll(PDO::FETCH_OBJ);
+            }
+
+            return $this->fusionnerTaches([$allouees, $affectees]);
 
         } catch (\Throwable $th) {
             return [];
@@ -697,85 +990,6 @@ LEFT JOIN listeApplications la
     ON la.id = t.idAppli
 WHERE t.idTypeTache = :idTypeTache
   AND t.active = :active
-
-ORDER BY
-    CASE
-        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 0
-        ELSE 1
-    END,
-    COALESCE(sm.ordre, t.ordre, 0),
-    t.ordre,
-    t.nom;        ";
-
-            $stmt = $bdP->prepare($sql);
-            $stmt->execute($params);
-
-            return $stmt->fetchAll(PDO::FETCH_OBJ);
-
-        } catch (\Throwable $th) {
-            return [];
-        }
-    }
-
-    public function listeTachesStructures($matricule)
-    {
-        try {
-
-            $bdP = $this->connect();
-
-            $params = [
-                'idTypeTache' => 1,
-                'matricule' => $matricule,
-                'access' => 1,
-                'active' => 1
-
-            ];
-
-            $sql = "
-SELECT
-    t.id,
-    t.nom,
-        t.url,
-    sm.nom AS sousMenu,
-    t.estVisible,
-        t.estVisibleUrl,
-
-    CASE
-        WHEN sm.id IS NOT NULL THEN ic_sm.icon
-        ELSE ic_t.icon
-    END AS icon,
-
-    CASE
-        WHEN t.nom LIKE 'Accueil%' OR t.nom LIKE 'Dashboard%' THEN 1
-        ELSE 0
-    END AS statut,
-        la.nomApplication,
-                la.id as idAppli
-
-
-
-FROM tache t
-
-INNER JOIN tache_utilisateur tu
-    ON tu.idTache = t.id
-
-LEFT JOIN sous_menu sm
-    ON sm.id = t.idSousMenu
-
-LEFT JOIN icons ic_t
-    ON ic_t.id = t.idIcon
-
-LEFT JOIN icons ic_sm
-    ON ic_sm.id = sm.idIcon
-
-
-LEFT JOIN listeApplications la
-    ON la.id = t.idAppli
-
-WHERE t.idTypeTache = :idTypeTache
-  AND t.active = :active
-  AND tu.matricule = :matricule
-  AND tu.access = :access
 
 ORDER BY
     CASE
@@ -2463,7 +2677,7 @@ WHERE p.matricule = :matricule;";
 
 
 
-                                            $listeTachesIncarnes = $authController->listeTachesIncarnes($idFonction);
+                                            $listeTachesIncarnes = $authController->listeTachesIncarnes($idFonction,$matricule);
 
                                             if (is_array($listeTachesIncarnes)) {
                                                 $_SESSION['listeTachesIncarnes'] = $listeTachesIncarnes;
@@ -4662,7 +4876,7 @@ WHERE p.matricule = :matricule;";
                                                                             }
 
 
-                                                                            $listeTachesIncarnes = $authController->listeTachesIncarnes($idFonction);
+                                                                            $listeTachesIncarnes = $authController->listeTachesIncarnes($idFonction,$matricule);
 
                                                                             if (is_array($listeTachesIncarnes)) {
                                                                                 $_SESSION['listeTachesIncarnes'] = $listeTachesIncarnes;

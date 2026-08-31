@@ -63,8 +63,8 @@ include_once('../sessions/admin.php');
                                       d="M14.2657 11.4343L18.45 7.25C18.8642 6.83579 18.8642 6.16421 18.45 5.75C18.0358 5.33579 17.3642 5.33579 16.95 5.75L11.4071 11.2929C11.0166 11.6834 11.0166 12.3166 11.4071 12.7071L16.95 18.25C17.3642 18.6642 18.0358 18.6642 18.45 18.25C18.8642 17.8358 18.8642 17.1642 18.45 16.75L14.2657 12.5657C13.9533 12.2533 13.9533 11.7467 14.2657 11.4343Z"
                                       fill="black"/>
                                 <path
-                                    d="M8.2657 11.4343L12.45 7.25C12.8642 6.83579 12.8642 6.16421 12.45 5.75C12.0358 5.33579 11.3642 5.33579 10.95 5.75L5.40712 11.2929C5.01659 11.6834 5.01659 12.3166 5.40712 12.7071L10.95 18.25C11.3642 18.6642 12.0358 18.6642 12.45 18.25C12.8642 17.8358 12.8642 17.1642 12.45 16.75L8.2657 12.5657C7.95328 12.2533 7.95328 11.7467 8.2657 11.4343Z"
-                                    fill="black"/>
+                                        d="M8.2657 11.4343L12.45 7.25C12.8642 6.83579 12.8642 6.16421 12.45 5.75C12.0358 5.33579 11.3642 5.33579 10.95 5.75L5.40712 11.2929C5.01659 11.6834 5.01659 12.3166 5.40712 12.7071L10.95 18.25C11.3642 18.6642 12.0358 18.6642 12.45 18.25C12.8642 17.8358 12.8642 17.1642 12.45 16.75L8.2657 12.5657C7.95328 12.2533 7.95328 11.7467 8.2657 11.4343Z"
+                                        fill="black"/>
                             </svg>
                         </span>
                 </div>
@@ -217,8 +217,8 @@ include_once('../sessions/admin.php');
                                     <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24"
                                          fill="none">
                                         <path
-                                            d="M21 7H3C2.4 7 2 6.6 2 6V4C2 3.4 2.4 3 3 3H21C21.6 3 22 3.4 22 4V6C22 6.6 21.6 7 21 7Z"
-                                            fill="black"/>
+                                                d="M21 7H3C2.4 7 2 6.6 2 6V4C2 3.4 2.4 3 3 3H21C21.6 3 22 3.4 22 4V6C22 6.6 21.6 7 21 7Z"
+                                                fill="black"/>
                                         <path opacity="0.3"
                                               d="M21 14H3C2.4 14 2 13.6 2 13V11C2 10.4 2.4 10 3 10H21C21.6 10 22 10.4 22 11V13C22 13.6 21.6 14 21 14ZM22 20V18C22 17.4 21.6 17 21 17H3C2.4 17 2 17.4 2 18V20C2 20.6 2.4 21 3 21H21C21.6 21 22 20.6 22 20Z"
                                               fill="black"/>
@@ -418,8 +418,8 @@ include_once('../sessions/admin.php');
                                                                   transform="rotate(45 17.0365 15.1223)"
                                                                   fill="black"/>
                                                             <path
-                                                                d="M11 19C6.55556 19 3 15.4444 3 11C3 6.55556 6.55556 3 11 3C15.4444 3 19 6.55556 19 11C19 15.4444 15.4444 19 11 19ZM11 5C7.53333 5 5 7.53333 5 11C5 14.4667 7.53333 17 11 17C14.4667 17 17 14.4667 17 11C17 7.53333 14.4667 5 11 5Z"
-                                                                fill="black"/>
+                                                                    d="M11 19C6.55556 19 3 15.4444 3 11C3 6.55556 6.55556 3 11 3C15.4444 3 19 6.55556 19 11C19 15.4444 15.4444 19 11 19ZM11 5C7.53333 5 5 7.53333 5 11C5 14.4667 7.53333 17 11 17C14.4667 17 17 14.4667 17 11C17 7.53333 14.4667 5 11 5Z"
+                                                                    fill="black"/>
                                                         </svg>
                                                     </span>
                                                 <input type="text" data-kt-docs-table-filter="search"
@@ -453,10 +453,10 @@ include_once('../sessions/admin.php');
                                                class="table align-middle table-row-dashed fs-6 gy-5">
                                             <thead>
                                             <tr
-                                                class="text-start text-gray-400 fw-bolder fs-7 text-uppercase gs-0">
-<!--                                                <th>Icon</th>-->
-<!--                                                <th>sous_menu</th>-->
-<!--                                                <th class="max-w-150px text-center">Action</th>-->
+                                                    class="text-start text-gray-400 fw-bolder fs-7 text-uppercase gs-0">
+                                                <!--                                                <th>Icon</th>-->
+                                                <!--                                                <th>sous_menu</th>-->
+                                                <!--                                                <th class="max-w-150px text-center">Action</th>-->
 
                                                 <th>Nom</th>
                                                 <th>Type</th>
@@ -478,7 +478,7 @@ include_once('../sessions/admin.php');
             </div>
             <div class="footer py-4 d-flex flex-lg-column" id="kt_footer">
                 <div
-                    class="container-fluid d-flex flex-column flex-md-row align-items-center justify-content-between">
+                        class="container-fluid d-flex flex-column flex-md-row align-items-center justify-content-between">
                     <div class="text-dark order-2 order-md-1">
                             <span class="text-muted fw-bold me-1">
                                 <script type="text/javascript">
@@ -494,6 +494,13 @@ include_once('../sessions/admin.php');
     </div>
 </div>
 
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MODAL — AJOUT D'UNE TÂCHE
+     Sert aussi à l'association d'une tâche invisible : les trois champs
+     cachés estVisible / estVisibleId / estVisibleUrl basculent le formulaire
+     en mode association. Leurs valeurs par défaut (1 / vide / vide) sont
+     restaurées par form1.reset() dans videAddTache().
+     ══════════════════════════════════════════════════════════════════════ -->
 <div class="modal fade" id="kt_modal_add_tache" tabindex="-1" aria-labelledby="tache" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -505,6 +512,32 @@ include_once('../sessions/admin.php');
                 <form id="formAddTache" action="#" class="form m-3">
                     <input type="hidden" name="option" value="19">
                     <input type="hidden" name="id" id="id_tache">
+
+                    <!-- Mode association (tâche invisible) -->
+                    <input type="hidden" name="estVisible"    id="estVisible"    value="1">
+                    <input type="hidden" name="estVisibleId"  id="estVisibleId"  value="">
+                    <input type="hidden" name="estVisibleUrl" id="estVisibleUrl" value="">
+
+                    <!-- Bandeau affiché uniquement en mode association -->
+                    <div class="alert alert-primary d-none" id="bandeauAssociation">
+                        <div class="d-flex align-items-center">
+                            <span class="svg-icon svg-icon-2 me-3">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                     viewBox="0 0 24 24" fill="none">
+                                    <path opacity="0.3"
+                                          d="M10.9,2 L10.9,4 L6.5,4 C5.11928813,4 4,5.11928813 4,6.5 C4,7.88071187 5.11928813,9 6.5,9 L10.9,9 L10.9,11 L6.5,11 C4.01471863,11 2,8.98528137 2,6.5 C2,4.01471863 4.01471863,2 6.5,2 L10.9,2 Z"
+                                          fill="black"/>
+                                    <path d="M13.1,2 L17.5,2 C19.9852814,2 22,4.01471863 22,6.5 C22,8.98528137 19.9852814,11 17.5,11 L13.1,11 L13.1,9 L17.5,9 C18.8807119,9 20,7.88071187 20,6.5 C20,5.11928813 18.8807119,4 17.5,4 L13.1,4 L13.1,2 Z"
+                                          fill="black"/>
+                                    <rect x="7" y="6" width="10" height="2" rx="1" fill="black"/>
+                                </svg>
+                            </span>
+                            <div class="fs-7">
+                                Cette tâche sera <strong>invisible</strong> et rattachée à
+                                <strong id="bandeauAssociationNom"></strong>.
+                            </div>
+                        </div>
+                    </div>
 
                     <!-- Nom -->
                     <div class="mb-3">
@@ -584,12 +617,11 @@ include_once('../sessions/admin.php');
                     </div>
 
                     <!-- Icône -->
-                    <!-- Icône -->
                     <div class="mb-3">
                         <label class="form-label required">Icône</label>
                         <div class="d-flex align-items-center justify-content-start gap-3">
                             <div id="iconPreview" class="border bg-light btn d-flex align-items-center justify-content-center" style="min-width:48px;min-height:48px;"></div>
-                            <div class="flex-grow-1" id="iconSelectWrapper"> <!-- ✅ id ajouté -->
+                            <div class="flex-grow-1" id="iconSelectWrapper">
                                 <select class="form-control" name="idIcon" id="id_icon_tache">
                                     <option value="">Sélectionner une icône</option>
                                 </select>
@@ -597,6 +629,7 @@ include_once('../sessions/admin.php');
                         </div>
                         <div class="invalid-feedback d-block" id="idIcon-feedback"></div>
                     </div>
+
                     <!-- URL -->
                     <div class="mb-3">
                         <label class="form-label required">URL</label>
@@ -662,133 +695,10 @@ include_once('../sessions/admin.php');
     </div>
 </div>
 
-<!--<div class="modal fade" id="kt_modal_add_tache" tabindex="-1" aria-labelledby="tache" aria-hidden="true">-->
-<!--    <div class="modal-dialog">-->
-<!--        <div class="modal-content">-->
-<!--            <div class="modal-header">-->
-<!--                <h5 class="modal-title" id="exampleModalLabel">Tache</h5>-->
-<!--                <button type="button" class="btn-close" onclick="closeAddTache()" ></button>-->
-<!--            </div>-->
-<!--            <div class="modal-body">-->
-<!--                <form id="formAddTache" action="#" class="form row g-2 d-flex align-items-center justify-content-center m-3">-->
-<!--                    <input type="hidden" name="option" value="19">-->
-<!--                    <input type="hidden" name="id" id="id_tache">-->
-<!---->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label required">Nom </label>-->
-<!--                        <input type="text" name="nom" class="form-control" placeholder="nom" id="nom">-->
-<!---->
-<!---->
-<!--                    </div>-->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label required">Type</label>-->
-<!--                        <select name="idTypeTache" class="form-control" data-control="select2" data-placeholder="Choisir..." id="idTypeTache" onchange="type_tache(this.value)">-->
-<!--                            <option value="">Sélectionner un type</option>-->
-<!--                        </select>-->
-<!---->
-<!--                    </div>-->
-<!--                    <div class="mb-3 d-none" id="box_niv">-->
-<!--                        <label class="form-label required">Niveaux</label>-->
-<!--                        <select name="nivUA" class="form-control" data-control="select2" data-placeholder="Choisir..." id="nivUA" onchange="actionUniteAdministrative(this.value)">-->
-<!--                            <option value="">Sélectionner le niveau</option>-->
-<!--                            <option value="1">Niveau 1</option>-->
-<!--                            <option value="2">Niveau 2</option>-->
-<!--                            <option value="3">Niveau 3</option>-->
-<!--                        </select>-->
-<!---->
-<!--                    </div>-->
-<!--                    <div class="mb-3 d-none" id="box_ua">-->
-<!--                        <label class="form-label required">Unité administrative</label>-->
-<!--                        <select name="idUA" class="form-control" data-control="select2" data-placeholder="Choisir..." id="idUA">-->
-<!--                            <option value="">Sélectionner une fonction</option>-->
-<!--                        </select>-->
-<!---->
-<!--                    </div>-->
-<!--                    <div class="mb-3 d-none" id="box_fonction">-->
-<!--                        <label class="form-label required">Fonction</label>-->
-<!--                        <select name="id_fonction" class="form-control" data-control="select2" data-placeholder="Choisir..." id="id_fonction">-->
-<!--                            <option value="">Sélectionner une fonction</option>-->
-<!--                        </select>-->
-<!---->
-<!--                    </div>-->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label required">Sous menu</label>-->
-<!--                        <select name="idSousMenu" class="form-control" data-control="select2" data-placeholder="Choisir..." id="idSousMenu">-->
-<!--                            <option value=''>Sélectionner un sous menu</option>-->
-<!--                        </select>-->
-<!---->
-<!--                    </div>-->
-<!---->
-<!--                    <label class="form-label required">Icône</label>-->
-<!--                    <div class="mb-1 d-flex align-items-center justify-content-start">-->
-<!--                        <div id="iconPreview" class="border bg-light b-1px btn "></div>-->
-<!--                        <div class="w-50 m-2">-->
-<!--                            <select class="form-control select2-icon"  name="idIcon" id="id_icon_tache">-->
-<!--                                <option value="">Sélectionner une icône</option>-->
-<!--                                <option value="1"><span class="menu-icon">-->
-<!--<span class="svg-icon svg-icon-2">-->
-<!--												<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">-->
-<!--													<rect x="2" y="2" width="9" height="9" rx="2" fill="black" />-->
-<!--													<rect opacity="0.3" x="13" y="2" width="9" height="9" rx="2" fill="black" />-->
-<!--													<rect opacity="0.3" x="13" y="13" width="9" height="9" rx="2" fill="black" />-->
-<!--													<rect opacity="0.3" x="2" y="13" width="9" height="9" rx="2" fill="black" />-->
-<!--												</svg>-->
-<!--											</span>-->
-<!--</span></option>-->
-<!---->
-<!--                            </select>-->
-<!---->
-<!--                        </div>-->
-<!---->
-<!--                    </div>-->
-<!---->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label required">URL</label>-->
-<!--                        <input type="text" name="url" id="urlInput" class="form-control" placeholder="url">-->
-<!---->
-<!--                    </div>-->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label required">Base de données</label>-->
-<!--                        <select name="idBD" class="form-control" data-control="select2" data-placeholder="Choisir..." id="idBD">-->
-<!--                            <option value="">Sélectionner une base de données</option>-->
-<!--                        </select>-->
-<!--                    </div>-->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label required">Applications</label>-->
-<!--                        <select name="idDB" id="idAppli" class="form-select" data-control="select2" data-placeholder="Choisir...">-->
-<!--                            <option value="">Sélectionner l'application</option>-->
-<!--                        </select>-->
-<!--                    </div>-->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label">Autre ressource </label>-->
-<!--                        <textarea name="autre_ressource" class="form-control"></textarea>-->
-<!---->
-<!--                    </div>-->
-<!--                    <div class="mb-3">-->
-<!--                        <label class="form-label">Commentaire</label>-->
-<!--                        <textarea name="commentaire" class="form-control"></textarea>-->
-<!--                    </div>-->
-<!---->
-<!--<!--                    <div class="text-center pt-15">-->-->
-<!--<!--                        <button type="reset" class="btn btn-light me-3" onclick="closeAddUser()">Annuler</button>-->-->
-<!--<!--                        <button type="submit" id="formAddUser2_submit" class="btn btn-primary">-->-->
-<!--<!--                            <span class="indicator-label">Valider</span>-->-->
-<!--<!--                            <span class="indicator-progress">Veuillez patienter...-->-->
-<!--<!--															<span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>-->-->
-<!--<!--                        </button>-->-->
-<!--<!--                    </div>-->-->
-<!--                    <button type="submit" class="btn btn-success w-500px m-2" ype="submit" id="formAddTache_submit">valider-->
-<!--                        <span class="indicator-progress">Veuillez patienter...-->
-<!--															<span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>-->
-<!--                    </button>-->
-<!--                </form>-->
-<!--            </div>-->
-<!---->
-<!--        </div>-->
-<!--    </div>-->
-<!--</div>-->
 
-
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MODAL — MODIFICATION D'UNE TÂCHE
+     ══════════════════════════════════════════════════════════════════════ -->
 <div class="modal fade" id="kt_modal_edit_tache" tabindex="-1" aria-labelledby="editTache" aria-hidden="true">
     <div class="modal-dialog modal-lg">
         <div class="modal-content">
@@ -956,14 +866,120 @@ include_once('../sessions/admin.php');
     </div>
 </div>
 
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MODAL — UTILISATEURS D'UNE TÂCHE
+     Rempli par voirUtilisateur(id, nom, type). Le modal lui-même est ouvert
+     par data-bs-toggle sur l'icône de la colonne actions.
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="voirUtilisateur" tabindex="-1"
+     aria-labelledby="voirUtilisateurLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <h5 class="modal-title" id="voirUtilisateurLabel">Liste des utilisateurs</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Fermer"></button>
+            </div>
+
+            <div class="modal-body">
+                <div id="utilisateurTache">
+                    <div class="text-center text-muted py-10">Chargement…</div>
+                </div>
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" data-bs-dismiss="modal">Fermer</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
+<!-- ═══════════════════════════════════════════════════════════════════════════
+     MODAL — TÂCHES INVISIBLES ASSOCIÉES
+     Liste les tâches estVisible = 0 rattachées à la tâche sélectionnée
+     (estVisibleId = id de la tâche sélectionnée), permet d'en associer une
+     nouvelle via le formulaire d'ajout, et d'en retirer une (estVisible = 3).
+     ══════════════════════════════════════════════════════════════════════ -->
+<div class="modal fade" id="kt_modal_taches_invisibles" tabindex="-1"
+     aria-labelledby="tachesInvisibles" aria-hidden="true">
+    <div class="modal-dialog modal-xl modal-dialog-scrollable">
+        <div class="modal-content">
+
+            <div class="modal-header">
+                <div>
+                    <h5 class="modal-title mb-1">Tâches invisibles associées</h5>
+                    <div class="text-muted fs-7">
+                        <span class="fw-bolder text-gray-800" id="ti_parent_nom">—</span>
+                        <span class="mx-2 text-gray-400">•</span>
+                        <span id="ti_parent_url" class="text-gray-600"></span>
+                    </div>
+                </div>
+                <button type="button" class="btn-close" onclick="fermerTachesInvisibles()"></button>
+            </div>
+
+            <div class="modal-body">
+
+                <div class="d-flex flex-stack mb-5">
+                    <div class="text-muted fs-7 pe-5">
+                        Une tâche invisible n'apparaît pas dans la liste des tâches :
+                        elle est rattachée à la tâche ci-dessus et suit son URL.
+                    </div>
+                    <a href="javascript:void(0)"
+                       class="btn btn-sm btn-light btn-active-primary flex-shrink-0"
+                       onclick="ouvrirFormAssociation()">
+                        <span class="svg-icon svg-icon-3">
+                            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
+                                 viewBox="0 0 24 24" fill="none">
+                                <rect opacity="0.5" x="11.364" y="20.364" width="16" height="2" rx="1"
+                                      transform="rotate(-90 11.364 20.364)" fill="black"/>
+                                <rect x="4.36396" y="11.364" width="16" height="2" rx="1" fill="black"/>
+                            </svg>
+                        </span>
+                        Associer une tâche
+                    </a>
+                </div>
+
+                <div class="table-responsive">
+                    <table class="table align-middle table-row-dashed fs-6 gy-4 mb-0">
+                        <thead>
+                        <tr class="text-start text-gray-400 fw-bolder fs-7 text-uppercase gs-0">
+                            <th>Nom</th>
+                            <th>Type</th>
+                            <th>Sous-menu</th>
+                            <th>URL</th>
+                            <th class="text-center">Action</th>
+                        </tr>
+                        </thead>
+                        <tbody class="text-gray-600 fw-bold" id="ti_tbody">
+                        <tr>
+                            <td colspan="5" class="text-center text-muted py-10">Chargement…</td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+
+            </div>
+
+            <div class="modal-footer">
+                <button type="button" class="btn btn-light" onclick="fermerTachesInvisibles()">Fermer</button>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+
 <div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
         <span class="svg-icon">
             <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
                 <rect opacity="0.5" x="13" y="6" width="13" height="2" rx="1" transform="rotate(90 13 6)"
                       fill="black"/>
                 <path
-                    d="M12.5657 8.56569L16.75 12.75C17.1642 13.1642 17.8358 13.1642 18.25 12.75C18.6642 12.3358 18.6642 11.6642 18.25 11.25L12.7071 5.70711C12.3166 5.31658 11.6834 5.31658 11.2929 5.70711L5.75 11.25C5.33579 11.6642 5.33579 12.3358 5.75 12.75C6.16421 13.1642 6.83579 13.1642 7.25 12.75L11.4343 8.56569C11.7467 8.25327 12.2533 8.25327 12.5657 8.56569Z"
-                    fill="black"/>
+                        d="M12.5657 8.56569L16.75 12.75C17.1642 13.1642 17.8358 13.1642 18.25 12.75C18.6642 12.3358 18.6642 11.6642 18.25 11.25L12.7071 5.70711C12.3166 5.31658 11.6834 5.31658 11.2929 5.70711L5.75 11.25C5.33579 11.6642 5.33579 12.3358 5.75 12.75C6.16421 13.1642 6.83579 13.1642 7.25 12.75L11.4343 8.56569C11.7467 8.25327 12.2533 8.25327 12.5657 8.56569Z"
+                        fill="black"/>
             </svg>
         </span>
 </div>
@@ -973,6 +989,7 @@ include_once('../sessions/admin.php');
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/js/scripts.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.js"></script>
+<!-- Le module « tâches invisibles » est intégré à la fin de ce fichier. -->
 <script src="/personnel/scripts.bundle.9.js"></script>
 </body>
 
