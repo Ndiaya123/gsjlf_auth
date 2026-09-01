@@ -2469,6 +2469,29 @@ ORDER BY t.nom ASC;";
         try {
             $bdP->beginTransaction();
 
+
+
+            // recuperer dernier tache
+            $stmtTD = $bdP->prepare("
+                SELECT ordre
+                FROM tache WHERE estVisible = 1 ORDER BY id DESC LIMIT 1
+            ");
+            $stmtTD->execute([$id_fonction]);
+            $td = $stmtTD>fetch(PDO::FETCH_ASSOC);
+
+            $ordre = NULL;
+            if($td)
+            {
+
+                $ordre = 10;
+            }else
+            {
+                $ordre = 10 + (int) $td['ordre'];
+
+            }
+
+
+
             // ── Validation du mode association ──────────────────────
             if ($estVisible === 0) {
 
@@ -2497,14 +2520,7 @@ ORDER BY t.nom ASC;";
                 $estVisibleUrl = null;
             }
 
-            // ── Vérifier si l'URL existe déjà ───────────────────────
-            $stmtCheck = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE url = ?");
-            $stmtCheck->execute([$url]);
-            if ($stmtCheck->fetchColumn() > 0) {
-                $bdP->rollBack();
-                echo "existeTache";
-                die;
-            }
+
 
             // ── Vérifier doublon nom + type + UA ────────────────────
             $whereUA  = '';
@@ -2556,6 +2572,16 @@ ORDER BY t.nom ASC;";
                 }
             }
 
+
+            // ── Vérifier si l'URL existe déjà ───────────────────────
+            $stmtCheck = $bdP->prepare("SELECT COUNT(*) FROM tache WHERE url = ? AND  idUniteAdministrativeNiv1 = ? AND idUniteAdministrativeNiv2  = ? AND idUniteAdministrativeNiv3  = ? AND idFonction = ?");
+            $stmtCheck->execute([$url,$idNiv1,$idNiv2,$idNiv3,$id_fonction]);
+            if ($stmtCheck->fetchColumn() > 0) {
+                $bdP->rollBack();
+                echo "existeTache";
+                die;
+            }
+
             // ── Insertion tache — 18 colonnes / 18 placeholders ─────
             $stmtInsert = $bdP->prepare("
         INSERT INTO tache (
@@ -2563,13 +2589,13 @@ ORDER BY t.nom ASC;";
             autre_ressource, commentaire,
             idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3,
             dateEnregistrement, idFonction, createdBy, idDB, idAppli,
-            estVisible, estVisibleId, estVisibleUrl
+            estVisible, estVisibleId, estVisibleUrl,ordre
         ) VALUES (
             ?, ?, ?, ?, ?,
             ?, ?,
             ?, ?, ?,
             ?, ?, ?, ?, ?,
-            ?, ?, ?
+            ?, ?, ?, ?
         )
     ");
 
@@ -2578,7 +2604,7 @@ ORDER BY t.nom ASC;";
                 $autre_ressource, $commentaire,
                 $idNiv1, $idNiv2, $idNiv3,
                 $dateEnregistrement, $id_fonction, $idUtilisateur, $idDB, $idAppli,
-                $estVisible, $estVisibleId, $estVisibleUrl
+                $estVisible, $estVisibleId, $estVisibleUrl,$ordre
             ]);
 
             $idTache = $bdP->lastInsertId();
@@ -2590,13 +2616,13 @@ ORDER BY t.nom ASC;";
             idTypeTache, commentaire, idSousMenu, idIcon,
             idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3,
             dateEnregistrement, active, idFonction, createdBy, idDB, idAppli,
-            estVisible, estVisibleId, estVisibleUrl
+            estVisible, estVisibleId, estVisibleUrlordre
         ) VALUES (
             ?, ?, ?, ?, ?,
             ?, ?, ?, ?,
             ?, ?, ?,
             ?, ?, ?, ?, ?, ?,
-            ?, ?, ?
+            ?, ?, ?,?
         )
     ");
 
@@ -2605,7 +2631,7 @@ ORDER BY t.nom ASC;";
                 $idTypeTache, $commentaire, $idSousMenu, $idIcon,
                 $idNiv1, $idNiv2, $idNiv3,
                 $dateEnregistrement, 1, $id_fonction, $idUtilisateur, $idDB, $idAppli,
-                $estVisible, $estVisibleId, $estVisibleUrl
+                $estVisible, $estVisibleId, $estVisibleUrl,$ordre
             ]);
 
             $bdP->commit();
@@ -3707,7 +3733,7 @@ WHERE tache.'.$colonneUA.' = :idUniteAd AND tache.idTypeTache = :idTypeTache');
                     WHERE sm.statut = 0
                       AND EXISTS (
                           SELECT 1 FROM tache t
-                          WHERE t.idSousMenu = sm.id AND t.idAppli = :idAppli AND t.active = 1
+                          WHERE t.idSousMenu = sm.id AND t.idAppli = :idAppli AND t.active = 1 AND estVisible = 1
                       )
                     ORDER BY COALESCE(sm.ordre, 0) ASC, sm.nom ASC
                 ");
@@ -3717,7 +3743,7 @@ WHERE tache.'.$colonneUA.' = :idUniteAd AND tache.idTypeTache = :idTypeTache');
                 $stmtTachesSM = $bdP->prepare("
                     SELECT id, nom, url, idIcon, COALESCE(ordre, 0) AS ordre
                     FROM tache
-                    WHERE idSousMenu = :idSousMenu AND idAppli = :idAppli AND active = 1
+                    WHERE idSousMenu = :idSousMenu AND idAppli = :idAppli AND active = 1 AND estVisible = 1
                     ORDER BY COALESCE(ordre, 0) ASC, nom ASC
                 ");
 
@@ -3738,7 +3764,7 @@ WHERE tache.'.$colonneUA.' = :idUniteAd AND tache.idTypeTache = :idTypeTache');
                 $stmtTachesLibres = $bdP->prepare("
                     SELECT id, nom, url, idIcon, COALESCE(ordre, 0) AS ordre
                     FROM tache
-                    WHERE idSousMenu IS NULL AND idAppli = :idAppli AND active = 1
+                    WHERE idSousMenu IS NULL AND idAppli = :idAppli AND active = 1 AND estVisible = 1
                     ORDER BY COALESCE(ordre, 0) ASC, nom ASC
                 ");
                 $stmtTachesLibres->execute(['idAppli' => $idAppli]);

@@ -1394,8 +1394,8 @@ linked_services
                 </div>
                 <div class="ps_app-sep"></div>
                 <div class="ps_app-footer">
-                    <button class="ps_open-btn" onclick="actionOuvrirApplication('gest-tache')"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
-                    <button class="ps_action-icon-btn" title="Détails" onclick="actionOuvrirApplication('gest-tache')"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
+                    <button class="ps_open-btn" onclick="actionOuvrirApplication('gest-tache',1)"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
+                    <button class="ps_action-icon-btn" title="Détails" onclick="actionOuvrirApplication('gest-tache',1)"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
                 </div>
             </article>
 
@@ -1430,8 +1430,8 @@ linked_services
                         </div>
                         <div class="ps_app-sep"></div>
                         <div class="ps_app-footer">
-                            <button class="ps_pending-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>)"><span class="material-symbols-outlined" style="font-size:15px">schedule</span>En construction</button>
-                            <button class="ps_action-icon-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>)"><span class="material-symbols-outlined" style="font-size:15px">schedule</span></button>
+                            <button class="ps_pending-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>,<?= $tmpAppli->statutApplication ?>)"><span class="material-symbols-outlined" style="font-size:15px">schedule</span>En construction</button>
+                            <button class="ps_action-icon-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>,<?= $tmpAppli->statutApplication ?>)"><span class="material-symbols-outlined" style="font-size:15px">schedule</span></button>
                         </div>
                     </article>
 
@@ -1458,8 +1458,8 @@ linked_services
                         </div>
                         <div class="ps_app-sep"></div>
                         <div class="ps_app-footer">
-                            <button class="ps_open-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>)"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
-                            <button class="ps_action-icon-btn" title="Détails" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>)"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
+                            <button class="ps_open-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>,<?= $tmpAppli->statutApplication ?>)"><span class="material-symbols-outlined" style="font-size:15px">open_in_new</span>Ouvrir</button>
+                            <button class="ps_action-icon-btn" title="Détails" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>,<?= $tmpAppli->statutApplication ?>)"><span class="material-symbols-outlined" style="font-size:16px">arrow_forward</span></button>
                         </div>
                     </article>
 
@@ -1489,8 +1489,8 @@ linked_services
                         </div>
                         <div class="ps_app-sep"></div>
                         <div class="ps_app-footer">
-                            <button class="ps_deny-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>)"><span class="material-symbols-outlined" style="font-size:15px">lock</span>Demander l'accès</button>
-                            <button class="ps_action-icon-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>)"><span class="material-symbols-outlined" style="font-size:15px">lock</span></button>
+                            <button class="ps_deny-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>,<?= $tmpAppli->statutApplication ?>)"><span class="material-symbols-outlined" style="font-size:15px">lock</span>Demander l'accès</button>
+                            <button class="ps_action-icon-btn" onclick="actionOuvrirApplication(<?= $tmpAppli->numero  ?>,<?= $tmpAppli->statutApplication ?>)"><span class="material-symbols-outlined" style="font-size:15px">lock</span></button>
                         </div>
                     </article>
 
