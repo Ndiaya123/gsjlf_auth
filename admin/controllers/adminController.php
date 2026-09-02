@@ -2473,22 +2473,23 @@ ORDER BY t.nom ASC;";
 
             // recuperer dernier tache
             $stmtTD = $bdP->prepare("
-                SELECT ordre
-                FROM tache WHERE estVisible = 1 ORDER BY id DESC LIMIT 1
-            ");
-            $stmtTD->execute([$id_fonction]);
-            $td = $stmtTD>fetch(PDO::FETCH_ASSOC);
+    SELECT ordre
+    FROM tache
+    WHERE estVisible = 1
+    ORDER BY id DESC
+    LIMIT 1
+");
 
-            $ordre = NULL;
-            if($td)
-            {
+            $stmtTD->execute();
 
-                $ordre = 10;
-            }else
-            {
+            $td = $stmtTD->fetch(PDO::FETCH_ASSOC);
+
+            if ($td) {
                 $ordre = 10 + (int) $td['ordre'];
-
+            } else {
+                $ordre = 10;
             }
+
 
 
 
@@ -2616,7 +2617,7 @@ ORDER BY t.nom ASC;";
             idTypeTache, commentaire, idSousMenu, idIcon,
             idUniteAdministrativeNiv1, idUniteAdministrativeNiv2, idUniteAdministrativeNiv3,
             dateEnregistrement, active, idFonction, createdBy, idDB, idAppli,
-            estVisible, estVisibleId, estVisibleUrlordre
+            estVisible, estVisibleId, estVisibleUrl,ordre
         ) VALUES (
             ?, ?, ?, ?, ?,
             ?, ?, ?, ?,
@@ -2643,7 +2644,7 @@ ORDER BY t.nom ASC;";
                 $bdP->rollBack();
             }
             error_log("Erreur add_tache: " . $e->getMessage());
-            echo "erreur";
+            echo "erreur".$e;
             die;
         }
 

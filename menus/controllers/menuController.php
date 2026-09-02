@@ -508,6 +508,25 @@ switch ($option) {
             // visible du menu qui doit être surligné comme actif à sa place)
             $estVisibleUrlTache = null;
 
+
+
+//            $url_page =   dirname($url_page);
+
+
+
+            $path = parse_url($url_page, PHP_URL_PATH);
+            $parts = explode('/', trim($path, '/'));
+
+// Supprime le dernier segment uniquement s'il y en a un après le nom du service
+            if (count($parts) >= 3) {
+                array_pop($parts);
+            }
+
+            $url_page = 'http://localhost/' . implode('/', $parts);
+
+
+
+
             foreach ($listeTachesStructures as $tache) {
                 if ($tache->url === $url_page) {
                     $tmp_tache_url_page = "oui";
@@ -590,6 +609,10 @@ switch ($option) {
             //    tâche attribuée (présente dans une des 3 listes), quelle que
             //    soit sa valeur estVisible (estVisible ne pilote que l'affichage
             //    dans le menu, pas l'autorisation d'accès à la page).
+
+
+
+
             if ($tmp_tache_url_page != "oui") {
                 echo "sesionExpired";
                 die;
