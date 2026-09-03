@@ -519,7 +519,7 @@ switch ($option) {
 
 // Supprime le dernier segment uniquement s'il y en a un après le nom du service
             if (count($parts) >= 3) {
-                array_pop($parts);
+                array_splice($parts, 2);
             }
 
             $url_page = 'http://localhost/' . implode('/', $parts);
@@ -609,6 +609,8 @@ switch ($option) {
             //    tâche attribuée (présente dans une des 3 listes), quelle que
             //    soit sa valeur estVisible (estVisible ne pilote que l'affichage
             //    dans le menu, pas l'autorisation d'accès à la page).
+
+
 
 
 
