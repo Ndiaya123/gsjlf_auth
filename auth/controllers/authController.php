@@ -2392,7 +2392,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['tmpId'] = $tmpId;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur1";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -2404,7 +2404,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['tmpIdBASI'] = $tmpIdBASI;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur2";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -2420,7 +2420,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['tmpListeApplication'] = $listeApplications;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur3";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -2433,7 +2433,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['listeTachesParDefaut'] = $listeTachesParDefaut;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur3";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -2573,7 +2573,7 @@ WHERE p.matricule = :matricule;";
 
                                             } else {
                                                 session_destroy();
-                                                echo "erreur4";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -2611,7 +2611,7 @@ WHERE p.matricule = :matricule;";
                                                                 ++$tmp_nombre_bd;
                                                             } else {
                                                                 session_destroy();
-                                                                echo "erreur2";
+                                                                echo "erreur";
                                                                 die;
                                                             }
 
@@ -2629,7 +2629,7 @@ WHERE p.matricule = :matricule;";
                                                                 ++$tmp_nombre_bd;
                                                             } else {
                                                                 session_destroy();
-                                                                echo "erreur5";
+                                                                echo "erreur";
                                                                 die;
                                                             }
                                                         }
@@ -2658,7 +2658,7 @@ WHERE p.matricule = :matricule;";
                                             } else {
 
                                                 session_destroy();
-                                                echo "erreur6";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -2671,7 +2671,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['listeTachesParDefaut'] = $listeTachesParDefaut;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur7";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -2683,7 +2683,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['listeTachesIncarnes'] = $listeTachesIncarnes;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur8";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -2696,7 +2696,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['listeTachesStructures'] = $listeTachesStructures;
                                             } else {
                                                 session_destroy();
-                                                echo "erreur9";
+                                                echo "erreur";
                                                 die;
                                             }
 
@@ -2711,7 +2711,7 @@ WHERE p.matricule = :matricule;";
                                                 $_SESSION['tmpIdDirection'] = $infoDirection->id;
                                             } else {
 //                                                session_destroy();
-//                                                echo "erreur22";
+//                                                echo "erreur";
 //                                                die;
                                             }
 
