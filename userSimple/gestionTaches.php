@@ -185,15 +185,16 @@
                                         <div class="separator my-2"></div>
                                         <div class="menu-item px-5">
                                             <div class="menu-content px-5">
-                                                <label
-                                                    class="form-check form-switch form-check-custom form-check-solid pulse pulse-success"
-                                                    for="kt_user_menu_dark_mode_toggle">
-                                                    <input class="form-check-input w-30px h-20px" type="checkbox"
-                                                           value="1" name="mode" id="kt_user_menu_dark_mode_toggle"
-                                                           data-kt-url="/personnel/quitter"/>
-                                                    <span class="pulse-ring ms-n1"></span>
-                                                    <span class="form-check-label text-gray-600 fs-7">Se
-                                                            déconnecter</span>
+                                                <label class="form-check form-switch form-check-custom form-check-solid pulse pulse-success"
+                                                       for="kt_user_menu_dark_mode_toggle">
+                                                    <a href="/personnel/signout">
+                                                        <input class="form-check-input w-30px h-20px" checked="checked"
+                                                               type="checkbox" value="1" name="mode"
+                                                               id="kt_user_menu_dark_mode_toggle"
+                                                               data-kt-url="/personnel/quitter"/>
+                                                        <span class="pulse-ring ms-n1"></span>
+                                                        <span class="form-check-label text-gray-600 fs-7">se déconnecter</span>
+                                                    </a>
                                                 </label>
                                             </div>
                                         </div>

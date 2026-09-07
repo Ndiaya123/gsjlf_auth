@@ -2691,7 +2691,7 @@ WHERE p.matricule = :matricule;";
 
 
 
-                                            $listeTachesStructures = $authController->listeTachesStructures($idFonction);
+                                            $listeTachesStructures = $authController->listeTachesStructures($matricule);
                                             if (is_array($listeTachesStructures)) {
                                                 $_SESSION['listeTachesStructures'] = $listeTachesStructures;
                                             } else {
@@ -4886,7 +4886,7 @@ WHERE p.matricule = :matricule;";
                                                                                 die;
                                                                             }
 
-                                                                            $listeTachesStructures = $authController->listeTachesStructures($idFonction);
+                                                                            $listeTachesStructures = $authController->listeTachesStructures($matricule);
                                                                             if (is_array($listeTachesStructures)) {
                                                                                 $_SESSION['listeTachesStructures'] = $listeTachesStructures;
                                                                             } else {

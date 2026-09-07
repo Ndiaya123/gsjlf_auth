@@ -496,6 +496,7 @@ switch ($option) {
             }
 
 
+
             $tmp_tache_url_page = "non";
             $nomApplication = null;
             $nomTache = null;
@@ -609,6 +610,8 @@ switch ($option) {
             //    tâche attribuée (présente dans une des 3 listes), quelle que
             //    soit sa valeur estVisible (estVisible ne pilote que l'affichage
             //    dans le menu, pas l'autorisation d'accès à la page).
+
+
 
 
 
