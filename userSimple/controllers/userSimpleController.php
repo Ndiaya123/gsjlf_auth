@@ -746,6 +746,7 @@ function tuTachesIncarnees(PDO $bdP)
             WHERE t.idTypeTache = :type
               AND t.idFonction  = :idFonction
               AND t.active      = 1
+              AND estActive = 1
             GROUP BY t.id";
     $st = $bdP->prepare($sql);
     $st->execute([':type' => TU_TYPE_INCARNE, ':idFonction' => $idFonction]);
@@ -781,6 +782,7 @@ function tuTachesStructure(PDO $bdP)
                 WHERE t.idUniteAdministrativeNiv{$niveau} = :idUA
                   AND t.idTypeTache = :type
                   AND t.active      = 1
+                  AND estActive = 1
                 GROUP BY t.id";
         $q = $bdP->prepare($sql);
         $q->execute([':idUA' => $u->idUniteAdministrative, ':type' => TU_TYPE_STRUCTURE]);

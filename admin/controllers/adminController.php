@@ -3204,7 +3204,8 @@ FROM tache";
             $data =
                 [
                     'idUniteAd' => $idUniteAd,
-                    'idTypeTache' => 1
+                    'idTypeTache' => 1,
+                    'estVisible' => 1
                 ];
 
             $stmt = $bdP->prepare('SELECT
@@ -3217,7 +3218,7 @@ FROM tache";
 FROM tache
 LEFT JOIN sous_menu
     ON sous_menu.id = tache.idSousMenu
-WHERE tache.'.$colonneUA.' = :idUniteAd AND tache.idTypeTache = :idTypeTache');
+WHERE  tache.estVisible=:estVisible AND tache.'.$colonneUA.' = :idUniteAd AND tache.idTypeTache = :idTypeTache');
             $stmt->execute($data);
             $listes = $stmt->fetchAll(PDO::FETCH_OBJ);
 
