@@ -1,3 +1,36 @@
+
+
+$(document).ready(function () {
+
+    verificationSession();
+
+    setInterval(function () {
+        verificationSession();
+    }, 10 * 60 * 1000);
+
+
+});
+
+
+function verificationSession()
+{
+
+    $.ajax({
+        type: 'post',
+        url: '/personnel/menu-controller',
+        data: { option: 2 },
+        success: function (data) {
+
+            if (data !== "ok") {
+                window.location.href = "http://localhost/personnel/signin";
+
+            }
+
+        }
+
+    });
+}
+
 function changeFavicon(url) {
     let link = document.querySelector("link[rel*='icon']");
     if (!link) {

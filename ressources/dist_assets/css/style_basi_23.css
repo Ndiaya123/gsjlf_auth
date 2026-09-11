@@ -1,0 +1,264 @@
+    /* ════════════════════════════════════════════════════════════════════════
+       CONSULTATION BUDGET DFC  — préfixe cb-
+       CSS identique au template budgetFonctionnement.php (bud-) appliqué
+       sur les nouveaux composants de cette page.
+       ════════════════════════════════════════════════════════════════════════ */
+
+    /* ── Loader ──────────────────────────────────────────────────────────── */
+#cb-loader{position:fixed;inset:0;z-index:9999;pointer-events:all}
+#cb-loader .cb-loader-bg{position:absolute;inset:0;background:rgba(10,40,25,.45);backdrop-filter:blur(4px)}
+#cb-loader .cb-loader-box{
+    position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);
+    background:#fff;border-radius:16px;padding:2rem 2.5rem;
+    display:flex;flex-direction:column;align-items:center;gap:.9rem;
+    box-shadow:0 20px 60px rgba(0,0,0,.18);min-width:190px;
+}
+#cb-loader svg{width:40px;height:40px;animation:cb-spin .85s linear infinite}
+#cb-loader svg circle{stroke:#1a7a5e;stroke-dasharray:80;stroke-dashoffset:55;stroke-linecap:round;fill:none;animation:cb-dash 1.4s ease-in-out infinite}
+#cb-loader .cb-loader-box p{margin:0;font-size:.82rem;font-weight:700;color:#1a7a5e}
+@keyframes cb-spin{to{transform:rotate(360deg)}}
+@keyframes cb-dash{0%{stroke-dashoffset:80}50%{stroke-dashoffset:20}100%{stroke-dashoffset:80}}
+
+/* ── Bandeau titre gradient ──────────────────────────────────────────── */
+.cb-hero{
+    background:linear-gradient(135deg,#064e3b 0%,#1a7a5e 55%,#34d399 100%);
+    padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;gap:1rem;
+}
+.cb-hero-left{display:flex;align-items:center;gap:1rem}
+.cb-back{
+    display:inline-flex;align-items:center;gap:.35rem;
+    background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);
+    color:#fff;border-radius:9px;padding:.45rem .9rem;font-size:.8rem;font-weight:600;
+    cursor:pointer;transition:all .18s;
+}
+.cb-back:hover{background:rgba(255,255,255,.25)}
+.cb-hero-title h1{
+    margin:0;font-size:1.45rem;font-weight:800;color:#fff;
+    display:flex;align-items:center;gap:.5rem;
+}
+.cb-hero-title p{margin:.15rem 0 0;font-size:.8rem;color:rgba(255,255,255,.75)}
+.cb-hero-right{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+.cb-type-chip{
+    display:inline-block;background:rgba(255,255,255,.2);color:#fff;
+    font-size:.7rem;font-weight:700;padding:.2rem .6rem;border-radius:99px;
+    border:1px solid rgba(255,255,255,.3);letter-spacing:.05em;text-transform:uppercase;
+}
+
+/* ── Boutons action DFC ──────────────────────────────────────────────── */
+.cb-act-btn{
+    display:inline-flex;align-items:center;gap:.4rem;
+    padding:.5rem 1.15rem;border-radius:9px;font-size:.83rem;font-weight:700;
+    border:none;cursor:pointer;transition:all .18s;white-space:nowrap;
+}
+.cb-act-btn:hover{filter:brightness(.9);transform:translateY(-1px)}
+.cb-act-green {background:#fff;color:#1a7a5e}
+.cb-act-red   {background:rgba(239,68,68,.2);color:#fff;border:1.5px solid rgba(255,255,255,.35)}
+.cb-act-orange{background:#f59e0b;color:#fff}
+.cb-no-action {font-size:.78rem;color:rgba(255,255,255,.7)}
+
+/* ── KPI grid ────────────────────────────────────────────────────────── */
+.cb-kpi-grid{
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(155px,1fr));
+    gap:.85rem;margin-bottom:1.5rem;
+}
+.cb-kpi{
+    background:#fff;border-radius:14px;border:1px solid #e9ecef;
+    padding:1.1rem 1.1rem .9rem;position:relative;overflow:hidden;
+    transition:transform .2s,box-shadow .2s;
+}
+.cb-kpi:hover{transform:translateY(-2px);box-shadow:0 8px 24px rgba(0,0,0,.09)}
+.cb-kpi::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;border-radius:14px 14px 0 0}
+.cb-kpi-1::before{background:#1a7a5e} .cb-kpi-2::before{background:#3b82f6}
+.cb-kpi-3::before{background:#10b981} .cb-kpi-4::before{background:#f59e0b}
+.cb-kpi-5::before{background:#7c3aed} .cb-kpi-6::before{background:#6366f1}
+.cb-kpi__lbl{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9ca3af;margin-bottom:.25rem}
+.cb-kpi__val{font-size:1.05rem;font-weight:800;color:#111827;line-height:1.25;font-variant-numeric:tabular-nums}
+.cb-kpi__ico{
+    position:absolute;right:.85rem;top:.85rem;width:32px;height:32px;
+    border-radius:8px;display:flex;align-items:center;justify-content:center;
+}
+
+/* ── Progression plafond ──────────────────────────────────────────────  */
+.cb-prog-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;padding:1.2rem 1.5rem;margin-bottom:1.5rem}
+.cb-prog-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem}
+.cb-prog-head-title{font-size:.84rem;font-weight:700;color:#374151;display:flex;align-items:center;gap:.35rem}
+.cb-prog-pct{font-size:1.25rem;font-weight:900;color:#1a7a5e;font-variant-numeric:tabular-nums}
+.cb-prog-track{background:#f3f4f6;border-radius:99px;height:10px;overflow:hidden}
+.cb-prog-fill{height:100%;border-radius:99px;transition:width .6s ease}
+.cb-prog-fill.ok  {background:linear-gradient(90deg,#10b981,#1a7a5e)}
+.cb-prog-fill.warn{background:linear-gradient(90deg,#f59e0b,#ef4444)}
+.cb-prog-fill.over{background:#ef4444}
+.cb-alert-depass{
+    margin-top:.75rem;background:#fef2f2;border:1px solid #fca5a5;
+    border-radius:8px;padding:.5rem 1rem;font-size:.8rem;font-weight:600;color:#991b1b;
+    display:flex;align-items:center;gap:.4rem;
+}
+
+/* ── Carte générique ─────────────────────────────────────────────────── */
+.cb-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden;margin-bottom:1.5rem}
+.cb-card-head{
+    padding:.9rem 1.35rem;border-bottom:1px solid #f3f4f6;
+    display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem;
+}
+.cb-card-title{font-size:.88rem;font-weight:700;color:#111827;display:flex;align-items:center;gap:.4rem}
+
+/* ── Fiche info budget ───────────────────────────────────────────────── */
+.cb-info-grid{
+    display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));
+    gap:.5rem;padding:1rem 1.35rem;
+}
+.cb-info-item{display:flex;flex-direction:column;gap:.15rem}
+.cb-info-lbl{font-size:.65rem;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#9ca3af}
+.cb-info-val{font-size:.875rem;font-weight:600;color:#111827}
+
+/* ── Onglets ─────────────────────────────────────────────────────────── */
+.cb-tabs{
+    display:flex;gap:.15rem;padding:.6rem 1rem 0;
+    background:#fafafa;border-bottom:1px solid #e9ecef;
+    overflow-x:auto;-webkit-overflow-scrolling:touch;
+}
+.cb-tab-btn{
+    display:inline-flex;align-items:center;gap:.4rem;
+    padding:.5rem .9rem;border-radius:8px 8px 0 0;font-size:.82rem;font-weight:600;
+    background:transparent;border:1px solid transparent;border-bottom:none;
+    cursor:pointer;color:#6b7280;transition:all .18s;margin-bottom:-1px;
+}
+.cb-tab-btn:hover:not(.active){background:#f3f4f6;color:#374151}
+.cb-tab-btn.active{
+    background:#fff !important;border-color:#e9ecef !important;
+    border-bottom-color:#fff !important;color:#047857 !important;
+}
+.cb-tab-panel{display:none}
+.cb-tab-panel.active{display:block}
+
+/* ── DataTable (identique au module liste budgets) ────────────────────── */
+.cb-dt-wrap{padding:0 0 .5rem}
+.cb-dt-wrap .cb-dt-top{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:.75rem 1.25rem .6rem;flex-wrap:wrap;gap:.5rem;
+}
+.cb-dt-wrap .cb-dt-bottom{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:.6rem 1.25rem .75rem;border-top:1px solid #f3f4f6;flex-wrap:wrap;gap:.5rem;
+}
+.cb-dt-wrap .dataTables_length{display:flex;align-items:center}
+.cb-dt-wrap .dataTables_length label{display:flex;align-items:center;gap:.45rem;font-size:.8rem;color:#6b7280;font-weight:500;white-space:nowrap}
+.cb-dt-wrap .dataTables_length select{
+    border:1.5px solid #e5e7eb !important;border-radius:8px !important;
+    padding:.35rem .55rem !important;font-size:.82rem !important;font-weight:600 !important;
+    color:#374151 !important;background:#fff !important;min-width:58px;cursor:pointer;
+}
+.cb-dt-wrap .dataTables_length select:focus{outline:none !important;border-color:#1a7a5e !important;box-shadow:0 0 0 3px rgba(26,122,94,.1) !important}
+.cb-dt-wrap .dataTables_filter{display:flex;align-items:center}
+.cb-dt-wrap .dataTables_filter label{display:flex;align-items:center;gap:.5rem;font-size:0}
+.cb-dt-wrap .dataTables_filter input{
+    border:1.5px solid #e5e7eb !important;border-radius:8px !important;
+    padding:.5rem 1rem !important;font-size:.82rem !important;color:#374151 !important;
+    background:#fff !important;min-width:200px;transition:border-color .18s,box-shadow .18s !important;
+}
+.cb-dt-wrap .dataTables_filter input:focus{outline:none !important;border-color:#1a7a5e !important;box-shadow:0 0 0 3px rgba(26,122,94,.1) !important}
+.cb-dt-wrap .dataTables_info{font-size:.78rem;color:#9ca3af;font-weight:500}
+.cb-dt-wrap .dataTables_paginate{display:flex;align-items:center;gap:.1rem}
+.cb-dt-wrap .dataTables_paginate .paginate_button{
+    border-radius:8px !important;font-size:.78rem !important;font-weight:600 !important;
+    padding:.35rem .7rem !important;margin:0 .1rem !important;border:1px solid transparent !important;transition:all .18s !important;
+}
+.cb-dt-wrap .dataTables_paginate .paginate_button.current,
+.cb-dt-wrap .dataTables_paginate .paginate_button.current:hover{background:#1a7a5e !important;color:#fff !important;border-color:#1a7a5e !important}
+.cb-dt-wrap .dataTables_paginate .paginate_button:hover:not(.current):not(.disabled){background:#f0fdf4 !important;color:#1a7a5e !important;border-color:#d1fae5 !important}
+.cb-dt-wrap .dataTables_paginate .paginate_button.disabled{color:#d1d5db !important;cursor:default}
+.cb-dt-wrap table.dataTable{border-collapse:collapse !important;width:100% !important}
+.cb-dt-wrap table.dataTable thead th{
+    background:#f8f9fa !important;font-size:.68rem !important;font-weight:800 !important;
+    text-transform:uppercase !important;letter-spacing:.07em !important;color:#9ca3af !important;
+    border-bottom:2px solid #e9ecef !important;border-top:none !important;
+    padding:.8rem .85rem !important;white-space:nowrap;
+}
+.cb-dt-wrap table.dataTable thead th:first-child{padding-left:1.25rem !important}
+.cb-dt-wrap table.dataTable thead th:last-child{padding-right:1.25rem !important}
+.cb-dt-wrap table.dataTable tbody td{
+    padding:.75rem .85rem !important;font-size:.83rem !important;color:#374151 !important;
+    border-bottom:1px solid #f9fafb !important;vertical-align:middle !important;
+}
+.cb-dt-wrap table.dataTable tbody td:first-child{padding-left:1.25rem !important}
+.cb-dt-wrap table.dataTable tbody td:last-child{padding-right:1.25rem !important}
+.cb-dt-wrap table.dataTable tbody tr:hover td{background:#f0fdf4 !important}
+.cb-dt-wrap table.dataTable.no-footer{border-bottom:none !important}
+.cb-dt-wrap .dataTables_empty{padding:2.5rem !important;font-style:italic !important;color:#9ca3af !important}
+
+/* Ligne verrouillée */
+.cb-row-locked td{background:#faf5ff !important}
+.cb-row-locked td:first-child{border-left:3px solid #7c3aed !important}
+.cb-verr{display:inline-flex;align-items:center;gap:.25rem;font-size:.7rem;font-weight:700;color:#7c3aed;background:#ede9fe;padding:.15rem .5rem;border-radius:99px}
+
+/* Montants */
+.cb-amt      {font-weight:600;color:#374151;font-variant-numeric:tabular-nums}
+.cb-amt-total{font-weight:800;color:#1a7a5e;font-variant-numeric:tabular-nums}
+.cb-na       {color:#9ca3af;font-style:italic}
+.cb-empty    {padding:2rem;color:#9ca3af;font-style:italic}
+.dt-right    {text-align:right !important}
+
+/* Pied de tableau total */
+.cb-table-foot{
+    display:flex;justify-content:flex-end;align-items:center;gap:.65rem;
+    padding:.75rem 1.25rem;border-top:2px solid #e9ecef;background:#fafafa;
+}
+.cb-table-foot span{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280}
+.cb-table-foot strong{font-size:1rem;font-weight:900;color:#1a7a5e;font-variant-numeric:tabular-nums}
+
+/* Badges */
+.cb-badge{
+    display:inline-flex;align-items:center;gap:.3rem;
+    padding:.25rem .65rem;border-radius:99px;font-size:.7rem;font-weight:800;
+    text-transform:uppercase;letter-spacing:.04em;white-space:nowrap;
+}
+.cb-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.cb-badge-warn  {background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+.cb-badge-ok    {background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.cb-badge-err   {background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+.cb-badge-purple{background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd}
+.cb-badge-gray  {background:#f3f4f6;color:#6b7280;border:1px solid #e5e7eb}
+
+/* Erreur */
+.hidden{display:none!important}
+#cb-error{
+    background:#fee2e2;border:1px solid #fca5a5;border-radius:10px;
+    padding:1rem 1.25rem;color:#991b1b;font-weight:600;margin-bottom:1rem;
+}
+
+/* ── Responsive ──────────────────────────────────────────────────────── */
+@media(max-width:768px){
+    .cb-hero{flex-direction:column}
+    .cb-hero-right{width:100%;justify-content:flex-start}
+    .cb-kpi-grid{grid-template-columns:1fr 1fr}
+}
+@media(max-width:480px){.cb-kpi-grid{grid-template-columns:1fr}}
+
+
+
+.dataTables_info{font-size:.78rem;color:#9ca3af;font-weight:500;padding : .5rem 0;}
+
+
+/* "Afficher X lignes" */
+.dataTables_length {
+    display: flex; align-items: center;
+    padding-left: 10px !important;
+}
+.dataTables_length label {
+    display: flex; align-items: center; gap: .45rem;
+    font-size: .8rem; color: #6b7280; font-weight: 500; white-space: nowrap;
+}
+.dataTables_length select {
+    border: 1.5px solid #e5e7eb !important; border-radius: 8px !important;
+    padding: .35rem .55rem !important; font-size: .82rem !important;
+    font-weight: 600 !important; color: #374151 !important;
+    background: #fff !important; min-width: 58px; text-align: center;
+    cursor: pointer; transition: border-color .18s;
+}
+.dataTables_length select:focus {
+    outline: none !important; border-color: #1a7a5e !important;
+    box-shadow: 0 0 0 3px rgba(26,122,94,.1) !important;
+}
+

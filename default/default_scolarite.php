@@ -9,10 +9,10 @@
     <title>ENT — GSJLF</title>
     <link rel="shortcut icon" href="/personnel/ressources/dist_assets/media/logos/logo_gsjlf.png"/>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700"/>
-    <link href="/uahb/ressources/dist_assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet"
+    <link href="/personnel/ressources/dist_assets/plugins/custom/fullcalendar/fullcalendar.bundle.css" rel="stylesheet"
           type="text/css"/>
-    <link href="/uahb/ressources/dist_assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css"/>
-    <link href="/uahb/ressources/dist_assets/css/style.bundle.css" rel="stylesheet" type="text/css"/>
+    <link href="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css"/>
+    <link href="/personnel/ressources/dist_assets/css/style.bundle.css" rel="stylesheet" type="text/css"/>
 
 
 <body id="kt_body"
@@ -25,8 +25,8 @@
              data-kt-drawer-overlay="true" data-kt-drawer-width="{default:'200px', '300px': '250px'}"
              data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_aside_mobile_toggle">
             <div class="aside-logo flex-column-auto text-center" id="kt_aside_logo">
-                <a href="/uahb/responsable-financier-accueil" style="margin-left: 65px;" id="lien_logo1">
-                    <img alt="Logo" src="/uahb/ressources/dist_assets/media/logos/1.png" id="logo1" class="h-50px logo"/>
+                <a href="/personnel/responsable-financier-accueil" style="margin-left: 65px;" id="lien_logo1">
+                    <img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/1.png" id="logo1" class="h-50px logo"/>
                 </a>
                 <div id="kt_aside_toggle" class="btn btn-icon w-auto px-0 btn-active-color-primary aside-toggle"
                      data-kt-toggle="true" data-kt-toggle-state="active" data-kt-toggle-target="body"
@@ -83,8 +83,8 @@
                         </div>
                     </div>
                     <div class="d-flex align-items-center flex-grow-1 flex-lg-grow-0" >
-                        <a href="/uahb/responsable-financier-accueil" class="d-lg-none" id="lien_logo2">
-                            <img alt="Logo" src="/uahb/ressources/dist_assets/media/logos/1.png" id="logo2"   class="h-30px"/>
+                        <a href="/personnel/responsable-financier-accueil" class="d-lg-none" id="lien_logo2">
+                            <img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/1.png" id="logo2"   class="h-30px"/>
                         </a>
                     </div>
                     <div class="d-flex align-items-stretch justify-content-between flex-lg-grow-1">
@@ -141,8 +141,8 @@
                                         <div class="menu-item px-5">
                                             <div class="menu-content px-5">
                                                 <label class="form-check form-switch form-check-custom form-check-solid pulse pulse-success" for="kt_user_menu_dark_mode_toggle">
-                                                    <!--                                                    <a href="/uahb/quitter">-->
-                                                    <!--                                                        <input class="form-check-input w-30px h-20px" checked="checked" type="checkbox" value="1" name="mode" id="kt_user_menu_dark_mode_toggle" data-kt-url="/uahb/quitter" />-->
+                                                    <!--                                                    <a href="/personnel/quitter">-->
+                                                    <!--                                                        <input class="form-check-input w-30px h-20px" checked="checked" type="checkbox" value="1" name="mode" id="kt_user_menu_dark_mode_toggle" data-kt-url="/personnel/quitter" />-->
                                                     <!--                                                        <span class="pulse-ring ms-n1"></span>-->
                                                     <!--                                                        <span class="form-check-label text-gray-600 fs-7">se déconnecter</span>-->
                                                     <!--                                                    </a>-->
@@ -150,7 +150,7 @@
                                                         <div class="menu-content px-5">
                                                             <label class="form-check form-switch form-check-custom form-check-solid pulse pulse-success" for="kt_user_menu_dark_mode_toggle">
                                                                 <a href="/personnel/signout">
-                                                                    <input class="form-check-input w-30px h-20px" checked="checked" type="checkbox" value="1" name="mode" id="kt_user_menu_dark_mode_toggle" data-kt-url="/uahb/quitter" />
+                                                                    <input class="form-check-input w-30px h-20px" checked="checked" type="checkbox" value="1" name="mode" id="kt_user_menu_dark_mode_toggle" data-kt-url="/personnel/quitter" />
                                                                     <span class="pulse-ring ms-n1"></span>
                                                                     <span class="form-check-label text-gray-600 fs-7">se déconnecter</span>
                                                                 </a>
@@ -238,10 +238,10 @@
 
 
 
-<script src="/uahb/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>
-<script src="/uahb/ressources/dist_assets/js/scripts.bundle.js"></script>
-<script src="/uahb/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.js"></script>
-<script src="http://localhost/personnel/scripts.bundle.gs.js"></script>
+<script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>
+<script src="/personnel/ressources/dist_assets/js/scripts.bundle.js"></script>
+<script src="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.js"></script>
+<script src="/personnel/scripts.bundle.gs.js"></script>
 
 
 </body>

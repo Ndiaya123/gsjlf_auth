@@ -1,0 +1,88 @@
+body{background:#f5f8fa;font-family:'Poppins',sans-serif;}
+
+#dga-loader{position:fixed;inset:0;z-index:9999;pointer-events:all}
+#dga-loader .dga-loader-bg{position:absolute;inset:0;background:rgba(10,40,25,.45);backdrop-filter:blur(4px)}
+#dga-loader .dga-loader-box{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;padding:2rem 2.5rem;display:flex;flex-direction:column;align-items:center;gap:.9rem;box-shadow:0 20px 60px rgba(0,0,0,.18);min-width:190px}
+#dga-loader .dga-loader-spin{width:40px;height:40px;animation:dga-spin .85s linear infinite}
+#dga-loader .dga-loader-spin circle{stroke:#1a7a5e;stroke-dasharray:80;stroke-dashoffset:55;stroke-linecap:round;fill:none;animation:dga-dash 1.4s ease-in-out infinite}
+#dga-loader .dga-loader-box p{margin:0;font-size:.82rem;font-weight:700;color:#1a7a5e}
+@keyframes dga-spin{to{transform:rotate(360deg)}}
+@keyframes dga-dash{0%{stroke-dashoffset:80}50%{stroke-dashoffset:20}100%{stroke-dashoffset:80}}
+
+.dga-hero{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
+.dga-hero-title h1{font-size:1.35rem;font-weight:800;color:#111827;margin:0;display:flex;align-items:center;gap:.55rem}
+.dga-hero-title h1 svg{background:#d1fae5;color:#065f46;border-radius:9px;padding:.4rem;width:20px !important;height:20px !important;box-sizing:content-box}
+.dga-hero-title p{font-size:.8rem;color:#9ca3af;margin:.2rem 0 0}
+
+/* ── Statistiques ─────────────────────────────────────────────── */
+.dga-stats{display:grid;grid-template-columns:repeat(2,1fr);gap:.85rem;margin-bottom:1.5rem}
+.dga-stat-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;padding:1.15rem 1.3rem;display:flex;align-items:center;gap:1rem;position:relative;overflow:hidden}
+.dga-stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#1a7a5e}
+.dga-stat-icon{width:42px;height:42px;border-radius:12px;background:#d1fae5;color:#065f46;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dga-stat-lbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;margin-bottom:.3rem}
+.dga-stat-val{font-size:1.4rem;font-weight:900;color:#111827;font-variant-numeric:tabular-nums}
+
+.dga-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden}
+.dga-card-head{padding:.9rem 1.35rem;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+.dga-card-title{font-size:.88rem;font-weight:700;color:#111827;display:flex;align-items:center;gap:.45rem}
+.dga-card-title svg{color:#1a7a5e}
+
+/* ── Filtres ──────────────────────────────────────────────────── */
+.dga-filters{display:flex;flex-wrap:wrap;gap:.85rem;align-items:flex-end;padding:1rem 1.35rem;border-bottom:1px solid #f3f4f6;background:#fafafa}
+.dga-filter-group{display:flex;flex-direction:column;gap:.3rem}
+.dga-filter-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af}
+.dga-inp-date{border:1.5px solid #e5e7eb;border-radius:8px;padding:.5rem .85rem;font-size:.82rem;color:#374151}
+.dga-inp-date:focus{outline:none;border-color:#1a7a5e;box-shadow:0 0 0 3px rgba(26,122,94,.1)}
+.dga-btn-reset,.dga-btn-filtrer{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1.1rem;border-radius:8px;font-size:.82rem;font-weight:600;cursor:pointer;border:1.5px solid transparent}
+.dga-btn-reset{background:#fff;color:#6b7280;border-color:#e5e7eb}
+.dga-btn-reset:hover{border-color:#9ca3af;color:#374151}
+.dga-btn-filtrer{background:#1a7a5e;color:#fff}
+.dga-btn-filtrer:hover{background:#145f49}
+
+table.dataTable{border-collapse:collapse !important;width:100% !important}
+table.dataTable thead th{background:#f8f9fa !important;font-size:.7rem !important;font-weight:800 !important;text-transform:uppercase !important;letter-spacing:.07em !important;color:#9ca3af !important;border-bottom:2px solid #e9ecef !important;border-top:none !important;padding:.85rem 1rem !important;white-space:nowrap}
+table.dataTable tbody td{padding:.85rem 1rem !important;font-size:.875rem !important;color:#374151 !important;border-bottom:1px solid #f9fafb !important;vertical-align:middle !important}
+table.dataTable tbody tr:hover td{background:#f0fdf4 !important}
+.dataTables_empty{padding:2.5rem !important;font-style:italic !important;color:#9ca3af !important}
+.dataTables_filter input{border:1.5px solid #e5e7eb !important;border-radius:8px !important;padding:.5rem 1rem !important;font-size:.82rem !important}
+.dataTables_paginate .paginate_button.current{background:#1a7a5e !important;color:#fff !important;border-color:#1a7a5e !important;border-radius:7px !important}
+
+.dga-cell-amount{font-weight:700;color:#1a7a5e;font-variant-numeric:tabular-nums}
+.dga-badge-type{display:inline-flex;align-items:center;padding:.25rem .65rem;border-radius:99px;font-size:.68rem;font-weight:800;text-transform:uppercase}
+.dga-type-1{background:#dbeafe;color:#1d4ed8}
+.dga-type-2{background:#ede9fe;color:#5b21b6}
+.dga-badge-mode{display:inline-flex;align-items:center;padding:.25rem .65rem;border-radius:99px;font-size:.68rem;font-weight:800;text-transform:uppercase}
+.dga-mode-1{background:#d1fae5;color:#047857}
+.dga-mode-4{background:#bfdbfe;color:#1e40af}
+.dga-mode-5{background:#fed7aa;color:#9a3412}
+.dga-mode-autre{background:#e5e7eb;color:#374151}
+
+.dga-btn-annuler{display:inline-flex !important;align-items:center !important;gap:.35rem !important;padding:.4rem .8rem !important;border-radius:7px !important;font-size:.75rem !important;font-weight:700 !important;background:#fef2f2 !important;color:#dc2626 !important;border:1.5px solid #fee2e2 !important;cursor:pointer !important;transition:all .18s}
+.dga-btn-annuler:hover{background:#dc2626 !important;color:#fff !important;transform:translateY(-1px)}
+
+
+
+.dataTables_info{font-size:.78rem;color:#9ca3af;font-weight:500;padding : .5rem 0;}
+
+
+/* "Afficher X lignes" */
+.dataTables_length {
+    display: flex; align-items: center;
+    padding-left: 10px !important;
+}
+.dataTables_length label {
+    display: flex; align-items: center; gap: .45rem;
+    font-size: .8rem; color: #6b7280; font-weight: 500; white-space: nowrap;
+}
+.dataTables_length select {
+    border: 1.5px solid #e5e7eb !important; border-radius: 8px !important;
+    padding: .35rem .55rem !important; font-size: .82rem !important;
+    font-weight: 600 !important; color: #374151 !important;
+    background: #fff !important; min-width: 58px; text-align: center;
+    cursor: pointer; transition: border-color .18s;
+}
+.dataTables_length select:focus {
+    outline: none !important; border-color: #1a7a5e !important;
+    box-shadow: 0 0 0 3px rgba(26,122,94,.1) !important;
+}
+

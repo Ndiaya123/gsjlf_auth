@@ -694,6 +694,22 @@ switch ($option) {
 
         break;
 
+
+
+    case 2 :
+
+        if (!isset($_SESSION['connectUserGSJLF_ENT']) || !isset($_SESSION['tmpIdP'])) {
+
+           echo "sesionExpired";
+           die;
+        }else
+        {
+            echo "ok";
+            die;
+        }
+        break;
+
+
     default :
         echo "erreur";
         die;

@@ -1,0 +1,191 @@
+    /* ════════════════════════════════════════════════════════════════════════
+       ADD LINES TO DEMANDE — thème vert/blanc | préfixe al-
+       ════════════════════════════════════════════════════════════════════════ */
+
+    /* ── Loader ──────────────────────────────────────────────────────────── */
+#al-loader{position:fixed;inset:0;z-index:9999;pointer-events:all}
+#al-loader .al-loader-bg{position:absolute;inset:0;background:rgba(10,40,25,.5);backdrop-filter:blur(4px)}
+#al-loader .al-loader-box{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;padding:2rem 2.5rem;display:flex;flex-direction:column;align-items:center;gap:.9rem;box-shadow:0 20px 60px rgba(0,0,0,.18);min-width:190px}
+#al-loader .al-loader-spin{width:40px;height:40px;animation:al-spin .85s linear infinite}
+#al-loader .al-loader-spin circle{stroke:#1a7a5e;stroke-dasharray:80;stroke-dashoffset:55;stroke-linecap:round;fill:none;animation:al-dash 1.4s ease-in-out infinite}
+#al-loader .al-loader-box p{margin:0;font-size:.82rem;font-weight:700;color:#1a7a5e}
+@keyframes al-spin{to{transform:rotate(360deg)}}
+@keyframes al-dash{0%{stroke-dashoffset:80}50%{stroke-dashoffset:20}100%{stroke-dashoffset:80}}
+
+/* ── Bandeau titre ───────────────────────────────────────────────────── */
+.al-hero{
+    background:linear-gradient(135deg,#064e3b 0%,#1a7a5e 55%,#34d399 100%);
+    padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;
+    flex-wrap:wrap;gap:1rem;margin-bottom:1.5rem;border-radius:0 0 14px 14px;
+}
+.al-hero-left{display:flex;align-items:center;gap:1rem}
+.al-back{display:inline-flex;align-items:center;gap:.35rem;background:rgba(255,255,255,.15);border:1.5px solid rgba(255,255,255,.3);color:#fff;border-radius:9px;padding:.45rem .9rem;font-size:.8rem;font-weight:600;cursor:pointer;transition:all .18s}
+.al-back:hover{background:rgba(255,255,255,.28)}
+.al-hero-title h1{margin:0;font-size:1.35rem;font-weight:800;color:#fff;display:flex;align-items:center;gap:.5rem}
+.al-hero-title p{margin:.15rem 0 0;font-size:.8rem;color:rgba(255,255,255,.75)}
+.al-hero-right{display:flex;align-items:center;gap:.6rem;flex-wrap:wrap}
+
+/* ── Boutons ─────────────────────────────────────────────────────────── */
+.al-btn{display:inline-flex;align-items:center;gap:.4rem;padding:.5rem 1.15rem;border-radius:9px;font-size:.83rem;font-weight:700;border:none;cursor:pointer;transition:all .18s;white-space:nowrap}
+.al-btn:hover:not(:disabled){filter:brightness(.92);transform:translateY(-1px)}
+.al-btn:disabled{opacity:.4;cursor:not-allowed;transform:none}
+.al-btn-primary {background:#1a7a5e;color:#fff}
+.al-btn-white   {background:#fff;color:#1a7a5e;border:1.5px solid rgba(255,255,255,.5)}
+.al-btn-soumettre{background:#f0fdf4;color:#065f46;border:1.5px solid #a7f3d0;font-weight:700}
+.al-btn-white:hover:not(:disabled){background:#f0fdf4}
+.al-btn-ghost   {background:#fff;color:#6b7280;border:1.5px solid #e5e7eb}
+.al-btn-ghost:hover:not(:disabled){border-color:#1a7a5e;color:#1a7a5e;background:#f0fdf4}
+
+/* ── Badges ──────────────────────────────────────────────────────────── */
+.al-badge{display:inline-flex;align-items:center;gap:.3rem;padding:.25rem .65rem;border-radius:99px;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.04em;white-space:nowrap}
+.al-badge::before{content:'';width:5px;height:5px;border-radius:50%;background:currentColor;flex-shrink:0}
+.al-badge-achat   {background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.al-badge-paiement{background:#ede9fe;color:#5b21b6;border:1px solid #c4b5fd}
+.al-badge-draft   {background:#fef3c7;color:#92400e;border:1px solid #fde68a}
+.al-badge-ok      {background:#d1fae5;color:#065f46;border:1px solid #a7f3d0}
+.al-badge-err     {background:#fee2e2;color:#991b1b;border:1px solid #fca5a5}
+
+/* ── Cartes ──────────────────────────────────────────────────────────── */
+.al-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden;margin-bottom:1.5rem}
+.al-card-head{padding:.9rem 1.35rem;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+.al-card-title{font-size:.88rem;font-weight:700;color:#111827;display:flex;align-items:center;gap:.45rem}
+.al-card-title svg{color:#1a7a5e}
+.al-count-badge{display:inline-flex;align-items:center;justify-content:center;min-width:22px;height:22px;background:#d1fae5;color:#065f46;border-radius:99px;font-size:.75rem;font-weight:800;padding:0 6px}
+
+/* ── Filtre service ──────────────────────────────────────────────────── */
+.al-filter-bar{display:flex;align-items:flex-end;gap:.75rem;padding:.85rem 1.35rem;border-bottom:1px solid #f3f4f6;background:#fafafa;flex-wrap:wrap}
+.al-fg{display:flex;flex-direction:column;gap:.3rem}
+.al-flbl{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#9ca3af}
+.al-select{border:1.5px solid #e5e7eb;border-radius:8px;padding:.5rem .85rem;font-size:.82rem;font-weight:500;color:#374151;background:#fff;min-width:200px;cursor:pointer;appearance:none;-webkit-appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23adb5bd' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .7rem center;padding-right:2rem;transition:border-color .18s}
+.al-select:focus{outline:none;border-color:#1a7a5e;box-shadow:0 0 0 3px rgba(26,122,94,.1)}
+
+/* ── DataTable ───────────────────────────────────────────────────────── */
+.al-dt-top{display:flex;align-items:center;justify-content:space-between;padding:.75rem 1.25rem .6rem;flex-wrap:wrap;gap:.5rem}
+.al-dt-bottom{display:flex;align-items:center;justify-content:space-between;padding:.6rem 1.25rem .75rem;border-top:1px solid #f3f4f6;flex-wrap:wrap;gap:.5rem}
+.dataTables_length label{display:flex;align-items:center;gap:.45rem;font-size:.8rem;color:#6b7280;font-weight:500}
+.dataTables_length select{border:1.5px solid #e5e7eb !important;border-radius:8px !important;padding:.35rem .55rem !important;font-size:.82rem !important;font-weight:600 !important;color:#374151 !important;background:#fff !important;min-width:58px}
+.dataTables_filter label{display:flex;align-items:center;gap:.5rem;font-size:0}
+.dataTables_filter input{border:1.5px solid #e5e7eb !important;border-radius:8px !important;padding:.5rem 1rem !important;font-size:.82rem !important;color:#374151 !important;background:#fff !important;min-width:200px}
+.dataTables_filter input:focus{outline:none !important;border-color:#1a7a5e !important;box-shadow:0 0 0 3px rgba(26,122,94,.1) !important}
+.dataTables_info{font-size:.78rem;color:#9ca3af;font-weight:500}
+.dataTables_paginate .paginate_button{border-radius:8px !important;font-size:.78rem !important;font-weight:600 !important;padding:.35rem .7rem !important;margin:0 .1rem !important;border:1px solid transparent !important;transition:all .18s !important}
+.dataTables_paginate .paginate_button.current,.dataTables_paginate .paginate_button.current:hover{background:#1a7a5e !important;color:#fff !important;border-color:#1a7a5e !important}
+.dataTables_paginate .paginate_button:hover:not(.current):not(.disabled){background:#f0fdf4 !important;color:#1a7a5e !important;border-color:#d1fae5 !important}
+table.dataTable{border-collapse:collapse !important;width:100% !important}
+table.dataTable thead th{background:#f0fdf4 !important;font-size:.7rem !important;font-weight:800 !important;text-transform:uppercase !important;letter-spacing:.07em !important;color:#4b7a5e !important;border-bottom:2px solid #a7f3d0 !important;border-top:none !important;padding:.85rem 1rem !important;white-space:nowrap}
+table.dataTable thead th:first-child{padding-left:1.25rem !important}
+table.dataTable thead th:last-child{padding-right:1.25rem !important}
+table.dataTable tbody td{padding:.8rem 1rem !important;font-size:.83rem !important;color:#374151 !important;border-bottom:1px solid #f9fafb !important;vertical-align:middle !important}
+table.dataTable tbody tr:hover td{background:#f0fdf4 !important}
+.dataTables_empty{padding:2.5rem !important;font-style:italic !important;color:#9ca3af !important}
+.al-row-epuise td{opacity:.4 !important;background:#fafafa !important}
+.al-amt{font-weight:600;color:#374151;font-variant-numeric:tabular-nums}
+.al-amt-total{font-weight:800;color:#1a7a5e;font-variant-numeric:tabular-nums}
+.dt-right{text-align:right !important}
+
+/* Checkbox personnalisé vert */
+.al-chk{accent-color:#1a7a5e;width:16px;height:16px;cursor:pointer}
+.al-chk:disabled{opacity:.4;cursor:not-allowed}
+
+/* ── Badges colonne "Sélectionné" ────────────────────────────────────── */
+.al-sel-badge{display:inline-flex;align-items:center;padding:.2rem .55rem;border-radius:99px;font-size:.72rem;font-weight:800;white-space:nowrap}
+.al-sel-badge-qte{background:#d1fae5;color:#065f46;border:1.5px solid #6ee7b7}
+.al-sel-badge-mnt{background:#dbeafe;color:#1e40af;border:1.5px solid #93c5fd}
+
+/* ── Boutons d'action individuels ────────────────────────────────────── */
+.al-btn-indiv{
+    display:inline-flex;align-items:center;gap:.3rem;
+    padding:.3rem .7rem;border-radius:7px;font-size:.72rem;font-weight:700;
+    border:1.5px solid transparent;cursor:pointer;white-space:nowrap;
+    transition:all .18s;
+}
+.al-btn-indiv-add     {background:#f0fdf4;color:#1a7a5e;border-color:#a7f3d0}
+.al-btn-indiv-add:hover{background:#1a7a5e;color:#fff;border-color:#1a7a5e}
+.al-btn-indiv-selected{background:#d1fae5;color:#065f46;border-color:#6ee7b7}
+.al-btn-indiv-selected:hover{background:#065f46;color:#fff;border-color:#065f46}
+.al-btn-indiv-existing{background:#dbeafe;color:#1d4ed8;border-color:#93c5fd}
+.al-btn-indiv-existing:hover{background:#1d4ed8;color:#fff;border-color:#1d4ed8}
+.al-btn-indiv-disabled{background:#f3f4f6;color:#9ca3af;border-color:#e5e7eb;cursor:not-allowed;font-size:.72rem;font-weight:600;padding:.3rem .7rem;border-radius:7px;display:inline-flex;align-items:center;gap:.3rem}
+
+/* ── Checkbox tout-sélectionner dans l'en-tête ──────────────────────── */
+#al-chk-all{accent-color:#1a7a5e;width:15px;height:15px;cursor:pointer}
+
+/* ── Barre d'action fixe en bas ─────────────────────────────────────── */
+.al-action-bar{
+    display:flex;align-items:center;justify-content:space-between;
+    padding:1rem 1.35rem;background:#f0fdf4;border-top:2px solid #a7f3d0;
+    flex-wrap:wrap;gap:.65rem;
+}
+.al-sel-info{
+    display:flex;align-items:center;gap:.5rem;font-size:.82rem;color:#374151;font-weight:500;
+}
+.al-sel-info span{
+    display:inline-flex;align-items:center;justify-content:center;
+    min-width:24px;height:24px;background:#1a7a5e;color:#fff;
+    border-radius:99px;font-size:.75rem;font-weight:800;padding:0 7px;
+}
+
+/* ── Pied total ──────────────────────────────────────────────────────── */
+.al-total-bar{
+    display:flex;justify-content:flex-end;align-items:center;gap:.65rem;
+    padding:.75rem 1.25rem;border-top:2px solid #e9ecef;background:#fafafa;
+}
+.al-total-bar .lbl{font-size:.78rem;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6b7280}
+.al-total-bar .val{font-size:1rem;font-weight:900;color:#1a7a5e;font-variant-numeric:tabular-nums}
+
+/* ── Info box ────────────────────────────────────────────────────────── */
+.al-info-box{background:#f0fdf4;border:1px solid #a7f3d0;border-radius:10px;padding:.65rem 1rem;font-size:.8rem;color:#065f46;display:flex;align-items:flex-start;gap:.5rem;line-height:1.55;margin-bottom:1.25rem}
+
+/* Responsive */
+@media(max-width:768px){.al-hero{flex-direction:column}.al-hero-right{width:100%}}
+
+
+/* ── Boutons action table (générés par le JS) ────────────────── */
+.btn-action {
+    width: 30px; height: 30px; border-radius: 7px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: 1.5px solid transparent; cursor: pointer;
+    transition: all .18s cubic-bezier(.4,0,.2,1); flex-shrink: 0;
+    background: none;
+}
+.btn-action:hover { transform: translateY(-2px) scale(1.08); }
+.btn-action .w-4 { width: 14px !important; height: 14px !important; }
+.btn-action-primary { background: #eff6ff; color: #2563eb; border-color: #dbeafe; }
+.btn-action-primary:hover  { background: #2563eb; color: #fff; }
+.btn-action-warning { background: #fffbeb; color: #d97706; border-color: #fef3c7; }
+.btn-action-warning:hover  { background: #d97706; color: #fff; }
+.btn-action-success { background: #ecfdf5; color: #059669; border-color: #d1fae5; }
+.btn-action-success:hover  { background: #059669; color: #fff; }
+.btn-action-danger  { background: #fef2f2; color: #dc2626; border-color: #fee2e2; }
+.btn-action-danger:hover   { background: #dc2626; color: #fff; }
+/* Flex wrapper généré par le JS */
+.flex { display: flex !important; }
+.justify-end { justify-content: flex-end !important; }
+.gap-2 { gap: .35rem !important; }
+
+
+
+.dataTables_info{font-size:.78rem;color:#9ca3af;font-weight:500;padding : .5rem 0;}
+
+
+/* "Afficher X lignes" */
+.dataTables_length {
+    display: flex; align-items: center;
+    padding-left: 10px !important;
+}
+.dataTables_length label {
+    display: flex; align-items: center; gap: .45rem;
+    font-size: .8rem; color: #6b7280; font-weight: 500; white-space: nowrap;
+}
+.dataTables_length select {
+    border: 1.5px solid #e5e7eb !important; border-radius: 8px !important;
+    padding: .35rem .55rem !important; font-size: .82rem !important;
+    font-weight: 600 !important; color: #374151 !important;
+    background: #fff !important; min-width: 58px; text-align: center;
+    cursor: pointer; transition: border-color .18s;
+}
+.dataTables_length select:focus {
+    outline: none !important; border-color: #1a7a5e !important;
+    box-shadow: 0 0 0 3px rgba(26,122,94,.1) !important;
+}
+

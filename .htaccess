@@ -161,6 +161,148 @@ RewriteRule ^scripts.bundle.gs.js$ menus/js/menu.js [L]
 
 
 
+#  BASI (BUDGET - INVENTAIRE - STOCK - ARCHAT)
+
+#chef service
+RewriteRule ^chef_service_basi_controller$ basi/chefService/controllers/chefServiceController.php [L]
+RewriteRule ^chef_service_rubrique$ basi/chefService/rubrique.php [L]
+RewriteRule ^basi-scripts.bundle.1.js$ basi/chefService/js/rubrique.js [L]
+RewriteRule ^chef_service_sous_rubrique$ basi/chefService/sousRubrique.php [L]
+RewriteRule ^basi-scripts.bundle.2.js$ basi/chefService/js/sousRubrique.js [L]
+RewriteRule ^chef_service_budget_investissement$ basi/chefService/budgetInvestissement.php [L]
+RewriteRule ^basi-scripts.bundle.5.js$ basi/chefService/js/budgetInvestissement.js [L]
+RewriteRule ^chef_service_demande$ basi/chefService/listeDemande.php [L]
+RewriteRule ^basi-scripts.bundle.12.js$ basi/chefService/js/listeDemande.js [L]
+#RewriteRule ^admission_en_ligne_antecedent/(.*) admission/admin/antecedentsPDF.php?idAntecedents=$1 [L]
+RewriteRule ^chef_service_ligne_budget_investissement/(.*)$ basi/chefService/ligneBudgetInvestissement.php?budgetId=$1 [L]
+RewriteRule ^basi-scripts.bundle.6.js$ basi/chefService/js/ligneBudgetInvestissement.js [L]
+RewriteRule ^chef_service_associe_ligne_budget_demande/(.*)/(.*)$ basi/chefService/add-lines-to-demandes.php?token=$1&type=$2 [L]
+RewriteRule ^basi-scripts.bundle.13.js$ basi/chefService/js/add-lines-to-demandes.js [L]
+RewriteRule ^chef_service_basi_controller_1$ basi/chefService/controllers/chefServiceController1.php [L]
+RewriteRule ^chef_service_basi_expression_besoin$ basi/chefService/liste_expression_besoin.php [L]
+RewriteRule ^basi-scripts.bundle.30.js$ basi/chefService/js/liste_expression_besoin.js [L]
+
+
+
+#DFC
+RewriteRule ^dfc_basi_controller$ basi/dfc/controllers/dfcController.php [L]
+RewriteRule ^dfc-liste_budget$ basi/dfc/listeBudget.php [L]
+RewriteRule ^basi-scripts.bundle.10.js$ basi/dfc/js/listeBudget.js [L]
+RewriteRule ^dfc-consultation-budget/(.*)$ basi/dfc/consulterBudget.php?budgetId=$1  [L]
+RewriteRule ^basi-scripts.bundle.11.js$ basi/dfc/js/consulterBudget.js [L]
+RewriteRule ^drh_commande_avis_favorable$ basi/dfc/avisfavorable_pap.php [L]
+RewriteRule ^basi-scripts.bundle.20.js$ basi/dfc/js/avisfavorable_pap.js [L]
+
+
+
+
+
+
+#Comptable
+
+RewriteRule ^cpt_basi_controller$ basi/comptable/controllers/comptaController.php [L]
+RewriteRule ^compta_categorie$ basi/comptable/categorie.php [L]
+RewriteRule ^basi-scripts.bundle.3.js$ basi/comptable/js/categorie.js [L]
+RewriteRule ^compta_sous_categorie$ basi/comptable/sousCategorie.php [L]
+RewriteRule ^basi-scripts.bundle.4.js$ basi/comptable/js/sousCategorie.js [L]
+RewriteRule ^compta_basi_controller$ basi/comptable/controllers/comptableController.php [L]
+RewriteRule ^compta_liste_des_produits$ basi/comptable/listeProduits.php [L]
+RewriteRule ^basi-scripts.bundle.7.js$ basi/comptable/js/listeProduits.js [L]
+RewriteRule ^compta_liste_budget_fonctionnement$ basi/comptable/budgetFonctionnement.php [L]
+RewriteRule ^basi-scripts.bundle.8.js$ basi/comptable/js/budgetFonctionnement.js [L]
+RewriteRule ^compta_ligne_budget_fonctionnement/(.*)$ basi/comptable/ligneBudgetFonctionnement.php?budgetId=$1 [L]
+RewriteRule ^basi-scripts.bundle.9.js$ basi/comptable/js/ligneBudgetFonctionnement.js [L]
+RewriteRule ^compta_liste_alimentation_caisse$ basi/comptable/listeAlimentationCaisse.php [L]
+RewriteRule ^basi-scripts.bundle.23.js$ basi/comptable/js/listeAlimentationCaisse.js [L]
+RewriteRule ^cpt_caisse_basi_controller$ basi/comptable/controllers/caisseController.php [L]
+RewriteRule ^compta_basi_liste_des_paiements$ basi/comptable/listePaiements.php [L]
+RewriteRule ^basi-scripts.bundle.26.js$ basi/comptable/js/listePaiements.js [L]
+RewriteRule ^compta_basi_liste_pap$ basi/comptable/liste_pap.php [L]
+RewriteRule ^basi-scripts.bundle.27.js$ basi/comptable/js/liste_pap.js [L]
+RewriteRule ^compta_facture/(.*)$ basi/comptable/facture_pap.php?token=$1  [L]
+RewriteRule ^compta_basi_liste_livraisons$ basi/comptable/listeLivraison.php [L]
+RewriteRule ^basi-scripts.bundle.28.js$ basi/comptable/js/listeLivraison.js [L]
+RewriteRule ^compta_basi_sortie_produit$ basi/comptable/sortieProduit.php [L]
+RewriteRule ^basi-scripts.bundle.31.js$ basi/comptable/js/sortieProduit.js [L]
+RewriteRule ^compta_basi_inventaire$ basi/comptable/inventaire.php [L]
+RewriteRule ^basi-scripts.bundle.32.js$ basi/comptable/js/inventaire.js [L]
+RewriteRule ^compta_basi_inventaire_rapport_pdf/(.*)$ basi/comptable/rapportInventaire.php?token=$1 [L]
+RewriteRule ^compta_basi_inventaire-pdf-vierge/(.*)$ basi/comptable/inventaireVierge.php?token=$1 [L]
+
+
+
+RewriteRule ^compta_demande$ basi/comptable/listeDemande.php [L]
+RewriteRule ^basi-scripts.bundle.34.js$ basi/comptable/js/listeDemande.js [L]
+RewriteRule ^compta_associe_ligne_budget_demande/(.*)/(.*)$ basi/comptable/add-lines-to-demandes.php?token=$1&type=$2 [L]
+RewriteRule ^basi-scripts.bundle.35.js$ basi/comptable/js/add-lines-to-demandes.js [L]
+
+
+
+
+#DRH
+
+RewriteRule ^drh_basi_controller$ basi/drh/controllers/drhController.php [L]
+RewriteRule ^drh_basi_controller1$ basi/drh/controllers/drh_basi_controller.php [L]
+RewriteRule ^drh_liste_des_fournisseurs$ basi/drh/listeFournisseur.php [L]
+RewriteRule ^basi-scripts.bundle.14.js$ basi/drh/js/listeFournisseur.js [L]
+RewriteRule ^drh_liste_des_demandes$ basi/drh/listeDemande.php [L]
+RewriteRule ^basi-scripts.bundle.15.js$ basi/drh/js/listeDemande.js [L]
+RewriteRule ^drh_demande_voir_lignes/(.*)$ basi/drh/listeDemandeLigne.php?token=$1 [L]
+RewriteRule ^basi-scripts.bundle.16.js$ basi/drh/js/listeDemandeLigne.js [L]
+RewriteRule ^drh_demande_facture_proforma$ basi/drh/demandeFactureProforma.php [L]
+RewriteRule ^drh_toutes_les_lignes_de_demandes_d_achat$ basi/drh/toutesLignesDemandesAchat.php [L]
+RewriteRule ^basi-scripts.bundle.17.js$ basi/drh/js/toutesLignesDemandesAchat.js [L]
+RewriteRule ^drh_toutes_les_lignes_de_demandes_de_paiement$ basi/drh/toutesLignesDemandesPaiement.php [L]
+RewriteRule ^basi-scripts.bundle.18.js$ basi/drh/js/toutesLignesDemandesPaiement.js [L]
+RewriteRule ^drh_liste_commandes$ basi/drh/listeCommandes.php [L]
+RewriteRule ^basi-scripts.bundle.22.js$ basi/drh/js/listeCommandes.js [L]
+RewriteRule ^drh_facture/(.*)$ basi/drh/facture_pap.php?token=$1  [L]
+
+
+# DGA
+
+
+RewriteRule ^dga_basi_controller$ basi/DGA/controllers/dgaController.php [L]
+RewriteRule ^drh_commande_a_valider$ basi/DGA/commandeAValider.php [L]
+RewriteRule ^basi-scripts.bundle.19.js$ basi/DGA/js/commandeAValider.js [L]
+
+
+
+#DG
+RewriteRule ^dg_basi_controller$ basi/dg/controllers/dgController.php [L]
+RewriteRule ^dg_liste_pap$ basi/dg/accepter_pap.php [L]
+RewriteRule ^basi-scripts.bundle.21.js$ basi/dg/js/accepter_pap.js [L]
+
+
+#caisse
+RewriteRule ^caisse_basi_controller$ basi/caisse/controllers/caisseController.php [L]
+RewriteRule ^caisse_liste_alimentation_caisse$ basi/caisse/listeAlimentationCaisse.php [L]
+RewriteRule ^basi-scripts.bundle.24.js$ basi/caisse/js/listeAlimentationCaisse.js [L]
+RewriteRule ^caisse_basi_paiement$ basi/caisse/paiement.php [L]
+RewriteRule ^basi-scripts.bundle.25.js$ basi/caisse/js/paiement.js [L]
+RewriteRule ^basi_arrete-caisse$ basi/caisse/arrete_caisse.php [L]
+
+#basi personnel
+
+RewriteRule ^personnel_basi_controller$ basi/personnel/controllers/personnelController.php [L]
+RewriteRule ^personnel_basi_expression_besoin$ basi/personnel/expression_besoin.php [L]
+RewriteRule ^basi-scripts.bundle.29.js$ basi/personnel/js/expression_besoin.js [L]
+
+
+# operateur
+RewriteRule ^operateur_basi_controller$ basi/operateur/controllers/operateurController.php [L]
+RewriteRule ^opterateur_basi_inventaire$ basi/operateur/inventaire.php [L]
+RewriteRule ^basi-scripts.bundle.33.js$ basi/operateur/js/inventaire.js [L]
+RewriteRule ^operateur_basi_inventaire-pdf-vierge/(.*)$ basi/operateur/inventaireVierge.php?token=$1 [L]
+
+
+
+
+
+
+
+
+
 
 
 
