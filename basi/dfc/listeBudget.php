@@ -15,6 +15,8 @@
 
     <link href="/personnel/ressources/dist_assets/css/style_basi_24.css" rel="stylesheet" type="text/css"/>
 
+    <script>document.documentElement.classList.add('ld-booting');</script>
+
 
 </head>
 
@@ -358,6 +360,12 @@
         </svg>
     </span>
 </div>
+
+
+<noscript>
+    <style>html.ld-booting body > .d-flex.flex-column.flex-root { visibility: visible !important; }</style>
+</noscript>
+
 
 <!-- Scripts Metronic (jQuery + DataTables + SweetAlert2 déjà inclus) -->
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>

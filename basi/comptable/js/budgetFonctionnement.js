@@ -167,7 +167,13 @@ function initializeDataTable() {
                 searchable: false,
                 width: '110px'
             }
-        ]
+        ],
+        initComplete: function () {
+
+            document.documentElement.classList.remove('ld-booting');
+            document.getElementById('lb-table')?.classList.add('lb-ready');
+
+        }
     });
 
     return dataTableInstance;

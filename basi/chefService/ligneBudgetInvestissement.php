@@ -16,6 +16,8 @@ if (empty($budgetToken)) { header('Location: /personnel/responsable-financier-ac
 
     <link href="/personnel/ressources/dist_assets/css/style_basi_5.css" rel="stylesheet" type="text/css"/>
 
+    <script>document.documentElement.classList.add('ld-booting');</script>
+
 </head>
 <body id="kt_body" class="header-fixed header-tablet-and-mobile-fixed toolbar-enabled toolbar-fixed aside-enabled aside-fixed" style="--kt-toolbar-height:55px;--kt-toolbar-height-tablet-and-mobile:55px">
 <div class="d-flex flex-column flex-root"><div class="page d-flex flex-row flex-column-fluid">
@@ -345,6 +347,11 @@ if (empty($budgetToken)) { header('Location: /personnel/responsable-financier-ac
         </div>
     </div>
 </div>
+
+
+<noscript>
+    <style>html.ld-booting body > .d-flex.flex-column.flex-root { visibility: visible !important; }</style>
+</noscript>
 
 <!-- Scripts Metronic -->
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>

@@ -14,6 +14,8 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
     <link href="/personnel/ressources/dist_assets/css/style_basi_4.css" rel="stylesheet" type="text/css"/>
 
+    <script>document.documentElement.classList.add('ld-booting');</script>
+
 </head>
 
 <body id="kt_body"
@@ -423,6 +425,11 @@
         </svg>
     </span>
 </div>
+
+<noscript>
+    <style>html.ld-booting body > .d-flex.flex-column.flex-root { visibility: visible !important; }</style>
+</noscript>
+
 
 <!-- Scripts Metronic (jQuery + DataTables + SweetAlert2 déjà inclus) -->
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>

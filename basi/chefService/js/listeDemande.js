@@ -5,29 +5,61 @@
 //
 // Budgets visibles : année en cours ET année suivante (case 34)
 // type_demande : 'demande_achat' | 'demande_paiement' (choix utilisateur)
+//
+// v4 — SIMPLE : pas de splash, pas de loader au démarrage, pas de flou.
+//   • <html class="ld-booting"> masque la page tant que le CSS n'est pas appliqué
+//   • à window.load : la page s'affiche NORMALEMENT (stylée, table vide)
+//   • les données arrivent ensuite et remplissent la table, sans décalage
+//     (hauteurs réservées en CSS => le footer ne bouge pas)
+//   • filet de sécurité : la page s'affiche au bout de 5 s quoi qu'il arrive
 // ════════════════════════════════════════════════════════════════════════
 
 const LD_API = '/personnel/chef_service_basi_controller';
 const ld_api = {
-    liste   : `${LD_API}?option=33`,
-    budgets : `${LD_API}?option=34`,
-    creer   : `${LD_API}?option=36`,
-    supprimer:`${LD_API}?option=39`,
-    lignes  : `${LD_API}?option=38`,
-    suivi   : `${LD_API}?option=52`,
+    liste    : `${LD_API}?option=33`,
+    budgets  : `${LD_API}?option=34`,
+    creer    : `${LD_API}?option=36`,
+    supprimer: `${LD_API}?option=39`,
+    lignes   : `${LD_API}?option=38`,
+    suivi    : `${LD_API}?option=52`,
 };
 
 // ─── État ─────────────────────────────────────────────────────────────────────
-let ld_table = null;
+let ld_table        = null;
+let ld_pageRevealed = false;   // la page a-t-elle déjà été affichée ?
+let ld_firstLoad    = true;    // premier chargement = pas d'overlay de loader
+
+// ─── Affichage de la page (anti-FOUC) ─────────────────────────────────────────
+function ld_revealPage() {
+    if (ld_pageRevealed) return;
+    ld_pageRevealed = true;
+
+    document.documentElement.classList.remove('ld-booting');
+    // ⚠️ Filet de sécurité complet : révèle aussi la table (#ld-table.ld-ready)
+    // même si initComplete du DataTable ne s'est pas encore déclenché.
+    document.getElementById('ld-table')?.classList.add('ld-ready');
+
+    // la table était cachée => DataTables a mal mesuré les colonnes
+    if (ld_table) {
+        try { ld_table.columns.adjust().draw(false); } catch (e) {}
+    }
+}
+
+// Filet de sécurité : si une ressource externe (Google Fonts, CDN) rame,
+// on ne laisse JAMAIS un écran blanc au-delà de 5 s.
+setTimeout(ld_revealPage, 5000);
 
 // ─── Réseau ───────────────────────────────────────────────────────────────────
 function ld_expired() {
     ld_hideLoader();
-    Swal.fire({ icon:'warning', title:'Session expirée', text:'Redirection…',
-        timer:2500, showConfirmButton:false,
-        didClose:()=>{ window.location.href = '/personnel/signin'; }
+    ld_revealPage();                        // sinon l'alerte serait invisible sur page masquée
+    Swal.fire({
+        icon: 'warning', title: 'Session expirée', text: 'Redirection…',
+        timer: 2500, showConfirmButton: false,
+        didClose: () => { window.location.href = '/personnel/signin'; }
     });
 }
+
 async function ld_post(url, body = {}, timeout = 12000) {
     const ctrl = new AbortController();
     const t    = setTimeout(() => ctrl.abort(), timeout);
@@ -51,6 +83,8 @@ async function ld_post(url, body = {}, timeout = 12000) {
 
 // ─── Loader ───────────────────────────────────────────────────────────────────
 function ld_showLoader(msg = 'Chargement…') {
+    // pas d'overlay tant que la page n'est pas affichée (elle est masquée)
+    if (!ld_pageRevealed) return;
     $('#ld-loader').remove();
     $('body').append(`
         <div id="ld-loader">
@@ -73,7 +107,7 @@ const ld_fmtK    = v => {
     if (v >= 1e3) return (v / 1e3).toFixed(0) + ' K';
     return new Intl.NumberFormat('fr-FR').format(v);
 };
-const ld_fmtNum = v => new Intl.NumberFormat('fr-FR').format(Number(v || 0)) + '\u00a0FCFA';
+const ld_fmtNum = v => new Intl.NumberFormat('fr-FR').format(Number(v || 0)) + ' FCFA';
 
 // ─── Badges ───────────────────────────────────────────────────────────────────
 function ld_badgeStatut(s) {
@@ -110,18 +144,18 @@ function ld_badgeLivraisonStatut(idStatut) {
 
 // ─── DataTable liste ──────────────────────────────────────────────────────────
 function ld_initTable() {
-    if (ld_table) { try { ld_table.destroy(); } catch(e){} ld_table = null; }
+    if (ld_table) { try { ld_table.destroy(); } catch (e) {} ld_table = null; }
     if (!document.getElementById('ld-table')) return;
 
     ld_table = $('#ld-table').DataTable({
-        responsive  : true,
-        paging      : true,
-        pageLength  : 25,
-        searching   : true,
-        ordering    : true,
-        autoWidth   : false,
-        dom         : '<"bud-dt-top"lf>rt<"bud-dt-bottom"ip>',
-        language    : {
+        responsive : true,
+        paging     : true,
+        pageLength : 25,
+        searching  : true,
+        ordering   : true,
+        autoWidth  : false,
+        dom        : '<"bud-dt-top"lf>rt<"bud-dt-bottom"ip>',
+        language   : {
             emptyTable       : 'Aucune demande',
             info             : 'Affichage _START_–_END_ sur _TOTAL_',
             infoEmpty        : 'Aucune demande',
@@ -129,7 +163,7 @@ function ld_initTable() {
             search           : '_INPUT_',
             searchPlaceholder: 'Rechercher…',
             zeroRecords      : 'Aucun résultat',
-            paginate         : { first:'«', last:'»', next:'›', previous:'‹' },
+            paginate         : { first: '«', last: '»', next: '›', previous: '‹' },
         },
         data   : [],
         columns: [
@@ -141,13 +175,18 @@ function ld_initTable() {
                 render: v => ld_badgeType(v) },
             { data: 'date_creation',   title: 'Créée le', width: '90px',
                 render: ld_fmtDate },
-            { data: 'nb_lignes',       title: 'Lignes',   width: '65px',  className: 'dt-center',
+            { data: 'nb_lignes',       title: 'Lignes',   width: '65px', className: 'dt-center',
                 render: v => `<span class="ld-nb">${v || 0}</span>` },
             { data: 'statut',          title: 'Statut',   width: '115px',
                 render: ld_badgeStatut },
             { data: null, title: 'Actions', orderable: false, searchable: false, width: '155px',
                 render: (d, t, row) => ld_getActions(row) },
         ],
+        // la table n'est rendue visible qu'une fois le DOM DataTables construit
+        initComplete: function () {
+            document.documentElement.classList.remove('ld-booting');
+            document.getElementById('ld-table')?.classList.add('ld-ready');
+        }
     });
 }
 
@@ -211,7 +250,11 @@ function ld_getActions(row) {
 
 // ─── Charger la liste ─────────────────────────────────────────────────────────
 async function ld_loadListe() {
-    ld_showLoader('Chargement des demandes…');
+    // 1er chargement : AUCUN overlay — la page est visible et la table se
+    // remplit toute seule. Les rechargements suivants (bouton Actualiser,
+    // après suppression) gardent le loader habituel.
+    if (!ld_firstLoad) ld_showLoader('Chargement des demandes…');
+
     try {
         const d = await ld_post(ld_api.liste);
         ld_hideLoader();
@@ -232,7 +275,10 @@ async function ld_loadListe() {
         setEl('ld-count-paiement', rows.filter(r => r.type_demande === 'demande_paiement').length);
     } catch (err) {
         ld_hideLoader();
+        ld_revealPage();   // l'alerte doit être visible même si la page est encore masquée
         Swal.fire('Erreur', 'Erreur réseau : ' + err.message, 'error');
+    } finally {
+        ld_firstLoad = false;
     }
 }
 
@@ -297,7 +343,7 @@ async function ld_creerEtRediriger() {
         return;
     }
 
-    const opt        = selBudget.options[selBudget.selectedIndex];
+    const opt         = selBudget.options[selBudget.selectedIndex];
     const budgetToken = opt.dataset.token;
     const typeDemande = selType.value;
     const budgetLabel = opt.textContent;
@@ -311,10 +357,10 @@ async function ld_creerEtRediriger() {
                         Vous pourrez ajouter les lignes budgétaires sur la page suivante.
                     </p>
                 </div>`,
-        icon            : 'question',
-        showCancelButton : true,
-        confirmButtonText: 'Créer et ajouter des lignes →',
-        cancelButtonText : 'Annuler',
+        icon              : 'question',
+        showCancelButton  : true,
+        confirmButtonText : 'Créer et ajouter des lignes →',
+        cancelButtonText  : 'Annuler',
         confirmButtonColor: '#1a7a5e',
     });
     if (!conf.isConfirmed) return;
@@ -535,7 +581,7 @@ async function ld_voirSuiviComplet(id) {
                     <h4 style="font-size:.8rem;font-weight:800;color:#111827;margin:1rem 0 .4rem;">Lignes de la demande</h4>
                     ${lignesHtml}
                </div>`,
-        confirmButtonText: 'Fermer',
+        confirmButtonText : 'Fermer',
         confirmButtonColor: '#1a7a5e',
     });
 }
@@ -548,10 +594,10 @@ async function ld_supprimer(id) {
                     La demande <strong>#${id}</strong> sera supprimée.<br>
                     <small style="color:#9ca3af">Seules les demandes "En création" sans lignes actives peuvent être supprimées.</small>
                 </p>`,
-        icon            : 'warning',
-        showCancelButton : true,
-        confirmButtonText: 'Oui, supprimer',
-        cancelButtonText : 'Annuler',
+        icon              : 'warning',
+        showCancelButton  : true,
+        confirmButtonText : 'Oui, supprimer',
+        cancelButtonText  : 'Annuler',
         confirmButtonColor: '#ef4444',
     });
     if (!c.isConfirmed) return;
@@ -561,7 +607,7 @@ async function ld_supprimer(id) {
     ld_hideLoader();
 
     if (!d?.success) { Swal.fire('Erreur', d?.message || 'Erreur.', 'error'); return; }
-    await Swal.fire({ icon:'success', title:'Supprimée', text:d.message, timer:1500, showConfirmButton:false });
+    await Swal.fire({ icon: 'success', title: 'Supprimée', text: d.message, timer: 1500, showConfirmButton: false });
     ld_loadListe();
 }
 
@@ -577,8 +623,25 @@ function ld_bindEvents() {
 }
 
 // ─── Init ─────────────────────────────────────────────────────────────────────
+// 1) DOM prêt : on construit la table (encore invisible) et on branche les events
 document.addEventListener('DOMContentLoaded', () => {
     ld_initTable();
-    ld_loadListe();
     ld_bindEvents();
+});
+
+// 2) Page COMPLÈTEMENT chargée (CSS externes, polices, images, bundles) :
+//    → on AFFICHE la page tout de suite, normalement (table vide mais stylée)
+//    → puis on charge les données, qui remplissent la table sans décalage.
+window.addEventListener('load', () => {
+    ld_revealPage();
+    ld_loadListe();
+});
+
+// 3) Redessine la table si la fenêtre change de taille (colonnes DataTables)
+let ld_resizeT = null;
+window.addEventListener('resize', () => {
+    clearTimeout(ld_resizeT);
+    ld_resizeT = setTimeout(() => {
+        if (ld_table) { try { ld_table.columns.adjust(); } catch (e) {} }
+    }, 200);
 });

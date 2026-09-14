@@ -134,8 +134,8 @@ header('Content-Type: application/json; charset=utf-8');
 // considéré comme "Cas 2" (Chèque/Virement/etc. — Banque + Numéro requis).
 define('MODES_SOLDE_JOURNALIER', [1, 4, 5]); // Liquide, Wave, Orange Money
 
-define('UPLOAD_DIR_RECUS_PAIEMENT', __DIR__ . '/../../documents/commandes'); // ← ajuster
-define('UPLOAD_URL_RECUS_PAIEMENT', '/personnel/basi/documents');
+define('UPLOAD_DIR_RECUS_PAIEMENT', __DIR__ . '/../../documents/preuve_paiement'); // ← ajuster
+define('UPLOAD_URL_RECUS_PAIEMENT', '/personnel/basi/documents/preuve_paiement');
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MODULE — Profil Caissier
@@ -878,6 +878,79 @@ function statsJourPaiement(PDO $bdBASI): void {
     }
 }
 
+function listerPaiements(PDO $bdBASI, caisseController $basiController,$sessionUserId): void {
+    try {
+        $dateFin = trim((string) inputValueCaisse('dateFin', ''));
+        if ($dateFin === '') $dateFin = date('Y-m-d');
+
+        $dateDebut = trim((string) inputValueCaisse('dateDebut', ''));
+
+        // Garde-fou serveur : Date de début ne doit jamais dépasser Date de fin.
+        if ($dateDebut !== '' && $dateDebut > $dateFin) {
+            [$dateDebut, $dateFin] = [$dateFin, $dateDebut];
+        }
+
+        $sql = "
+            SELECT
+                pp.id, pp.idPAP, pp.montant, pp.mode_reglement, pp.banque, pp.numero_cheque_virement,
+                pp.recu, pp.id_tranche, pp.date_paiement, pp.idCaissier,
+                CONCAT(uc.prenom, ' ', uc.nom) AS caissier,
+                p.id AS numeroPAP, p.nom_commande, p.idTypePAP,
+                mr.mode_reglement AS mode_reglement_nom
+            FROM paiement_pap pp
+            JOIN passer_achat_et_paiement p ON pp.idPAP = p.id
+            JOIN utilisateurs uc ON pp.idCaissier = uc.id
+            LEFT JOIN mode_reglement mr ON pp.mode_reglement = mr.id
+            WHERE uc.id = ?
+        ";
+        $params = [];
+        $params [] = $sessionUserId;
+
+        if ($dateDebut !== '') {
+            $sql .= " AND DATE(pp.date_paiement) BETWEEN ? AND ?";
+            $params[] = $dateDebut;
+            $params[] = $dateFin;
+        } else {
+            $sql .= " AND DATE(pp.date_paiement) = ?";
+            $params[] = $dateFin;
+        }
+
+        // Tous les paiements sont toujours affichés, quel que soit l'état de
+        // l'arrêt de caisse — seule la MODIFICATION est bloquée (cf. le flag
+        // `modifiable`, calculé ci-dessous à partir de arreteCaisseExiste()).
+        $sql .= " ORDER BY pp.date_paiement DESC";
+
+        $stmt = $bdBASI->prepare($sql);
+        if (!$stmt) throw new \RuntimeException('Requête de liste des paiements échouée.');
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $montantTotal = 0.0;
+        foreach ($rows as &$r) {
+            $r['tmp'] = $basiController->tokenencrypt($r['id']);
+            $montantTotal += (float) $r['montant'];
+
+            $dateDuPaiement = date('Y-m-d', strtotime($r['date_paiement']));
+            $r['modifiable'] = (
+                (float) $r['montant'] > 0
+                && !arreteCaisseExiste($bdBASI, (int) $r['idCaissier'], $dateDuPaiement)
+            );
+        }
+        unset($r);
+
+        echo json_encode([
+            'status'         => 'success',
+            'data'           => $rows,
+            'nombre_total'   => count($rows),
+            'montant_total'  => $montantTotal,
+        ]);
+    } catch (\Throwable $e) {
+        error_log('[Caisse][listerPaiements] ' . $e->getMessage());
+        erreurSqlCaisse('Impossible de charger la liste des paiements.');
+    }
+}
+
+
 /* ═══════════════════════════════════════════════════════════════════════════
    ROUTAGE
    1 = listerAlimentationsCaissier (les alimentations du caissier connecté)
@@ -923,6 +996,10 @@ try {
 
         case 8:
             statsJourPaiement($bdBASI);
+            break;
+        case 9 :
+
+            listerPaiements($bdBASI, $basiController,$sessionUserId);
             break;
 
         default:

@@ -15,6 +15,8 @@ if (empty($budgetToken)) { header('Location: /personnel/comptable-accueil'); exi
     <link href="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
     <link href="/personnel/ressources/dist_assets/css/style_basi_14.css" rel="stylesheet" type="text/css"/>
+    <script>document.documentElement.classList.add('ld-booting');</script>
+
 
 </head>
 <body id="kt_body" class="header-fixed header-tablet-and-mobile-fixed toolbar-enabled toolbar-fixed aside-enabled aside-fixed" style="--kt-toolbar-height:55px;--kt-toolbar-height-tablet-and-mobile:55px">
@@ -325,6 +327,14 @@ if (empty($budgetToken)) { header('Location: /personnel/comptable-accueil'); exi
         </div>
     </div>
 </div>
+
+
+
+
+
+<noscript>
+    <style>html.ld-booting body > .d-flex.flex-column.flex-root { visibility: visible !important; }</style>
+</noscript>
 
 <!-- Scripts Metronic -->
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>

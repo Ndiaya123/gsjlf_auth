@@ -22,6 +22,9 @@ header("Expires: 0");
           type="text/css"/>
     <link href="/personnel/ressources/dist_assets/css/style_basi_8.css" rel="stylesheet" type="text/css"/>
 
+    <script>document.documentElement.classList.add('ld-booting');</script>
+
+</head>
 
 <body id="kt_body"
       class="header-fixed header-tablet-and-mobile-fixed toolbar-enabled toolbar-fixed aside-enabled aside-fixed"
@@ -59,13 +62,6 @@ header("Expires: 0");
                      data-kt-scroll-wrappers="#kt_aside_menu" data-kt-scroll-offset="0">
                     <div class="menu menu-column menu-title-gray-800 menu-state-title-primary menu-state-icon-primary menu-state-bullet-primary menu-arrow-gray-500"
                          id="kt_aside_menu" data-kt-menu="true" >
-
-
-
-
-
-
-
                     </div>
                 </div>
             </div>
@@ -149,11 +145,6 @@ header("Expires: 0");
                                         <div class="menu-item px-5">
                                             <div class="menu-content px-5">
                                                 <label class="form-check form-switch form-check-custom form-check-solid pulse pulse-success" for="kt_user_menu_dark_mode_toggle">
-                                                    <!--                                                    <a href="/personnel/quitter">-->
-                                                    <!--                                                        <input class="form-check-input w-30px h-20px" checked="checked" type="checkbox" value="1" name="mode" id="kt_user_menu_dark_mode_toggle" data-kt-url="/personnel/quitter" />-->
-                                                    <!--                                                        <span class="pulse-ring ms-n1"></span>-->
-                                                    <!--                                                        <span class="form-check-label text-gray-600 fs-7">se déconnecter</span>-->
-                                                    <!--                                                    </a>-->
                                                     <div class="menu-item px-5">
                                                         <div class="menu-content px-5">
                                                             <label class="form-check form-switch form-check-custom form-check-solid pulse pulse-success" for="kt_user_menu_dark_mode_toggle">
@@ -205,79 +196,65 @@ header("Expires: 0");
                 <div class="post d-flex flex-column-fluid" id="kt_post">
                     <div id="kt_content_container" class="container-xxl">
 
-                        <div class="row">
+                        <!-- ══ BANDEAU TITRE ══ -->
+                        <div class="dga-hero">
+                            <div class="dga-hero-title">
+                                <h1>
+                                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/>
+                                    </svg>
+                                    Gestion des rubriques
+                                </h1>
+                                <p>Créez et gérez les rubriques budgétaires</p>
+                            </div>
+                            <a href="#" class="dga-btn-primary" data-bs-toggle="modal" data-bs-target="#kt_modal_new_rubrique">
+                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                Nouvelle rubrique
+                            </a>
+                        </div>
 
-
-                            <div class="col-sm-12">
-                                <div class="card card-xl-stretch mb-5 mb-xl-8">
-                                    <div class="card-body py-3">
-                                        <div class="d-flex flex-stack mb-5">
-                                            <div class="d-flex align-items-center position-relative my-1">
-                                                    <span class="svg-icon svg-icon-1 position-absolute ms-6">
-                                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                             viewBox="0 0 24 24" fill="none">
-                                                            <rect opacity="0.5" x="17.0365" y="15.1223" width="8.15546"
-                                                                  height="2" rx="1"
-                                                                  transform="rotate(45 17.0365 15.1223)"
-                                                                  fill="black"/>
-                                                            <path
-                                                                    d="M11 19C6.55556 19 3 15.4444 3 11C3 6.55556 6.55556 3 11 3C15.4444 3 19 6.55556 19 11C19 15.4444 15.4444 19 11 19ZM11 5C7.53333 5 5 7.53333 5 11C5 14.4667 7.53333 17 11 17C14.4667 17 17 14.4667 17 11C17 7.53333 14.4667 5 11 5Z"
-                                                                    fill="black"/>
-                                                        </svg>
-                                                    </span>
-                                                <input type="text" data-kt-docs-table-filter="search"
-                                                       class="form-control form-control-solid w-250px ps-15"
-                                                       placeholder="Rechercher"/>
-                                            </div>
-
-                                            <div class="d-flex justify-content-end"
-                                                 data-kt-docs-table-toolbar="base">
-
-                                                <a href="#" class="btn btn-primary er fs-6 px-8 py-4"
-                                                   data-bs-toggle="modal" data-bs-target="#kt_modal_new_rubrique">Ajouter</a>
-
-
-                                            </div>
-                                            <div class="d-flex justify-content-end align-items-center d-none"
-                                                 data-kt-docs-table-toolbar="selected">
-                                                <div class="fw-bolder me-5">
-                                                        <span class="me-2"
-                                                              data-kt-docs-table-select="selected_count"></span>Selected
-                                                </div>
-                                                <button type="button" class="btn btn-danger"
-                                                        data-kt-docs-table-select="delete_selected">Selection
-                                                    Action
-                                                </button>
-                                            </div>
-                                        </div>
-                                        <div class="table-responsive">
-                                            <table
-                                                    class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4"
-                                                    id="table_rubrique">
-                                                <thead>
-                                                <tr class="fw-bolder text-muted">
-                                                    <th class="min-w-120px">N°</th>
-                                                    <th class="min-w-200px">Nom</th>
-                                                    <th class="min-w-150px">Date de création</th>
-                                                    <th class="min-w-150px">Créateur</th>
-                                                    <th class="min-w-100px">Action</th>
-                                                </tr>
-                                                </thead>
-                                                <tbody>
-
-
-                                                </tbody>
-
-                                            </table>
-                                        </div>
+                        <!-- ══ CARTE LISTE ══ -->
+                        <div class="dga-card">
+                            <div class="dga-card-head">
+                                <span class="dga-card-title">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                                        <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+                                    </svg>
+                                    Rubriques
+                                </span>
+                                <div class="dga-search">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                        <circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/>
+                                    </svg>
+                                    <input type="text" data-kt-docs-table-filter="search" placeholder="Rechercher"/>
+                                </div>
+                                <div class="d-flex justify-content-end align-items-center d-none" data-kt-docs-table-toolbar="selected">
+                                    <div class="fw-bolder me-5">
+                                        <span class="me-2" data-kt-docs-table-select="selected_count"></span>Selected
                                     </div>
+                                    <button type="button" class="btn btn-danger" data-kt-docs-table-select="delete_selected">Selection Action</button>
                                 </div>
                             </div>
 
-
+                            <div class="dga-table-wrap">
+                                <div class="table-responsive">
+                                    <table class="table table-row-dashed table-row-gray-300 align-middle gs-0 gy-4 dga-table" id="table_rubrique">
+                                        <thead>
+                                        <tr class="fw-bolder text-muted">
+                                            <th class="min-w-120px">N°</th>
+                                            <th class="min-w-200px">Nom</th>
+                                            <th class="min-w-150px">Date de création</th>
+                                            <th class="min-w-150px">Créateur</th>
+                                            <th class="min-w-100px">Action</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody>
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
                         </div>
-
-
 
                     </div>
 
@@ -314,44 +291,35 @@ header("Expires: 0");
 </div>
 
 <!--begin::Modal - New Card-->
-<div class="modal fade" id="kt_modal_new_rubrique" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered mw-650px">
+<div class="modal fade dga-modal" id="kt_modal_new_rubrique" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Ajouter une rubrique</h2>
+                <h2>Nouvelle rubrique</h2>
                 <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal"
                      onclick="closeRubrique()">
                     <span class="svg-icon svg-icon-1">
-														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                             viewBox="0 0 24 24" fill="none">
-															<rect opacity="0.5" x="6" y="17.3137" width="16" height="2"
-                                                                  rx="1" transform="rotate(-45 6 17.3137)"
-                                                                  fill="black"/>
-															<rect x="7.41422" y="6" width="16" height="2" rx="1"
-                                                                  transform="rotate(45 7.41422 6)" fill="black"/>
-														</svg>
-													</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black"/>
+                            <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black"/>
+                        </svg>
+                    </span>
                 </div>
             </div>
-            <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+            <div class="modal-body">
                 <form id="formRubrique" class="form" action="#">
                     <input type="hidden" name="option" value="2"/>
-                    <div class="d-flex flex-column mb-7 fv-row">
-                        <label class="d-flex align-items-center fs-6 fw-bold form-label mb-2">
-                            <span class="required">Nom</span>
-                            <i class="fas fa-exclamation-circle ms-2 fs-7" data-bs-toggle="tooltip"
-                               title="Le nom de la rubrique doit être unique."></i>
-                        </label>
-                        <input type="text" class="form-control form-control-solid" placeholder="" name="nom_rubrique"
-                               id="nom_rubrique" value=""/>
+                    <div class="dga-field fv-row">
+                        <label>Nom <i class="fas fa-exclamation-circle ms-1 fs-7" data-bs-toggle="tooltip" title="Le nom de la rubrique doit être unique."></i></label>
+                        <input type="text" class="dga-inp form-control" placeholder="" name="nom_rubrique" id="nom_rubrique" value=""/>
                     </div>
 
-                    <div class="text-center pt-15">
-                        <button type="reset" class="btn btn-light me-3" onclick="closeRubrique()">Annuler</button>
-                        <button type="submit" id="formRubrique_submit" class="btn btn-primary">
+                    <div class="dga-actions" style="padding:0;border-top:none;background:transparent;margin-top:1rem;">
+                        <button type="reset" class="dga-cancel" onclick="closeRubrique()">Annuler</button>
+                        <button type="submit" id="formRubrique_submit" class="dga-submit">
                             <span class="indicator-label">Ajouter</span>
                             <span class="indicator-progress">Veuillez patienter...
-															<span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                                <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
                         </button>
                     </div>
                 </form>
@@ -363,47 +331,38 @@ header("Expires: 0");
 
 <!--editer-->
 
-<div class="modal fade" id="kt_modal_update_rubrique" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered mw-650px">
+<div class="modal fade dga-modal" id="kt_modal_update_rubrique" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Modifier une rubrique</h2>
+                <h2>Modifier la rubrique</h2>
                 <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal"
                      onclick="closeRubriqueUpdate()">
                     <span class="svg-icon svg-icon-1">
-														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                             viewBox="0 0 24 24" fill="none">
-															<rect opacity="0.5" x="6" y="17.3137" width="16" height="2"
-                                                                  rx="1" transform="rotate(-45 6 17.3137)"
-                                                                  fill="black"/>
-															<rect x="7.41422" y="6" width="16" height="2" rx="1"
-                                                                  transform="rotate(45 7.41422 6)" fill="black"/>
-														</svg>
-													</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black"/>
+                            <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black"/>
+                        </svg>
+                    </span>
                 </div>
             </div>
-            <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+            <div class="modal-body">
                 <form id="formRubriqueUpdate" class="form" action="#">
                     <input type="hidden" name="option" value="3"/>
                     <input type="hidden" name="tmp" id="tmp" value=""/>
                     <input type="hidden" name="original_nom" id="original_nom" value=""/>
 
-                    <div class="d-flex flex-column mb-7 fv-row">
-                        <label class="d-flex align-items-center fs-6 fw-bold form-label mb-2">
-                            <span class="required">Nom</span>
-                            <i class="fas fa-exclamation-circle ms-2 fs-7" data-bs-toggle="tooltip"
-                               title="Le nom de la rubrique doit être unique."></i>
-                        </label>
-                        <input type="text" class="form-control form-control-solid" placeholder="" name="nom_rubrique_up"
-                               id="nom_rubrique_up" value=""/>
+                    <div class="dga-field fv-row">
+                        <label>Nom <i class="fas fa-exclamation-circle ms-1 fs-7" data-bs-toggle="tooltip" title="Le nom de la rubrique doit être unique."></i></label>
+                        <input type="text" class="dga-inp form-control" placeholder="" name="nom_rubrique_up" id="nom_rubrique_up" value=""/>
                     </div>
 
-                    <div class="text-center pt-15">
-                        <button type="reset" class="btn btn-light me-3" onclick="closeRubriqueUpdate()">Annuler</button>
-                        <button type="submit" id="formRubriqueUpdate_submit" class="btn btn-primary">
+                    <div class="dga-actions" style="padding:0;border-top:none;background:transparent;margin-top:1rem;">
+                        <button type="reset" class="dga-cancel" onclick="closeRubriqueUpdate()">Annuler</button>
+                        <button type="submit" id="formRubriqueUpdate_submit" class="dga-submit">
                             <span class="indicator-label">Modifier</span>
                             <span class="indicator-progress">Veuillez patienter...
-															<span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                                <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
                         </button>
                     </div>
                 </form>
@@ -413,7 +372,9 @@ header("Expires: 0");
 </div>
 
 
-
+<noscript>
+    <style>html.ld-booting body > .d-flex.flex-column.flex-root { visibility: visible !important; }</style>
+</noscript>
 
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/js/scripts.bundle.js"></script>

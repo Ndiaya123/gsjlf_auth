@@ -1,7 +1,9 @@
 <?php
 // require('fpdf.php');
 use setasign\Fpdi\Fpdi;
-require_once('../../finance/FPDI/src/autoload.php');
+//require_once('../../finance/FPDI/src/autoload.php');
+require_once('../../includes/FPDI/src/autoload.php');
+
 
 class PDF_MC_Table extends FPDI
 {

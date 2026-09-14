@@ -87,6 +87,12 @@ function vd_renderTable(lignes) {
         order: [[1, 'desc']],
         language: vd_dataTableLangFr(),
         drawCallback: () => vd_reappliquerSelection('vd-table-paiement'),
+        initComplete: function () {
+
+            document.documentElement.classList.remove('ld-booting');
+            document.getElementById('lb-table')?.classList.add('lb-ready');
+
+        }
     });
 
     $('#vd-table-paiement tbody').off('change', '.vd-row-check').on('change', '.vd-row-check', vd_onRowCheckChange);

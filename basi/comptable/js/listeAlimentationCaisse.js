@@ -166,6 +166,12 @@ function dga_renderTable(alimentations) {
             infoEmpty: 'Aucune entrée',
             paginate: { previous: 'Précédent', next: 'Suivant' },
         },
+        initComplete: function () {
+
+            document.documentElement.classList.remove('ld-booting');
+            document.getElementById('lb-table')?.classList.add('lb-ready');
+
+        }
     });
 }
 

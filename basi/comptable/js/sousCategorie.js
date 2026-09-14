@@ -1,5 +1,4 @@
 // ─── LOADER ───────────────────────────────────────────────────────────────────
-
 function showLoader(message) {
     message = message || 'Chargement en cours…';
     $('#global-loader').remove();
@@ -100,46 +99,60 @@ var KTDatatablesServerSide = function () {
             ],
             columnDefs: [
                 {
+                    // N° — discret, aligné au centre
                     targets: 0,
                     orderable: false,
-                    className: 'fw-bolder text-muted text-center',
-                    render: function (data) { return data; }
+                    className: 'text-center',
+                    render: function (data) {
+                        return '<span style="color:#9ca3af;font-weight:700;">' + data + '</span>';
+                    }
                 },
                 {
+                    // Nom — mis en avant, c'est l'information principale
                     targets: 1,
                     orderable: false,
-                    className: 'fw-bolder text-muted text-center',
-                    render: function (data) { return data; }
+                    className: 'text-center',
+                    render: function (data) {
+                        return '<span style="color:#111827;font-weight:700;">' + data + '</span>';
+                    }
                 },
                 {
+                    // Catégorie parente
                     targets: 2,
                     orderable: false,
-                    className: 'fw-bolder text-muted text-center',
-                    render: function (data) { return data; }
-                },  {
+                    className: 'text-center',
+                    render: function (data) {
+                        return '<span style="">' + data + '</span>';
+                    }
+                },
+                {
                     targets: 3,
                     orderable: false,
-                    className: 'fw-bolder text-muted text-center',
-                    render: function (data) { return data; }
+                    className: 'text-center',
+                    render: function (data) {
+                        return '<span style="">' + data + '</span>';
+                    }
                 },
                 {
                     targets: 4,
                     orderable: false,
-                    className: 'fw-bolder text-muted text-center',
-                    render: function (data) { return data; }
+                    className: 'text-center',
+                    render: function (data) {
+                        return '<span style="">' + data + '</span>';
+                    }
                 },
                 {
                     targets: -1,
                     orderable: false,
-                    className: 'fw-bolder text-muted text-cente w-150pxr',
+                    className: 'text-center w-150px',
                     render: function (data, type, row) {
                         if (row.subrub_count > 0) {
-                            return `<span class="badge bg-secondary text-white" title="Modification/Suppression désactivé car liée à une ou plusieurs sous-categories">
-                                        <i class="bi bi-lock-fill"></i> Verrouillée
-                                    </span>`;
+                            return '<span class="dga-badge-locked" title="Modification/Suppression désactivé car liée à une ou plusieurs sous-categories">' +
+                                '<i class="bi bi-lock-fill"></i> Verrouillée' +
+                                '</span>';
                         } else {
-                            let section_btn = `<button class="btn btn-sm btn-warning btn-edit" onclick="modifierSouscategorie('${row.tmp}', '${row.nom_sous_categorie.replace(/'/g, "\\'")}', '${row.categorie}')">Modifier</button>`;
-                            section_btn += ` <button class="btn btn-sm btn-danger btn-delete" onclick="deletecategorie('${row.tmp}', '${row.nom_sous_categorie.replace(/'/g, "\\'")}')">Supprimer</button>`;
+                            let section_btn = `<button class="dga-btn-modifier btn-edit" onclick="modifierSouscategorie('${row.tmp}', '${row.nom_sous_categorie.replace(/'/g, "\\'")}', '${row.categorie}')">Modifier</button>`;
+                            section_btn += ` <button class="dga-btn-supprimer btn-delete" onclick="deletecategorie('${row.tmp}', '${row.nom_sous_categorie.replace(/'/g, "\\'")}')">Supprimer</button>`;
                             return section_btn;
                         }
                     }
@@ -147,6 +160,12 @@ var KTDatatablesServerSide = function () {
             ],
             ordering: false,
             initComplete: function () {
+
+
+                    document.documentElement.classList.remove('ld-booting');
+                    document.getElementById('lb-table')?.classList.add('lb-ready');
+
+
                 hideLoader();
             }
         });
@@ -241,11 +260,6 @@ submitButton1.addEventListener('click', function (e) {
                     url: "/personnel/cpt_basi_controller",
                     data: form_data,
                     success: function (resp) {
-
-                       // var  resp = (resp || '').trim();
-
-
-                        console.log(resp);
 
                         if (resp === "sessionExpired") {
 
@@ -361,19 +375,13 @@ function closeSouscategorie() {
 
 // ─── MODIFIER categorie ────────────────────────────────────────────────────────
 
-function modifierSouscategorie(e1, e2,e3) {
-
-    alert(e3);
-    // ✅ CORRIGÉ : suppression des alert(e1) et alert(e2) de debug
+function modifierSouscategorie(e1, e2, e3) {
     document.getElementById("tmp").value = e1;
     document.getElementById("nom_sous_categorie_up").value = e2;
-    // ✅ AJOUTÉ : on stocke le nom original pour la comparaison côté serveur
     document.getElementById("original_nom").value = e2;
     $('#categorie_up').val(e3).trigger('change');
 
     $("#kt_modal_update_categorie").modal('show');
-
-
 }
 
 
@@ -554,7 +562,6 @@ submitButton2.addEventListener('click', function (e) {
 
 
 function videSouscategorieUpdate() {
-    // ✅ CORRIGÉ : vide le bon champ "nom_sous_categorie_up" et non "nom_sous_categorie"
     document.getElementById("nom_sous_categorie_up").value = "";
     document.getElementById("original_nom").value = "";
     $('#categorie_up').val('').trigger('change');
@@ -571,7 +578,6 @@ function closeSouscategorieUpdate() {
 // ─── SUPPRIMER categorie ───────────────────────────────────────────────────────
 
 function deletecategorie(e1, e2) {
-    // ✅ AJOUTÉ : confirmation avant suppression
     Swal.fire({
         title: 'Confirmer la suppression',
         text: `Voulez-vous vraiment supprimer la categorie "${e2}" ? Cette action est irréversible.`,
@@ -590,9 +596,6 @@ function deletecategorie(e1, e2) {
                 url: "/personnel/cpt_basi_controller",
                 data: { option: 9, e1: e1, e2: e2 },
                 success: function (resp) {
-
-                    console.log("suppriper "+resp);
-                    // ✅ CORRIGÉ : suppression du alert(resp) de debug
                     hideLoader();
 
                     if (resp === "sessionExpired") {
@@ -623,7 +626,6 @@ function deletecategorie(e1, e2) {
                             confirmButtonText: 'OK',
                             confirmButtonColor: '#113B26'
                         }).then(function () {
-                            // ✅ CORRIGÉ : pas de référence à submitButton2 ici, simple reload
                             KTDatatablesServerSide.reload();
                         });
 

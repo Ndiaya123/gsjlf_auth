@@ -148,6 +148,10 @@ function ld_initTable() {
             { data: null, title: 'Actions', orderable: false, searchable: false, width: '155px',
                 render: (d, t, row) => ld_getActions(row) },
         ],
+        initComplete: function () {
+            document.documentElement.classList.remove('ld-booting');
+            document.getElementById('ld-table')?.classList.add('ld-ready');
+        }
     });
 }
 

@@ -111,3 +111,26 @@ table.dga-table-lignes tbody td{padding:.55rem .75rem;border-bottom:1px solid #f
     box-shadow: 0 0 0 3px rgba(26,122,94,.1) !important;
 }
 
+
+/* ── 1. ANTI-FOUC : page masquée tant que le CSS n'est pas appliqué ───── */
+html.ld-booting body > .d-flex.flex-column.flex-root { visibility: hidden !important; }
+
+/* ── 2. FOOTER COLLÉ EN BAS : il ne remonte plus, il ne saute plus ───── */
+html, body                    { height: 100%; }
+.d-flex.flex-column.flex-root { min-height: 100vh; }
+.page                         { min-height: 100vh; }
+#kt_wrapper { min-height: 100vh; display: flex; flex-direction: column; }
+#kt_content { flex: 1 0 auto; }                     /* prend la place dispo */
+#kt_footer  { flex: 0 0 auto; margin-top: auto; }   /* poussé tout en bas  */
+
+/* ── 3. HAUTEURS RÉSERVÉES : la zone table ne change plus de hauteur ───
+       (mesure .bud-card avec une liste pleine et ajuste ces valeurs)      */
+/*#kt_content_container { min-height: 640px; }*/
+/*.bud-card             { min-height: 430px; }*/
+/*#ld-table_wrapper     { min-height: 400px; }*/
+/*.ld-stat__val         { min-height: 1.6em; }        !* évite le saut 0->128 *!*/
+
+/* ── 4. La table brute (th/td non stylés) reste invisible
+       jusqu'à l'initialisation de DataTables ─────────────────────────── */
+#ld-table          { visibility: hidden; }
+#ld-table.ld-ready { visibility: visible; }

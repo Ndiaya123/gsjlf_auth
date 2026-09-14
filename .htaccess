@@ -281,6 +281,8 @@ RewriteRule ^basi-scripts.bundle.24.js$ basi/caisse/js/listeAlimentationCaisse.j
 RewriteRule ^caisse_basi_paiement$ basi/caisse/paiement.php [L]
 RewriteRule ^basi-scripts.bundle.25.js$ basi/caisse/js/paiement.js [L]
 RewriteRule ^basi_arrete-caisse$ basi/caisse/arrete_caisse.php [L]
+RewriteRule ^caisse_basi_liste_des_paiements$ basi/caisse/listePaiements.php [L]
+RewriteRule ^basi-scripts.bundle.36.js$ basi/comptable/js/listePaiements.js [L]
 
 #basi personnel
 

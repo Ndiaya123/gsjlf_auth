@@ -320,6 +320,12 @@ function al_renderTableBudget(lignes, existantes) {
                 },
             },
         ],
+        initComplete: function () {
+
+            document.documentElement.classList.remove('ld-booting');
+            document.getElementById('lb-table')?.classList.add('lb-ready');
+
+        },
         rowCallback(row, data) {
             // Grisé si la ligne (Produit ou Autre) est épuisée
             if (al_estEpuisee(data)) {

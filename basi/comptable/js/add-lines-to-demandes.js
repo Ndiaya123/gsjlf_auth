@@ -326,6 +326,12 @@ function al_renderTableBudget(lignes, existantes) {
                 $(row).addClass('al-row-epuise');
             }
         },
+        initComplete: function () {
+
+            document.documentElement.classList.remove('ld-booting');
+            document.getElementById('lb-table')?.classList.add('lb-ready');
+
+        }
     });
 }
 

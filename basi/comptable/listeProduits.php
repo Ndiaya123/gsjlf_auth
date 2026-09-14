@@ -13,6 +13,9 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
     <link href="/personnel/ressources/dist_assets/css/style_basi_20.css" rel="stylesheet" type="text/css"/>
 
+    <script>document.documentElement.classList.add('ld-booting');</script>
+
+
 </head>
 <body id="kt_body" class="header-fixed header-tablet-and-mobile-fixed toolbar-enabled toolbar-fixed aside-enabled aside-fixed" style="--kt-toolbar-height:55px;--kt-toolbar-height-tablet-and-mobile:55px">
 <div class="d-flex flex-column flex-root"><div class="page d-flex flex-row flex-column-fluid">
@@ -294,6 +297,12 @@
 
 <!-- Dropdown notifications (positionné dynamiquement par le JS au clic sur la cloche) -->
 <ul id="cp-notif-list" style="display:none;position:absolute;list-style:none;margin:0;padding:.5rem 0;background:#fff;border-radius:12px;box-shadow:0 12px 32px rgba(0,0,0,.15);min-width:300px;z-index:9999;border:1px solid #e9ecef;"></ul>
+
+
+<noscript>
+    <style>html.ld-booting body > .d-flex.flex-column.flex-root { visibility: visible !important; }</style>
+</noscript>
+
 
 <!-- Scripts Metronic -->
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>

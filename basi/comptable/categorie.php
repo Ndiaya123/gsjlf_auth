@@ -15,65 +15,8 @@
           type="text/css"/>
     <link href="/personnel/ressources/dist_assets/css/style_basi_12.css" rel="stylesheet" type="text/css"/>
 
-    <style>
-        body{background:#f5f8fa;font-family:'Poppins',sans-serif;}
+    <script>document.documentElement.classList.add('ld-booting');</script>
 
-        .dga-hero{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
-        .dga-hero-title h1{font-size:1.35rem;font-weight:800;color:#111827;margin:0;display:flex;align-items:center;gap:.55rem}
-        .dga-hero-title h1 svg{background:#d1fae5;color:#065f46;border-radius:9px;padding:.4rem;width:20px !important;height:20px !important;box-sizing:content-box}
-        .dga-hero-title p{font-size:.8rem;color:#9ca3af;margin:.2rem 0 0}
-
-        .dga-btn-primary{display:inline-flex !important;align-items:center !important;gap:.4rem !important;padding:.65rem 1.25rem !important;border-radius:10px !important;font-size:.85rem !important;font-weight:700 !important;background:#1a7a5e !important;color:#fff !important;border:none !important;cursor:pointer !important;transition:all .18s;text-decoration:none !important}
-        .dga-btn-primary:hover{background:#145f49 !important;transform:translateY(-1px);color:#fff !important}
-
-        .dga-stat-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;padding:1.15rem 1.3rem;display:flex;align-items:center;gap:1rem;position:relative;overflow:hidden;margin-bottom:1.25rem;max-width:320px}
-        .dga-stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#1a7a5e}
-        .dga-stat-icon{width:42px;height:42px;border-radius:12px;background:#d1fae5;color:#065f46;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .dga-stat-lbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;margin-bottom:.3rem}
-        .dga-stat-val{font-size:1.4rem;font-weight:900;color:#111827;font-variant-numeric:tabular-nums}
-
-        .dga-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden}
-        .dga-card-title{font-size:.88rem;font-weight:700;color:#111827;display:flex;align-items:center;gap:.45rem}
-        .dga-card-title svg{color:#1a7a5e}
-        .dga-card-head{padding:1rem 1.35rem;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
-
-        .dga-search{position:relative}
-        .dga-search svg{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:#9ca3af}
-        .dga-search input{border:1.5px solid #e5e7eb !important;border-radius:9px !important;padding:.55rem .9rem .55rem 2.4rem !important;font-size:.83rem !important;color:#374151 !important;min-width:230px;background:#fff !important;box-shadow:none !important}
-        .dga-search input:focus{outline:none;border-color:#1a7a5e !important;box-shadow:0 0 0 3px rgba(26,122,94,.1) !important}
-
-        .dga-table-wrap{padding:0 1.35rem 1.35rem}
-        table.dga-table{width:100%;border-collapse:collapse}
-        table.dga-table thead th{background:#f8f9fa;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#9ca3af;border-bottom:2px solid #e9ecef;padding:.85rem 1rem;text-align:left;white-space:nowrap}
-        table.dga-table tbody td{padding:.85rem 1rem;font-size:.875rem;color:#374151;border-bottom:1px solid #f9fafb;vertical-align:middle}
-        table.dga-table tbody tr:hover td{background:#f0fdf4}
-        table.dataTable{border-collapse:collapse !important;width:100% !important}
-        table.dataTable thead th{background:#f8f9fa !important;font-size:.7rem !important;font-weight:800 !important;text-transform:uppercase !important;letter-spacing:.07em !important;color:#9ca3af !important;border-bottom:2px solid #e9ecef !important;border-top:none !important;padding:.85rem 1rem !important;white-space:nowrap}
-        table.dataTable tbody td{padding:.85rem 1rem !important;font-size:.875rem !important;color:#374151 !important;border-bottom:1px solid #f9fafb !important;vertical-align:middle !important}
-        table.dataTable tbody tr:hover td{background:#f0fdf4 !important}
-        .dataTables_empty{padding:2.5rem !important;font-style:italic !important;color:#9ca3af !important}
-        .dataTables_paginate .paginate_button.current{background:#1a7a5e !important;color:#fff !important;border-color:#1a7a5e !important;border-radius:7px !important}
-
-        .dga-btn-modifier,.dga-btn-supprimer{display:inline-flex !important;align-items:center !important;gap:.35rem !important;padding:.4rem .8rem !important;border-radius:7px !important;font-size:.75rem !important;font-weight:700 !important;border:1.5px solid transparent !important;cursor:pointer !important;transition:all .18s;margin-right:.35rem}
-        .dga-btn-modifier:hover,.dga-btn-supprimer:hover{transform:translateY(-1px)}
-        .dga-btn-modifier{background:#ecfdf5 !important;color:#059669 !important;border-color:#d1fae5 !important}
-        .dga-btn-modifier:hover{background:#059669 !important;color:#fff !important}
-        .dga-btn-supprimer{background:#fef2f2 !important;color:#dc2626 !important;border-color:#fee2e2 !important}
-        .dga-btn-supprimer:hover{background:#dc2626 !important;color:#fff !important}
-
-        /* ── Modales (même gabarit que le reste du projet) ──────────────── */
-        .modal-content{border-radius:16px !important;border:none !important;box-shadow:0 24px 64px rgba(0,0,0,.18) !important;overflow:hidden}
-        .modal-header{background:linear-gradient(135deg,#064e3b,#1a7a5e) !important;border:none !important;padding:1.25rem 1.5rem !important}
-        .modal-header h2{color:#fff !important;font-size:1rem !important;font-weight:800 !important;margin:0 !important}
-        .modal-header .btn-icon .svg-icon svg path,.modal-header .btn-icon .svg-icon svg rect{fill:#fff !important}
-        .modal-body{padding:1.5rem !important}
-        .modal-body .form-label{font-size:.72rem !important;font-weight:700 !important;color:#6b7280 !important;text-transform:uppercase;letter-spacing:.04em}
-        .modal-body .form-control{border:1.5px solid #e5e7eb !important;border-radius:8px !important;padding:.6rem .9rem !important;font-size:.85rem !important}
-        .modal-body .form-control:focus{outline:none !important;border-color:#1a7a5e !important;box-shadow:0 0 0 3px rgba(26,122,94,.1) !important}
-        .modal-body .btn-primary{background:#1a7a5e !important;border-color:#1a7a5e !important;border-radius:9px !important;font-weight:700 !important;padding:.6rem 1.4rem !important}
-        .modal-body .btn-primary:hover{background:#145f49 !important;border-color:#145f49 !important}
-        .modal-body .btn-light{border-radius:9px !important;font-weight:600 !important;padding:.6rem 1.4rem !important}
-    </style>
 </head>
 
 <body id="kt_body"
@@ -263,17 +206,6 @@
                             </a>
                         </div>
 
-                        <!-- ══ STATISTIQUE ══ -->
-                        <div class="dga-stat-card">
-                            <div class="dga-stat-icon">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z"/></svg>
-                            </div>
-                            <div>
-                                <div class="dga-stat-lbl">Nombre total</div>
-                                <div class="dga-stat-val" id="dga-stat-nombre-categories">0</div>
-                            </div>
-                        </div>
-
                         <!-- ══ CARTE LISTE ══ -->
                         <div class="dga-card">
                             <div class="dga-card-head">
@@ -352,44 +284,36 @@
 </div>
 
 <!--begin::Modal - New Card-->
-<div class="modal fade" id="kt_modal_new_categorie" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered mw-650px">
+<!--begin::Modal - New Card-->
+<div class="modal fade dga-modal" id="kt_modal_new_categorie" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Ajouter une categorie</h2>
+                <h2>Nouvelle catégorie</h2>
                 <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal"
                      onclick="closecategorie()">
                     <span class="svg-icon svg-icon-1">
-														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                             viewBox="0 0 24 24" fill="none">
-															<rect opacity="0.5" x="6" y="17.3137" width="16" height="2"
-                                                                  rx="1" transform="rotate(-45 6 17.3137)"
-                                                                  fill="black"/>
-															<rect x="7.41422" y="6" width="16" height="2" rx="1"
-                                                                  transform="rotate(45 7.41422 6)" fill="black"/>
-														</svg>
-													</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black"/>
+                            <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black"/>
+                        </svg>
+                    </span>
                 </div>
             </div>
-            <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+            <div class="modal-body">
                 <form id="formcategorie" class="form" action="#">
                     <input type="hidden" name="option" value="2"/>
-                    <div class="d-flex flex-column mb-7 fv-row">
-                        <label class="d-flex align-items-center fs-6 fw-bold form-label mb-2">
-                            <span class="required">Nom</span>
-                            <i class="fas fa-exclamation-circle ms-2 fs-7" data-bs-toggle="tooltip"
-                               title="Le nom de la categorie doit être unique."></i>
-                        </label>
-                        <input type="text" class="form-control form-control-solid" placeholder="" name="nom_categorie"
-                               id="nom_categorie" value=""/>
+                    <div class="dga-field fv-row">
+                        <label>Nom <i class="fas fa-exclamation-circle ms-1 fs-7" data-bs-toggle="tooltip" title="Le nom de la categorie doit être unique."></i></label>
+                        <input type="text" class="dga-inp" placeholder="" name="nom_categorie" id="nom_categorie" value=""/>
                     </div>
 
-                    <div class="text-center pt-15">
-                        <button type="reset" class="btn btn-light me-3" onclick="closecategorie()">Annuler</button>
-                        <button type="submit" id="formcategorie_submit" class="btn btn-primary">
+                    <div class="dga-actions" style="padding:0;border-top:none;background:transparent;margin-top:1rem;">
+                        <button type="reset" class="dga-cancel" onclick="closecategorie()">Annuler</button>
+                        <button type="submit" id="formcategorie_submit" class="dga-submit">
                             <span class="indicator-label">Ajouter</span>
                             <span class="indicator-progress">Veuillez patienter...
-															<span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                                <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
                         </button>
                     </div>
                 </form>
@@ -401,47 +325,38 @@
 
 <!--editer-->
 
-<div class="modal fade" id="kt_modal_update_categorie" tabindex="-1" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered mw-650px">
+<div class="modal fade dga-modal" id="kt_modal_update_categorie" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>Modifier une categorie</h2>
+                <h2>Modifier la catégorie</h2>
                 <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal"
                      onclick="closecategorieUpdate()">
                     <span class="svg-icon svg-icon-1">
-														<svg xmlns="http://www.w3.org/2000/svg" width="24" height="24"
-                                                             viewBox="0 0 24 24" fill="none">
-															<rect opacity="0.5" x="6" y="17.3137" width="16" height="2"
-                                                                  rx="1" transform="rotate(-45 6 17.3137)"
-                                                                  fill="black"/>
-															<rect x="7.41422" y="6" width="16" height="2" rx="1"
-                                                                  transform="rotate(45 7.41422 6)" fill="black"/>
-														</svg>
-													</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none">
+                            <rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black"/>
+                            <rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black"/>
+                        </svg>
+                    </span>
                 </div>
             </div>
-            <div class="modal-body scroll-y mx-5 mx-xl-15 my-7">
+            <div class="modal-body">
                 <form id="formcategorieUpdate" class="form" action="#">
                     <input type="hidden" name="option" value="3"/>
                     <input type="hidden" name="tmp" id="tmp" value=""/>
                     <input type="hidden" name="original_nom" id="original_nom" value=""/>
 
-                    <div class="d-flex flex-column mb-7 fv-row">
-                        <label class="d-flex align-items-center fs-6 fw-bold form-label mb-2">
-                            <span class="required">Nom</span>
-                            <i class="fas fa-exclamation-circle ms-2 fs-7" data-bs-toggle="tooltip"
-                               title="Le nom de la categorie doit être unique."></i>
-                        </label>
-                        <input type="text" class="form-control form-control-solid" placeholder="" name="nom_categorie_up"
-                               id="nom_categorie_up" value=""/>
+                    <div class="dga-field fv-row">
+                        <label>Nom <i class="fas fa-exclamation-circle ms-1 fs-7" data-bs-toggle="tooltip" title="Le nom de la categorie doit être unique."></i></label>
+                        <input type="text" class="dga-inp" placeholder="" name="nom_categorie_up" id="nom_categorie_up" value=""/>
                     </div>
 
-                    <div class="text-center pt-15">
-                        <button type="reset" class="btn btn-light me-3" onclick="closecategorieUpdate()">Annuler</button>
-                        <button type="submit" id="formcategorieUpdate_submit" class="btn btn-primary">
+                    <div class="dga-actions" style="padding:0;border-top:none;background:transparent;margin-top:1rem;">
+                        <button type="reset" class="dga-cancel" onclick="closecategorieUpdate()">Annuler</button>
+                        <button type="submit" id="formcategorieUpdate_submit" class="dga-submit">
                             <span class="indicator-label">Modifier</span>
                             <span class="indicator-progress">Veuillez patienter...
-															<span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
+                                <span class="spinner-border spinner-border-sm align-middle ms-2"></span></span>
                         </button>
                     </div>
                 </form>
@@ -452,31 +367,16 @@
 
 
 
+<noscript>
+    <style>html.ld-booting body > .d-flex.flex-column.flex-root { visibility: visible !important; }</style>
+</noscript>
+
 
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/js/scripts.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.js"></script>
 <script src="/personnel/basi-scripts.bundle.3.js"></script>
 <script src="/personnel/scripts.bundle.gs.js"></script>
-
-<script>
-    // Mise à jour automatique du compteur "Nombre total" — n'interfère pas
-    // avec le JS existant (basi-scripts.bundle.3.js), se contente d'observer
-    // le tableau et de compter les lignes affichées.
-    (function () {
-        var tbody = document.querySelector('#table_categorie tbody');
-        var compteur = document.getElementById('dga-stat-nombre-categories');
-        if (!tbody || !compteur) return;
-
-        function majCompteur() {
-            var lignes = tbody.querySelectorAll('tr');
-            compteur.textContent = lignes.length;
-        }
-
-        majCompteur();
-        new MutationObserver(majCompteur).observe(tbody, { childList: true, subtree: false });
-    })();
-</script>
 
 
 </body>

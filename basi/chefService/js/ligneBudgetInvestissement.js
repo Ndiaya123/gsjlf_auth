@@ -445,6 +445,12 @@ async function lb_initTable() {
         responsive: true,
         order: [[0,'asc']],
         lengthMenu: [[10,25,50,100],['10','25','50','100']],
+        initComplete: function () {
+
+            document.documentElement.classList.remove('ld-booting');
+            document.getElementById('lb-table')?.classList.add('lb-ready');
+
+        }
     });
 }
 

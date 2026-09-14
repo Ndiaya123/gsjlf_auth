@@ -154,6 +154,12 @@ function ld_renderTable(demandes) {
                 },
             },
         ],
+        initComplete: function () {
+
+            document.documentElement.classList.remove('ld-booting');
+            document.getElementById('lb-table')?.classList.add('lb-ready');
+
+        }
     });
 }
 

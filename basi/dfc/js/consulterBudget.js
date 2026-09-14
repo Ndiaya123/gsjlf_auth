@@ -297,6 +297,12 @@ function cb_renderLignes(dL, isFonc) {
         rowCallback(row, data) {
            // if (cb_isLigneVerrouillee(data)) $(row).addClass('cb-row-locked');
         },
+        initComplete: function () {
+
+            document.documentElement.classList.remove('ld-booting');
+            document.getElementById('lb-table')?.classList.add('lb-ready');
+
+        }
     });
 
     // Total

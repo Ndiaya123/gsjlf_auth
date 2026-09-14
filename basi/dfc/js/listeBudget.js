@@ -205,7 +205,13 @@ function dfc_initTable() {
             { data:'statut', render: dfc_badge, width:'110px' },
             { data:null, render:(d,t,row)=>dfc_getActions(row),
                 orderable:false, searchable:false, width:'130px' },
-        ]
+        ],
+        initComplete: function () {
+
+            document.documentElement.classList.remove('ld-booting');
+            document.getElementById('lb-table')?.classList.add('lb-ready');
+
+        }
     });
 }
 

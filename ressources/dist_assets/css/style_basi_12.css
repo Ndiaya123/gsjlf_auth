@@ -1,0 +1,92 @@
+
+body{background:#f5f8fa;font-family:'Poppins',sans-serif;}
+
+.dga-hero{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
+.dga-hero-title h1{font-size:1.35rem;font-weight:800;color:#111827;margin:0;display:flex;align-items:center;gap:.55rem}
+.dga-hero-title h1 svg{background:#d1fae5;color:#065f46;border-radius:9px;padding:.4rem;width:20px !important;height:20px !important;box-sizing:content-box}
+.dga-hero-title p{font-size:.8rem;color:#9ca3af;margin:.2rem 0 0}
+
+.dga-btn-primary{display:inline-flex !important;align-items:center !important;gap:.4rem !important;padding:.65rem 1.25rem !important;border-radius:10px !important;font-size:.85rem !important;font-weight:700 !important;background:#113B26 !important;color:#fff !important;border:none !important;cursor:pointer !important;transition:all .18s;text-decoration:none !important}
+.dga-btn-primary:hover{background:#0c2818 !important;transform:translateY(-1px);color:#fff !important}
+
+.dga-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden}
+.dga-card-title{font-size:.88rem;font-weight:700;color:#111827;display:flex;align-items:center;gap:.45rem}
+.dga-card-title svg{color:#113B26}
+.dga-card-head{padding:1rem 1.35rem;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem}
+
+.dga-search{position:relative}
+.dga-search svg{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:#9ca3af}
+.dga-search input{border:1.5px solid #e5e7eb !important;border-radius:9px !important;padding:.55rem .9rem .55rem 2.4rem !important;font-size:.83rem !important;color:#374151 !important;min-width:230px;background:#fff !important;box-shadow:none !important}
+.dga-search input:focus{outline:none;border-color:#113B26 !important;box-shadow:0 0 0 3px rgba(26,122,94,.1) !important}
+
+.dga-table-wrap{padding:0 1.35rem 1.35rem}
+table.dga-table{width:100%;border-collapse:collapse}
+table.dga-table thead th{background:#f8f9fa;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.07em;color:#9ca3af;border-bottom:2px solid #e9ecef;padding:.85rem 1rem;text-align:left;white-space:nowrap}
+table.dga-table tbody td{padding:.85rem 1rem;font-size:.875rem;color:#374151;border-bottom:1px solid #f9fafb;vertical-align:middle}
+table.dga-table tbody tr:hover td{background:#f0fdf4}
+table.dataTable{border-collapse:collapse !important;width:100% !important}
+table.dataTable thead th{background:#f8f9fa !important;font-size:.7rem !important;font-weight:800 !important;text-transform:uppercase !important;letter-spacing:.07em !important;color:#9ca3af !important;border-bottom:2px solid #e9ecef !important;border-top:none !important;padding:.85rem 1rem !important;white-space:nowrap}
+table.dataTable tbody td{padding:.85rem 1rem !important;font-size:.875rem !important;color:#374151 !important;border-bottom:1px solid #f9fafb !important;vertical-align:middle !important}
+table.dataTable tbody tr:hover td{background:#f0fdf4 !important}
+.dataTables_empty{padding:2.5rem !important;font-style:italic !important;color:#9ca3af !important}
+.dataTables_paginate .paginate_button.current{background:#113B26 !important;color:#fff !important;border-color:#113B26 !important;border-radius:7px !important}
+
+/* Les classes Bootstrap (fw-bolder text-muted) ajoutées par le JS sur
+   chaque cellule assombrissaient le texte et empêchaient nos couleurs
+   de s'appliquer — on les surcharge explicitement ici. */
+table.dataTable tbody td.text-muted{color:#374151 !important;font-weight:600 !important}
+table.dataTable tbody td:first-child.text-muted{color:#9ca3af !important;font-weight:700 !important}
+
+.dga-badge-locked{display:inline-flex;align-items:center;gap:.3rem;padding:.3rem .7rem;border-radius:99px;font-size:.7rem;font-weight:800;text-transform:uppercase;letter-spacing:.03em;background:#fef3c7;color:#92400e}
+
+.dga-btn-modifier,.dga-btn-supprimer{display:inline-flex !important;align-items:center !important;gap:.35rem !important;padding:.4rem .8rem !important;border-radius:7px !important;font-size:.75rem !important;font-weight:700 !important;border:1.5px solid transparent !important;cursor:pointer !important;transition:all .18s;margin-right:.35rem}
+.dga-btn-modifier:hover,.dga-btn-supprimer:hover{transform:translateY(-1px)}
+.dga-btn-modifier{background:#ecfdf5 !important;color:#059669 !important;border-color:#d1fae5 !important}
+.dga-btn-modifier:hover{background:#059669 !important;color:#fff !important}
+.dga-btn-supprimer{background:#fef2f2 !important;color:#dc2626 !important;border-color:#fee2e2 !important}
+.dga-btn-supprimer:hover{background:#dc2626 !important;color:#fff !important}
+
+/* ── Modales (même gabarit que le reste du projet) ──────────────── */
+.modal-content{border-radius:16px !important;border:none !important;box-shadow:0 24px 64px rgba(0,0,0,.18) !important;overflow:hidden}
+.modal-header{background:linear-gradient(135deg,#064e3b,#113B26) !important;border:none !important;padding:1.25rem 1.5rem !important}
+.modal-header h2{color:#fff !important;font-size:1rem !important;font-weight:800 !important;margin:0 !important}
+.modal-header .btn-icon .svg-icon svg path,.modal-header .btn-icon .svg-icon svg rect{fill:#fff !important}
+.modal-body{padding:1.35rem 1.5rem !important}
+.dga-modal .modal-dialog{max-width:480px}
+
+.dga-field{margin-bottom:.9rem}
+.dga-field label{display:block;font-size:.72rem;font-weight:700;color:#6b7280;margin-bottom:.3rem;text-transform:uppercase;letter-spacing:.04em}
+.dga-inp{width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:.55rem .8rem;font-size:.85rem;color:#374151}
+.dga-inp:focus{outline:none;border-color:#113B26;box-shadow:0 0 0 3px rgba(26,122,94,.1)}
+
+.dga-actions{display:flex;justify-content:flex-end;gap:.6rem;padding:1rem 1.35rem;border-top:1px solid #f3f4f6;background:#fafafa}
+.dga-cancel{padding:.55rem 1.15rem;border-radius:8px;font-size:.82rem;font-weight:600;background:#fff;color:#6b7280;border:1.5px solid #e5e7eb;cursor:pointer}
+.dga-cancel:hover{border-color:#9ca3af;color:#374151}
+.dga-submit{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.35rem;border-radius:8px;font-size:.82rem;font-weight:700;background:#113B26;color:#fff;border:none;cursor:pointer;min-width:130px;justify-content:center}
+.dga-submit:hover{background:#0c2818}
+.dga-submit .indicator-progress{display:none;color:#fff;font-size:.8rem}
+.dga-submit[data-kt-indicator="on"] .indicator-label{display:none}
+.dga-submit[data-kt-indicator="on"] .indicator-progress{display:inline-flex;align-items:center}
+
+/* ── 1. ANTI-FOUC : page masquée tant que le CSS n'est pas appliqué ───── */
+html.ld-booting body > .d-flex.flex-column.flex-root { visibility: hidden !important; }
+
+/* ── 2. FOOTER COLLÉ EN BAS : il ne remonte plus, il ne saute plus ───── */
+html, body                    { height: 100%; }
+.d-flex.flex-column.flex-root { min-height: 100vh; }
+.page                         { min-height: 100vh; }
+#kt_wrapper { min-height: 100vh; display: flex; flex-direction: column; }
+#kt_content { flex: 1 0 auto; }                     /* prend la place dispo */
+#kt_footer  { flex: 0 0 auto; margin-top: auto; }   /* poussé tout en bas  */
+
+/* ── 3. HAUTEURS RÉSERVÉES : la zone table ne change plus de hauteur ───
+       (mesure .bud-card avec une liste pleine et ajuste ces valeurs)      */
+/*#kt_content_container { min-height: 640px; }*/
+/*.bud-card             { min-height: 430px; }*/
+/*#ld-table_wrapper     { min-height: 400px; }*/
+/*.ld-stat__val         { min-height: 1.6em; }        !* évite le saut 0->128 *!*/
+
+/* ── 4. La table brute (th/td non stylés) reste invisible
+       jusqu'à l'initialisation de DataTables ─────────────────────────── */
+#ld-table          { visibility: hidden; }
+#ld-table.ld-ready { visibility: visible; }

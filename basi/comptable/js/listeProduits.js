@@ -240,6 +240,12 @@ function cp_renderTable(produits) {
         dom: '<"cp-dt-top d-flex align-items-center justify-content-between gap-2"lf>rt<"cp-dt-bottom d-flex align-items-center justify-content-between gap-2"ip>',
         order: [[2,'asc']],
         responsive: true,
+        initComplete: function () {
+
+            document.documentElement.classList.remove('ld-booting');
+            document.getElementById('lb-table')?.classList.add('lb-ready');
+
+        }
     });
 
     // Filtres custom DataTable
