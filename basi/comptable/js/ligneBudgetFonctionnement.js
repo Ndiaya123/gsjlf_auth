@@ -62,7 +62,7 @@ function lb_sessionExpired() {
         icon:'warning', title:'Session expirée',
         text:'Votre session a expiré. Vous allez être redirigé.',
         timer:2500, showConfirmButton:false,
-        didClose:() => { window.location.href='/personnel/signin'; }
+        didClose:() => { window.location.href='/signin'; }
     });
 }
 
@@ -729,7 +729,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     if (!lb_budgetId) { Swal.fire('Erreur','Identifiant budget introuvable.','error'); return; }
 
     document.getElementById('lb-back-btn')?.addEventListener('click', ()=> // Redirect to another page
-        window.location.href = "/personnel/compta_liste_budget_fonctionnement");
+        window.location.href = "/compta_liste_budget_fonctionnement");
 
     document.getElementById('lb-add-btn')?.addEventListener('click', ()=>{
         document.getElementById('lb-modal-title').textContent='Nouvelle ligne budgétaire';

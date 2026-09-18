@@ -7,7 +7,7 @@
  * paramètre "option" et répond toujours avec { status: 'success'|'error', ... }.
  */
 
-const CONTROLLER_URL = '/personnel/drh_basi_controller';
+const CONTROLLER_URL = '/drh_basi_controller';
 
 let allFournisseurs = [];
 let currentTab = 'tous';

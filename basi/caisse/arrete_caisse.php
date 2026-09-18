@@ -21,12 +21,20 @@
  *   - Le PDF est construit sans gabarit externe (pas de finance.pdf connu
  *     dans ce projet) — à remplacer par un import de template si un fichier
  *     équivalent existe dans /includes/fpdf/template/.
+ *
+ * ⚠️ Correctifs PHP 8.2+ :
+ *   - utf8_decode() est déprécié depuis PHP 8.2 → remplacé par
+ *     decodeFpdfArrete() (mb_convert_encoding, même principe que
+ *     decodeFpdfInv() utilisé dans les autres scripts PDF du projet).
+ *   - strftime() est déprécié depuis PHP 8.1 (et supprimé en PHP 9) →
+ *     remplacé par formatDateJourFr(), qui donne le nom du mois en français
+ *     sans dépendre de la locale système ni de l'extension intl.
  */
 
 ob_start();
 session_start();
 if (empty($_SESSION['tmpIdBASI']) || empty($_SESSION['tmpMatricule'])) {
-    header('Location:/personnel/page-de-connexion');
+    header('Location:/page-de-connexion');
     exit;
 }
 include_once('../../bdBASI.php'); // ← ajuster selon la profondeur réelle du fichier
@@ -48,8 +56,44 @@ try {
     $bdBASI = $BDBASI->connect();
 } catch (\Throwable $e) {
     error_log('[ArreteCaissePdf][Connexion] ' . $e->getMessage());
-    header('Location:/personnel/erreur');
+    header('Location:/erreur');
     exit;
+}
+
+/**
+ * Convertit une chaîne UTF-8 en ISO-8859-1 pour FPDF, qui ne supporte pas
+ * nativement l'UTF-8 avec les polices standard (Helvetica, Times, Courier).
+ * Remplace utf8_decode(), déprécié depuis PHP 8.2.
+ */
+function decodeFpdfArrete($s) {
+    if (function_exists('mb_convert_encoding')) {
+        return mb_convert_encoding((string) $s, 'ISO-8859-1', 'UTF-8');
+    }
+    if (function_exists('iconv')) {
+        return iconv('UTF-8', 'ISO-8859-1//IGNORE', (string) $s);
+    }
+    return (string) $s;
+}
+
+/**
+ * Nom du mois en français, sans dépendre de la locale système ni de
+ * l'extension intl. Remplace strftime(), déprécié depuis PHP 8.1.
+ */
+function moisFrancaisArrete(int $mois): string {
+    static $moisFr = [
+        1 => 'janvier', 2 => 'fevrier', 3 => 'mars', 4 => 'avril',
+        5 => 'mai', 6 => 'juin', 7 => 'juillet', 8 => 'aout',
+        9 => 'septembre', 10 => 'octobre', 11 => 'novembre', 12 => 'decembre',
+    ];
+    return $moisFr[$mois] ?? '';
+}
+
+/**
+ * Formate une date (Y-m-d) en "JJ mois AAAA" en français, sans strftime().
+ */
+function formatDateJourFrArrete(string $dateJour): string {
+    $dt = new DateTime($dateJour);
+    return $dt->format('d') . ' ' . moisFrancaisArrete((int) $dt->format('n')) . ' ' . $dt->format('Y');
 }
 
 /**
@@ -120,7 +164,7 @@ class PdfArreteCaisse extends PDF_MC_Table
         $this->SetX(10);
         $this->SetFont('Helvetica', 'I', 7.5);
         $this->SetTextColor(120, 120, 120);
-        $this->Cell(0, 8, "CRIAT — Centre des Ressources Informatiques et d'Appui Technique", 0, 0, 'L');
+        $this->Cell(0, 8, decodeFpdfArrete("CRIAT - Centre des Ressources Informatiques et d'Appui Technique"), 0, 0, 'L');
         $this->SetX(180);
         $this->Cell(0, 8, 'Page ' . $this->PageNo() . '/{nb}', 0, 0, 'R');
         $this->AliasNbPages();
@@ -161,8 +205,6 @@ class PdfArreteCaisse extends PDF_MC_Table
  * enregistrement fichier, via FPDF::Output()).
  */
 function construirePdfArreteCaisse(array $paiements, float $somme, string $prenom, string $nom, string $matricule, string $dateJour): FPDF {
-    setlocale(LC_ALL, 'fr_FR.UTF8', 'fr_FR', 'fr', 'fra');
-
     $pdf = new PdfArreteCaisse();
     $pdf->AddPage();
     $pageWidth = 190; // zone utile (210mm A4 - marges 10mm x2)
@@ -173,11 +215,11 @@ function construirePdfArreteCaisse(array $paiements, float $somme, string $preno
     $pdf->SetXY(10, 8);
     $pdf->SetFont('Helvetica', 'B', 18);
     $pdf->SetTextColor(255, 255, 255);
-    $pdf->Cell($pageWidth, 9, utf8_decode("Arrêt de caisse"), 0, 1, 'C');
+    $pdf->Cell($pageWidth, 9, decodeFpdfArrete("Arr\u{00EA}t de caisse"), 0, 1, 'C');
     $pdf->SetX(10);
     $pdf->SetFont('Helvetica', '', 11);
     $pdf->SetTextColor(220, 240, 230);
-    $pdf->Cell($pageWidth, 7, utf8_decode('Journée du ' . mb_strtoupper(strftime('%d %B %Y', strtotime($dateJour)))), 0, 1, 'C');
+    $pdf->Cell($pageWidth, 7, decodeFpdfArrete("Journ\u{00E9}e du " . mb_strtoupper(formatDateJourFrArrete($dateJour))), 0, 1, 'C');
     $pdf->SetTextColor(0, 0, 0);
     $pdf->SetY(40);
 
@@ -188,15 +230,15 @@ function construirePdfArreteCaisse(array $paiements, float $somme, string $preno
     $pdf->SetXY(15, $pdf->GetY() + 4);
     $pdf->SetFont('Helvetica', 'B', 9);
     $pdf->SetTextColor(...VERT_FONCE);
-    $pdf->Cell(60, 5, utf8_decode('CAISSIER'), 0, 0);
-    $pdf->Cell(60, 5, utf8_decode('MATRICULE'), 0, 0);
-    $pdf->Cell(60, 5, utf8_decode('GÉNÉRÉ LE'), 0, 1);
+    $pdf->Cell(60, 5, decodeFpdfArrete('CAISSIER'), 0, 0);
+    $pdf->Cell(60, 5, decodeFpdfArrete('MATRICULE'), 0, 0);
+    $pdf->Cell(60, 5, decodeFpdfArrete("G\u{00C9}N\u{00C9}R\u{00C9} LE"), 0, 1);
     $pdf->SetX(15);
     $pdf->SetFont('Helvetica', '', 11);
     $pdf->SetTextColor(...GRIS_TEXTE);
-    $pdf->Cell(60, 6, utf8_decode(ucwords(strtolower($prenom)) . ' ' . strtoupper($nom)), 0, 0);
-    $pdf->Cell(60, 6, utf8_decode($matricule), 0, 0);
-    $pdf->Cell(60, 6, utf8_decode(date('d/m/Y à H:i')), 0, 1);
+    $pdf->Cell(60, 6, decodeFpdfArrete(ucwords(strtolower($prenom)) . ' ' . strtoupper($nom)), 0, 0);
+    $pdf->Cell(60, 6, decodeFpdfArrete($matricule), 0, 0);
+    $pdf->Cell(60, 6, decodeFpdfArrete(date("d/m/Y \u{00E0} H:i")), 0, 1);
     $pdf->Ln(10);
 
     // ── Tableau des paiements ────────────────────────────────────────────
@@ -204,11 +246,11 @@ function construirePdfArreteCaisse(array $paiements, float $somme, string $preno
     $pdf->SetFillColor(...VERT_MOYEN);
     $pdf->SetTextColor(255, 255, 255);
     $pdf->SetDrawColor(...VERT_MOYEN);
-    $pdf->Cell(10, 9, utf8_decode('N°'), 1, 0, 'C', true);
-    $pdf->Cell(35, 9, utf8_decode('N° commande'), 1, 0, 'C', true);
-    $pdf->Cell(65, 9, utf8_decode('Nom'), 1, 0, 'C', true);
-    $pdf->Cell(45, 9, utf8_decode('Moyen de paiement'), 1, 0, 'C', true);
-    $pdf->Cell(35, 9, utf8_decode('Montant'), 1, 1, 'C', true);
+    $pdf->Cell(10, 9, decodeFpdfArrete("N\u{00B0}"), 1, 0, 'C', true);
+    $pdf->Cell(35, 9, decodeFpdfArrete("N\u{00B0} commande"), 1, 0, 'C', true);
+    $pdf->Cell(65, 9, decodeFpdfArrete('Nom'), 1, 0, 'C', true);
+    $pdf->Cell(45, 9, decodeFpdfArrete('Moyen de paiement'), 1, 0, 'C', true);
+    $pdf->Cell(35, 9, decodeFpdfArrete('Montant'), 1, 1, 'C', true);
 
     $pdf->SetFont('Helvetica', '', 9);
     $pdf->SetDrawColor(230, 230, 230);
@@ -220,8 +262,8 @@ function construirePdfArreteCaisse(array $paiements, float $somme, string $preno
             $pdf->SetTextColor(...GRIS_TEXTE);
 
             $pdf->Cell(10, 8, (string) $i, 1, 0, 'C', true);
-            $pdf->Cell(35, 8, utf8_decode((string) ($p['numero'] ?? $p['id'])), 1, 0, 'L', true);
-            $pdf->Cell(65, 8, utf8_decode(substr((string) ($p['nom_commande'] ?? ''), 0, 38)), 1, 0, 'L', true);
+            $pdf->Cell(35, 8, decodeFpdfArrete((string) ($p['numero'] ?? $p['id'])), 1, 0, 'L', true);
+            $pdf->Cell(65, 8, decodeFpdfArrete(substr((string) ($p['nom_commande'] ?? ''), 0, 38)), 1, 0, 'L', true);
 
             // Pastille colorée pour le mode de règlement (petit carré, Rect
             // natif FPDF — Ellipse() n'existe pas dans FPDF standard).
@@ -233,7 +275,7 @@ function construirePdfArreteCaisse(array $paiements, float $somme, string $preno
             $pdf->Rect($xModeDebut + 3, $yModeDebut + 3.2, 2.4, 2.4, 'F');
             $pdf->SetXY($xModeDebut + 7, $yModeDebut + 1.5);
             $pdf->SetTextColor(...GRIS_TEXTE);
-            $pdf->Cell(36, 5, utf8_decode(LIBELLES_MODE_PDF[(int) $p['mode_reglement']] ?? ''), 0, 0, 'L');
+            $pdf->Cell(36, 5, decodeFpdfArrete(LIBELLES_MODE_PDF[(int) $p['mode_reglement']] ?? ''), 0, 0, 'L');
             $pdf->SetXY($xModeDebut + 45, $yModeDebut);
 
             $pdf->SetFont('Helvetica', 'B', 9);
@@ -246,7 +288,7 @@ function construirePdfArreteCaisse(array $paiements, float $somme, string $preno
         $pdf->SetFillColor(...GRIS_CLAIR);
         $pdf->SetTextColor(150, 150, 150);
         $pdf->SetFont('Helvetica', 'I', 11);
-        $pdf->Cell($pageWidth, 14, utf8_decode('Aucun paiement enregistré pour cette journée'), 1, 1, 'C', true);
+        $pdf->Cell($pageWidth, 14, decodeFpdfArrete("Aucun paiement enregistr\u{00E9} pour cette journ\u{00E9}e"), 1, 1, 'C', true);
     }
 
     // ── Bandeau total ────────────────────────────────────────────────────
@@ -256,7 +298,7 @@ function construirePdfArreteCaisse(array $paiements, float $somme, string $preno
     $pdf->SetFont('Helvetica', 'B', 10);
     $pdf->RoundedRect(10, $pdf->GetY(), $pageWidth, 14, 2, 'F');
     $pdf->SetXY(15, $pdf->GetY() + 4);
-    $pdf->Cell(90, 6, utf8_decode('MONTANT TOTAL'), 0, 0, 'L');
+    $pdf->Cell(90, 6, decodeFpdfArrete('MONTANT TOTAL'), 0, 0, 'L');
     $pdf->SetFont('Helvetica', 'B', 14);
     $pdf->Cell(85, 6, number_format($somme, 0, ',', ' ') . ' F CFA', 0, 1, 'R');
     $pdf->SetTextColor(0, 0, 0);
@@ -265,9 +307,9 @@ function construirePdfArreteCaisse(array $paiements, float $somme, string $preno
     // ── Pied : nombre de paiements + signature ──────────────────────────
     $pdf->SetFont('Helvetica', '', 10);
     $pdf->SetTextColor(...GRIS_TEXTE);
-    $pdf->Cell(95, 6.5, utf8_decode('Nombre de paiements : ' . count($paiements)), 0, 0, 'L');
+    $pdf->Cell(95, 6.5, decodeFpdfArrete('Nombre de paiements : ' . count($paiements)), 0, 0, 'L');
     $pdf->SetFont('Helvetica', 'B', 10);
-    $pdf->Cell(95, 6.5, utf8_decode('Fait, le ' . date('d-m-Y à H:i')), 0, 1, 'R');
+    $pdf->Cell(95, 6.5, decodeFpdfArrete("Fait, le " . date("d-m-Y \u{00E0} H:i")), 0, 1, 'R');
 
     $pdf->Ln(14);
     $pdf->SetDrawColor(200, 200, 200);
@@ -276,7 +318,7 @@ function construirePdfArreteCaisse(array $paiements, float $somme, string $preno
     $pdf->SetFont('Helvetica', 'I', 9);
     $pdf->SetTextColor(150, 150, 150);
     $pdf->Cell(130, 6, '', 0, 0);
-    $pdf->Cell(60, 6, utf8_decode('Signature du caissier'), 0, 1, 'C');
+    $pdf->Cell(60, 6, decodeFpdfArrete('Signature du caissier'), 0, 1, 'C');
 
     return $pdf;
 }
@@ -303,7 +345,7 @@ $paiements = listerPaiementsJour($bdBASI, $idCaissier, $dateJour);
 
 if (count($paiements) === 0) {
     // Rien à clôturer aujourd'hui.
-    header('Location:/personnel/erreur');
+    header('Location:/erreur');
     exit;
 }
 
@@ -325,7 +367,7 @@ try {
 } catch (\Throwable $e) {
     if ($bdBASI->inTransaction()) $bdBASI->rollBack();
     error_log('[ArreteCaissePdf] ' . $e->getMessage());
-    header('Location:/personnel/erreur');
+    header('Location:/erreur');
     exit;
 }
 

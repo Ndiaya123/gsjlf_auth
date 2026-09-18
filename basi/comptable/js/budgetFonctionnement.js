@@ -40,7 +40,7 @@ function handleSessionExpired() {
         text: 'Votre session a expiré. Vous allez être redirigé vers la page de connexion.',
         timer: 2500,
         showConfirmButton: false,
-        didClose: () => { window.location.href = '/personnel/signin'; }
+        didClose: () => { window.location.href = '/signin'; }
     });
 }
 
@@ -629,9 +629,9 @@ function getBudgetActions(budget, lineCount) {
 // ─── Redirections ─────────────────────────────────────────────────────────────
 // Page lignes propre au module fonctionnement comptable (route, pas .php direct)
 //function redirectionVersPageGraphics(id) { window.location.href = `Consulter_Budget_Fonctionnement.php?id=${id}`; }
-function redirectionVersPageGraphics(id) { window.location.href = `/personnel/compta_ligne_budget_fonctionnement/${id}`; }
-function poursuivreBudget(id)            { window.location.href = `/personnel/compta_ligne_budget_fonctionnement/${id}`; }
-function voirBudget(id)                  { window.location.href = `/personnel/compta_ligne_budget_fonctionnement/${id}`; }
+function redirectionVersPageGraphics(id) { window.location.href = `/compta_ligne_budget_fonctionnement/${id}`; }
+function poursuivreBudget(id)            { window.location.href = `/compta_ligne_budget_fonctionnement/${id}`; }
+function voirBudget(id)                  { window.location.href = `/compta_ligne_budget_fonctionnement/${id}`; }
 
 // ─── Valider un budget — option=25 POST { budgetId } ──────────────────────────
 // Utilise le même endpoint JSON que le reste du module (cohérent, plus de

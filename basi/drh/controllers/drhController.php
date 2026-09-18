@@ -535,7 +535,7 @@ function listerDemandes(PDO $bdBASI, drhController $basiController): void {
  * Chaque ligne renvoyée porte la clé `idDemande` = demandes_ligne.idDL,
  * pour rester compatible avec les actions groupées déjà en place
  * (Facture pro forma / Passer commande / Passer au paiement sur
- * /personnel/drh_basi_controller1, options 3/4/5) qui attendent cette forme.
+ * /drh_basi_controller1, options 3/4/5) qui attendent cette forme.
  */
 function voirDemande(PDO $bdBASI, drhController $basiController): void {
     try {
@@ -1136,7 +1136,7 @@ function passerCommande(PDO $bdBASI, int $sessionUserId, string $sessionMatricul
 ═══════════════════════════════════════════════════════════════════════════ */
 
 define('UPLOAD_DIR_JUSTIFICATIFS', __DIR__ . '/../../documents/justificatifs'); // ← ajuster si besoin
-define('UPLOAD_URL_JUSTIFICATIFS', 'http://localhost//personnel/basi/documents/justificatifs');
+define('UPLOAD_URL_JUSTIFICATIFS', 'http://localhost/personnel//basi/documents/justificatifs');
 
 /**
  * Enregistre un paiement (passer_achat_et_paiement + ses lignes) pour une ou
@@ -2515,7 +2515,7 @@ function detailDossierComplet(PDO $bdBASI, drhController $basiController): void 
             $documents['fournisseur']         = $facture ? trim(($facture['prenomF'] ?? '') . ' ' . ($facture['nomF'] ?? '')) . (!empty($facture['entreprise']) ? ' — ' . $facture['entreprise'] : '') : null;
 
             // Bon de commande généré par le système (PDF autonome existant).
-            $documents['bon_commande_url'] = '/personnel/bon_pap_pdf?token=' . urlencode($token);
+            $documents['bon_commande_url'] = '/drh_facture/' . urlencode($token);
 
             // Bon(s) de livraison — potentiellement plusieurs (livraisons partielles).
             $stmtLivraisons = $bdBASI->prepare("
@@ -2773,11 +2773,13 @@ function demanderFactureProforma(PDO $bdBASI, int $sessionUserId): void {
         // Avant d'insérer les nouvelles demandes : désactiver (statut → 0) les
         // anciennes demandes actives pour ces mêmes lignes.
         $stmtDesactiver = $bdBASI->prepare("
-            UPDATE demande_proforma SET statut = 0 WHERE idDL = ? AND statut = 1
+            UPDATE demande_proforma SET statut = 0 WHERE statut = 1
         ");
-        foreach ($idDLs as $idDL) {
-            $stmtDesactiver->execute([$idDL]);
-        }
+                    $stmtDesactiver->execute();
+
+        // foreach ($idDLs as $idDL) {
+        //     $stmtDesactiver->execute([$idDL]);
+        // }
 
         // Insertion des nouvelles demandes (une ligne par couple ligne × fournisseur)
         // — une référence unique par fournisseur, partagée par toutes ses lignes.

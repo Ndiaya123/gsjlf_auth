@@ -1,6 +1,6 @@
 <?php
 $budgetToken = $_GET['budgetId'] ?? '';
-if (empty($budgetToken)) { header('Location: /personnel/responsable-financier-accueil'); exit; }
+if (empty($budgetToken)) { header('Location: /responsable-financier-accueil'); exit; }
 ?><!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -25,7 +25,7 @@ if (empty($budgetToken)) { header('Location: /personnel/responsable-financier-ac
         <!-- ASIDE -->
         <div id="kt_aside" class="aside aside-light aside-hoverable" data-kt-drawer="true" data-kt-drawer-name="aside" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="{default:'200px', '300px': '250px'}" data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_aside_mobile_toggle">
             <div class="aside-logo flex-column-auto text-center" id="kt_aside_logo">
-                <a href="/personnel/responsable-financier-accueil" style="margin-left:65px;" id="lien_logo1"><img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/1.png" id="logo1" class="h-50px logo"/></a>
+                <a href="/responsable-financier-accueil" style="margin-left:65px;" id="lien_logo1"><img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/1.png" id="logo1" class="h-50px logo"/></a>
                 <div id="kt_aside_toggle" class="btn btn-icon w-auto px-0 btn-active-color-primary aside-toggle" data-kt-toggle="true" data-kt-toggle-state="active" data-kt-toggle-target="body" data-kt-toggle-name="aside-minimize">
                     <span class="svg-icon svg-icon-1 rotate-180"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><path opacity="0.5" d="M14.2657 11.4343L18.45 7.25C18.8642 6.83579 18.8642 6.16421 18.45 5.75C18.0358 5.33579 17.3642 5.33579 16.95 5.75L11.4071 11.2929C11.0166 11.6834 11.0166 12.3166 11.4071 12.7071L16.95 18.25C17.3642 18.6642 18.0358 18.6642 18.45 18.25C18.8642 17.8358 18.8642 17.1642 18.45 16.75L14.2657 12.5657C13.9533 12.2533 13.9533 11.7467 14.2657 11.4343Z" fill="black"/><path d="M8.2657 11.4343L12.45 7.25C12.8642 6.83579 12.8642 6.16421 12.45 5.75C12.0358 5.33579 11.3642 5.33579 10.95 5.75L5.40712 11.2929C5.01659 11.6834 5.01659 12.3166 5.40712 12.7071L10.95 18.25C11.3642 18.6642 12.0358 18.6642 12.45 18.25C12.8642 17.8358 12.8642 17.1642 12.45 16.75L8.2657 12.5657C7.95328 12.2533 7.95328 11.7467 8.2657 11.4343Z" fill="black"/></svg></span>
                 </div>
@@ -46,7 +46,7 @@ if (empty($budgetToken)) { header('Location: /personnel/responsable-financier-ac
                             <span class="svg-icon svg-icon-2x mt-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M21 7H3C2.4 7 2 6.6 2 6V4C2 3.4 2.4 3 3 3H21C21.6 3 22 3.4 22 4V6C22 6.6 21.6 7 21 7Z" fill="black"/><path opacity="0.3" d="M21 14H3C2.4 14 2 13.6 2 13V11C2 10.4 2.4 10 3 10H21C21.6 10 22 10.4 22 11V13C22 13.6 21.6 14 21 14ZM22 20V18C22 17.4 21.6 17 21 17H3C2.4 17 2 17.4 2 18V20C2 20.6 2.4 21 3 21H21C21.6 21 22 20.6 22 20Z" fill="black"/></svg></span>
                         </div>
                     </div>
-                    <div class="d-flex align-items-center flex-grow-1 flex-lg-grow-0"><a href="/personnel/responsable-financier-accueil" class="d-lg-none" id="lien_logo2"><img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/1.png" id="logo2" class="h-30px"/></a></div>
+                    <div class="d-flex align-items-center flex-grow-1 flex-lg-grow-0"><a href="/responsable-financier-accueil" class="d-lg-none" id="lien_logo2"><img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/1.png" id="logo2" class="h-30px"/></a></div>
                     <div class="d-flex align-items-stretch justify-content-between flex-lg-grow-1">
                         <div class="d-flex align-items-stretch" id="kt_header_nav">
                             <div class="header-menu align-items-stretch" data-kt-drawer="true" data-kt-drawer-name="header-menu" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="{default:'200px', '300px': '250px'}" data-kt-drawer-direction="end" data-kt-drawer-toggle="#kt_header_menu_mobile_toggle" data-kt-swapper="true" data-kt-swapper-mode="prepend" data-kt-swapper-parent="{default: '#kt_body', lg: '#kt_header_nav'}">
@@ -63,7 +63,7 @@ if (empty($budgetToken)) { header('Location: /personnel/responsable-financier-ac
                                     <div class="separator my-2"></div>
                                     <div class="menu-item px-5"><a href="javascript:void(0)" onclick="actionMonProfile()" class="menu-link px-5">Mon profil</a></div>
                                     <div class="separator my-2"></div>
-                                    <div class="menu-item px-5"><div class="menu-content px-5"><label class="form-check form-switch form-check-custom form-check-solid pulse pulse-success"><a href="/personnel/signout"><input class="form-check-input w-30px h-20px" checked="checked" type="checkbox" value="1" name="mode" id="kt_user_menu_dark_mode_toggle" data-kt-url="/personnel/quitter"/><span class="pulse-ring ms-n1"></span><span class="form-check-label text-gray-600 fs-7">se déconnecter</span></a></label></div></div>
+                                    <div class="menu-item px-5"><div class="menu-content px-5"><label class="form-check form-switch form-check-custom form-check-solid pulse pulse-success"><a href="/signout"><input class="form-check-input w-30px h-20px" checked="checked" type="checkbox" value="1" name="mode" id="kt_user_menu_dark_mode_toggle" data-kt-url="/quitter"/><span class="pulse-ring ms-n1"></span><span class="form-check-label text-gray-600 fs-7">se déconnecter</span></a></label></div></div>
                                 </div>
                             </div>
                         </div>

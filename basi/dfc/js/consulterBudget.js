@@ -6,7 +6,7 @@
 // • Actions DFC selon statut (Valider/Rejeter/Réajuster)
 // ════════════════════════════════════════════════════════════════════════
 
-const DFC_API = '/personnel/dfc_basi_controller'; // dfcController.php
+const DFC_API = '/dfc_basi_controller'; // dfcController.php
 
 const cb = {
     budget    : `${DFC_API}?option=12`,  // détails budget (token chiffré)
@@ -52,7 +52,7 @@ function cb_isLigneVerrouillee(l) {
 function cb_expired() {
     Swal.fire({ icon:'warning', title:'Session expirée', text:'Redirection…',
         timer:2500, showConfirmButton:false,
-        didClose:()=>{ window.location.href='/personnel/signin'; }
+        didClose:()=>{ window.location.href='/signin'; }
     });
 }
 async function cb_post(url, body={}) {
@@ -408,5 +408,5 @@ function cb_initTabs() {
 document.addEventListener('DOMContentLoaded', () => {
     cb_initTabs();
     cb_init();
-    document.getElementById('cb-back-btn')?.addEventListener('click', () => window.location.href = "/personnel/dfc-liste_budget");
+    document.getElementById('cb-back-btn')?.addEventListener('click', () => window.location.href = "/dfc-liste_budget");
 });

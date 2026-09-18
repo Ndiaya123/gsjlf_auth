@@ -570,6 +570,49 @@ function insererHistoriqueEBP(PDO $bdBASI, int $idEBP, int $idEB, int $idP, floa
     ")->execute([$idEBP, $idEB, $idP, $quantite, $statut, $motif, $dateEnregistrement, $idUtilisateur]);
 }
 
+
+function detailExpressionBesoinDirection2(PDO $bdBASI, expressionBesoinController $basiController): void {
+    try {
+        $token = trim((string) inputValueEB('token', ''));
+        if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
+        $idEB = (int) $basiController->tokendecrypt($token);
+        if ($idEB <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+
+        $stmt = $bdBASI->prepare("
+            SELECT eb.id, eb.nom_expression, eb.date_creation, eb.idStatut, eb.idDirection,
+                   CONCAT(u.prenom, ' ', u.nom) AS demandeur
+            FROM expression_besoin eb
+            JOIN utilisateurs u ON eb.idUtilisateur = u.id
+            WHERE eb.id = ? 
+            LIMIT 1
+        ");
+        $stmt->execute([$idEB]);
+        $expression = $stmt->fetch(PDO::FETCH_ASSOC);
+        if (!$expression) {
+            echo json_encode(['status' => 'error', 'message' => 'Expression de besoin introuvable.']);
+            return;
+        }
+
+        $stmtProduits = $bdBASI->prepare("
+            SELECT ebp.id AS idEBP, ebp.idP, ebp.quantite, ebp.quantite_reelle, p.nomproduit as designation
+            FROM expression_besoin_produit ebp
+            JOIN product p ON ebp.idP = p.idP
+            WHERE ebp.idEB = ? AND ebp.statut = 1
+            ORDER BY ebp.id ASC
+        ");
+        $stmtProduits->execute([$idEB]);
+        $expression['produits'] = $stmtProduits->fetchAll(PDO::FETCH_ASSOC);
+
+        echo json_encode(['status' => 'success', 'expression' => $expression]);
+    } catch (\Throwable $e) {
+
+    echo $e;
+    die;
+        error_log('[ChefDirEB][detailExpressionBesoinDirection] ' . $e->getMessage());
+        erreurSqlChefDirEB("Impossible de charger le détail de l'expression de besoin.");
+    }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    ROUTAGE
    1 = listerExpressionsBesoin       (ses propres demandes, filtrable par années)
@@ -609,6 +652,11 @@ try {
         case 7:
             voirSuiviExpressionBesoin($bdBASI, $basiController, $sessionUserId);
             break;
+            case 8 :
+
+                  detailExpressionBesoinDirection2($bdBASI, $basiController);
+            break;
+
 
         default:
             http_response_code(400);

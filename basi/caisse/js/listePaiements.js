@@ -77,7 +77,7 @@ function dga_renderTable(paiements) {
             { data: 'mode_reglement_nom' },
             { data: 'montant' },
             { data: 'date_paiement' },
-            { data: 'tmp', orderable: false, searchable: false },
+            // { data: 'tmp', orderable: false, searchable: false },
         ],
         columnDefs: [
             { targets: 0, render: d => dga_escapeHtml(d) },
@@ -102,15 +102,15 @@ function dga_renderTable(paiements) {
                     : '<span class="dga-cell-amount">' + dga_formatMontant(d) + '</span>',
             },
             { targets: 6, render: d => dga_fmtDateHeure(d) },
-            {
-                targets: 7,
-                render: (d, t, row) => row.modifiable
-                    ? `<button type="button" class="dga-btn-annuler" onclick="dga_confirmerAnnuler('${d}')">
-                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-                            Annuler
-                       </button>`
-                    : '<span style="color:#d1d5db;">—</span>',
-            },
+            // {
+            //     targets: 7,
+            //     render: (d, t, row) => row.modifiable
+            //         ? `<button type="button" class="dga-btn-annuler" onclick="dga_confirmerAnnuler('${d}')">
+            //                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+            //                 Annuler
+            //            </button>`
+            //         : '<span style="color:#d1d5db;">—</span>',
+            // },
         ],
         order: [[6, 'desc']],
         language: {
@@ -132,39 +132,39 @@ function dga_renderTable(paiements) {
 }
 
 /* ────────────────────────── ANNULATION ─────────────────────────────── */
-function dga_confirmerAnnuler(token) {
-    Swal.fire({
-        title: 'Annuler ce paiement',
-        text: "Cette action remet le montant du paiement à 0, met à jour la commande liée (et la tranche concernée le cas échéant). Confirmez-vous ?",
-        input: 'textarea',
-        inputLabel: "Motif de l'annulation (optionnel)",
-        inputPlaceholder: 'Précisez le motif si nécessaire…',
-        icon: 'warning',
-        showCancelButton: true,
-        confirmButtonText: 'Annuler le paiement',
-        cancelButtonText: 'Retour',
-        confirmButtonColor: '#dc2626',
-        cancelButtonColor: '#6b7280',
-    }).then(function (result) {
-        if (!result.isConfirmed) return;
+// function dga_confirmerAnnuler(token) {
+//     Swal.fire({
+//         title: 'Annuler ce paiement',
+//         text: "Cette action remet le montant du paiement à 0, met à jour la commande liée (et la tranche concernée le cas échéant). Confirmez-vous ?",
+//         input: 'textarea',
+//         inputLabel: "Motif de l'annulation (optionnel)",
+//         inputPlaceholder: 'Précisez le motif si nécessaire…',
+//         icon: 'warning',
+//         showCancelButton: true,
+//         confirmButtonText: 'Annuler le paiement',
+//         cancelButtonText: 'Retour',
+//         confirmButtonColor: '#dc2626',
+//         cancelButtonColor: '#6b7280',
+//     }).then(function (result) {
+//         if (!result.isConfirmed) return;
 
-        dga_showLoader('Annulation en cours…');
-        $.ajax({
-            url: CAISSE_CONTROLLER_URL, method: 'POST', data: { option: 16, token: token, motif: result.value || '' }, dataType: 'json'
-        }).done(function (res) {
-            dga_hideLoader();
-            if (res.status === 'success') {
-                Swal.fire({ title: 'Succès', text: res.message || 'Paiement annulé avec succès.', icon: 'success', confirmButtonColor: '#1a7a5e' });
-                chargerPaiements();
-            } else {
-                Swal.fire('Erreur', res.message || 'Une erreur est survenue.', 'error');
-            }
-        }).fail(function (xhr) {
-            dga_hideLoader();
-            Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
-        });
-    });
-}
+//         dga_showLoader('Annulation en cours…');
+//         $.ajax({
+//             url: CAISSE_CONTROLLER_URL, method: 'POST', data: { option: 16, token: token, motif: result.value || '' }, dataType: 'json'
+//         }).done(function (res) {
+//             dga_hideLoader();
+//             if (res.status === 'success') {
+//                 Swal.fire({ title: 'Succès', text: res.message || 'Paiement annulé avec succès.', icon: 'success', confirmButtonColor: '#1a7a5e' });
+//                 chargerPaiements();
+//             } else {
+//                 Swal.fire('Erreur', res.message || 'Une erreur est survenue.', 'error');
+//             }
+//         }).fail(function (xhr) {
+//             dga_hideLoader();
+//             Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
+//         });
+//     });
+// }
 
 /* ────────────────────────────── UTILITAIRES ────────────────────── */
 function dga_showLoader(msg = 'Chargement…') {

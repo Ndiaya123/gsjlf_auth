@@ -38,7 +38,7 @@ function handleSessionExpired() {
         text: 'Votre session a expiré. Vous allez être redirigé vers la page de connexion.',
         timer: 2500,
         showConfirmButton: false,
-        didClose: () => { window.location.href = '/personnel/signin'; }
+        didClose: () => { window.location.href = '/signin'; }
     });
 }
 
@@ -714,8 +714,8 @@ function getBudgetActions(budget, lineCount) {
 
 // ─── Redirections ─────────────────────────────────────────────────────────────
 function redirectionVersPageGraphics(id) { window.location.href = `../../Gestion_example2/budget/Consulter_Budget.php?id=${id}`; }
-function poursuivreBudget(id)            { window.location.href = `/personnel/chef_service_ligne_budget_investissement/${id}`; }
-function voirBudget(id)                  { window.location.href = `/personnel/chef_service_ligne_budget_investissement/${id}`; }
+function poursuivreBudget(id)            { window.location.href = `/chef_service_ligne_budget_investissement/${id}`; }
+function voirBudget(id)                  { window.location.href = `/chef_service_ligne_budget_investissement/${id}`; }
 
 // ─── Valider un budget ────────────────────────────────────────────────────────
 function valider_budget(id) {
@@ -731,7 +731,7 @@ function valider_budget(id) {
                 const body =  {budgetId: `${encodeURIComponent(id)}`};
                 const controller = new AbortController();
                 const timer = setTimeout(() => controller.abort(), 10000);
-                const response = await fetch('/personnel/chef_service_basi_controller?option=32', {
+                const response = await fetch('/chef_service_basi_controller?option=32', {
                     method: 'POST',
                     headers:{'Content-Type':'application/json'},
                     body: JSON.stringify(body),

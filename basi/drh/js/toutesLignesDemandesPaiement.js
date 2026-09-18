@@ -11,8 +11,8 @@
  * (demandes_ligne.idD), sans exiger un idD global unique.
  */
 
-const VD_INFO_URL       = '/personnel/drh_basi_controller?option=18'; // ← ajuster selon le chemin réel
-const PC_CONTROLLER_URL = '/personnel/drh_basi_controller';            // ← ajuster selon le chemin réel
+const VD_INFO_URL       = '/drh_basi_controller?option=18'; // ← ajuster selon le chemin réel
+const PC_CONTROLLER_URL = '/drh_basi_controller';            // ← ajuster selon le chemin réel
 
 let vd_table      = null;
 let vd_ligneParId = {};   // lignes indexées par idDemande (= idDL)
@@ -78,7 +78,7 @@ function vd_renderTable(lignes) {
         ],
         columnDefs: [
             { targets: 0, render: d => vd_renderCheckbox(d) },
-            { targets: 1, render: (d, t, row) => `<a href="/personnel/voir-demande.php?token=${encodeURIComponent(row.tmp)}" class="vd-lien-demande" title="Voir cette demande">#${d}</a>` },
+            { targets: 1, render: (d, t, row) => `<a href="/voir-demande.php?token=${encodeURIComponent(row.tmp)}" class="vd-lien-demande" title="Voir cette demande">#${d}</a>` },
             { targets: 2, render: d => '<span class="vd-cell-name">' + vd_escapeHtml(d || '') + '</span>' },
             { targets: 3, render: d => '<span class="vd-cell-amount">' + vd_formatMontant(d) + '</span>' },
             { targets: 4, render: d => vd_formatMontant(d) },

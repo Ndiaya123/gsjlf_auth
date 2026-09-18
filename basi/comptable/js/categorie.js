@@ -217,7 +217,7 @@ submitButton1.addEventListener('click', function (e) {
 
                         if (resp === "sessionExpired") {
 
-                            window.location.href = '/personnel/signin';
+                            window.location.href = '/signin';
 
 
                         } else if (resp === "caratereSpeciaux") {

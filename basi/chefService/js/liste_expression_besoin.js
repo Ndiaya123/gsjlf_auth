@@ -9,7 +9,7 @@
 const CHEF_DIR_EB_CONTROLLER_URL = '/personnel/chef_service_basi_controller_1'; // ← ajuster selon le chemin réel
 const ANNEE_MIN_EB = 2026;
 
-const LIBELLES_STATUT_EB = { 2: 'Soumise', 3: 'Validée', 4: 'Rejetée', 5: 'Partiellement livré', 6: 'Terminé' };
+const LIBELLES_STATUT_EB = { 1: 'Brouillon', 2: 'Soumise', 3: 'Validée', 4: 'Rejetée', 5: 'Partiellement livré', 6: 'Terminé' };
 
 let dga_table = null;
 let dga_tokenCourant = null;
@@ -305,7 +305,7 @@ function dga_ouvrirConsulter(token) {
 
         const badgeLigne = (statutLigne) => {
             const map = {
-                'En attente': 'background:#fef3c7;color:#92400e;',
+                'Brouillon ': 'background:#fef3c7;color:#92400e;',
                 'Partiellement livré': 'background:#dbeafe;color:#1d4ed8;',
                 'Livré': 'background:#d1fae5;color:#047857;',
             };

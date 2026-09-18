@@ -34,7 +34,7 @@ function cp_sessionExpired() {
         icon:'warning', title:'Session expirée',
         text:'Votre session a expiré. Vous allez être redirigé.',
         timer:2500, showConfirmButton:false,
-        didClose:() => { window.location.href='/personnel/signin'; }
+        didClose:() => { window.location.href='/signin'; }
     });
 }
 

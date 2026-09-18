@@ -4,14 +4,14 @@
  * Paiement), avec colonnes et actions différentes selon le type.
  *
  * Récupère le détail via drh_basi_controller.php (option 9), puis réutilise les
- * actions groupées déjà en place sur /personnel/drh_basi_controller1
+ * actions groupées déjà en place sur /drh_basi_controller1
  * (options 3 = facture proforma, 4 = passer commande, 5 = passer au
  * paiement) — chaque ligne y est identifiée par la clé `idDemande`, qui
  * porte ici en réalité demandes_ligne.idDL (contrat déjà établi côté
  * back-end existant).
  */
 
-const VD_INFO_URL  = '/personnel/drh_basi_controller?option=9';   // ← ajuster selon le chemin réel
+const VD_INFO_URL  = '/drh_basi_controller?option=9';   // ← ajuster selon le chemin réel
 
 let vd_demande   = null;   // { idD, idTypeDemande, type_demande, demandeur, date_creation, tmp }
 let vd_estAchat  = true;
@@ -19,8 +19,21 @@ let vd_table     = null;   // instance DataTable active (achat OU paiement)
 let vd_ligneParId = {};    // lignes indexées par idDemande (= idDL), pour retrouver les données sans redemander
 let vd_selection  = new Set();
 
+// ─── Anti-FOUC : retrait de ld-booting (idempotent) ────────────────────────
+let vd_pageRevealed = false;
+function vd_revealPage() {
+    if (vd_pageRevealed) return;
+    vd_pageRevealed = true;
+    document.documentElement.classList.remove('ld-booting');
+}
+// Filet de sécurité : quoi qu'il arrive (erreur JS, AJAX qui ne répond
+// jamais, etc.), la page ne doit JAMAIS rester bloquée en blanc au-delà de
+// 5 secondes.
+setTimeout(vd_revealPage, 5000);
+
 document.addEventListener('DOMContentLoaded', function () {
     if (!window.VD_DEMANDE_TOKEN) {
+        vd_revealPage();
         Swal.fire('Erreur', "Token de demande manquant dans l'URL.", 'error')
             .then(() => window.history.back());
         return;
@@ -44,6 +57,7 @@ function chargerDemande() {
         vd_hideLoader();
         try {
             if (res.status !== 'success') {
+                vd_revealPage();   // ⚠️ sinon la popup reste invisible derrière la page masquée
                 Swal.fire('Erreur', res.message || 'Demande introuvable.', 'error')
                     .then(() => window.history.back());
                 return;
@@ -58,10 +72,12 @@ function chargerDemande() {
             vd_renderTable(res.data || []);
         } catch (err) {
             console.error('Erreur traitement demande :', err);
+            vd_revealPage();   // ⚠️ idem : ne jamais laisser la page bloquée sur une exception
             Swal.fire('Erreur', 'Une erreur inattendue est survenue lors de l\'affichage.', 'error');
         }
     }).fail(function (xhr) {
         vd_hideLoader();
+        vd_revealPage();   // ⚠️ idem : un échec réseau ne doit jamais bloquer la page en blanc
         Swal.fire('Erreur', vd_ajaxErrorMessage(xhr), 'error');
     });
 }
@@ -120,6 +136,12 @@ function vd_renderTable(lignes) {
             ],
             language: vd_dataTableLangFr(),
             drawCallback: () => vd_reappliquerSelection('vd-table-achat'),
+            // ⚠️ Ajouté : la branche Achat n'avait AUCUN retrait de ld-booting,
+            // c'était le bug principal (page blanche systématique pour les
+            // demandes d'Achat, le cas le plus fréquent).
+            initComplete: function () {
+                vd_revealPage();
+            },
         });
 
         $('#vd-table-achat tbody').off('change', '.vd-row-check').on('change', '.vd-row-check', vd_onRowCheckChange);
@@ -144,12 +166,13 @@ function vd_renderTable(lignes) {
             ],
             language: vd_dataTableLangFr(),
             drawCallback: () => vd_reappliquerSelection('vd-table-paiement'),
+            // ⚠️ Corrigé : référençait 'lb-table'/'lb-ready', qui n'existent
+            // pas sur cette page (copié-collé d'une autre page). Remplacé
+            // par le retrait simple de ld-booting, cohérent avec la branche
+            // Achat ci-dessus.
             initComplete: function () {
-
-                document.documentElement.classList.remove('ld-booting');
-                document.getElementById('lb-table')?.classList.add('lb-ready');
-
-            }
+                vd_revealPage();
+            },
         });
 
         $('#vd-table-paiement tbody').off('change', '.vd-row-check').on('change', '.vd-row-check', vd_onRowCheckChange);
@@ -301,7 +324,7 @@ function df_majCompteur() {
 /* ═══════════════════════════ PASSER COMMANDE ═════════════════════════ */
 /* ═══════════════════════════ PASSER COMMANDE ═════════════════════════ */
 // Même contrôleur que VD_INFO_URL (drh_basi_controller.php), options 10/11/12.
-const PC_CONTROLLER_URL = '/personnel/drh_basi_controller'; // ← ajuster selon le chemin réel
+const PC_CONTROLLER_URL = '/drh_basi_controller'; // ← ajuster selon le chemin réel
 
 let pc_listesChargees  = false;
 let pc_fournisseurs    = [];
@@ -767,7 +790,7 @@ function initModalesSubmit() {
                 // Ouvre la génération des pro forma dans un nouvel onglet
                 // (téléchargement du ZIP), ferme la modale, puis actualise
                 // la page courante pour refléter le nouvel état.
-                window.open('/personnel/drh_demande_facture_proforma', '_blank');
+                window.open('/drh_demande_facture_proforma', '_blank');
 
                 const modalEl = document.getElementById('modalDemandeFacture');
                 const modalInstance = bootstrap.Modal.getInstance(modalEl);

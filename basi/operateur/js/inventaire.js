@@ -9,6 +9,21 @@ const INVENTAIRE_OP_CONTROLLER_URL = '/personnel/operateur_basi_controller'; // 
 
 let dga_inventaireCourant = null;
 
+// ─── Anti-FOUC : retrait de ld-booting (idempotent) ────────────────────────
+// ⚠️ Si cette page ajoute <html class="ld-booting"> dans son <head> (comme
+// les autres pages de l'application), rien dans ce fichier ne retirait
+// jamais cette classe — d'où la page blanche permanente. Corrigé ci-dessous.
+let dga_pageRevealed = false;
+function dga_revealPage() {
+    if (dga_pageRevealed) return;
+    dga_pageRevealed = true;
+    document.documentElement.classList.remove('ld-booting');
+}
+// Filet de sécurité : quoi qu'il arrive (erreur JS, AJAX qui ne répond
+// jamais, etc.), la page ne doit JAMAIS rester bloquée en blanc au-delà de
+// 5 secondes.
+setTimeout(dga_revealPage, 5000);
+
 document.addEventListener('DOMContentLoaded', function () {
     chargerInventaireEnCours();
     document.getElementById('dgaBtnConfirmerSoumission')?.addEventListener('click', dga_confirmerSoumission);
@@ -23,14 +38,17 @@ function chargerInventaireEnCours() {
     }).done(function (res) {
         dga_hideLoader();
         if (res.status !== 'success') {
+            dga_revealPage();   // ⚠️ sinon la popup reste invisible derrière la page masquée
             Swal.fire('Erreur', res.message || "Impossible de charger l'inventaire.", 'error');
             return;
         }
 
         dga_inventaireCourant = res.inventaire;
         dga_renderZone();
+        dga_revealPage();   // ⚠️ correctif principal : la page n'était jamais révélée
     }).fail(function (xhr) {
         dga_hideLoader();
+        dga_revealPage();   // ⚠️ idem : un échec réseau ne doit jamais bloquer la page en blanc
         Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
     });
 }
@@ -77,7 +95,7 @@ function dga_renderZone() {
                 <tbody>${lignesHtml}</tbody>
             </table>
             <div class="dga-actions-bar">
-                <a href="/personnel/operateur_basi_inventaire-pdf-vierge/${inv.tmp}" target="_blank" class="dga-btn-pdf-op">PDF vierge</a>
+                <a href="/operateur_basi_inventaire-pdf-vierge/${inv.tmp}" target="_blank" class="dga-btn-pdf-op">PDF vierge</a>
                 <button type="button" class="dga-btn-brouillon" id="dga-btn-brouillon">Sauvegarder en brouillon</button>
                 <button type="button" class="dga-btn-soumettre" id="dga-btn-soumettre">Soumettre le traitement</button>
             </div>
@@ -94,6 +112,12 @@ function dga_renderZone() {
             info: 'Affichage de _START_ à _END_ sur _TOTAL_ entrées',
             infoEmpty: 'Aucune entrée',
             paginate: { previous: 'Précédent', next: 'Suivant' },
+        },
+        // Filet de sécurité supplémentaire : si un jour cette table est
+        // initialisée avant que dga_revealPage() ait pu s'exécuter (ordre
+        // d'exécution modifié plus tard), on la déclenche aussi ici.
+        initComplete: function () {
+            dga_revealPage();
         },
     });
 

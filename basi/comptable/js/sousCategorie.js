@@ -263,7 +263,7 @@ submitButton1.addEventListener('click', function (e) {
 
                         if (resp === "sessionExpired") {
 
-                            window.location.href = 'http://localhost/personnel/signin';
+                            window.location.href = 'http://localhost/signin';
 
 
                         } else if (resp === "caratereSpeciaux") {

@@ -56,7 +56,7 @@ function ld_expired() {
     Swal.fire({
         icon: 'warning', title: 'Session expirée', text: 'Redirection…',
         timer: 2500, showConfirmButton: false,
-        didClose: () => { window.location.href = '/personnel/signin'; }
+        didClose: () => { window.location.href = '/signin'; }
     });
 }
 
@@ -380,14 +380,14 @@ async function ld_creerEtRediriger() {
     // Rediriger vers la page d'ajout de lignes
     // URL htaccess : /chef_service_associe_ligne_budget_demande/{token}/{typeToken}
     // type est le token chiffré de idTypeDemande (retourné par le contrôleur)
-    window.location.href = `/personnel/chef_service_associe_ligne_budget_demande/${encodeURIComponent(d.tmp)}/${encodeURIComponent(d.typeToken || d.idTypeDemande)}`;
+    window.location.href = `/chef_service_associe_ligne_budget_demande/${encodeURIComponent(d.tmp)}/${encodeURIComponent(d.typeToken || d.idTypeDemande)}`;
 }
 
 // ─── Redirection "Ajouter des lignes" depuis la liste ─────────────────────────
 function ld_allerAjouterLignes(token) {
     // Depuis la liste : on n'a pas le typeToken → on passe juste le token demande
     // le case 41 retrouvera idTypeDemande depuis la BDD
-    window.location.href = `/personnel/chef_service_associe_ligne_budget_demande/${encodeURIComponent(token)}/0`;
+    window.location.href = `/chef_service_associe_ligne_budget_demande/${encodeURIComponent(token)}/0`;
 }
 
 // ─── Voir les lignes d'une demande ────────────────────────────────────────────

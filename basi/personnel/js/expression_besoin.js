@@ -9,8 +9,8 @@
 const EB_CONTROLLER_URL = '/personnel/personnel_basi_controller'; // ← ajuster selon le chemin réel
 const ANNEE_MIN_EB = 2026;
 
-const LIBELLES_STATUT_EB = { 1: 'En attente', 2: 'Soumise', 3: 'Validée', 4: 'Rejetée', 5: 'Partiellement livré', 6: 'Terminé' };
-const LIBELLES_STATUT_LIGNE_EB = { 'En attente': 'dga-ligne-attente', 'Partiellement livré': 'dga-ligne-partiel', 'Livré': 'dga-ligne-livre' };
+const LIBELLES_STATUT_EB = { 1: 'Brouillon ', 2: 'Soumise', 3: 'Validée', 4: 'Rejetée', 5: 'Partiellement livré', 6: 'Terminé' };
+const LIBELLES_STATUT_LIGNE_EB = { 'Brouillon ': 'dga-ligne-attente', 'Partiellement livré': 'dga-ligne-partiel', 'Livré': 'dga-ligne-livre' };
 
 let dga_table = null;
 let dga_produitsPanier = []; // [{ idP, designation, quantite }]
@@ -110,9 +110,18 @@ function dga_renderTable(expressions) {
                 render: (d, t, row) => {
                     const statut = parseInt(row.idStatut);
                     let html = '';
-                    html += `<button type="button" class="dga-btn-voir-eb" onclick="dga_ouvrirVoir('${d}')">Voir</button>`;
+                    if (statut === 2) {
+                                                                    html += `<button type="button" class="dga-btn-voir-eb" onclick="
+dga_ouvrirConsulter('${d}')">Voir</button>`;
+
+                    }else if (statut === 3 || statut === 4 || statut === 5 || statut === 6)
+                    {
+                                            html += `<button type="button" class="dga-btn-voir-eb" onclick="dga_ouvrirVoir('${d}')">Voir</button>`;
+
+                    }
                     if (statut === 1) {
                         html += `<button type="button" class="dga-btn-poursuivre" onclick="dga_ouvrirModifier('${d}')">Poursuivre</button>`;
+                                     
                     }
                     if (statut === 4) {
                         html += `<button type="button" class="dga-btn-modifier-eb" onclick="dga_ouvrirModifier('${d}')">Modifier</button>`;
@@ -475,4 +484,104 @@ function dga_escapeHtml(str) {
         .replace(/>/g, '&gt;')
         .replace(/"/g, '&quot;')
         .replace(/'/g, '&#039;');
+}
+
+
+
+/* ────────────────────────── INFORMATIONS SUR LES SORTIES ───────────── */
+// function dga_ouvrirInfoSorties(token) {
+//     dga_showLoader('Chargement des informations…');
+//     $.ajax({
+//         url: EB_CONTROLLER_URL, method: 'POST', data: { option: 5, token: token }, dataType: 'json'
+//     }).done(function (res) {
+//         dga_hideLoader();
+//         if (res.status !== 'success') {
+//             Swal.fire('Erreur', res.message || 'Impossible de charger les informations sur les sorties.', 'error');
+//             return;
+//         }
+
+//         const e = res.expression;
+//         document.getElementById('infoSortiesModalTitre').textContent = 'Sorties — ' + e.nom_expression;
+
+//         const lignes = e.lignes || [];
+//         const sectionsHtml = lignes.length
+//             ? lignes.map(function (l) {
+//                 const sortiesHtml = (l.sorties || []).length
+//                     ? l.sorties.map(function (s) {
+//                         return `<tr><td>${dga_fmtDateHeure(s.date_sortie)}</td><td>${dga_escapeHtml(s.quantite_sortie)}</td><td>${s.utilisateur ? dga_escapeHtml(s.utilisateur) : '—'}</td></tr>`;
+//                     }).join('')
+//                     : '<tr><td colspan="3" style="text-align:center;color:#9ca3af;font-style:italic;">Aucune sortie enregistrée pour ce produit.</td></tr>';
+
+//                 return `
+//                     <div class="dga-section-produit">
+//                         <div class="dga-section-produit-titre">${dga_escapeHtml(l.designation)}</div>
+//                         <div class="dga-section-produit-qtes">
+//                             Quantité demandée : <strong>${dga_escapeHtml(l.quantite)}</strong>
+//                             — Quantité réelle : <strong>${l.quantite_reelle !== null ? dga_escapeHtml(l.quantite_reelle) : '—'}</strong>
+//                             — Quantité sortie : <strong>${dga_escapeHtml(l.quantite_sortie)}</strong>
+//                         </div>
+//                         <table class="dga-table-sorties-detail">
+//                             <thead><tr><th>Date de sortie</th><th>Quantité sortie</th><th>Utilisateur</th></tr></thead>
+//                             <tbody>${sortiesHtml}</tbody>
+//                         </table>
+//                     </div>
+//                 `;
+//             }).join('')
+//             : '<p style="text-align:center;color:#9ca3af;font-style:italic;">Aucun produit.</p>';
+
+//         document.getElementById('dgaContenuInfoSorties').innerHTML = `
+//             <p style="margin-bottom:1rem;font-size:.85rem;color:#374151;">
+//                 <strong>Demandeur :</strong> ${dga_escapeHtml(e.demandeur)}<br/>
+//                 <strong>Date de création :</strong> ${dga_fmtDate(e.date_creation)}
+//             </p>
+//             ${sectionsHtml}
+//         `;
+
+//         new bootstrap.Modal(document.getElementById('modalInfoSorties')).show();
+//     }).fail(function (xhr) {
+//         dga_hideLoader();
+//         Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
+//     });
+// }
+
+
+function dga_ouvrirConsulter(token) {
+    dga_showLoader('Chargement du détail…');
+    $.ajax({
+        url: EB_CONTROLLER_URL, method: 'POST', data: { option: 8, token: token }, dataType: 'json'
+    }).done(function (res) {
+        dga_hideLoader();
+        if (res.status !== 'success') {
+            Swal.fire('Erreur', res.message || 'Impossible de charger le détail.', 'error');
+            return;
+        }
+
+        const e = res.expression;
+        document.getElementById('consulterModalTitre').textContent = 'Détail — ' + e.nom_expression;
+
+        const lignes = (e.produits || []).map(function (p) {
+            return `<tr>
+                <td>${dga_escapeHtml(p.designation)}</td>
+                <td>${dga_escapeHtml(p.quantite)}</td>
+                <td>${p.quantite_reelle !== null ? dga_escapeHtml(p.quantite_reelle) : '—'}</td>
+            </tr>`;
+        }).join('') || '<tr><td colspan="3" style="text-align:center;color:#9ca3af;font-style:italic;">Aucun produit.</td></tr>';
+
+        document.getElementById('dgaContenuConsulter').innerHTML = `
+            <p style="margin-bottom:1rem;font-size:.85rem;color:#374151;">
+                <strong>Demandeur :</strong> ${dga_escapeHtml(e.demandeur)}<br/>
+                <strong>Date de création :</strong> ${dga_fmtDate(e.date_creation)}<br/>
+                <strong>Statut :</strong> <span class="dga-badge-statut dga-statut-${e.idStatut}">${LIBELLES_STATUT_EB[e.idStatut] || e.idStatut}</span>
+            </p>
+            <table class="dga-table-produits">
+                <thead><tr><th>Désignation</th><th>Qté demandée</th><th>Qté réelle</th></tr></thead>
+                <tbody>${lignes}</tbody>
+            </table>
+        `;
+
+        new bootstrap.Modal(document.getElementById('modalConsulterEB')).show();
+    }).fail(function (xhr) {
+        dga_hideLoader();
+        Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
+    });
 }

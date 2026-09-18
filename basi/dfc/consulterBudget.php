@@ -23,7 +23,7 @@ if (!empty($_GET['budgetId'])) {
     $budgetId    = (int)$_GET['budgetId'];
     $budgetToken = tokenencrypt((string)$budgetId);
 }
-if (!$budgetId) { header('Location: /personnel/dfc-liste_budget'); exit; }
+if (!$budgetId) { header('Location: /dfc-liste_budget'); exit; }
 ?>
 <!DOCTYPE html>
 <html lang="fr">
@@ -56,7 +56,7 @@ if (!$budgetId) { header('Location: /personnel/dfc-liste_budget'); exit; }
              data-kt-drawer-overlay="true" data-kt-drawer-width="{default:'200px', '300px': '250px'}"
              data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_aside_mobile_toggle">
             <div class="aside-logo flex-column-auto text-center" id="kt_aside_logo">
-                <a href="/personnel/dfc-accueil" style="margin-left:65px;" id="lien_logo1">
+                <a href="/dfc-accueil" style="margin-left:65px;" id="lien_logo1">
                     <img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/1.png" id="logo1" class="h-50px logo"/>
                 </a>
                 <div id="kt_aside_toggle" class="btn btn-icon w-auto px-0 btn-active-color-primary aside-toggle"
@@ -96,7 +96,7 @@ if (!$budgetId) { header('Location: /personnel/dfc-liste_budget'); exit; }
                         </div>
                     </div>
                     <div class="d-flex align-items-center flex-grow-1 flex-lg-grow-0">
-                        <a href="/personnel/dfc-accueil" class="d-lg-none" id="lien_logo2">
+                        <a href="/dfc-accueil" class="d-lg-none" id="lien_logo2">
                             <img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/1.png" id="logo2" class="h-30px"/>
                         </a>
                     </div>
@@ -145,8 +145,8 @@ if (!$budgetId) { header('Location: /personnel/dfc-liste_budget'); exit; }
                                                     <div class="menu-item px-5">
                                                         <div class="menu-content px-5">
                                                             <label class="form-check form-switch form-check-custom form-check-solid pulse pulse-success" for="kt_user_menu_dark_mode_toggle">
-                                                                <a href="/personnel/signout">
-                                                                    <input class="form-check-input w-30px h-20px" checked="checked" type="checkbox" value="1" name="mode" id="kt_user_menu_dark_mode_toggle" data-kt-url="/personnel/quitter"/>
+                                                                <a href="/signout">
+                                                                    <input class="form-check-input w-30px h-20px" checked="checked" type="checkbox" value="1" name="mode" id="kt_user_menu_dark_mode_toggle" data-kt-url="/quitter"/>
                                                                     <span class="pulse-ring ms-n1"></span>
                                                                     <span class="form-check-label text-gray-600 fs-7">se déconnecter</span>
                                                                 </a>

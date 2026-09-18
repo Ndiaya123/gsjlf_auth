@@ -15,6 +15,10 @@
  * Paramètre GET : token (chiffré de inventaire.id)
  */
 
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE);
+
 // ─── Session ────────────────────────────────────────────────────────────────
 ob_start();
 session_start();
@@ -48,8 +52,13 @@ if ($idI <= 0) { http_response_code(400); die('Token invalide.'); }
 require('../../includes/fpdf/fpdf.php');
 require('../../includes/fpdf/PDF_MC_Table.php');
 
-define('TEMPLATE_PREMIERE_PAGE',   __DIR__ . '/../../includes/fpdf/template/gsjlf_template.pdf');
-define('TEMPLATE_PAGES_SUIVANTES', __DIR__ . '/../../includes/fpdf/template/gsjlf_template.pdf');
+// define('TEMPLATE_PREMIERE_PAGE',   __DIR__ . '/../../includes/fpdf/template/gsjlf_template.pdf');
+// define('TEMPLATE_PAGES_SUIVANTES', __DIR__ . '/../../includes/fpdf/template/gsjlf_template.pdf');
+
+define('TEMPLATE_PREMIERE_PAGE',   __DIR__ . '/../../includes/fpdf/template/gsjlf_template_2026_1.pdf');
+define('TEMPLATE_PAGES_SUIVANTES', __DIR__ . '/../../includes/fpdf/template/gsjlf_template_2026_1.pdf');
+
+
 
 // ── Palette sobre : encre + un seul accent, pas d'aplats de couleur ────────
 define('ENCRE',      [31, 41, 55]);     // texte principal, quasi noir

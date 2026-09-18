@@ -27,7 +27,7 @@
              data-kt-drawer-overlay="true" data-kt-drawer-width="{default:'200px', '300px': '250px'}"
              data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_aside_mobile_toggle">
             <div class="aside-logo flex-column-auto text-center" id="kt_aside_logo">
-                <a href="/personnel/responsable-financier-accueil" style="margin-left:65px;" id="lien_logo1">
+                <a href="/responsable-financier-accueil" style="margin-left:65px;" id="lien_logo1">
                     <img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/1.png" id="logo1" class="h-50px logo"/>
                 </a>
             </div>
@@ -45,7 +45,7 @@
             <div id="kt_header" class="header align-items-stretch">
                 <div class="container-fluid d-flex align-items-stretch justify-content-between">
                     <div class="d-flex align-items-center flex-grow-1 flex-lg-grow-0">
-                        <a href="/personnel/responsable-financier-accueil" class="d-lg-none" id="lien_logo2">
+                        <a href="/responsable-financier-accueil" class="d-lg-none" id="lien_logo2">
                             <img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/1.png" id="logo2" class="h-30px"/>
                         </a>
                     </div>
@@ -78,8 +78,8 @@
                                     <div class="menu-item px-5">
                                         <div class="menu-content px-5">
                                             <label class="form-check form-switch form-check-custom form-check-solid pulse pulse-success" for="kt_user_menu_dark_mode_toggle">
-                                                <a href="/personnel/signout">
-                                                    <input class="form-check-input w-30px h-20px" checked="checked" type="checkbox" value="1" name="mode" id="kt_user_menu_dark_mode_toggle" data-kt-url="/personnel/quitter"/>
+                                                <a href="/signout">
+                                                    <input class="form-check-input w-30px h-20px" checked="checked" type="checkbox" value="1" name="mode" id="kt_user_menu_dark_mode_toggle" data-kt-url="/quitter"/>
                                                     <span class="pulse-ring ms-n1"></span>
                                                     <span class="form-check-label text-gray-600 fs-7">se déconnecter</span>
                                                 </a>
@@ -223,7 +223,7 @@
                                     <div class="dga-actions">
                                         <button type="button" class="dga-cancel" data-bs-dismiss="modal">Annuler</button>
                                         <button type="button" class="dga-submit-poursuivre" id="dgaBtnPoursuivre">
-                                            <span>Soumettre et poursuivre</span>
+                                            <span> Enregistrer et poursuivre après</span>
                                             <svg class="dga-spinner hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity=".25"/><path d="M12 2a10 10 0 019.76 7.8"/></svg>
                                         </button>
                                         <button type="button" class="dga-submit-soumettre" id="dgaBtnSoumettre">
@@ -270,6 +270,27 @@
         </div>
     </div>
 </div>
+
+
+ <!-- ══ MODALE : Consulter (lecture seule) ══ -->
+                        <div class="modal fade dga-modal" id="modalConsulterEB" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h2 id="consulterModalTitre">Détail</h2>
+                                        <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                                            <span class="svg-icon svg-icon-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black"/><rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black"/></svg></span>
+                                        </div>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div id="dgaContenuConsulter"></div>
+                                    </div>
+                                    <div class="dga-actions">
+                                        <button type="button" class="dga-cancel" data-bs-dismiss="modal">Fermer</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
 <div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
     <span class="svg-icon">

@@ -50,7 +50,7 @@ let al_budgetToken    = null;
 function al_expired() {
     Swal.fire({ icon:'warning', title:'Session expirée', text:'Redirection…',
         timer:2500, showConfirmButton:false,
-        didClose:()=>{ window.location.href = '/personnel/signin'; }
+        didClose:()=>{ window.location.href = '/signin'; }
     });
 }
 async function al_post(url, body = {}, timeout = 12000) {
@@ -868,7 +868,7 @@ async function al_soumettre() {
         confirmButtonText : 'Retour à la liste',
         confirmButtonColor: '#1a7a5e',
     });
-    window.location.href = '/personnel/chef_service_demande';
+    window.location.href = '/chef_service_demande';
 }
 
 // ─── Recharger les deux tableaux ─────────────────────────────────────────────
@@ -895,11 +895,11 @@ document.addEventListener('DOMContentLoaded', () => {
     al_init();
     // Délégation pour le checkbox "tout sélectionner" dans l'en-tête
     $(document).on('change', '#al-chk-all', function() { al_toggleAll(this); });
-    document.getElementById('al-btn-retour')?.addEventListener('click', () => window.location.href='/personnel/chef_service_demande');
+    document.getElementById('al-btn-retour')?.addEventListener('click', () => window.location.href='/chef_service_demande');
     document.getElementById('al-btn-valider')?.addEventListener('click', al_ajouterLignes);
     document.getElementById('al-btn-soumettre')?.addEventListener('click', al_soumettre);
     document.getElementById('al-sel-service')?.addEventListener('change', al_filtrerService);
     document.getElementById('al-btn-terminer')?.addEventListener('click', () => {
-        window.location.href = '/personnel/chef_service_demande';
+        window.location.href = '/chef_service_demande';
     });
 });

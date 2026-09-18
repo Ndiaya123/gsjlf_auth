@@ -108,7 +108,7 @@ function dga_renderTable(inventaires) {
                     const statut = parseInt(row.idStatut);
                     let html = '';
                     if (statut === 1 || statut === 2) {
-                        html += `<a href="/personnel/compta_basi_inventaire-pdf-vierge/${d}" target="_blank" class="dga-btn-pdf">PDF vierge</a>`;
+                        html += `<a href="/compta_basi_inventaire-pdf-vierge/${d}" target="_blank" class="dga-btn-pdf">PDF vierge</a>`;
                     }
                     if (statut === 3) {
                         html += `<button type="button" class="dga-btn-valider" onclick="dga_ouvrirValidation('${d}')">Valider</button>`;
@@ -265,7 +265,7 @@ function dga_ouvrirDetail(token) {
 
         const inv = res.inventaire;
         document.getElementById('detailInvModalTitre').textContent = 'Détail — ' + inv.reference;
-        document.getElementById('dgaLienRapportPdf').href = '/personnel/compta_basi_inventaire_rapport_pdf/' + encodeURIComponent(token);
+        document.getElementById('dgaLienRapportPdf').href = '/compta_basi_inventaire_rapport_pdf/' + encodeURIComponent(token);
 
         const lignes = (inv.lignes || []).map(function (l) {
             let badge = '<span style="color:#d1d5db;">—</span>';

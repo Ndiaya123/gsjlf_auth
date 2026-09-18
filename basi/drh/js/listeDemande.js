@@ -11,7 +11,7 @@
 //   - "Toutes les lignes demandes de paiement"→ type=paiement, afficherEpuisees=1
 // ════════════════════════════════════════════════════════════════════════
 
-const LD_API = '/personnel/drh_basi_controller'; // ← ajuster selon le chemin réel du contrôleur
+const LD_API = '/drh_basi_controller'; // ← ajuster selon le chemin réel du contrôleur
 const ld_api = {
     demandes: `${LD_API}?option=8`,
 };
@@ -23,7 +23,7 @@ let ld_filtre   = 'toutes'; // 'toutes' | 'demande_achat' | 'demande_paiement'
 function ld_expired() {
     Swal.fire({ icon:'warning', title:'Session expirée', text:'Redirection…',
         timer:2500, showConfirmButton:false,
-        didClose:()=>{ window.location.href = '/personnel/signin'; }
+        didClose:()=>{ window.location.href = '/signin'; }
     });
 }
 async function ld_post(url, body = {}, timeout = 12000) {
@@ -144,7 +144,7 @@ function ld_renderTable(demandes) {
                     if (row.epuisee) {
                         return '<span style="color:#d1d5db;font-size:.75rem">—</span>';
                     }
-                    return `<a href="/personnel/drh_demande_voir_lignes/${row.tmp}"
+                    return `<a href="/drh_demande_voir_lignes/${row.tmp}"
                                class="ld-btn-voir" title="Voir le détail de la demande">
                         <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                             <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>

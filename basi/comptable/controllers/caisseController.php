@@ -153,8 +153,8 @@ $option = (int)$option;
 
 header('Content-Type: application/json; charset=utf-8');
 
-define('UPLOAD_DIR_BON_LIVRAISON', __DIR__ . '/../../documents/commandes/bons_livraison'); // ← ajuster
-define('UPLOAD_URL_BON_LIVRAISON', '/personnel/basi/documents/bons_livraison');
+define('UPLOAD_DIR_BON_LIVRAISON', __DIR__ . '/../../documents/commandes'); // ← ajuster
+define('UPLOAD_URL_BON_LIVRAISON', 'http://localhost/personnel/basi/documents/commandes');
 
 /* ═══════════════════════════════════════════════════════════════════════════
    HELPERS
@@ -167,7 +167,7 @@ define('UPLOAD_URL_BON_LIVRAISON', '/personnel/basi/documents/bons_livraison');
  */
 function arreteCaisseExiste(PDO $bdBASI, int $idCaissier, string $dateAlimentation): bool {
     $stmt = $bdBASI->prepare("
-        SELECT id FROM arrete_caisse WHERE idCaissier = ? AND date_alimentation = ? LIMIT 1
+        SELECT id FROM alimentation_arrete_caisse WHERE idCaissier = ? AND date_alimentation = ? LIMIT 1
     ");
     $stmt->execute([$idCaissier, $dateAlimentation]);
     return (bool)$stmt->fetch();
@@ -702,6 +702,9 @@ function listerPaiements(PDO $bdBASI, caisseController $basiController): void {
             'montant_total'  => $montantTotal,
         ]);
     } catch (\Throwable $e) {
+
+    echo $e;
+    die;
         error_log('[Caisse][listerPaiements] ' . $e->getMessage());
         erreurSqlCaisse('Impossible de charger la liste des paiements.');
     }
@@ -1330,7 +1333,7 @@ function detailDossierComplet(PDO $bdBASI, caisseController $basiController): vo
             $documents['fournisseur']         = $facture ? trim(($facture['prenomF'] ?? '') . ' ' . ($facture['nomF'] ?? '')) . (!empty($facture['entreprise']) ? ' — ' . $facture['entreprise'] : '') : null;
 
             // Bon de commande généré par le système (PDF autonome existant).
-            $documents['bon_commande_url'] = '/personnel/bon_pap_pdf?token=' . urlencode($token);
+            $documents['bon_commande_url'] = '/compta_facture/' . urlencode($token);
 
             // Bon(s) de livraison — potentiellement plusieurs (livraisons partielles).
             $stmtLivraisons = $bdBASI->prepare("
@@ -2454,7 +2457,7 @@ function validerInventaire(PDO $bdBASI, caisseController $basiController, int $s
     }
 }
 
-function uploaderBC(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void {
+function uploaderFD(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void {
     try {
         $token = trim((string)($_POST['token'] ?? ''));
         if ($token === '') {
@@ -2489,7 +2492,7 @@ function uploaderBC(PDO $bdBASI, caisseController $basiController, int $sessionU
         $finfo    = new finfo(FILEINFO_MIME_TYPE);
         $mimeType = $finfo->file($_FILES['bc']['tmp_name']);
         if ($mimeType !== 'application/pdf') {
-            echo json_encode(['status' => 'error', 'message' => 'Le bon de commande doit être un fichier PDF.']);
+            echo json_encode(['status' => 'error', 'message' => 'La facture définitive doit être un fichier PDF.']);
             return;
         }
 
@@ -2500,21 +2503,45 @@ function uploaderBC(PDO $bdBASI, caisseController $basiController, int $sessionU
         date_default_timezone_set('Africa/Dakar');
         $dateEnregistrement = date('Y-m-d H:i:s');
 
-        $nomFichier   = 'bon_commande_' . $idPAP . '_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.pdf';
+        $nomFichier   = 'facture_difitive_' . $idPAP . '_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.pdf';
         $cheminAbsolu = UPLOAD_DIR_COMMANDES . '/' . $nomFichier;
         if (!move_uploaded_file($_FILES['bc']['tmp_name'], $cheminAbsolu)) {
             throw new \RuntimeException("Échec de l'enregistrement du bon de commande.");
         }
         $cheminPublic = UPLOAD_URL_COMMANDES . '/' . $nomFichier;
 
+        $bdBASI->beginTransaction();
+
         $bdBASI->prepare("
             UPDATE documents_pap SET facture_definitive = ? WHERE id = ?
         ")->execute([$cheminPublic, $document['id']]);
 
+
+        //  date_default_timezone_set('Africa/Dakar');
+        // $dateEnregistrement = date('Y-m-d H:i:s');
+
+
+
+        // $bdBASI->prepare("
+        //     INSERT INTO historique_passer_achat_et_paiement
+        //         (idPAP, nom_commande, montant_total, idStatut, idTypePAP, dateCreation, id_mode_reglement,
+        //          id_mode_paiement, nb_tranche, idUtilisateur, motif, dateEnregistrement)
+        //     SELECT id, nom_commande, montant_total, idStatut, idTypePAP, dateCreation, id_mode_reglement,
+        //            id_mode_paiement, nb_tranche, ?, ?, ?
+        //     FROM passer_achat_et_paiement
+        //     WHERE id = ?
+        // ")->execute([
+        //     $sessionUserId,
+        //     "La facture définitive a été téléversée (par $sessionMatricule)",
+        //     $dateEnregistrement, $idPAP,
+        // ]);
+
+                $bdBASI->commit();
+
         echo json_encode(['status' => 'success', 'message' => 'Bon de commande téléversé avec succès.']);
     } catch (\Throwable $e) {
-        error_log('[Operations][uploaderBC] ' . $e->getMessage());
-        erreurSql('Impossible de téléverser le bon de commande.');
+        error_log('[Operations][uploaderFD] ' . $e->getMessage());
+        erreurSql('Impossible de téléverser la facture définitive.');
     }
 }
 
@@ -2953,7 +2980,7 @@ try {
             break;
 
         case 33:
-            uploaderBC($bdBASI, $basiController, $sessionUserId, $sessionMatricule);
+            uploaderFD($bdBASI, $basiController, $sessionUserId, $sessionMatricule);
             break;
 
         case 34:

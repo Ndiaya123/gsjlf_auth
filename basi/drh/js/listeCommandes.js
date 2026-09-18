@@ -11,7 +11,7 @@
  *   - Envoyer à la caisse (idStatut = 4 uniquement) : idStatut 4 → 6.
  */
 
-const drh_basi_controller_URL = '/personnel/drh_basi_controller'; // ← ajuster selon le chemin réel
+const drh_basi_controller_URL = '/drh_basi_controller'; // ← ajuster selon le chemin réel
 
 const LIBELLES_STATUT = {
     1: 'En attente', 2: 'Validée', 3: 'Avis favorable', 4: 'Acceptée',
@@ -318,13 +318,13 @@ function dga_ouvrirDetail(token) {
 
         if (estAchat) {
             if (res.facture_definitive) {
-                titreDoc.textContent = 'Facture définitive';
+                titreDoc.textContent = 'Facture choisie';
                 const f = res.facture_definitive;
                 const nomF = `${f.prenomF || ''} ${f.nomF || ''}`.trim() + (f.entreprise ? ' — ' + f.entreprise : '');
                 listeDoc.innerHTML = `
                     <div class="dga-doc-item">
                         <div class="dga-doc-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-                        <div class="dga-doc-info"><div class="dga-doc-nom">Facture définitive</div><div class="dga-doc-sub">Fournisseur retenu : ${vd_escapeHtml(nomF)}</div></div>
+                        <div class="dga-doc-info"><div class="dga-doc-nom">Facture choisie</div><div class="dga-doc-sub">Fournisseur retenu : ${vd_escapeHtml(nomF)}</div></div>
                         <a href="${f.facture_definitive}" target="_blank" class="dga-doc-link">Ouvrir</a>
                     </div>
                 `;
@@ -400,7 +400,7 @@ function dga_ouvrirSuivi(token) {
 
 /* ────────────────────────── ACTION : GÉNÉRER PDF ───────────────────── */
 function dga_genererPdf(token) {
-    window.open('/personnel/drh_facture/' + encodeURIComponent(token), '_blank');
+    window.open('/drh_facture/' + encodeURIComponent(token), '_blank');
 }
 
 /* ────────────────────────── ACTION : DOSSIER ───────────────────────── */
@@ -513,7 +513,7 @@ function dga_rendreDocuments(docs, estAchat) {
                 ${docs.facture_choisie ? `<a href="${docs.facture_choisie}" target="_blank" class="dga-doc-link">Ouvrir</a>` : '<span style="color:#d1d5db;">—</span>'}
             </div>
             <div class="dga-doc-item">
-                <span>Facture définitive (BC uploadé)</span>
+                <span>Facture définitive (FD uploadée)</span>
                 ${docs.facture_definitive ? `<a href="${docs.facture_definitive}" target="_blank" class="dga-doc-link">Ouvrir</a>` : '<span style="color:#d1d5db;">—</span>'}
             </div>
             <div class="dga-doc-item">

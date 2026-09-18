@@ -14,7 +14,7 @@
 // Historique : INSERT complet (copie colonnes budget + motif + dateEnregistrement)
 // ═══════════════════════════════════════════════════════════════════════
 
-const DFC_API = '/personnel/dfc_basi_controller';
+const DFC_API = '/dfc_basi_controller';
 const dfc_api = {
     tous      : `${DFC_API}?option=1`,
     pending   : `${DFC_API}?option=2`,
@@ -48,7 +48,7 @@ function dfc_expired() {
     dfc_hideLoader();
     Swal.fire({ icon:'warning', title:'Session expirée', text:'Redirection en cours…',
         timer:2500, showConfirmButton:false,
-        didClose:()=>{ window.location.href='/personnel/signin'; }});
+        didClose:()=>{ window.location.href='/signin'; }});
 }
 async function dfc_post(url, body={}, timeout=10000) {
     const ctrl=new AbortController(), t=setTimeout(()=>ctrl.abort(),timeout);
@@ -345,7 +345,7 @@ function dfc_initTabs() {
 // ─── Actions ──────────────────────────────────────────────────────────
 function dfc_voirBudget(id) {
 
-    window.location.href = `/personnel/dfc-consultation-budget/${id}`;
+    window.location.href = `/dfc-consultation-budget/${id}`;
 
 }
 

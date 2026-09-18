@@ -5,7 +5,7 @@
  * modale à 2 blocs (choix du fournisseur + prix réels des lignes).
  */
 
-const DGA_CONTROLLER_URL = '/personnel/dga_basi_controller'; // ← ajuster selon le chemin réel
+const DGA_CONTROLLER_URL = '/dga_basi_controller'; // ← ajuster selon le chemin réel
 
 let dga_table          = null;
 let dga_commandeActive = null; // token de la commande en cours de validation

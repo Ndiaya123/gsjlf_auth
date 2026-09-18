@@ -8,7 +8,7 @@
  *   - Avis favorable : fait passer idStatut de 2 à 3.
  */
 
-const DFC_CONTROLLER_URL = '/personnel/dfc_basi_controller'; // ← ajuster selon le chemin réel
+const DFC_CONTROLLER_URL = '/dfc_basi_controller'; // ← ajuster selon le chemin réel
 
 let dga_table = null;
 

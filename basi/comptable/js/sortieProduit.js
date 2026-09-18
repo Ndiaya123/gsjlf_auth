@@ -8,7 +8,7 @@
 
 const CAISSE_CONTROLLER_URL = '/personnel/cpt_caisse_basi_controller'; // ← ajuster selon le chemin réel
 
-const LIBELLES_STATUT_EB_SORTIE = { 3: 'À sortir', 5: 'Partiellement livré', 6: 'Terminé' };
+const LIBELLES_STATUT_EB_SORTIE = { 1: 'Brouillon', 2: 'Soumise', 3: 'Validée', 4: 'Rejetée', 5: 'Partiellement livré', 6: 'Terminé'};
 
 let dga_table = null;
 let dga_tokenCourant = null;
@@ -267,7 +267,7 @@ function dga_confirmerSortie() {
 /* ────────────────────────── VOIR (suivi de l'évolution) ─────────────── */
 function dga_badgeLigneSortie(statutLigne) {
     const map = {
-        'En attente': 'dga-ligne-attente',
+        'Brouillon': 'dga-ligne-attente',
         'Partiellement livré': 'dga-ligne-partiel',
         'Livré': 'dga-ligne-livre',
     };

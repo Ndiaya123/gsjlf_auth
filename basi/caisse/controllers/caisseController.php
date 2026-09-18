@@ -135,7 +135,8 @@ header('Content-Type: application/json; charset=utf-8');
 define('MODES_SOLDE_JOURNALIER', [1, 4, 5]); // Liquide, Wave, Orange Money
 
 define('UPLOAD_DIR_RECUS_PAIEMENT', __DIR__ . '/../../documents/preuve_paiement'); // ← ajuster
-define('UPLOAD_URL_RECUS_PAIEMENT', '/personnel/basi/documents/preuve_paiement');
+define('UPLOAD_URL_RECUS_PAIEMENT', 'http://localhost/personnel/basi/documents/preuve_paiement');
+
 
 /* ═══════════════════════════════════════════════════════════════════════════
    MODULE — Profil Caissier
@@ -509,6 +510,16 @@ function arreteCaisseExisteJour(PDO $bdBASI, int $idCaissier): bool {
     return (bool) $stmt->fetch();
 }
 
+
+function arreteCaisseExiste(PDO $bdBASI, int $idCaissier, string $dateAlimentation): bool {
+    $stmt = $bdBASI->prepare("
+        SELECT id FROM alimentation_arrete_caisse WHERE idCaissier = ? AND date_alimentation = ? LIMIT 1
+    ");
+    $stmt->execute([$idCaissier, $dateAlimentation]);
+    return (bool)$stmt->fetch();
+}
+
+
 /**
  * Liste des commandes (achat + paiement) restant à régler : idStatut = 6
  * ET montant_paye < montant_total.
@@ -542,8 +553,7 @@ function listerCommandesAPayer(PDO $bdBASI, caisseCaissierController $basiContro
         echo json_encode(['status' => 'success', 'data' => $rows, 'arreteEffectue' => arreteCaisseExisteJour($bdBASI, $sessionUserId)]);
     } catch (\Throwable $e) {
 
-        echo $e;
-        die;
+       
         error_log('[CaisseCaissier][listerCommandesAPayer] ' . $e->getMessage());
         erreurSqlCaissier('Impossible de charger la liste des commandes à payer.');
     }
@@ -767,11 +777,11 @@ function effectuerPaiement(PDO $bdBASI, caisseCaissierController $basiController
             // de la création des tranches (passerCommande/passerPaiement).
             $bdBASI->prepare("
                 INSERT INTO tranches_histo
-                    (id_tranche, idPAP, ordre, pourcentage, created_at, updated_at, action, dateEnregistrement)
-                VALUES (?, ?, ?, ?, ?, ?, 'Paiement', ?)
+                    (id_tranche, idPAP, ordre, pourcentage, created_at, updated_at, action, dateEnregistrement,date_paiement)
+                VALUES (?, ?, ?, ?, ?, ?, 'Paiement', ?,?)
             ")->execute([
                     $trancheAReglee['id'], $idPAP, $trancheAReglee['ordre'], $trancheAReglee['pourcentage'],
-                    $dateEnregistrement, $dateEnregistrement, $dateEnregistrement,
+                    $dateEnregistrement, $dateEnregistrement, $dateEnregistrement,$dateEnregistrement
             ]);
         }
 
@@ -788,7 +798,7 @@ function effectuerPaiement(PDO $bdBASI, caisseCaissierController $basiController
         if ($estTypePaiement) {
             $nouveauStatut = $desormaisSolde ? 7 : (int)$commande['idStatut'];
         } else {
-            $livraisonNulle = ((int)($commande['livraison'] ?? 0) === 0);
+            $livraisonNulle = ((int)($commande['livraison'] ?? 0) === 1);
             $nouveauStatut = ($desormaisSolde && $livraisonNulle) ? 7 : (int)$commande['idStatut'];
         }
         $bdBASI->prepare("
@@ -813,6 +823,9 @@ function effectuerPaiement(PDO $bdBASI, caisseCaissierController $basiController
                 'commandeSoldee' => $desormaisSolde,
         ]);
     } catch (\Throwable $e) {
+
+    echo $e;
+    die;
         if ($bdBASI->inTransaction()) $bdBASI->rollBack();
         error_log('[CaisseCaissier][effectuerPaiement] ' . $e->getMessage());
         erreurSqlCaissier("Impossible d'enregistrer le paiement.");
@@ -878,12 +891,13 @@ function statsJourPaiement(PDO $bdBASI): void {
     }
 }
 
-function listerPaiements(PDO $bdBASI, caisseController $basiController,$sessionUserId): void {
+
+function listerPaiements(PDO $bdBASI, caisseCaissierController $basiController,$sessionUserId): void {
     try {
-        $dateFin = trim((string) inputValueCaisse('dateFin', ''));
+        $dateFin = trim((string) inputValueCaissier('dateFin', ''));
         if ($dateFin === '') $dateFin = date('Y-m-d');
 
-        $dateDebut = trim((string) inputValueCaisse('dateDebut', ''));
+        $dateDebut = trim((string) inputValueCaissier('dateDebut', ''));
 
         // Garde-fou serveur : Date de début ne doit jamais dépasser Date de fin.
         if ($dateDebut !== '' && $dateDebut > $dateFin) {
@@ -945,6 +959,10 @@ function listerPaiements(PDO $bdBASI, caisseController $basiController,$sessionU
             'montant_total'  => $montantTotal,
         ]);
     } catch (\Throwable $e) {
+
+    echo "papa ".$e;
+    die;
+
         error_log('[Caisse][listerPaiements] ' . $e->getMessage());
         erreurSqlCaisse('Impossible de charger la liste des paiements.');
     }
@@ -997,10 +1015,11 @@ try {
         case 8:
             statsJourPaiement($bdBASI);
             break;
+
         case 9 :
 
-            listerPaiements($bdBASI, $basiController,$sessionUserId);
-            break;
+        listerPaiements($bdBASI, $basiController,$sessionUserId);
+        break;
 
         default:
             http_response_code(400);
@@ -1008,6 +1027,8 @@ try {
             exit;
     }
 } catch (\Throwable $e) {
+
+
     error_log('[CaisseCaissier][Routage] ' . $e->getMessage());
     http_response_code(500);
     echo json_encode(['status' => 'error', 'message' => 'Une erreur inattendue est survenue.']);

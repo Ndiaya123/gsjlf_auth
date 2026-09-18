@@ -11,7 +11,7 @@
  * d'origine (demandes_ligne.idD), sans exiger un idD global unique.
  */
 
-const VD_INFO_URL = '/personnel/drh_basi_controller?option=17'; // ← ajuster selon le chemin réel
+const VD_INFO_URL = '/drh_basi_controller?option=17'; // ← ajuster selon le chemin réel
 
 let vd_estAchat   = true; // page dédiée aux lignes d'achat uniquement
 let vd_table      = null;
@@ -82,7 +82,7 @@ function vd_renderTable(lignes) {
         ],
         columnDefs: [
             { targets: 0, render: d => vd_renderCheckbox(d) },
-            { targets: 1, render: (d, t, row) => `<a href="/personnel/voir-demande.php?token=${encodeURIComponent(row.tmp)}" class="vd-lien-demande" title="Voir cette demande">#${d}</a>` },
+            { targets: 1, render: (d, t, row) => `<a href="/voir-demande.php?token=${encodeURIComponent(row.tmp)}" class="vd-lien-demande" title="Voir cette demande">#${d}</a>` },
             { targets: 2, render: d => '<span class="vd-cell-name">' + vd_escapeHtml(d || '') + '</span>' },
             { targets: [3, 4, 5], render: d => '<span class="vd-cell-qty">' + vd_formatNumber(d) + '</span>' },
             { targets: 6, render: d => vd_formatMontant(d) },
@@ -245,7 +245,7 @@ function df_majCompteur() {
 /* ═══════════════════════════ PASSER COMMANDE ═════════════════════════ */
 /* ═══════════════════════════ PASSER COMMANDE ═════════════════════════ */
 // Même contrôleur que VD_INFO_URL (drh_basi_controller.php), options 10/11/12.
-const PC_CONTROLLER_URL = '/personnel/drh_basi_controller'; // ← ajuster selon le chemin réel
+const PC_CONTROLLER_URL = '/drh_basi_controller'; // ← ajuster selon le chemin réel
 
 let pc_listesChargees  = false;
 let pc_fournisseurs    = [];
@@ -515,7 +515,7 @@ function initModalesSubmit() {
                 // Ouvre la génération des pro forma dans un nouvel onglet
                 // (téléchargement du ZIP), ferme la modale, puis actualise
                 // la page courante pour refléter le nouvel état.
-                window.open('/personnel/drh_demande_facture_proforma', '_blank');
+                window.open('/drh_demande_facture_proforma', '_blank');
 
                 const modalEl = document.getElementById('modalDemandeFacture');
                 const modalInstance = bootstrap.Modal.getInstance(modalEl);

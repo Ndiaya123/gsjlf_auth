@@ -15,11 +15,17 @@
  * Paramètre GET : token (chiffré de inventaire.id)
  */
 
+
+ini_set('display_errors', '0');
+ini_set('log_errors', '1');
+error_reporting(E_ALL & ~E_DEPRECATED & ~E_STRICT & ~E_NOTICE);
+
+
 ob_start();
 session_start();
 $sessionOk = !empty($_SESSION['tmpIdBASI']) && !empty($_SESSION['tmpMatricule']);
 if (!$sessionOk) {
-    header('Location: /personnel/signin'); // ← ajuster selon la vraie route de connexion
+    header('Location: /signin'); // ← ajuster selon la vraie route de connexion
     die;
 }
 
@@ -47,8 +53,11 @@ if ($idI <= 0) { http_response_code(400); die('Token invalide.'); }
 require('../../includes/fpdf/fpdf.php');
 require('../../includes/fpdf/PDF_MC_Table.php');
 
-define('TEMPLATE_PREMIERE_PAGE',   __DIR__ . '/../../includes/fpdf/template/gsjlf_finance.pdf');
-define('TEMPLATE_PAGES_SUIVANTES', __DIR__ . '/../../includes/fpdf/template/gsjlf_template_finance.pdf');
+// define('TEMPLATE_PREMIERE_PAGE',   __DIR__ . '/../../includes/fpdf/template/gsjlf_finance.pdf');
+// define('TEMPLATE_PAGES_SUIVANTES', __DIR__ . '/../../includes/fpdf/template/gsjlf_template_finance.pdf');
+
+define('TEMPLATE_PREMIERE_PAGE','../../includes/fpdf/template/gsjlf_template_2026_1.pdf');
+define('TEMPLATE_PAGES_SUIVANTES','../../includes/fpdf/template/gsjlf_template_2026_1.pdf');
 
 define('ENCRE',       [31, 41, 55]);
 define('ENCRE_DOUCE',  [107, 114, 128]);
@@ -111,7 +120,7 @@ class PdfInventaireVierge extends PDF_MC_Table
             $this->SetTextColor($r, $g, $b);
             $this->SetFont('Helvetica', '', 9.5);
             $this->SetX(10);
-            $this->Cell(190, 5, decodeFpdfInv('Feuille vierge — saisie terrain'), 0, 1, 'L');
+            $this->Cell(190, 5, decodeFpdfInv('Feuille vierge - saisie terrain'), 0, 1, 'L');
 
             [$r, $g, $b] = FILET_FONCE;
             $this->SetDrawColor($r, $g, $b);

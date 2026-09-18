@@ -1,23 +1,28 @@
 <?php
 /**
  * dfc-demande-facture-proforma.php
- * Route : /personnel/dfc_demande_facture_proforma/
+ * Route : /dfc_demande_facture_proforma/
  *
  * Script autonome (session → BDD → FPDF → génération → sortie, tout en un
  * seul fichier, sans passer par drh_controller.php).
+ *
+ * Design : sobre et élégant, quasi monochrome (encre + un seul accent
+ * discret pour le titre et les filets), sans aplats colorés — même style
+ * que le rapport d'inventaire. Seule l'en-tête du tableau porte un fond
+ * argenté discret.
  *
  * Au chargement :
  *   1. Récupère les demandes de facture pro forma actives (statut = 1),
  *      groupées par fournisseur.
  *   2. Génère un PDF par fournisseur sur le gabarit institutionnel GSJLF
- *      (Désignation / Prix vide / Délai de validité vide), avec une mise en
- *      page soignée (bandeau titre, encart fournisseur, tableau stylé).
+ *      (Désignation / Prix vide / Délai de validité vide).
  *   3. Regroupe les PDF (normalement 3) dans une archive ZIP.
  *   4. Propose le ZIP en téléchargement automatique.
  *
  * ⚠️ À vérifier :
- *   - PROFORMA_TEMPLATE_PDF : placez le PDF d'en-tête GSJLF fourni à ce
- *     chemin exact (ou ajustez la constante).
+ *   - TEMPLATE_PREMIERE_PAGE / TEMPLATE_PAGES_SUIVANTES : mêmes fichiers
+ *     que le rapport d'inventaire (gsjlf_finance.pdf / gsjlf_template_finance.pdf),
+ *     à copier dans includes/fpdf/template/.
  *   - Chemins de bdBASI.php / fpdf.php / PDF_MC_Table.php : repris à
  *     l'identique de votre exemple fonctionnel (2 niveaux).
  */
@@ -28,7 +33,7 @@ session_start();
 
 $sessionOk = !empty($_SESSION['tmpIdBASI']) && !empty($_SESSION['tmpIdDirection']) && !empty($_SESSION['tmpMatricule']);
 if (!$sessionOk) {
-    header('Location: /personnel/signin'); // ← ajuster selon la vraie route de connexion
+    header('Location: /signin'); // ← ajuster selon la vraie route de connexion
     die;
 }
 
@@ -46,15 +51,24 @@ if (!$bdBASI) {
 require('../../includes/fpdf/fpdf.php');
 require('../../includes/fpdf/PDF_MC_Table.php');
 
-// Gabarit institutionnel (fond de page) — placez le PDF fourni à ce chemin.
-define('PROFORMA_TEMPLATE_PDF', __DIR__ . '/../../includes/fpdf/template/entete_gsjlf.pdf');
+// Gabarit institutionnel (fond de page) — mêmes fichiers que le rapport
+// d'inventaire : page 1 sur gsjlf_finance.pdf, pages suivantes sur
+// gsjlf_template_finance.pdf.
+// define('TEMPLATE_PREMIERE_PAGE',   __DIR__ . '/../../includes/fpdf/template/gsjlf_finance.pdf');
+// define('TEMPLATE_PAGES_SUIVANTES', __DIR__ . '/../../includes/fpdf/template/gsjlf_template_finance.pdf');
 
-// Palette de la marque (cohérente avec le reste de l'application)
-define('COULEUR_VERT_FONCE',  [6, 78, 59]);     // #064e3b
-define('COULEUR_VERT',        [26, 122, 94]);   // #1a7a5e
-define('COULEUR_VERT_CLAIR',  [240, 253, 244]); // #f0fdf4
-define('COULEUR_TEXTE',       [55, 65, 81]);    // #374151
-define('COULEUR_TEXTE_DOUX',  [107, 114, 128]); // #6b7280
+define('TEMPLATE_PREMIERE_PAGE',   __DIR__ . '/../../includes/fpdf/template/gsjlf_template.pdf');
+define('TEMPLATE_PAGES_SUIVANTES', __DIR__ . '/../../includes/fpdf/template/gsjlf_template.pdf');
+
+
+// ── Palette sobre : encre + un seul accent, pas d'aplats de couleur ────────
+// (identique au rapport d'inventaire, pour une cohérence visuelle totale)
+define('ENCRE',       [31, 41, 55]);     // texte principal, quasi noir
+define('ENCRE_DOUCE',  [107, 114, 128]); // texte secondaire / labels
+define('ACCENT',      [15, 76, 58]);     // vert institutionnel, usage minimal
+define('FILET',       [223, 226, 230]);  // lignes fines
+define('FILET_FONCE', [180, 186, 192]);  // filet double sous l'en-tête tableau
+define('ARGENT',      [214, 219, 224]);  // fond argenté discret de l'en-tête tableau
 
 /**
  * Convertit une chaîne UTF-8 en ISO-8859-1 pour FPDF, qui ne supporte pas
@@ -113,7 +127,7 @@ function recupererGroupesProformaActifs(PDO $bdBASI): array {
                     'idFournisseur' => $idF,
                     'reference'     => $row['reference'],
                     'nom'           => trim(($row['prenomF'] ?? '') . ' ' . ($row['nomF'] ?? ''))
-                            . ($row['entreprise'] ? ' — ' . $row['entreprise'] : ''),
+                            . ($row['entreprise'] ? ' - ' . $row['entreprise'] : ''),
                     'lignes'        => [],
             ];
         }
@@ -126,7 +140,7 @@ function recupererGroupesProformaActifs(PDO $bdBASI): array {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   CLASSE PDF — mise en page sur gabarit institutionnel
+   CLASSE PDF — sobre, sur gabarit institutionnel (page 1 vs suivantes)
 ═══════════════════════════════════════════════════════════════════════════ */
 
 class PdfProforma extends PDF_MC_Table
@@ -137,130 +151,95 @@ class PdfProforma extends PDF_MC_Table
 
     function Header()
     {
-        // Fond de page : gabarit institutionnel GSJLF (bandeau, sceau, pied de page)
-        $this->setSourceFile(PROFORMA_TEMPLATE_PDF);
+        // Fond de page : gabarit institutionnel GSJLF — page 1 vs suivantes.
+        $template = ($this->PageNo() === 1) ? TEMPLATE_PREMIERE_PAGE : TEMPLATE_PAGES_SUIVANTES;
+        $this->setSourceFile($template);
         $tplIdx = $this->importPage(1);
         $this->useTemplate($tplIdx, 0, 0, 210, 297);
 
         if ($this->PageNo() === 1) {
-            // ── Bandeau de titre, coins arrondis (descendu de 4mm) ─────────
-            [$r, $g, $b] = COULEUR_VERT_FONCE;
-            $this->SetFillColor($r, $g, $b);
-            $this->RoundedRect(10, 48, 190, 13, 2.5, 'F');
-            $this->SetTextColor(255, 255, 255);
-            $this->SetFont('Helvetica', 'B', 13);
-            $this->SetXY(10, 48);
-            $this->Cell(190, 13, decodeFpdf('DEMANDE DE FACTURE PRO FORMA'), 0, 0, 'C');
+            // Titre — texte seul, pas d'aplat, filet fin en dessous.
+            [$r, $g, $b] = ACCENT;
+            $this->SetTextColor($r, $g, $b);
+            $this->SetFont('Helvetica', 'B', 17);
+            $this->SetXY(10, 50);
+            $this->Cell(190, 9, decodeFpdf('Demande de facture pro forma'), 0, 1, 'L');
 
-            // ── Encart fournisseur / référence / date, coins arrondis ─────
-            [$r, $g, $b] = COULEUR_VERT_CLAIR;
-            $this->SetFillColor($r, $g, $b);
-            [$r, $g, $b] = COULEUR_VERT;
+            [$r, $g, $b] = FILET_FONCE;
             $this->SetDrawColor($r, $g, $b);
-            $this->SetLineWidth(0.3);
-            $this->RoundedRect(10, 65, 190, 16, 2, 'FD');
+            $this->SetLineWidth(0.5);
+            $this->Line(10, 61, 200, 61);
 
-            [$r, $g, $b] = COULEUR_TEXTE;
-            $this->SetTextColor($r, $g, $b);
+            // Bloc d'identification — grille sobre, labels petites capitales.
+            $y = 68;
+            $this->blocChampPF('FOURNISSEUR', $this->nomFournisseur, 10, $y);
+            $this->blocChampPF('REFERENCE', $this->reference, 105, $y);
+            $y += 11;
+            $this->blocChampPF('DATE', $this->dateDoc, 10, $y);
 
-            $this->SetFont('Helvetica', 'B', 8);
-            $this->SetXY(14, 68);
-            $this->Cell(60, 4, decodeFpdf('FOURNISSEUR'), 0, 2);
-            $this->SetFont('Helvetica', '', 10);
-            $this->SetX(14);
-            $this->Cell(90, 5, decodeFpdf($this->nomFournisseur), 0, 0);
-
-            $this->SetFont('Helvetica', 'B', 8);
-            $this->SetXY(110, 68);
-            $this->Cell(40, 4, decodeFpdf('REFERENCE'), 0, 2);
-            $this->SetFont('Helvetica', '', 10);
-            $this->SetX(110);
-            $this->Cell(40, 5, decodeFpdf($this->reference), 0, 0);
-
-            $this->SetFont('Helvetica', 'B', 8);
-            $this->SetXY(160, 68);
-            $this->Cell(35, 4, decodeFpdf('DATE'), 0, 2);
-            $this->SetFont('Helvetica', '', 10);
-            $this->SetX(160);
-            $this->Cell(35, 5, decodeFpdf($this->dateDoc), 0, 0);
-
-            $this->SetY(88);
+            $this->SetY($y + 12);
         } else {
-            // ── Pages suivantes (plusieurs produits → plusieurs pages) ────
-            // Bandeau compact : juste un rappel de la référence, pas de
-            // répétition du gros titre/encart, pour laisser plus de place
-            // utile au tableau.
-            [$r, $g, $b] = COULEUR_TEXTE_DOUX;
+            [$r, $g, $b] = ENCRE_DOUCE;
             $this->SetTextColor($r, $g, $b);
-            $this->SetFont('Helvetica', 'I', 9);
+            $this->SetFont('Helvetica', 'I', 8.5);
             $this->SetXY(10, 44);
-            $this->Cell(190, 5, decodeFpdf('Référence : ' . $this->reference . ' (suite)'), 0, 1, 'R');
-
+            $this->Cell(190, 5, decodeFpdf('Référence : ' . $this->reference . ' - suite'), 0, 1, 'R');
             $this->SetY(50);
         }
 
-        // ── En-tête du tableau (répété sur toutes les pages) ────────────────
-        [$r, $g, $b] = COULEUR_VERT_FONCE;
+        $this->enteteTableauPF();
+    }
+
+    /** Petit bloc "label / valeur" sobre, sans fond. */
+    function blocChampPF(string $label, string $valeur, float $x, float $y): void
+    {
+        [$r, $g, $b] = ENCRE_DOUCE;
+        $this->SetTextColor($r, $g, $b);
+        $this->SetFont('Helvetica', 'B', 6.8);
+        $this->SetXY($x, $y);
+        $this->Cell(90, 3.5, decodeFpdf($label), 0, 1);
+        [$r, $g, $b] = ENCRE;
+        $this->SetTextColor($r, $g, $b);
+        $this->SetFont('Helvetica', '', 9.5);
+        $this->SetXY($x, $y + 3.8);
+        $this->Cell(90, 5, decodeFpdf($valeur), 0, 0);
+    }
+
+    /** En-tête de tableau : fond argenté discret + double filet, texte sombre. */
+    function enteteTableauPF(): void
+    {
+        [$r, $g, $b] = ARGENT;
         $this->SetFillColor($r, $g, $b);
-        $this->SetTextColor(255, 255, 255);
-        $this->SetFont('Helvetica', 'B', 9);
+        $this->Rect(10, $this->GetY(), 190, 8, 'F');
+
+        $yHautEntete = $this->GetY();
+
+        [$r, $g, $b] = ENCRE;
+        $this->SetTextColor($r, $g, $b);
+        $this->SetFont('Helvetica', 'B', 7.3);
         $this->SetX(10);
-        $this->Cell(100, 9, decodeFpdf('Désignation'), 0, 0, 'L', true);
-        $this->Cell(45, 9, decodeFpdf('Prix'), 0, 0, 'C', true);
-        $this->Cell(45, 9, decodeFpdf('Délai de validité'), 0, 1, 'C', true);
+        $this->Cell(100, 8, decodeFpdf('DESIGNATION'), 0, 0, 'L');
+        $this->Cell(45, 8, decodeFpdf('PRIX'), 0, 0, 'C');
+        $this->Cell(45, 8, decodeFpdf('DELAI DE VALIDITE'), 0, 1, 'C');
+
+        $yBasEntete = $this->GetY();
+
+        // Séparateurs verticaux entre les 3 colonnes (largeurs : 100 / 45 / 45).
+        [$r, $g, $b] = FILET_FONCE;
+        $this->SetDrawColor($r, $g, $b);
+        $this->SetLineWidth(0.3);
+        $this->Line(110, $yHautEntete, 110, $yBasEntete);
+        $this->Line(155, $yHautEntete, 155, $yBasEntete);
+
+        $this->SetLineWidth(0.4);
+        $this->Line(10, $yBasEntete, 200, $yBasEntete);
+        $this->Ln(1);
     }
 
     function Footer()
     {
         // Le gabarit contient déjà le pied de page institutionnel (adresse,
         // téléphone, site web) — rien à ajouter ici.
-    }
-
-    /**
-     * Rectangle à coins arrondis (recette FPDF classique — domaine public,
-     * script officiel fpdf.org). $style : 'F' (rempli), 'D' (contour),
-     * 'FD'/'DF' (rempli + contour).
-     */
-    function RoundedRect($x, $y, $w, $h, $r, $style = '')
-    {
-        $k  = $this->k;
-        $hp = $this->h;
-        if ($style === 'F')      $op = 'f';
-        elseif ($style === 'FD' || $style === 'DF') $op = 'B';
-        else                     $op = 'S';
-
-        $arc = 4 / 3 * (sqrt(2) - 1);
-
-        $this->_out(sprintf('%.2F %.2F m', ($x + $r) * $k, ($hp - $y) * $k));
-
-        $xc = $x + $w - $r; $yc = $y + $r;
-        $this->_out(sprintf('%.2F %.2F l', $xc * $k, ($hp - $y) * $k));
-        $this->_Arc($xc + $r * $arc, $yc - $r, $xc + $r, $yc - $r * $arc, $xc + $r, $yc);
-
-        $xc = $x + $w - $r; $yc = $y + $h - $r;
-        $this->_out(sprintf('%.2F %.2F l', ($x + $w) * $k, ($hp - $yc) * $k));
-        $this->_Arc($xc + $r, $yc + $r * $arc, $xc + $r * $arc, $yc + $r, $xc, $yc + $r);
-
-        $xc = $x + $r; $yc = $y + $h - $r;
-        $this->_out(sprintf('%.2F %.2F l', $xc * $k, ($hp - ($y + $h)) * $k));
-        $this->_Arc($xc - $r * $arc, $yc + $r, $xc - $r, $yc + $r * $arc, $xc - $r, $yc);
-
-        $xc = $x + $r; $yc = $y + $r;
-        $this->_out(sprintf('%.2F %.2F l', $x * $k, ($hp - $yc) * $k));
-        $this->_Arc($xc - $r, $yc - $r * $arc, $xc - $r * $arc, $yc - $r, $xc, $yc - $r);
-
-        $this->_out($op);
-    }
-
-    function _Arc($x1, $y1, $x2, $y2, $x3, $y3)
-    {
-        $h = $this->h;
-        $this->_out(sprintf(
-                '%.2F %.2F %.2F %.2F %.2F %.2F c ',
-                $x1 * $this->k, ($h - $y1) * $this->k,
-                $x2 * $this->k, ($h - $y2) * $this->k,
-                $x3 * $this->k, ($h - $y3) * $this->k
-        ));
     }
 }
 
@@ -277,39 +256,43 @@ function genererPdfFournisseur(array $groupe, string $reference, string $cheminF
     $pdf->reference      = $reference;
     $pdf->dateDoc        = $dateDoc;
     $pdf->SetAutoPageBreak(true, 22); // réserve l'espace du pied de page institutionnel
+    $pdf->AliasNbPages();
     $pdf->AddPage();
 
-    $pdf->SetFont('Helvetica', '', 10);
-    $pdf->SetDrawColor(230, 230, 230);
-    $pdf->SetLineWidth(0.2);
-
-    $clair = false;
+    $pdf->SetFont('Helvetica', '', 8);
     foreach ($groupe['lignes'] as $l) {
-        if ($clair) {
-            [$r, $g, $b] = COULEUR_VERT_CLAIR;
-            $pdf->SetFillColor($r, $g, $b);
-        } else {
-            $pdf->SetFillColor(255, 255, 255);
-        }
-        [$r, $g, $b] = COULEUR_TEXTE;
-        $pdf->SetTextColor($r, $g, $b);
+        if ($pdf->GetY() > 262) { $pdf->AddPage(); }
 
+        $yHautLigne = $pdf->GetY();
+
+        [$r, $g, $b] = ENCRE;
+        $pdf->SetTextColor($r, $g, $b);
+        $pdf->SetFont('Helvetica', '', 8);
         $pdf->SetX(10);
-        $pdf->Cell(100, 9, decodeFpdf($l['designation'] ?? ''), 0, 0, 'L', true);
-        $pdf->Cell(45, 9, '', 0, 0, 'C', true);  // Prix — à renseigner par le fournisseur
-        $pdf->Cell(45, 9, '', 0, 1, 'C', true);  // Délai de validité — à renseigner par le fournisseur
-        $clair = !$clair;
+        $pdf->Cell(100, 7.5, decodeFpdf($l['designation'] ?? ''), 0, 0, 'L');
+        $pdf->Cell(45, 7.5, '', 0, 0, 'C');   // Prix — à renseigner par le fournisseur
+        $pdf->Cell(45, 7.5, '', 0, 1, 'C');   // Délai de validité — à renseigner par le fournisseur
+
+        $yBasLigne = $pdf->GetY();
+
+        // Séparateurs verticaux (mêmes positions que l'en-tête : 100 / 45 / 45).
+        [$r, $g, $b] = FILET;
+        $pdf->SetDrawColor($r, $g, $b);
+        $pdf->SetLineWidth(0.15);
+        $pdf->Line(110, $yHautLigne, 110, $yBasLigne);
+        $pdf->Line(155, $yHautLigne, 155, $yBasLigne);
+        $pdf->Line(10, $yBasLigne, 200, $yBasLigne);
     }
 
-    // Ligne de clôture du tableau
-    [$r, $g, $b] = COULEUR_VERT_FONCE;
+    // Filet de clôture du tableau, plus marqué.
+    [$r, $g, $b] = FILET_FONCE;
     $pdf->SetDrawColor($r, $g, $b);
-    $pdf->SetLineWidth(0.5);
+    $pdf->SetLineWidth(0.4);
     $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
 
     // Note explicative
     $pdf->Ln(6);
-    [$r, $g, $b] = COULEUR_TEXTE_DOUX;
+    [$r, $g, $b] = ENCRE_DOUCE;
     $pdf->SetTextColor($r, $g, $b);
     $pdf->SetFont('Helvetica', 'I', 9);
     $pdf->SetX(10);
@@ -400,9 +383,9 @@ if (empty($groupes)) {
     die('Aucune demande de facture pro forma active pour le moment.');
 }
 
-if (!file_exists(PROFORMA_TEMPLATE_PDF)) {
+if (!file_exists(TEMPLATE_PREMIERE_PAGE) || !file_exists(TEMPLATE_PAGES_SUIVANTES)) {
     http_response_code(500);
-    die('Gabarit PDF introuvable (PROFORMA_TEMPLATE_PDF à ajuster).');
+    die('Gabarit(s) PDF introuvable(s) (TEMPLATE_PREMIERE_PAGE / TEMPLATE_PAGES_SUIVANTES à ajuster).');
 }
 
 $dossierTmp  = sys_get_temp_dir();

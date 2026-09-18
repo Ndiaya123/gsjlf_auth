@@ -1,18 +1,25 @@
 <?php
 /**
  * bon_pap_pdf.php
- * Route : /personnel/bon_pap_pdf
+ * Route : /bon_pap_pdf
  *
  * Script autonome (session → BDD → FPDF → sortie), générant le PDF du bon
  * de commande (achat) ou de la facture de paiement (paiement) pour une
  * opération donnée, disponible pour idStatut = 4 (Acceptée), 6 (En
  * paiement / Livrée) ou 7 (Terminée).
  *
+ * Design : sobre et élégant, quasi monochrome (encre + un seul accent
+ * discret pour le titre et les filets), sans aplats colorés — même style
+ * que le rapport d'inventaire et la demande de facture pro forma.
+ * Colonnes du tableau séparées par des filets verticaux fins.
+ *
  * Paramètre GET : token (chiffré de passer_achat_et_paiement.id)
  *
  * ⚠️ À vérifier :
- *   - PROFORMA_TEMPLATE_PDF : même gabarit institutionnel que les autres
- *     scripts PDF de l'application.
+ *   - TEMPLATE_PREMIERE_PAGE / TEMPLATE_PAGES_SUIVANTES : mêmes fichiers
+ *     que le rapport d'inventaire et la demande de facture pro forma
+ *     (gsjlf_finance.pdf / gsjlf_template_finance.pdf), à copier dans
+ *     includes/fpdf/template/.
  *   - Chemins de bdBASI.php / fpdf.php / PDF_MC_Table.php : 2 niveaux,
  *     comme dfc-demande-facture-proforma.php.
  */
@@ -23,7 +30,7 @@ session_start();
 
 $sessionOk = !empty($_SESSION['tmpIdBASI']) && !empty($_SESSION['tmpMatricule']);
 if (!$sessionOk) {
-    header('Location: /personnel/signin'); // ← ajuster selon la vraie route de connexion
+    header('Location: /signin'); // ← ajuster selon la vraie route de connexion
     die;
 }
 
@@ -59,53 +66,48 @@ if ($idPAP <= 0) {
 require('../../includes/fpdf/fpdf.php');
 require('../../includes/fpdf/PDF_MC_Table.php');
 
-define('PROFORMA_TEMPLATE_PDF', __DIR__ . '/../../includes/fpdf/template/entete_gsjlf.pdf');
+// Gabarit institutionnel (fond de page) — mêmes fichiers que le rapport
+// d'inventaire et la demande de facture pro forma.
+// define('TEMPLATE_PREMIERE_PAGE',   __DIR__ . '/../../includes/fpdf/template/gsjlf_finance.pdf');
+// define('TEMPLATE_PAGES_SUIVANTES', __DIR__ . '/../../includes/fpdf/template/gsjlf_template_finance.pdf');
 
-define('COULEUR_VERT_FONCE',  [6, 78, 59]);
-define('COULEUR_VERT',        [26, 122, 94]);
-define('COULEUR_VERT_CLAIR',  [240, 253, 244]);
-define('COULEUR_TEXTE',       [55, 65, 81]);
-define('COULEUR_TEXTE_DOUX',  [107, 114, 128]);
 
-//function decodeFpdf($s) {
-//    if (function_exists('mb_convert_encoding')) {
-//        return mb_convert_encoding((string)$s, 'ISO-8859-1', 'UTF-8');
-//    }
-//    if (function_exists('iconv')) {
-//        return iconv('UTF-8', 'ISO-8859-1//IGNORE', (string)$s);
-//    }
-//    return (string)$s;
-//}
+// define('TEMPLATE_PREMIERE_PAGE',   __DIR__ . '/../../includes/fpdf/template/gsjlf_template.pdf');
+// define('TEMPLATE_PAGES_SUIVANTES', __DIR__ . '/../../includes/fpdf/template/gsjlf_template.pdf');
+
+define('TEMPLATE_PREMIERE_PAGE',   __DIR__ . '/../../includes/fpdf/template/gsjlf_template_2026_1.pdf');
+define('TEMPLATE_PAGES_SUIVANTES', __DIR__ . '/../../includes/fpdf/template/gsjlf_template_2026_1.pdf');
+
+
+
+// ── Palette sobre : encre + un seul accent, pas d'aplats de couleur ────────
+define('ENCRE',       [31, 41, 55]);     // texte principal, quasi noir
+define('ENCRE_DOUCE',  [107, 114, 128]); // texte secondaire / labels
+define('ACCENT',      [15, 76, 58]);     // vert institutionnel, usage minimal
+define('FILET',       [223, 226, 230]);  // lignes fines
+define('FILET_FONCE', [180, 186, 192]);  // filet double sous l'en-tête tableau
+define('ARGENT',      [214, 219, 224]);  // fond argenté discret de l'en-tête tableau
 
 function decodeFpdf($value): string
 {
     $value = (string) $value;
-
-    // Déjà vide
     if ($value === '') {
         return '';
     }
-
-    // FPDF classique utilise généralement ISO-8859-1
     if (function_exists('mb_convert_encoding')) {
         return mb_convert_encoding($value, 'ISO-8859-1', 'UTF-8');
     }
-
     if (function_exists('iconv')) {
         $converted = iconv('UTF-8', 'ISO-8859-1//TRANSLIT', $value);
-
         if ($converted !== false) {
             return $converted;
         }
     }
-
-    // Dernier recours : retourner le texte original
     return $value;
 }
 
-
 function formatMontantPdf($n): string {
-    if ($n === null || $n === '') return '—';
+    if ($n === null || $n === '') return '-';
     return number_format((float)$n, 0, ',', ' ') . ' FCFA';
 }
 
@@ -138,7 +140,7 @@ function recupererDonneesBon(PDO $bdBASI, int $idPAP): ?array {
 
     // Fournisseur retenu (achat uniquement — le paiement n'a pas de notion
     // de fournisseur dans ce module).
-    $nomFournisseur = '—';
+    $nomFournisseur = '-';
     if ($estAchat) {
         $stmtF = $bdBASI->prepare("
             SELECT f.nomF, f.prenomF, f.entreprise
@@ -150,8 +152,11 @@ function recupererDonneesBon(PDO $bdBASI, int $idPAP): ?array {
         $stmtF->execute([$idPAP]);
         $f = $stmtF->fetch(PDO::FETCH_ASSOC);
         if ($f) {
+            // ⚠️ Le tiret cadratin (—, U+2014) n'existe pas en ISO-8859-1 —
+            // FPDF/decodeFpdf() l'aurait silencieusement remplacé par "?".
+            // Utiliser un tiret simple.
             $nomFournisseur = trim(($f['prenomF'] ?? '') . ' ' . ($f['nomF'] ?? ''))
-                . ($f['entreprise'] ? ' — ' . $f['entreprise'] : '');
+                . ($f['entreprise'] ? ' - ' . $f['entreprise'] : '');
         }
     }
 
@@ -185,7 +190,7 @@ function recupererDonneesBon(PDO $bdBASI, int $idPAP): ?array {
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
-   CLASSE PDF — mise en page sur gabarit institutionnel
+   CLASSE PDF — sobre, sur gabarit institutionnel (page 1 vs suivantes)
 ═══════════════════════════════════════════════════════════════════════════ */
 
 class PdfBonPap extends PDF_MC_Table
@@ -198,116 +203,117 @@ class PdfBonPap extends PDF_MC_Table
     public string $dateDoc       = '';
     public bool   $estAchat      = true;
 
+    /** Largeurs de colonnes du tableau, selon le type (achat/paiement). */
+    function largeursColonnes(): array
+    {
+        return $this->estAchat
+            ? ['designation' => 120, 'qte' => 30, 'montant' => 40] // 190
+            : ['designation' => 120, 'montant' => 70];             // 190
+    }
+
     function Header()
     {
-        $this->setSourceFile(PROFORMA_TEMPLATE_PDF);
+        $template = ($this->PageNo() === 1) ? TEMPLATE_PREMIERE_PAGE : TEMPLATE_PAGES_SUIVANTES;
+        $this->setSourceFile($template);
         $tplIdx = $this->importPage(1);
         $this->useTemplate($tplIdx, 0, 0, 210, 297);
 
         if ($this->PageNo() === 1) {
-            [$r, $g, $b] = COULEUR_VERT_FONCE;
-            $this->SetFillColor($r, $g, $b);
-            $this->RoundedRect(10, 48, 190, 13, 2.5, 'F');
-            $this->SetTextColor(255, 255, 255);
-            $this->SetFont('Helvetica', 'B', 13);
-            $this->SetXY(10, 48);
-            $this->Cell(190, 13, decodeFpdf($this->titre), 0, 0, 'C');
+            // Titre — texte seul, pas d'aplat, filet fin en dessous.
+            [$r, $g, $b] = ACCENT;
+            $this->SetTextColor($r, $g, $b);
+            $this->SetFont('Helvetica', 'B', 17);
+            $this->SetXY(10, 50);
+            $this->Cell(190, 9, decodeFpdf($this->titre), 0, 1, 'L');
 
-            [$r, $g, $b] = COULEUR_VERT_CLAIR;
-            $this->SetFillColor($r, $g, $b);
-            [$r, $g, $b] = COULEUR_VERT;
+            [$r, $g, $b] = FILET_FONCE;
             $this->SetDrawColor($r, $g, $b);
-            $this->SetLineWidth(0.3);
-            $this->RoundedRect(10, 65, 190, 24, 2, 'FD');
+            $this->SetLineWidth(0.5);
+            $this->Line(10, 61, 200, 61);
 
-            [$r, $g, $b] = COULEUR_TEXTE;
-            $this->SetTextColor($r, $g, $b);
+            // Bloc d'identification — grille sobre, labels petites capitales.
+            $y = 68;
+            $this->blocChampBon('N° / NOM', '#' . $this->numero . ' - ' . $this->nomCommande, 10, $y);
+            $this->blocChampBon('DATE', $this->dateDoc, 105, $y);
+            $y += 11;
+            $this->blocChampBon('ACHETEUR', $this->acheteur, 10, $y);
+            $this->blocChampBon('FOURNISSEUR', $this->fournisseur, 105, $y);
 
-            $this->SetFont('Helvetica', 'B', 8);
-            $this->SetXY(14, 68);
-            $this->Cell(85, 4, decodeFpdf('N° / NOM'), 0, 2);
-            $this->SetFont('Helvetica', '', 9);
-            $this->SetX(14);
-            $this->Cell(85, 5, decodeFpdf('#' . $this->numero . ' — ' . $this->nomCommande), 0, 0);
-
-            $this->SetFont('Helvetica', 'B', 8);
-            $this->SetXY(160, 68);
-            $this->Cell(35, 4, decodeFpdf('DATE'), 0, 2);
-            $this->SetFont('Helvetica', '', 9);
-            $this->SetX(160);
-            $this->Cell(35, 5, decodeFpdf($this->dateDoc), 0, 0);
-
-            $this->SetFont('Helvetica', 'B', 8);
-            $this->SetXY(14, 76);
-            $this->Cell(85, 4, decodeFpdf('ACHETEUR'), 0, 2);
-            $this->SetFont('Helvetica', '', 9);
-            $this->SetX(14);
-            $this->Cell(85, 5, decodeFpdf($this->acheteur), 0, 0);
-
-            $this->SetFont('Helvetica', 'B', 8);
-            $this->SetXY(110, 76);
-            $this->Cell(85, 4, decodeFpdf('FOURNISSEUR'), 0, 2);
-            $this->SetFont('Helvetica', '', 9);
-            $this->SetX(110);
-            $this->Cell(85, 5, decodeFpdf($this->fournisseur), 0, 0);
-
-            $this->SetY(96);
+            $this->SetY($y + 12);
         } else {
-            [$r, $g, $b] = COULEUR_TEXTE_DOUX;
+            [$r, $g, $b] = ENCRE_DOUCE;
             $this->SetTextColor($r, $g, $b);
-            $this->SetFont('Helvetica', 'I', 9);
+            $this->SetFont('Helvetica', 'I', 8.5);
             $this->SetXY(10, 44);
-            $this->Cell(190, 5, decodeFpdf('Bon #' . $this->numero . ' (suite)'), 0, 1, 'R');
+            $this->Cell(190, 5, decodeFpdf('Bon #' . $this->numero . ' - suite'), 0, 1, 'R');
             $this->SetY(50);
         }
 
-        [$r, $g, $b] = COULEUR_VERT_FONCE;
+        $this->enteteTableauBon();
+    }
+
+    /** Petit bloc "label / valeur" sobre, sans fond. */
+    function blocChampBon(string $label, string $valeur, float $x, float $y): void
+    {
+        [$r, $g, $b] = ENCRE_DOUCE;
+        $this->SetTextColor($r, $g, $b);
+        $this->SetFont('Helvetica', 'B', 6.8);
+        $this->SetXY($x, $y);
+        $this->Cell(90, 3.5, decodeFpdf($label), 0, 1);
+        [$r, $g, $b] = ENCRE;
+        $this->SetTextColor($r, $g, $b);
+        $this->SetFont('Helvetica', '', 9.5);
+        $this->SetXY($x, $y + 3.8);
+        $this->Cell(90, 5, decodeFpdf($valeur), 0, 0);
+    }
+
+    /** En-tête de tableau : fond argenté discret + double filet + séparateurs verticaux. */
+    function enteteTableauBon(): void
+    {
+        $L = $this->largeursColonnes();
+
+        [$r, $g, $b] = ARGENT;
         $this->SetFillColor($r, $g, $b);
-        $this->SetTextColor(255, 255, 255);
-        $this->SetFont('Helvetica', 'B', 9);
+        $this->Rect(10, $this->GetY(), 190, 8, 'F');
+
+        $yHaut = $this->GetY();
+
+        [$r, $g, $b] = ENCRE;
+        $this->SetTextColor($r, $g, $b);
+        $this->SetFont('Helvetica', 'B', 7.3);
         $this->SetX(10);
-        $libelleMontant = $this->estAchat ? 'Prix reel' : 'Montant';
-        $this->Cell(120, 9, decodeFpdf('Designation'), 0, 0, 'L', true);
+        $libelleMontant = $this->estAchat ? 'PRIX REEL' : 'MONTANT';
+
+        $this->Cell($L['designation'], 8, decodeFpdf('DESIGNATION'), 0, 0, 'L');
         if ($this->estAchat) {
-            $this->Cell(30, 9, decodeFpdf('Qte'), 0, 0, 'C', true);
-            $this->Cell(40, 9, decodeFpdf($libelleMontant), 0, 1, 'C', true);
+            $this->Cell($L['qte'], 8, decodeFpdf('QTE'), 0, 0, 'C');
+            $this->Cell($L['montant'], 8, decodeFpdf($libelleMontant), 0, 1, 'C');
         } else {
-            $this->Cell(70, 9, decodeFpdf($libelleMontant), 0, 1, 'C', true);
+            $this->Cell($L['montant'], 8, decodeFpdf($libelleMontant), 0, 1, 'C');
         }
+
+        $yBas = $this->GetY();
+
+        // Séparateurs verticaux entre colonnes.
+        [$r, $g, $b] = FILET_FONCE;
+        $this->SetDrawColor($r, $g, $b);
+        $this->SetLineWidth(0.3);
+        $xSep = 10 + $L['designation'];
+        $this->Line($xSep, $yHaut, $xSep, $yBas);
+        if ($this->estAchat) {
+            $xSep2 = $xSep + $L['qte'];
+            $this->Line($xSep2, $yHaut, $xSep2, $yBas);
+        }
+
+        $this->SetLineWidth(0.4);
+        $this->Line(10, $yBas, 200, $yBas);
+        $this->Ln(1);
     }
 
-    // Rectangle aux coins arrondis (recette FPDF classique, domaine public)
-    function RoundedRect($x, $y, $w, $h, $r, $style = '')
+    function Footer()
     {
-        $k = $this->k; $hp = $this->h;
-        $op = ($style === 'F') ? 'f' : (($style === 'FD' || $style === 'DF') ? 'B' : 'S');
-        $arc = 4 / 3 * (sqrt(2) - 1);
-
-        $this->_out(sprintf('%.2F %.2F m', ($x + $r) * $k, ($hp - $y) * $k));
-        $xc = $x + $w - $r; $yc = $y + $r;
-        $this->_out(sprintf('%.2F %.2F l', $xc * $k, ($hp - $y) * $k));
-        $this->_Arc($xc + $r * $arc, $yc - $r, $xc + $r, $yc - $r * $arc, $xc + $r, $yc);
-        $xc = $x + $w - $r; $yc = $y + $h - $r;
-        $this->_out(sprintf('%.2F %.2F l', ($x + $w) * $k, ($hp - $yc) * $k));
-        $this->_Arc($xc + $r, $yc + $r * $arc, $xc + $r * $arc, $yc + $r, $xc, $yc + $r);
-        $xc = $x + $r; $yc = $y + $h - $r;
-        $this->_out(sprintf('%.2F %.2F l', $xc * $k, ($hp - ($y + $h)) * $k));
-        $this->_Arc($xc - $r * $arc, $yc + $r, $xc - $r, $yc + $r * $arc, $xc - $r, $yc);
-        $xc = $x + $r; $yc = $y + $r;
-        $this->_out(sprintf('%.2F %.2F l', $x * $k, ($hp - $yc) * $k));
-        $this->_Arc($xc - $r, $yc - $r * $arc, $xc - $r * $arc, $yc - $r, $xc, $yc - $r);
-        $this->_out($op);
-    }
-
-    function _Arc($x1, $y1, $x2, $y2, $x3, $y3)
-    {
-        $h = $this->h;
-        $this->_out(sprintf(
-            '%.2F %.2F %.2F %.2F %.2F %.2F c ',
-            $x1 * $this->k, ($h - $y1) * $this->k,
-            $x2 * $this->k, ($h - $y2) * $this->k,
-            $x3 * $this->k, ($h - $y3) * $this->k
-        ));
+        // Le gabarit contient déjà le pied de page institutionnel — rien à
+        // ajouter ici.
     }
 }
 
@@ -324,9 +330,9 @@ if (!in_array((int)$donnees['entete']['idStatut'], [4, 6, 7], true)) {
     http_response_code(403);
     die("Le document n'est disponible que pour une opération Acceptée, En paiement/Livrée ou Terminée.");
 }
-if (!file_exists(PROFORMA_TEMPLATE_PDF)) {
+if (!file_exists(TEMPLATE_PREMIERE_PAGE) || !file_exists(TEMPLATE_PAGES_SUIVANTES)) {
     http_response_code(500);
-    die('Gabarit PDF introuvable (PROFORMA_TEMPLATE_PDF à ajuster).');
+    die('Gabarit(s) PDF introuvable(s) (TEMPLATE_PREMIERE_PAGE / TEMPLATE_PAGES_SUIVANTES à ajuster).');
 }
 
 date_default_timezone_set('Africa/Dakar');
@@ -335,87 +341,92 @@ $entete   = $donnees['entete'];
 $estAchat = $donnees['estAchat'];
 
 $pdf = new PdfBonPap();
-$pdf->titre        = $estAchat ? 'BON DE COMMANDE' : 'FACTURE DE PAIEMENT';
+$pdf->titre        = $estAchat ? 'Bon de commande' : 'Facture de paiement';
 $pdf->numero       = (string)$entete['idPAP'];
 $pdf->nomCommande  = $entete['nom_commande'] ?? '';
-$pdf->acheteur     = $entete['acheteur'] ?? '—';
+$pdf->acheteur     = $entete['acheteur'] ?? '-';
 $pdf->fournisseur  = $donnees['nomFournisseur'];
 $pdf->dateDoc      = (new DateTime())->format('d/m/Y');
 $pdf->estAchat     = $estAchat;
 $pdf->SetAutoPageBreak(true, 30);
+$pdf->AliasNbPages();
 $pdf->AddPage();
 
-$pdf->SetFont('Helvetica', '', 10);
-$pdf->SetDrawColor(230, 230, 230);
-$pdf->SetLineWidth(0.2);
+$L = $pdf->largeursColonnes();
 
-$clair = false;
+$pdf->SetFont('Helvetica', '', 8);
 foreach ($donnees['lignes'] as $l) {
-    [$r, $g, $b] = $clair ? COULEUR_VERT_CLAIR : [255, 255, 255];
-    $pdf->SetFillColor($r, $g, $b);
-    [$r, $g, $b] = COULEUR_TEXTE;
-    $pdf->SetTextColor($r, $g, $b);
+    if ($pdf->GetY() > 250) { $pdf->AddPage(); }
 
+    $yHaut = $pdf->GetY();
+
+    [$r, $g, $b] = ENCRE;
+    $pdf->SetTextColor($r, $g, $b);
+    $pdf->SetFont('Helvetica', '', 8);
     $pdf->SetX(10);
-    $pdf->Cell(120, 9, decodeFpdf($l['designation'] ?? ''), 0, 0, 'L', true);
+    $pdf->Cell($L['designation'], 7.5, decodeFpdf($l['designation'] ?? ''), 0, 0, 'L');
     if ($estAchat) {
-        $pdf->Cell(30, 9, decodeFpdf((string)($l['quantite_reelle'] ?? '—')), 0, 0, 'C', true);
-        $pdf->Cell(40, 9, decodeFpdf(formatMontantPdf($l['prix_reel'] ?? null)), 0, 1, 'C', true);
+        $pdf->Cell($L['qte'], 7.5, decodeFpdf((string)($l['quantite_reelle'] ?? '-')), 0, 0, 'C');
+        $pdf->Cell($L['montant'], 7.5, decodeFpdf(formatMontantPdf($l['prix_reel'] ?? null)), 0, 1, 'C');
     } else {
-        $pdf->Cell(70, 9, decodeFpdf(formatMontantPdf($l['montant_total_ligne'] ?? null)), 0, 1, 'C', true);
+        $pdf->Cell($L['montant'], 7.5, decodeFpdf(formatMontantPdf($l['montant_total_ligne'] ?? null)), 0, 1, 'C');
     }
-    $clair = !$clair;
+
+    $yBas = $pdf->GetY();
+
+    // Séparateurs verticaux (mêmes positions que l'en-tête).
+    [$r, $g, $b] = FILET;
+    $pdf->SetDrawColor($r, $g, $b);
+    $pdf->SetLineWidth(0.15);
+    $xSep = 10 + $L['designation'];
+    $pdf->Line($xSep, $yHaut, $xSep, $yBas);
+    if ($estAchat) {
+        $xSep2 = $xSep + $L['qte'];
+        $pdf->Line($xSep2, $yHaut, $xSep2, $yBas);
+    }
+    $pdf->Line(10, $yBas, 200, $yBas);
 }
 
 // ── Montant total ───────────────────────────────────────────────────────────
-[$r, $g, $b] = COULEUR_VERT_FONCE;
+[$r, $g, $b] = FILET_FONCE;
 $pdf->SetDrawColor($r, $g, $b);
 $pdf->SetLineWidth(0.5);
 $pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
 $pdf->Ln(3);
 
-$pdf->SetFont('Helvetica', 'B', 11);
+[$r, $g, $b] = ACCENT;
 $pdf->SetTextColor($r, $g, $b);
+$pdf->SetFont('Helvetica', 'B', 11);
 $pdf->SetX(10);
 $pdf->Cell(150, 8, decodeFpdf('MONTANT TOTAL'), 0, 0, 'R');
 $pdf->Cell(40, 8, decodeFpdf(formatMontantPdf($entete['montant_total'])), 0, 1, 'R');
 
 // ── Conditions de règlement + modalités de paiement (bas de page) ──────────
-$pdf->Ln(10);
-[$r, $g, $b] = COULEUR_VERT_CLAIR;
-$pdf->SetFillColor($r, $g, $b);
-[$r, $g, $b] = COULEUR_VERT;
+$pdf->Ln(8);
+
+[$r, $g, $b] = FILET;
 $pdf->SetDrawColor($r, $g, $b);
-$pdf->SetLineWidth(0.3);
-$hauteurBloc = 20 + (count($donnees['tranches']) > 0 ? 5 * count($donnees['tranches']) : 0);
-$pdf->RoundedRect(10, $pdf->GetY(), 190, $hauteurBloc, 2, 'FD');
+$pdf->SetLineWidth(0.2);
+$pdf->Line(10, $pdf->GetY(), 200, $pdf->GetY());
+$pdf->Ln(4);
 
-[$r, $g, $b] = COULEUR_TEXTE;
-$pdf->SetTextColor($r, $g, $b);
-$yBloc = $pdf->GetY() + 3;
-
-$pdf->SetFont('Helvetica', 'B', 8);
-$pdf->SetXY(14, $yBloc);
-$pdf->Cell(85, 4, decodeFpdf('CONDITIONS DE REGLEMENT'), 0, 2);
-$pdf->SetFont('Helvetica', '', 9);
-$pdf->SetX(14);
-$pdf->Cell(85, 5, decodeFpdf($entete['mode_reglement_nom'] ?? '—'), 0, 0);
-
-$pdf->SetFont('Helvetica', 'B', 8);
-$pdf->SetXY(110, $yBloc);
-$pdf->Cell(85, 4, decodeFpdf('MODALITE DE PAIEMENT'), 0, 2);
-$pdf->SetFont('Helvetica', '', 9);
-$pdf->SetX(110);
-$pdf->Cell(85, 5, decodeFpdf($entete['mode_paiement_nom'] ?? '—'), 0, 0);
+$pdf->blocChampBon('CONDITIONS DE REGLEMENT', $entete['mode_reglement_nom'] ?? '-', 10, $pdf->GetY());
+$pdf->blocChampBon('MODALITE DE PAIEMENT', $entete['mode_paiement_nom'] ?? '-', 105, $pdf->GetY());
+$pdf->Ln(11);
 
 if (!empty($donnees['tranches'])) {
-    $pdf->SetXY(14, $yBloc + 8);
-    $pdf->SetFont('Helvetica', 'B', 8);
-    $pdf->Cell(180, 4, decodeFpdf('REPARTITION DES TRANCHES'), 0, 2);
-    $pdf->SetFont('Helvetica', '', 9);
+    [$r, $g, $b] = ENCRE_DOUCE;
+    $pdf->SetTextColor($r, $g, $b);
+    $pdf->SetFont('Helvetica', 'B', 6.8);
+    $pdf->SetX(10);
+    $pdf->Cell(190, 3.5, decodeFpdf('REPARTITION DES TRANCHES'), 0, 1);
+
+    [$r, $g, $b] = ENCRE;
+    $pdf->SetTextColor($r, $g, $b);
+    $pdf->SetFont('Helvetica', '', 9.5);
     foreach ($donnees['tranches'] as $t) {
-        $pdf->SetX(14);
-        $pdf->Cell(180, 5, decodeFpdf('Tranche ' . $t['ordre'] . ' : ' . number_format((float)$t['pourcentage'], 2, ',', ' ') . ' %'), 0, 2);
+        $pdf->SetX(10);
+        $pdf->Cell(190, 5, decodeFpdf('Tranche ' . $t['ordre'] . ' : ' . number_format((float)$t['pourcentage'], 2, ',', ' ') . ' %'), 0, 1);
     }
 }
 

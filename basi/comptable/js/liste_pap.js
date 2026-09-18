@@ -223,7 +223,7 @@ function dga_renderActions(token, row) {
     `;
 
     // Page Comptable : consultation uniquement (pas de Modifier / Uploader
-    // le BC / Envoyer en caisse — ces actions de workflow restent propres à
+    // la FD / Envoyer en caisse — ces actions de workflow restent propres à
     // la page DRH). Le PDF reste disponible, simple consultation/impression.
 
 
@@ -231,13 +231,13 @@ function dga_renderActions(token, row) {
           html += `
           <button type="button" class="dga-btn-bc" onclick="dga_ouvrirUploadBC('${token}')">
           <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-         Uploader le BC
+         Uploader la FD
          </button>
          `;
     }
 
     // "Passer en caisse" : pour un paiement, toujours disponible à ce statut ;
-    // pour un achat, uniquement si le BC a déjà été téléversé (bc_uploade).
+    // pour un achat, uniquement si la FD a déjà été téléversé (bc_uploade).
     const peutPasserEnCaisse = statut === 4 && (parseInt(row.idTypePAP) === 2 || row.bc_uploade === true);
     if (peutPasserEnCaisse) {
          html += `
@@ -274,7 +274,7 @@ function dga_renderActions(token, row) {
     return html;
 }
 
-/* ────────────────────────── ACTION : DÉTAIL ────────────────────────── */
+/* ────────────────────────── ACTION : DéTAIL ────────────────────────── */
 function dga_ouvrirDetail(token) {
     dga_showLoader('Chargement du détail…');
 
@@ -314,13 +314,13 @@ function dga_ouvrirDetail(token) {
 
         if (estAchat) {
             if (res.facture_definitive) {
-                titreDoc.textContent = 'Facture définitive';
+                titreDoc.textContent = 'Facture choisie';
                 const f = res.facture_definitive;
                 const nomF = `${f.prenomF || ''} ${f.nomF || ''}`.trim() + (f.entreprise ? ' — ' + f.entreprise : '');
                 listeDoc.innerHTML = `
                     <div class="dga-doc-item">
                         <div class="dga-doc-icon"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/></svg></div>
-                        <div class="dga-doc-info"><div class="dga-doc-nom">Facture définitive</div><div class="dga-doc-sub">Fournisseur retenu : ${vd_escapeHtml(nomF)}</div></div>
+                        <div class="dga-doc-info"><div class="dga-doc-nom">Facture choisie</div><div class="dga-doc-sub">Fournisseur retenu : ${vd_escapeHtml(nomF)}</div></div>
                         <a href="${f.facture_definitive}" target="_blank" class="dga-doc-link">Ouvrir</a>
                     </div>
                 `;
@@ -394,9 +394,9 @@ function dga_ouvrirSuivi(token) {
     });
 }
 
-/* ────────────────────────── ACTION : GÉNÉRER PDF ───────────────────── */
+/* ────────────────────────── ACTION : GéNéRER PDF ───────────────────── */
 function dga_genererPdf(token) {
-    window.open('/personnel/compta_facture/' + encodeURIComponent(token), '_blank');
+    window.open('/compta_facture/' + encodeURIComponent(token), '_blank');
 }
 
 const LIBELLES_MODE_DOC = { 1: 'Liquide', 4: 'Wave', 5: 'Orange Money' };
@@ -511,7 +511,7 @@ function dga_rendreDocuments(docs, estAchat) {
                 ${docs.facture_choisie ? `<a href="${docs.facture_choisie}" target="_blank" class="dga-doc-link">Ouvrir</a>` : '<span style="color:#d1d5db;">—</span>'}
             </div>
             <div class="dga-doc-item">
-                <span>Facture définitive (BC uploadé)</span>
+                <span>Facture définitive (FD uploadée)</span>
                 ${docs.facture_definitive ? `<a href="${docs.facture_definitive}" target="_blank" class="dga-doc-link">Ouvrir</a>` : '<span style="color:#d1d5db;">—</span>'}
             </div>
             <div class="dga-doc-item">
@@ -593,7 +593,7 @@ function vd_escapeHtml(str) {
 
 function dga_ouvrirUploadBC(token) {
     Swal.fire({
-        title: 'Uploader le bon de commande',
+        title: 'Uploader la facture définitive.',
         html: '<p style="margin-bottom:.5rem;text-align:left;font-size:.85rem;color:#6b7280;">Sélectionnez le bon de commande (PDF) émis pour le fournisseur retenu.</p>',
         input: 'file',
         inputAttributes: { accept: 'application/pdf' },
@@ -604,7 +604,7 @@ function dga_ouvrirUploadBC(token) {
         cancelButtonColor: '#6b7280',
         preConfirm: (fichier) => {
             if (!fichier) {
-                Swal.showValidationMessage('Le bon de commande (PDF) est obligatoire.');
+                Swal.showValidationMessage('La facture définitive (PDF) est obligatoire.');
                 return false;
             }
             if (fichier.type !== 'application/pdf') {
@@ -632,7 +632,7 @@ function dga_ouvrirUploadBC(token) {
         }).done(function (res) {
             dga_hideLoader();
             if (res.status === 'success') {
-                Swal.fire({ title: 'Succès', text: res.message || 'Bon de commande téléversé avec succès.', icon: 'success', confirmButtonColor: '#1a7a5e' });
+                Swal.fire({ title: 'Succès', text: res.message || 'La facture définitive a été téléversée avec succès.', icon: 'success', confirmButtonColor: '#1a7a5e' });
                 chargerDemandes();
             } else {
                 Swal.fire('Erreur', res.message || 'Une erreur est survenue.', 'error');

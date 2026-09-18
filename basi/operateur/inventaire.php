@@ -21,7 +21,7 @@
     <div class="page d-flex flex-row flex-column-fluid">
         <div id="kt_aside" class="aside aside-light aside-hoverable" data-kt-drawer="true" data-kt-drawer-name="aside" data-kt-drawer-activate="{default: true, lg: false}" data-kt-drawer-overlay="true" data-kt-drawer-width="{default:'200px', '300px': '250px'}" data-kt-drawer-direction="start" data-kt-drawer-toggle="#kt_aside_mobile_toggle">
             <div class="aside-logo flex-column-auto text-center" id="kt_aside_logo">
-                <a href="/personnel/responsable-financier-accueil" style="margin-left:65px;" id="lien_logo1"><img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/1.png" id="logo1" class="h-50px logo"/></a>
+                <a href="/responsable-financier-accueil" style="margin-left:65px;" id="lien_logo1"><img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/1.png" id="logo1" class="h-50px logo"/></a>
             </div>
             <div class="aside-menu flex-column-fluid">
                 <div class="hover-scroll-overlay-y my-5 my-lg-5" id="kt_aside_menu_wrapper" data-kt-scroll="true" data-kt-scroll-activate="{default: false, lg: true}" data-kt-scroll-height="auto" data-kt-scroll-wrappers="#kt_aside_menu" data-kt-scroll-offset="0">
@@ -33,7 +33,7 @@
             <div id="kt_header" class="header align-items-stretch">
                 <div class="container-fluid d-flex align-items-stretch justify-content-between">
                     <div class="d-flex align-items-center flex-grow-1 flex-lg-grow-0">
-                        <a href="/personnel/responsable-financier-accueil" class="d-lg-none" id="lien_logo2"><img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/1.png" id="logo2" class="h-30px"/></a>
+                        <a href="/responsable-financier-accueil" class="d-lg-none" id="lien_logo2"><img alt="Logo" src="/personnel/ressources/dist_assets/media/logos/1.png" id="logo2" class="h-30px"/></a>
                     </div>
                     <div class="d-flex align-items-stretch justify-content-between flex-lg-grow-1">
                         <div class="d-flex align-items-stretch" id="kt_header_nav">
@@ -49,7 +49,7 @@
                                 <div class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg menu-state-primary fw-bold py-4 fs-6 w-275px" data-kt-menu="true">
                                     <div class="menu-item px-3"><div class="menu-content d-flex align-items-center px-3"><div class="symbol symbol-50px me-5"><img alt="admin" src="" id="user_photo2"/></div><div class="d-flex flex-column"><div class="fw-bolder d-flex align-items-center fs-5" id="user_pn"></div><a href="javascript:void(0)" class="fw-bold text-muted text-hover-primary fs-7" id="user_email"></a></div></div></div>
                                     <div class="separator my-2"></div>
-                                    <div class="menu-item px-5"><div class="menu-content px-5"><label class="form-check form-switch form-check-custom form-check-solid pulse pulse-success" for="kt_user_menu_dark_mode_toggle"><a href="/personnel/signout"><input class="form-check-input w-30px h-20px" checked="checked" type="checkbox" value="1" name="mode" id="kt_user_menu_dark_mode_toggle" data-kt-url="/personnel/quitter"/><span class="pulse-ring ms-n1"></span><span class="form-check-label text-gray-600 fs-7">se déconnecter</span></a></label></div></div>
+                                    <div class="menu-item px-5"><div class="menu-content px-5"><label class="form-check form-switch form-check-custom form-check-solid pulse pulse-success" for="kt_user_menu_dark_mode_toggle"><a href="/signout"><input class="form-check-input w-30px h-20px" checked="checked" type="checkbox" value="1" name="mode" id="kt_user_menu_dark_mode_toggle" data-kt-url="/quitter"/><span class="pulse-ring ms-n1"></span><span class="form-check-label text-gray-600 fs-7">se déconnecter</span></a></label></div></div>
                                 </div>
                             </div>
                         </div>
