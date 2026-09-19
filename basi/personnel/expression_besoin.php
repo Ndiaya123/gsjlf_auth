@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -12,6 +11,12 @@
     <link href="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
     <link href="/personnel/ressources/dist_assets/css/style_basi_34.css" rel="stylesheet" type="text/css"/>
+    <style>
+        .dga-switch-type{display:inline-flex;background:#f3f4f6;border-radius:99px;padding:.25rem;gap:.15rem;margin-bottom:1.25rem}
+        .dga-switch-btn{background:none;border:none;padding:.45rem 1.1rem;border-radius:99px;font-size:.8rem;font-weight:600;color:#6b7280;cursor:pointer;transition:all .15s}
+        .dga-switch-btn:hover{color:#111827}
+        .dga-switch-active{background:#fff;color:#113B26;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+    </style>
     <script>document.documentElement.classList.add('ld-booting');</script>
 
 </head>
@@ -102,37 +107,46 @@
                 <div class="post d-flex flex-column-fluid" id="kt_post">
                     <div id="kt_content_container" class="container-xxl">
 
-                        <!-- ══ BANDEAU TITRE ══ -->
-                        <div class="dga-hero">
-                            <div class="dga-hero-title">
-                                <h1>
-                                    <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                                        <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
-                                    </svg>
-                                    Expression de besoin
-                                </h1>
-                                <p>Créez et gérez vos demandes de produits</p>
-                            </div>
-                            <button id="dga-btn-nouvelle" class="dga-btn-primary" type="button">
-                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                                Nouvelle expression de besoin
-                            </button>
-                        </div>
+                        <!-- ══ PANNEAU FONCTIONNEMENT ══ -->
+                        <div id="dga-panel-fonctionnement">
 
-                        <!-- ══ STATISTIQUE ══ -->
-                        <div class="dga-stat-card">
-                            <div class="dga-stat-icon">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
+                            <!-- ══ BANDEAU TITRE ══ -->
+                            <div class="dga-hero">
+                                <div class="dga-hero-title">
+                                    <h1>
+                                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+                                        </svg>
+                                        Expression de besoin — Fonctionnement
+                                    </h1>
+                                    <p>Créez et gérez vos demandes de produits</p>
+                                </div>
+                                <button id="dga-btn-nouvelle" class="dga-btn-primary" type="button">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    Nouvelle expression de besoin
+                                </button>
                             </div>
-                            <div>
-                                <div class="dga-stat-lbl">Nombre total</div>
-                                <div class="dga-stat-val" id="dga-stat-nombre">0</div>
-                            </div>
-                        </div>
 
-                        <!-- ══ CARTE LISTE ══ -->
-                        <div class="dga-card">
-                            <div class="dga-card-head">
+                            <!-- ══ STATISTIQUE ══ -->
+                            <div class="dga-stat-card">
+                                <div class="dga-stat-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
+                                </div>
+                                <div>
+                                    <div class="dga-stat-lbl">Nombre total</div>
+                                    <div class="dga-stat-val" id="dga-stat-nombre">0</div>
+                                </div>
+                            </div>
+
+                            <!-- ══ COMMUTATEUR — chefs de service uniquement ══ -->
+                            <div class="dga-switch-type" id="dga-switch-type-1" style="display:none;">
+                                <button type="button" class="dga-switch-btn dga-switch-active" data-cible="fonctionnement">Fonctionnement</button>
+                                <button type="button" class="dga-switch-btn" data-cible="investissement">Investissement</button>
+                            </div>
+
+                            <!-- ══ CARTE LISTE ══ -->
+                            <div class="dga-card">
+                                <div class="dga-card-head">
                                 <span class="dga-card-title">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                         <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
@@ -140,43 +154,110 @@
                                     </svg>
                                     Mes expressions de besoin
                                 </span>
+                                </div>
+
+                                <div class="dga-filters">
+                                    <div class="dga-filter-group">
+                                        <label class="dga-filter-label" for="dga-annee-debut">Année de début</label>
+                                        <select id="dga-annee-debut" class="dga-inp-annee"></select>
+                                    </div>
+                                    <span class="dga-annee-sep">à</span>
+                                    <div class="dga-filter-group">
+                                        <label class="dga-filter-label" for="dga-annee-fin">Année de fin</label>
+                                        <select id="dga-annee-fin" class="dga-inp-annee"></select>
+                                    </div>
+                                    <div style="display:flex;gap:.5rem;">
+                                        <button id="dga-btn-reset-filtres" class="dga-btn-reset" type="button">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 109-9M3 12V6m0 6H9"/></svg>
+                                            Réinitialiser
+                                        </button>
+                                        <button id="dga-btn-appliquer-filtres" class="dga-btn-filtrer" type="button">
+                                            <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
+                                            Filtrer
+                                        </button>
+                                    </div>
+                                </div>
+
+                                <table id="dga-table-eb" class="display" style="width:100%">
+                                    <thead>
+                                    <tr>
+                                        <th>Nom</th>
+                                        <th>Date de création</th>
+                                        <th>Nb. produits</th>
+                                        <th>Statut</th>
+                                        <th>Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
                             </div>
 
-                            <div class="dga-filters">
-                                <div class="dga-filter-group">
-                                    <label class="dga-filter-label" for="dga-annee-debut">Année de début</label>
-                                    <select id="dga-annee-debut" class="dga-inp-annee"></select>
+                        </div><!-- /#dga-panel-fonctionnement -->
+
+                        <!-- ══ PANNEAU INVESTISSEMENT (masqué par défaut, révélé si idDirection) ══ -->
+                        <div id="dga-panel-investissement" style="display:none;">
+
+                            <!-- ══ BANDEAU TITRE ══ -->
+                            <div class="dga-hero">
+                                <div class="dga-hero-title">
+                                    <h1>
+                                        <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                                            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/>
+                                        </svg>
+                                        Expression de besoin — Investissement
+                                    </h1>
+                                    <p>Retirez, sur le stock de votre direction (<span id="dga-nom-direction">—</span>), les articles investissement déjà réceptionnés</p>
                                 </div>
-                                <span class="dga-annee-sep">à</span>
-                                <div class="dga-filter-group">
-                                    <label class="dga-filter-label" for="dga-annee-fin">Année de fin</label>
-                                    <select id="dga-annee-fin" class="dga-inp-annee"></select>
+                                <button id="dga-btn-nouvelle-invest" class="dga-btn-primary" type="button">
+                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+                                    Nouvelle expression de besoin
+                                </button>
+                            </div>
+
+                            <!-- ══ STATISTIQUE ══ -->
+                            <div class="dga-stat-card">
+                                <div class="dga-stat-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
                                 </div>
-                                <div style="display:flex;gap:.5rem;">
-                                    <button id="dga-btn-reset-filtres" class="dga-btn-reset" type="button">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M3 12a9 9 0 109-9M3 12V6m0 6H9"/></svg>
-                                        Réinitialiser
-                                    </button>
-                                    <button id="dga-btn-appliquer-filtres" class="dga-btn-filtrer" type="button">
-                                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 3H2l8 9.46V19l4 2v-8.54L22 3z"/></svg>
-                                        Filtrer
-                                    </button>
+                                <div>
+                                    <div class="dga-stat-lbl">Nombre total</div>
+                                    <div class="dga-stat-val" id="dga-stat-nombre-invest">0</div>
                                 </div>
                             </div>
 
-                            <table id="dga-table-eb" class="display" style="width:100%">
-                                <thead>
-                                <tr>
-                                    <th>Nom</th>
-                                    <th>Date de création</th>
-                                    <th>Nb. produits</th>
-                                    <th>Statut</th>
-                                    <th>Action</th>
-                                </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
+                            <!-- ══ COMMUTATEUR (même contrôle, dupliqué pour revenir en arrière) ══ -->
+                            <div class="dga-switch-type" id="dga-switch-type-2">
+                                <button type="button" class="dga-switch-btn" data-cible="fonctionnement">Fonctionnement</button>
+                                <button type="button" class="dga-switch-btn dga-switch-active" data-cible="investissement">Investissement</button>
+                            </div>
+
+                            <!-- ══ CARTE LISTE ══ -->
+                            <div class="dga-card">
+                                <div class="dga-card-head">
+                                    <span class="dga-card-title">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                                            <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+                                        </svg>
+                                        Expressions de besoin de ma direction
+                                    </span>
+                                </div>
+
+                                <table id="dga-table-ebi" class="display" style="width:100%">
+                                    <thead>
+                                    <tr>
+                                        <th>Nom</th>
+                                        <th>Date de création</th>
+                                        <th>Nb. produits</th>
+                                        <th>Statut</th>
+                                        <th>Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+
+                        </div><!-- /#dga-panel-investissement -->
 
                         <!-- ══ MODALE : Créer / Modifier ══ -->
                         <div class="modal fade dga-modal" id="modalExpressionBesoin" tabindex="-1" aria-hidden="true">
@@ -235,6 +316,78 @@
                             </div>
                         </div>
 
+                        <!-- ══ MODALE : Créer / Modifier — INVESTISSEMENT ══ -->
+                        <div class="modal fade dga-modal" id="modalExpressionBesoinInvest" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h2 id="ebInvestModalTitre">Nouvelle expression de besoin — Investissement</h2>
+                                        <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                                            <span class="svg-icon svg-icon-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black"/><rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black"/></svg></span>
+                                        </div>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div id="dgaErreurGeneraleInvest" class="dga-erreur-generale" style="display:none;"></div>
+                                        <div class="dga-alerte-info" style="background:#fef3c7;border-color:#fde68a;color:#92400e;margin-bottom:1rem;">
+                                            Seuls les articles déjà réceptionnés et attribués au stock de votre direction sont proposés ci-dessous, dans la limite de la quantité restante.
+                                        </div>
+
+                                        <label style="display:block;font-size:.72rem;font-weight:700;color:#6b7280;margin-bottom:.4rem;">Ajouter un produit</label>
+                                        <div class="dga-grid-ajout">
+                                            <div>
+                                                <label style="font-size:.68rem;color:#9ca3af;">Produit</label>
+                                                <select id="dgaProduitInvest" class="dga-inp"><option value="">Sélectionner…</option></select>
+                                            </div>
+                                            <div>
+                                                <label style="font-size:.68rem;color:#9ca3af;">Quantité <span id="dgaQuotaAffiche" style="color:#9ca3af;font-weight:400;"></span></label>
+                                                <input type="number" id="dgaQuantiteInvest" class="dga-inp" min="1" step="1" value="1"/>
+                                            </div>
+                                            <button type="button" class="dga-btn-ajouter" id="dgaBtnAjouterProduitInvest">Ajouter</button>
+                                        </div>
+
+                                        <label style="display:block;font-size:.72rem;font-weight:700;color:#6b7280;margin-bottom:.4rem;">Produits demandés</label>
+                                        <table class="dga-table-produits">
+                                            <thead><tr><th>Désignation</th><th>Quantité</th><th></th></tr></thead>
+                                            <tbody id="dgaCorpsProduitsInvest">
+                                            <tr id="dgaLigneVideInvest"><td colspan="3" style="text-align:center;color:#9ca3af;font-style:italic;">Aucun produit ajouté.</td></tr>
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                    <div class="dga-actions">
+                                        <button type="button" class="dga-cancel" data-bs-dismiss="modal">Annuler</button>
+                                        <button type="button" class="dga-submit-poursuivre" id="dgaBtnPoursuivreInvest">
+                                            <span>Enregistrer et poursuivre après</span>
+                                            <svg class="dga-spinner hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity=".25"/><path d="M12 2a10 10 0 019.76 7.8"/></svg>
+                                        </button>
+                                        <button type="button" class="dga-submit-soumettre" id="dgaBtnTerminerInvest">
+                                            <span>Terminer (sortie immédiate)</span>
+                                            <svg class="dga-spinner hidden" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10" stroke-opacity=".25"/><path d="M12 2a10 10 0 019.76 7.8"/></svg>
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- ══ MODALE : Détail — INVESTISSEMENT ══ -->
+                        <div class="modal fade dga-modal" id="modalDetailEBI" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h2 id="detailEbiModalTitre">Détail</h2>
+                                        <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                                            <span class="svg-icon svg-icon-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black"/><rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black"/></svg></span>
+                                        </div>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div id="dgaContenuDetailEBI"></div>
+                                    </div>
+                                    <div class="dga-actions">
+                                        <button type="button" class="dga-cancel" data-bs-dismiss="modal">Fermer</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <!-- ══ MODALE : Voir (suivi de l'évolution) ══ -->
                         <div class="modal fade dga-modal" id="modalVoirEB" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
@@ -272,25 +425,25 @@
 </div>
 
 
- <!-- ══ MODALE : Consulter (lecture seule) ══ -->
-                        <div class="modal fade dga-modal" id="modalConsulterEB" tabindex="-1" aria-hidden="true">
-                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
-                                <div class="modal-content">
-                                    <div class="modal-header">
-                                        <h2 id="consulterModalTitre">Détail</h2>
-                                        <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
-                                            <span class="svg-icon svg-icon-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black"/><rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black"/></svg></span>
-                                        </div>
-                                    </div>
-                                    <div class="modal-body">
-                                        <div id="dgaContenuConsulter"></div>
-                                    </div>
-                                    <div class="dga-actions">
-                                        <button type="button" class="dga-cancel" data-bs-dismiss="modal">Fermer</button>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
+<!-- ══ MODALE : Consulter (lecture seule) ══ -->
+<div class="modal fade dga-modal" id="modalConsulterEB" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2 id="consulterModalTitre">Détail</h2>
+                <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                    <span class="svg-icon svg-icon-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black"/><rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black"/></svg></span>
+                </div>
+            </div>
+            <div class="modal-body">
+                <div id="dgaContenuConsulter"></div>
+            </div>
+            <div class="dga-actions">
+                <button type="button" class="dga-cancel" data-bs-dismiss="modal">Fermer</button>
+            </div>
+        </div>
+    </div>
+</div>
 
 <div id="kt_scrolltop" class="scrolltop" data-kt-scrolltop="true">
     <span class="svg-icon">
@@ -313,4 +466,3 @@
 
 </body>
 </html>
-

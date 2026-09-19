@@ -181,6 +181,8 @@ RewriteRule ^basi-scripts.bundle.13.js$ basi/chefService/js/add-lines-to-demande
 RewriteRule ^chef_service_basi_controller_1$ basi/chefService/controllers/chefServiceController1.php [L]
 RewriteRule ^chef_service_basi_expression_besoin$ basi/chefService/liste_expression_besoin.php [L]
 RewriteRule ^basi-scripts.bundle.30.js$ basi/chefService/js/liste_expression_besoin.js [L]
+RewriteRule ^chef_service_basi_liste_des_produits_investissement basi/chefService/listeProduitInvestissement.php [L]
+RewriteRule ^basi-scripts.bundle.37.js$ basi/chefService/js/listeProduitInvestissement.js [L]
 
 
 

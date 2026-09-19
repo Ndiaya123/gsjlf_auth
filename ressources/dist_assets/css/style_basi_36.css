@@ -1,0 +1,207 @@
+body{background:#f5f8fa;font-family:'Poppins',sans-serif;}
+
+#dga-loader{position:fixed;inset:0;z-index:9999;pointer-events:all}
+#dga-loader .dga-loader-bg{position:absolute;inset:0;background:rgba(10,40,25,.45);backdrop-filter:blur(4px)}
+#dga-loader .dga-loader-box{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;padding:2rem 2.5rem;display:flex;flex-direction:column;align-items:center;gap:.9rem;box-shadow:0 20px 60px rgba(0,0,0,.18);min-width:190px}
+#dga-loader .dga-loader-spin{width:40px;height:40px;animation:dga-spin .85s linear infinite}
+#dga-loader .dga-loader-spin circle{stroke:#1a7a5e;stroke-dasharray:80;stroke-dashoffset:55;stroke-linecap:round;fill:none;animation:dga-dash 1.4s ease-in-out infinite}
+#dga-loader .dga-loader-box p{margin:0;font-size:.82rem;font-weight:700;color:#1a7a5e}
+@keyframes dga-spin{to{transform:rotate(360deg)}}
+@keyframes dga-dash{0%{stroke-dashoffset:80}50%{stroke-dashoffset:20}100%{stroke-dashoffset:80}}
+
+.dga-hero{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
+.dga-hero-title h1{font-size:1.35rem;font-weight:800;color:#111827;margin:0;display:flex;align-items:center;gap:.55rem}
+.dga-hero-title h1 svg{background:#d1fae5;color:#065f46;border-radius:9px;padding:.4rem;width:20px !important;height:20px !important;box-sizing:content-box}
+.dga-hero-title p{font-size:.8rem;color:#9ca3af;margin:.2rem 0 0}
+
+.dga-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.85rem;margin-bottom:1.25rem}
+.dga-stat-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;padding:1.15rem 1.3rem;display:flex;align-items:center;gap:1rem;position:relative;overflow:hidden}
+.dga-stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#1a7a5e}
+.dga-stat-icon{width:42px;height:42px;border-radius:12px;background:#d1fae5;color:#065f46;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.dga-stat-lbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;margin-bottom:.3rem}
+.dga-stat-val{font-size:1.4rem;font-weight:900;color:#111827;font-variant-numeric:tabular-nums}
+
+.dga-sc-a-sortir::before{background:#dc2626}
+.dga-sc-a-sortir .dga-stat-icon{background:#fee2e2;color:#991b1b}
+.dga-sc-partiel::before{background:#f59e0b}
+.dga-sc-partiel .dga-stat-icon{background:#fef3c7;color:#92400e}
+.dga-sc-terminee::before{background:#10b981}
+.dga-sc-terminee .dga-stat-icon{background:#d1fae5;color:#047857}
+
+@media(max-width:900px){.dga-stats-grid{grid-template-columns:1fr 1fr}}
+@media(max-width:480px){.dga-stats-grid{grid-template-columns:1fr}}
+
+.dga-filters{display:flex;flex-wrap:wrap;gap:.85rem;align-items:flex-end;padding:1rem 1.35rem;border-bottom:1px solid #f3f4f6;background:#fafafa}
+.dga-filter-group{display:flex;flex-direction:column;gap:.3rem}
+.dga-filter-label{font-size:.68rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af}
+.dga-inp-annee{border:1.5px solid #e5e7eb;border-radius:8px;padding:.5rem .85rem;font-size:.82rem;color:#374151;min-width:230px}
+
+.dga-badge-statut{display:inline-flex;align-items:center;padding:.25rem .65rem;border-radius:99px;font-size:.68rem;font-weight:800;text-transform:uppercase}
+.dga-statut-3{background:#fee2e2;color:#991b1b}
+.dga-statut-5{background:#fef3c7;color:#92400e}
+.dga-statut-6{background:#d1fae5;color:#047857}
+
+.dga-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden}
+.dga-card-head{padding:.9rem 1.35rem;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
+.dga-card-title{font-size:.88rem;font-weight:700;color:#111827;display:flex;align-items:center;gap:.45rem}
+.dga-card-title svg{color:#1a7a5e}
+
+table.dataTable{border-collapse:collapse !important;width:100% !important}
+table.dataTable thead th{background:#f8f9fa !important;font-size:.7rem !important;font-weight:800 !important;text-transform:uppercase !important;letter-spacing:.07em !important;color:#9ca3af !important;border-bottom:2px solid #e9ecef !important;border-top:none !important;padding:.85rem 1rem !important;white-space:nowrap}
+table.dataTable tbody td{padding:.85rem 1rem !important;font-size:.875rem !important;color:#374151 !important;border-bottom:1px solid #f9fafb !important;vertical-align:middle !important}
+table.dataTable tbody tr:hover td{background:#f0fdf4 !important}
+.dataTables_empty{padding:2.5rem !important;font-style:italic !important;color:#9ca3af !important}
+.dataTables_paginate .paginate_button.current{background:#1a7a5e !important;color:#fff !important;border-color:#1a7a5e !important;border-radius:7px !important}
+
+.dga-btn-sortie{display:inline-flex !important;align-items:center !important;gap:.4rem !important;padding:.45rem .95rem !important;border-radius:8px !important;font-size:.78rem !important;font-weight:700 !important;background:#1a7a5e !important;color:#fff !important;border:none !important;cursor:pointer !important;transition:all .18s}
+
+.dga-btn-voir-eb,.dga-btn-consulter-sortie{display:inline-flex !important;align-items:center !important;gap:.35rem !important;padding:.4rem .8rem !important;border-radius:7px !important;font-size:.75rem !important;font-weight:700 !important;border:1.5px solid transparent !important;cursor:pointer !important;transition:all .18s;margin-right:.35rem}
+.dga-btn-voir-eb:hover,.dga-btn-consulter-sortie:hover{transform:translateY(-1px)}
+.dga-btn-voir-eb{background:#eff6ff !important;color:#1d4ed8 !important;border-color:#dbeafe !important}
+.dga-btn-voir-eb:hover{background:#1d4ed8 !important;color:#fff !important}
+.dga-btn-consulter-sortie{background:#ede9fe !important;color:#5b21b6 !important;border-color:#ddd6fe !important}
+.dga-btn-consulter-sortie:hover{background:#5b21b6 !important;color:#fff !important}
+
+.dga-badge-ligne{display:inline-flex;align-items:center;padding:.2rem .55rem;border-radius:99px;font-size:.66rem;font-weight:800;text-transform:uppercase}
+.dga-ligne-attente{background:#fef3c7;color:#92400e}
+.dga-ligne-partiel{background:#dbeafe;color:#1d4ed8}
+.dga-ligne-livre{background:#d1fae5;color:#047857}
+
+table.dga-table-sorties-detail{width:100%;border-collapse:collapse;font-size:.8rem}
+table.dga-table-sorties-detail thead th{background:#f8f9fa;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;padding:.5rem .7rem;text-align:left;border-bottom:2px solid #e9ecef}
+table.dga-table-sorties-detail tbody td{padding:.45rem .7rem;border-bottom:1px solid #f3f4f6;color:#374151}
+.dga-section-produit{margin-bottom:1.2rem;padding-bottom:1rem;border-bottom:1px solid #f3f4f6}
+.dga-section-produit:last-child{border-bottom:none;margin-bottom:0}
+.dga-section-produit-titre{font-size:.85rem;font-weight:800;color:#111827;margin-bottom:.4rem}
+.dga-section-produit-qtes{font-size:.76rem;color:#6b7280;margin-bottom:.6rem}
+.dga-btn-sortie:hover{background:#145f49 !important;transform:translateY(-1px)}
+.dga-btn-sortie:disabled{background:#d1d5db !important;color:#6b7280 !important;cursor:not-allowed !important;transform:none !important}
+
+.dga-alerte-inventaire{display:none;align-items:flex-start;gap:.7rem;background:#fef2f2;border:1.5px solid #fecaca;border-radius:12px;padding:1rem 1.3rem;color:#991b1b;font-size:.85rem;font-weight:600;margin-bottom:1.25rem}
+
+.dga-inp-qte-sortie{width:100px;border:1.5px solid #e5e7eb;border-radius:6px;padding:.35rem .5rem;font-size:.82rem}
+.dga-inp-qte-sortie:focus{outline:none;border-color:#1a7a5e}
+.dga-inp-qte-sortie:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed}
+
+/* ── Modale ───────────────────────────────────────────────────── */
+.dga-modal .modal-dialog{max-width:720px}
+.dga-modal .modal-content{border-radius:16px !important;border:none !important;box-shadow:0 24px 64px rgba(0,0,0,.18) !important;overflow:hidden}
+.dga-modal .modal-header{background:linear-gradient(135deg,#064e3b,#1a7a5e) !important;border:none !important;padding:1.25rem 1.5rem !important}
+.dga-modal .modal-header h2{color:#fff !important;font-size:1rem !important;font-weight:800 !important;margin:0 !important}
+.dga-modal .modal-body{padding:1.35rem 1.5rem !important;max-height:70vh;overflow-y:auto}
+
+.dga-erreur-generale{margin-bottom:1rem;padding:.7rem .9rem;border-radius:9px;background:#fef2f2;border:1.5px solid #fecaca;color:#991b1b;font-size:.82rem;font-weight:600}
+.dga-alerte-info{display:flex;align-items:flex-start;gap:.6rem;background:#eff6ff;border:1.5px solid #dbeafe;border-radius:10px;padding:.85rem 1rem;color:#1e40af;font-size:.82rem;font-weight:600;margin-bottom:1.1rem}
+
+table.dga-table-produits{width:100%;border-collapse:collapse;font-size:.83rem;margin-bottom:.5rem}
+table.dga-table-produits thead th{background:#f8f9fa;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;padding:.6rem .75rem;text-align:left;border-bottom:2px solid #e9ecef}
+table.dga-table-produits tbody td{padding:.55rem .75rem;border-bottom:1px solid #f3f4f6;color:#374151}
+.dga-badge-partiel{display:inline-flex;align-items:center;padding:.2rem .55rem;border-radius:99px;font-size:.64rem;font-weight:800;text-transform:uppercase;background:#fef3c7;color:#92400e}
+.dga-badge-complet{display:inline-flex;align-items:center;padding:.2rem .55rem;border-radius:99px;font-size:.64rem;font-weight:800;text-transform:uppercase;background:#d1fae5;color:#047857}
+.dga-val-sortir{font-weight:800;color:#1a7a5e}
+
+.dga-actions{display:flex;justify-content:flex-end;gap:.6rem;padding:1rem 1.35rem;border-top:1px solid #f3f4f6;background:#fafafa}
+.dga-cancel{padding:.55rem 1.15rem;border-radius:8px;font-size:.82rem;font-weight:600;background:#fff;color:#6b7280;border:1.5px solid #e5e7eb;cursor:pointer}
+.dga-cancel:hover{border-color:#9ca3af;color:#374151}
+.dga-submit{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.35rem;border-radius:8px;font-size:.82rem;font-weight:700;background:#1a7a5e;color:#fff;border:none;cursor:pointer;min-width:170px;justify-content:center}
+.dga-submit:hover{background:#145f49}
+.dga-submit:disabled{opacity:.6;cursor:not-allowed}
+.dga-spinner.hidden{display:none !important}
+@keyframes dga-spin2{to{transform:rotate(360deg)}}
+.dga-spinner{animation:dga-spin2 1s linear infinite}
+
+
+
+
+.dataTables_info{font-size:.78rem;color:#9ca3af;font-weight:500;padding : .5rem 0;}
+
+
+/* "Afficher X lignes" */
+.dataTables_length {
+    display: flex; align-items: center;
+    padding-left: 10px !important;
+}
+.dataTables_length label {
+    display: flex; align-items: center; gap: .45rem;
+    font-size: .8rem; color: #6b7280; font-weight: 500; white-space: nowrap;
+}
+.dataTables_length select {
+    border: 1.5px solid #e5e7eb !important; border-radius: 8px !important;
+    padding: .35rem .55rem !important; font-size: .82rem !important;
+    font-weight: 600 !important; color: #374151 !important;
+    background: #fff !important; min-width: 58px; text-align: center;
+    cursor: pointer; transition: border-color .18s;
+}
+.dataTables_length select:focus {
+    outline: none !important; border-color: #1a7a5e !important;
+    box-shadow: 0 0 0 3px rgba(26,122,94,.1) !important;
+}
+
+
+/* ── 1. ANTI-FOUC : page masquée tant que le CSS n'est pas appliqué ───── */
+html.ld-booting body > .d-flex.flex-column.flex-root { visibility: hidden !important; }
+
+/* ── 2. FOOTER COLLÉ EN BAS : il ne remonte plus, il ne saute plus ───── */
+html, body                    { height: 100%; }
+.d-flex.flex-column.flex-root { min-height: 100vh; }
+.page                         { min-height: 100vh; }
+#kt_wrapper { min-height: 100vh; display: flex; flex-direction: column; }
+#kt_content { flex: 1 0 auto; }                     /* prend la place dispo */
+#kt_footer  { flex: 0 0 auto; margin-top: auto; }   /* poussé tout en bas  */
+
+/* ── 3. HAUTEURS RÉSERVÉES : la zone table ne change plus de hauteur ───
+       (mesure .bud-card avec une liste pleine et ajuste ces valeurs)      */
+/*#kt_content_container { min-height: 640px; }*/
+/*.bud-card             { min-height: 430px; }*/
+/*#ld-table_wrapper     { min-height: 400px; }*/
+/*.ld-stat__val         { min-height: 1.6em; }        !* évite le saut 0->128 *!*/
+
+/* ── 4. La table brute (th/td non stylés) reste invisible
+       jusqu'à l'initialisation de DataTables ─────────────────────────── */
+#ld-table          { visibility: hidden; }
+#ld-table.ld-ready { visibility: visible; }
+
+
+/* ── Ligne "produit" du tableau de stock = mini-formulaire d'ajout ── */
+.dga-qte-stock{width:90px;border:1.5px solid #e5e7eb;border-radius:7px;padding:.4rem .6rem;font-size:.82rem}
+.dga-qte-stock:focus{outline:none;border-color:#1a7a5e;box-shadow:0 0 0 3px rgba(26,122,94,.1)}
+.dga-btn-ajouter-ligne{background:#ecfdf5;color:#059669;border:1.5px solid #d1fae5;border-radius:7px;padding:.4rem .8rem;font-size:.75rem;font-weight:700;cursor:pointer;transition:all .18s}
+.dga-btn-ajouter-ligne:hover{background:#059669;color:#fff}
+.dga-btn-ajouter-ligne:disabled{opacity:.4;cursor:not-allowed}
+.dga-pill-rubrique{display:inline-flex;padding:.2rem .55rem;border-radius:99px;font-size:.7rem;font-weight:600;background:#f3f4f6;color:#6b7280}
+.dga-quota-val{font-weight:800;color:#1a7a5e;font-variant-numeric:tabular-nums}
+
+/* Espacement manquant entre la carte de statistique seule (hors grille) et
+   la carte suivante — scopé à cette page (#dga-stat-card-produits) pour ne
+   pas affecter .dga-stats-grid ailleurs, qui gère déjà son propre espacement.
+   max-width également scopé ici : .dga-stat-card n'a pas de limite de
+   largeur par défaut, elle s'étire donc sur toute la ligne quand elle est
+   utilisée seule (hors grille) sans qu'on la contraigne explicitement. */
+#dga-stat-card-produits{margin-bottom:1.25rem;max-width:320px}
+
+/* ── Barre de recherche (jamais définie jusqu'ici — icône manquante,
+   input sans style) ─────────────────────────────────────────────── */
+.dga-search{position:relative}
+.dga-search svg{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:#9ca3af;pointer-events:none}
+.dga-search input{border:1.5px solid #e5e7eb !important;border-radius:9px !important;padding:.55rem .9rem .55rem 2.4rem !important;font-size:.83rem !important;color:#374151 !important;min-width:230px;background:#fff !important;box-shadow:none !important}
+.dga-search input:focus{outline:none;border-color:#1a7a5e !important;box-shadow:0 0 0 3px rgba(26,122,94,.1) !important}
+
+/* ── Panier flottant, apparaît dès qu'un produit est ajouté ───────── */
+#dga-panier{position:sticky;bottom:1rem;z-index:50;background:#fff;border:1.5px solid #1a7a5e;border-radius:14px;box-shadow:0 12px 32px rgba(0,0,0,.14);padding:1.1rem 1.35rem;margin-top:1.25rem;display:none;}
+#dga-panier.dga-panier-visible{display:block;}
+.dga-panier-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.75rem;flex-wrap:wrap;gap:.5rem}
+.dga-panier-titre{font-size:.85rem;font-weight:800;color:#111827;display:flex;align-items:center;gap:.4rem}
+.dga-panier-badge{background:#1a7a5e;color:#fff;border-radius:99px;padding:.15rem .55rem;font-size:.72rem;font-weight:800}
+.dga-panier-liste{display:flex;flex-direction:column;gap:.4rem;max-height:220px;overflow-y:auto;margin-bottom:.9rem}
+.dga-panier-ligne{display:flex;align-items:center;justify-content:space-between;padding:.5rem .7rem;background:#f9fafb;border-radius:8px;font-size:.82rem}
+.dga-panier-ligne-nom{color:#374151;font-weight:600}
+.dga-panier-ligne-qte{color:#1a7a5e;font-weight:800;margin:0 .75rem}
+.dga-panier-retirer{background:none;border:none;color:#dc2626;cursor:pointer;font-size:.75rem;font-weight:700}
+.dga-panier-actions{display:flex;justify-content:flex-end;gap:.6rem}
+
+/* ── Section historique repliable ─────────────────────────────────── */
+.dga-histo-toggle{display:flex;align-items:center;gap:.4rem;cursor:pointer;font-size:.82rem;font-weight:700;color:#374151;padding:.9rem 0;border-top:1px solid #f3f4f6;margin-top:1.5rem;user-select:none}
+.dga-histo-toggle svg{transition:transform .2s}
+.dga-histo-toggle.dga-histo-ouvert svg{transform:rotate(90deg)}
+#dga-histo-contenu{display:none}
+#dga-histo-contenu.dga-histo-visible{display:block}

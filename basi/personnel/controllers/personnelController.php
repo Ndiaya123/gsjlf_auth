@@ -264,9 +264,11 @@ function detailExpressionBesoin(PDO $bdBASI, expressionBesoinController $basiCon
         if ($idEB <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
 
         $stmt = $bdBASI->prepare("
-            SELECT id, nom_expression, idUtilisateur, idDirection, date_creation, idStatut, dateEnregistrement
-            FROM expression_besoin
-            WHERE id = ? AND idUtilisateur = ?
+            SELECT eb.id, eb.nom_expression, eb.idUtilisateur, eb.idDirection, eb.date_creation, eb.idStatut, eb.dateEnregistrement,
+                   CONCAT(u.prenom, ' ', u.nom) AS demandeur
+            FROM expression_besoin eb
+            JOIN utilisateurs u ON eb.idUtilisateur = u.id
+            WHERE eb.id = ? AND eb.idUtilisateur = ?
             LIMIT 1
         ");
         $stmt->execute([$idEB, $sessionUserId]);
@@ -570,23 +572,205 @@ function insererHistoriqueEBP(PDO $bdBASI, int $idEBP, int $idEB, int $idP, floa
     ")->execute([$idEBP, $idEB, $idP, $quantite, $statut, $motif, $dateEnregistrement, $idUtilisateur]);
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODULE — Expression de besoin INVESTISSEMENT
+   Réservé aux chefs de service (idDirection présent en session, lue depuis
+   $_SESSION['user_direction'], même variable que le module Fonctionnement).
+   Cycle : 1 = Brouillon, 2 = Terminé (la finalisation déclenche IMMÉDIATEMENT
+   la sortie de stock — pas de validation hiérarchique, c'est la direction qui
+   consomme son propre quota).
+   Catalogue : produits partagés `product` avec id_type_product = 2.
+   Quota : calculé depuis livraison_produit_repartition (ce que le comptable a
+   explicitement attribué en stock à cette direction), moins ce qui a déjà été
+   sorti via ce module — jamais lu directement sur product.Stock_actuel, qui
+   reste un total physique partagé entre toutes les directions.
+═══════════════════════════════════════════════════════════════════════════ */
 
-function detailExpressionBesoinDirection2(PDO $bdBASI, expressionBesoinController $basiController): void {
+/**
+ * Indique si l'utilisateur connecté a accès à l'onglet Investissement
+ * (idDirection renseigné en session) et le nom de sa direction.
+ */
+function chargerContexteDirection(PDO $bdBASI, int $sessionIdDirection): void {
     try {
-        $token = trim((string) inputValueEB('token', ''));
-        if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
-        $idEB = (int) $basiController->tokendecrypt($token);
-        if ($idEB <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+        if ($sessionIdDirection <= 0) {
+            echo json_encode(['status' => 'success', 'aDirection' => false]);
+            return;
+        }
+        $stmt = $bdBASI->prepare("SELECT id, nom_direction FROM direction WHERE id = ? LIMIT 1");
+        $stmt->execute([$sessionIdDirection]);
+        $direction = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        $stmt = $bdBASI->prepare("
-            SELECT eb.id, eb.nom_expression, eb.date_creation, eb.idStatut, eb.idDirection,
-                   CONCAT(u.prenom, ' ', u.nom) AS demandeur
-            FROM expression_besoin eb
-            JOIN utilisateurs u ON eb.idUtilisateur = u.id
-            WHERE eb.id = ? 
+        echo json_encode([
+            'status'      => 'success',
+            'aDirection'  => (bool) $direction,
+            'idDirection' => $sessionIdDirection,
+            'nomDirection'=> $direction['nom_direction'] ?? null,
+        ]);
+    } catch (\Throwable $e) {
+        error_log('[EBI][chargerContexteDirection] ' . $e->getMessage());
+        erreurSqlEB("Impossible de charger le contexte de direction.");
+    }
+}
+
+/**
+ * Calcule le quota disponible pour une direction sur un produit donné :
+ * tout ce qui lui a été explicitement attribué en stock à la réception,
+ * moins tout ce qu'elle a déjà retiré via ce module.
+ */
+function calculerQuotaDirection(PDO $bdBASI, int $idDirection, int $idP): float {
+    $stmtRecu = $bdBASI->prepare("
+        SELECT COALESCE(SUM(lpr.quantite), 0) AS total
+        FROM livraison_produit_repartition lpr
+        JOIN livraison_produit lp ON lpr.idLP = lp.id
+        WHERE lpr.mode = 'stock' AND lpr.idDirection = ? AND lp.idP = ?
+    ");
+    $stmtRecu->execute([$idDirection, $idP]);
+    $recu = (float) $stmtRecu->fetch(PDO::FETCH_ASSOC)['total'];
+
+    $stmtSorti = $bdBASI->prepare("
+        SELECT COALESCE(SUM(ebip.quantite_sortie), 0) AS total
+        FROM expression_besoin_investissement_produit ebip
+        JOIN expression_besoin_investissement ebi ON ebip.idEBI = ebi.id
+        WHERE ebip.id_produit = ? AND ebi.idDirection = ?
+    ");
+    $stmtSorti->execute([$idP, $idDirection]);
+    $sorti = (float) $stmtSorti->fetch(PDO::FETCH_ASSOC)['total'];
+
+    return max(0.0, $recu - $sorti);
+}
+
+/**
+ * Liste directe des produits Investissement (id_type_product=2) pour
+ * lesquels la direction de l'utilisateur connecté a un quota disponible
+ * strictement positif — pas de cascade catégorie/sous-catégorie, ces champs
+ * ne s'appliquent pas aux produits Investissement (product.id_Sous_categorie
+ * y est NULL). La rubrique/sous-rubrique, à titre indicatif seulement, est
+ * retrouvée via ligneBudget (id_produit) → sousRubrique → rubrique.
+ *
+ * On ne parcourt que les produits ayant déjà transité par
+ * livraison_produit_repartition pour cette direction (mode='stock') — pas
+ * tout le catalogue Investissement — pour rester performant.
+ */
+function listerProduitsEligiblesInvestissement(PDO $bdBASI, int $sessionIdDirection): void {
+    try {
+        if ($sessionIdDirection <= 0) {
+            echo json_encode(['status' => 'error', 'message' => "Aucune direction associée à votre compte."]);
+            return;
+        }
+
+        $stmtCandidats = $bdBASI->prepare("
+            SELECT DISTINCT lp.idP
+            FROM livraison_produit_repartition lpr
+            JOIN livraison_produit lp ON lpr.idLP = lp.id
+            WHERE lpr.mode = 'stock' AND lpr.idDirection = ?
+        ");
+        $stmtCandidats->execute([$sessionIdDirection]);
+        $idsCandidats = array_column($stmtCandidats->fetchAll(PDO::FETCH_ASSOC), 'idP');
+
+        if (empty($idsCandidats)) {
+            echo json_encode(['status' => 'success', 'data' => []]);
+            return;
+        }
+
+        $placeholders = implode(',', array_fill(0, count($idsCandidats), '?'));
+        $stmtProduits = $bdBASI->prepare("
+            SELECT idP, nomproduit as designation
+            FROM product
+            WHERE idP IN ($placeholders) AND id_statut = 1 AND id_type_product = 2
+            ORDER BY nomproduit ASC
+        ");
+        $stmtProduits->execute($idsCandidats);
+        $produits = $stmtProduits->fetchAll(PDO::FETCH_ASSOC);
+
+        // Rubrique / sous-rubrique — indicatif seulement, via ligneBudget.
+        $stmtRubrique = $bdBASI->prepare("
+            SELECT r.nom_rubrique, sr.nom_sous_rubrique
+            FROM ligneBudget lb
+            JOIN sousRubrique sr ON lb.sous_rubrique_id = sr.id
+            JOIN rubrique r ON sr.rubrique_id = r.id
+            WHERE lb.id_produit = ?
             LIMIT 1
         ");
-        $stmt->execute([$idEB]);
+
+        $resultat = [];
+        foreach ($produits as $p) {
+            $quota = calculerQuotaDirection($bdBASI, $sessionIdDirection, (int) $p['idP']);
+            if ($quota <= 0.001) continue;
+
+            $stmtRubrique->execute([$p['idP']]);
+            $rubriqueInfo = $stmtRubrique->fetch(PDO::FETCH_ASSOC);
+
+            $p['quota_disponible'] = $quota;
+            $p['nom_rubrique']     = $rubriqueInfo['nom_rubrique'] ?? null;
+            $p['nom_sous_rubrique'] = $rubriqueInfo['nom_sous_rubrique'] ?? null;
+            $resultat[] = $p;
+        }
+
+        echo json_encode(['status' => 'success', 'data' => $resultat]);
+    } catch (\Throwable $e) {
+        error_log('[EBI][listerProduitsEligiblesInvestissement] ' . $e->getMessage());
+        erreurSqlEB('Impossible de charger la liste des produits.');
+    }
+}
+
+/**
+ * Liste des expressions de besoin investissement de la direction de
+ * l'utilisateur connecté (partagée entre tous les chefs de service qui se
+ * succèdent à la tête de cette direction — jamais filtrée par idUtilisateur).
+ */
+function listerExpressionsBesoinInvestissement(PDO $bdBASI, expressionBesoinController $basiController, int $sessionIdDirection): void {
+    try {
+        if ($sessionIdDirection <= 0) {
+            echo json_encode(['status' => 'error', 'message' => "Aucune direction associée à votre compte."]);
+            return;
+        }
+
+        $stmt = $bdBASI->prepare("
+            SELECT ebi.id, ebi.nom_expression, ebi.date_creation, ebi.idStatut,
+                   (SELECT COUNT(*) FROM expression_besoin_investissement_produit ebip WHERE ebip.idEBI = ebi.id AND ebip.statut = 1) AS nombre_produits
+            FROM expression_besoin_investissement ebi
+            WHERE ebi.idDirection = ?
+            ORDER BY ebi.date_creation DESC, ebi.id DESC
+        ");
+        $stmt->execute([$sessionIdDirection]);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($rows as &$r) {
+            $r['tmp'] = $basiController->tokenencrypt($r['id']);
+        }
+        unset($r);
+
+        echo json_encode(['status' => 'success', 'data' => $rows, 'nombre_total' => count($rows)]);
+    } catch (\Throwable $e) {
+        error_log('[EBI][listerExpressionsBesoinInvestissement] ' . $e->getMessage());
+        erreurSqlEB('Impossible de charger la liste des expressions de besoin investissement.');
+    }
+}
+
+/**
+ * Détail d'une expression de besoin investissement (en-tête + produits),
+ * pour modification ou consultation. Filtrée par idDirection, pas par
+ * idUtilisateur : n'importe quel chef de service de cette direction (passé
+ * ou présent) peut la consulter/modifier tant qu'elle est en Brouillon.
+ */
+function detailExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoinController $basiController, int $sessionIdDirection): void {
+    try {
+        if ($sessionIdDirection <= 0) {
+            echo json_encode(['status' => 'error', 'message' => "Aucune direction associée à votre compte."]);
+            return;
+        }
+        $token = trim((string) inputValueEB('token', ''));
+        if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
+        $idEBI = (int) $basiController->tokendecrypt($token);
+        if ($idEBI <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+
+        $stmt = $bdBASI->prepare("
+            SELECT id, nom_expression, idDirection, date_creation, idStatut, dateEnregistrement
+            FROM expression_besoin_investissement
+            WHERE id = ? AND idDirection = ?
+            LIMIT 1
+        ");
+        $stmt->execute([$idEBI, $sessionIdDirection]);
         $expression = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$expression) {
             echo json_encode(['status' => 'error', 'message' => 'Expression de besoin introuvable.']);
@@ -594,23 +778,238 @@ function detailExpressionBesoinDirection2(PDO $bdBASI, expressionBesoinControlle
         }
 
         $stmtProduits = $bdBASI->prepare("
-            SELECT ebp.id AS idEBP, ebp.idP, ebp.quantite, ebp.quantite_reelle, p.nomproduit as designation
-            FROM expression_besoin_produit ebp
-            JOIN product p ON ebp.idP = p.idP
-            WHERE ebp.idEB = ? AND ebp.statut = 1
-            ORDER BY ebp.id ASC
+            SELECT ebip.id AS idEBIP, ebip.id_produit, ebip.quantite_demandee, ebip.quantite_sortie,
+                   p.nomproduit AS designation
+            FROM expression_besoin_investissement_produit ebip
+            JOIN product p ON ebip.id_produit = p.idP
+            WHERE ebip.idEBI = ? AND ebip.statut = 1
+            ORDER BY ebip.id ASC
         ");
-        $stmtProduits->execute([$idEB]);
+        $stmtProduits->execute([$idEBI]);
         $expression['produits'] = $stmtProduits->fetchAll(PDO::FETCH_ASSOC);
 
         echo json_encode(['status' => 'success', 'expression' => $expression]);
     } catch (\Throwable $e) {
-
-    echo $e;
-    die;
-        error_log('[ChefDirEB][detailExpressionBesoinDirection] ' . $e->getMessage());
-        erreurSqlChefDirEB("Impossible de charger le détail de l'expression de besoin.");
+        error_log('[EBI][detailExpressionBesoinInvestissement] ' . $e->getMessage());
+        erreurSqlEB("Impossible de charger le détail de l'expression de besoin.");
     }
+}
+
+/**
+ * Crée (si pas de token) ou met à jour (si token fourni) une expression de
+ * besoin investissement. Action 'poursuivre' → reste en Brouillon. Action
+ * 'terminer' → vérifie le quota une dernière fois (sécurité), puis déclenche
+ * IMMÉDIATEMENT la sortie de stock (product.Stock_actuel décrémenté,
+ * quantite_sortie = quantite_demandee pour chaque ligne) — pas d'étape
+ * comptable intermédiaire, c'est la direction qui consomme son propre quota.
+ *
+ * Champs attendus :
+ *   - token (optionnel, présent uniquement en modification)
+ *   - action : 'poursuivre' | 'terminer'
+ *   - produits : [{ idP, quantite }, ...] — liste COMPLÈTE voulue
+ */
+function enregistrerExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoinController $basiController, int $sessionUserId, string $sessionMatricule, int $sessionIdDirection): void {
+    try {
+        if ($sessionIdDirection <= 0) {
+            echo json_encode(['status' => 'error', 'message' => "Aucune direction associée à votre compte."]);
+            return;
+        }
+
+        $token  = trim((string) inputValueEB('token', ''));
+        $action = trim((string) inputValueEB('action', 'poursuivre'));
+        $produitsEnvoyes = inputValueEB('produits', []);
+        if (!is_array($produitsEnvoyes)) $produitsEnvoyes = [];
+
+        $produitsValides = [];
+        $vus = [];
+        foreach ($produitsEnvoyes as $p) {
+            $idP      = (int) ($p['idP'] ?? 0);
+            $quantite = (float) ($p['quantite'] ?? 0);
+            if ($idP <= 0) continue;
+            if ($quantite <= 0) {
+                echo json_encode(['status' => 'error', 'message' => 'La quantité doit être strictement supérieure à zéro pour chaque produit.']);
+                return;
+            }
+            if (isset($vus[$idP])) {
+                echo json_encode(['status' => 'error', 'message' => 'Un même produit ne peut être ajouté qu\'une seule fois.']);
+                return;
+            }
+            $vus[$idP] = true;
+            $produitsValides[$idP] = $quantite;
+        }
+        if (empty($produitsValides)) {
+            echo json_encode(['status' => 'error', 'message' => 'Veuillez ajouter au moins un produit.']);
+            return;
+        }
+
+        // ── Vérification du quota (sécurité, en plus du filtrage déjà fait
+        // côté catalogue) — jamais faire confiance uniquement au client. ──
+        foreach ($produitsValides as $idP => $quantiteDemandee) {
+            $quotaDisponible = calculerQuotaDirection($bdBASI, $sessionIdDirection, $idP);
+            // En modification, il faut réintégrer la quantité déjà réservée
+            // par CETTE MÊME expression avant de comparer (sinon on se
+            // pénaliserait soi-même à chaque modification).
+            if ($token !== '') {
+                $idEBIExistant = (int) $basiController->tokendecrypt($token);
+                $stmtDejaReserve = $bdBASI->prepare("
+                    SELECT COALESCE(SUM(quantite_demandee), 0) AS total
+                    FROM expression_besoin_investissement_produit
+                    WHERE idEBI = ? AND id_produit = ? AND statut = 1
+                ");
+                $stmtDejaReserve->execute([$idEBIExistant, $idP]);
+                $quotaDisponible += (float) $stmtDejaReserve->fetch(PDO::FETCH_ASSOC)['total'];
+            }
+            if ($quantiteDemandee > $quotaDisponible + 0.001) {
+                echo json_encode(['status' => 'error', 'message' => "Quantité demandée supérieure au quota disponible pour un des produits ($quotaDisponible restant(s))."]);
+                return;
+            }
+        }
+
+        date_default_timezone_set('Africa/Dakar');
+        $dateEnregistrement = date('Y-m-d H:i:s');
+
+        $bdBASI->beginTransaction();
+
+        if ($token === '') {
+            $nomExpression = 'expression_invest_' . date('Ymd_His');
+            $idStatut = 1;
+
+            $bdBASI->prepare("
+                INSERT INTO expression_besoin_investissement (nom_expression, idDirection, idUtilisateur, date_creation, idStatut, dateEnregistrement)
+                VALUES (?, ?, ?, CURDATE(), ?, ?)
+            ")->execute([$nomExpression, $sessionIdDirection, $sessionUserId, $idStatut, $dateEnregistrement]);
+            $idEBI = (int) $bdBASI->lastInsertId();
+
+            insererHistoriqueEBI($bdBASI, $idEBI, $nomExpression, $sessionIdDirection, $sessionUserId, $idStatut,
+                "Création de l'expression de besoin investissement (par $sessionMatricule)", $dateEnregistrement);
+        } else {
+            $idEBI = (int) $basiController->tokendecrypt($token);
+            if ($idEBI <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); $bdBASI->rollBack(); return; }
+
+            $stmtC = $bdBASI->prepare("
+                SELECT id, nom_expression, idDirection, idStatut
+                FROM expression_besoin_investissement
+                WHERE id = ? AND idDirection = ?
+                LIMIT 1
+            ");
+            $stmtC->execute([$idEBI, $sessionIdDirection]);
+            $expression = $stmtC->fetch(PDO::FETCH_ASSOC);
+            if (!$expression) {
+                echo json_encode(['status' => 'error', 'message' => 'Expression de besoin introuvable.']);
+                $bdBASI->rollBack();
+                return;
+            }
+            if ((int) $expression['idStatut'] !== 1) {
+                echo json_encode(['status' => 'error', 'message' => 'Seule une expression en Brouillon peut être modifiée.']);
+                $bdBASI->rollBack();
+                return;
+            }
+            $nomExpression = $expression['nom_expression'];
+        }
+
+        // ── Réconciliation des produits (identique au module Fonctionnement) ──
+        $stmtActifs = $bdBASI->prepare("SELECT id, id_produit, quantite_demandee FROM expression_besoin_investissement_produit WHERE idEBI = ? AND statut = 1");
+        $stmtActifs->execute([$idEBI]);
+        $actifsExistants = [];
+        foreach ($stmtActifs->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $actifsExistants[(int) $row['id_produit']] = $row;
+        }
+
+        $motifProduits = ($token === '')
+            ? "Ajout à la création (par $sessionMatricule)"
+            : "Modification de l'expression de besoin (par $sessionMatricule)";
+
+        foreach ($produitsValides as $idP => $quantite) {
+            if (isset($actifsExistants[$idP])) {
+                $idEBIP = (int) $actifsExistants[$idP]['id'];
+                if ((float) $actifsExistants[$idP]['quantite_demandee'] !== $quantite) {
+                    $bdBASI->prepare("UPDATE expression_besoin_investissement_produit SET quantite_demandee = ?, dateEnregistrement = ? WHERE id = ?")
+                        ->execute([$quantite, $dateEnregistrement, $idEBIP]);
+                    insererHistoriqueEBIP($bdBASI, $idEBIP, $idEBI, $idP, $quantite, 0, 1, $motifProduits, $dateEnregistrement, $sessionUserId);
+                }
+            } else {
+                $bdBASI->prepare("
+                    INSERT INTO expression_besoin_investissement_produit (idEBI, id_produit, quantite_demandee, quantite_sortie, statut, dateEnregistrement)
+                    VALUES (?, ?, ?, 0, 1, ?)
+                ")->execute([$idEBI, $idP, $quantite, $dateEnregistrement]);
+                $idEBIP = (int) $bdBASI->lastInsertId();
+                insererHistoriqueEBIP($bdBASI, $idEBIP, $idEBI, $idP, $quantite, 0, 1, $motifProduits, $dateEnregistrement, $sessionUserId);
+            }
+        }
+
+        foreach ($actifsExistants as $idP => $row) {
+            if (!isset($produitsValides[$idP])) {
+                $idEBIP = (int) $row['id'];
+                $bdBASI->prepare("UPDATE expression_besoin_investissement_produit SET statut = 0, dateEnregistrement = ? WHERE id = ?")
+                    ->execute([$dateEnregistrement, $idEBIP]);
+                insererHistoriqueEBIP($bdBASI, $idEBIP, $idEBI, $idP, (float) $row['quantite_demandee'], 0, 0,
+                    "Suppression du produit (par $sessionMatricule)", $dateEnregistrement, $sessionUserId);
+            }
+        }
+
+        // ── Finalisation : sortie de stock immédiate ─────────────────────
+        if ($action === 'terminer') {
+            $stmtLignesActuelles = $bdBASI->prepare("
+                SELECT id, id_produit, quantite_demandee
+                FROM expression_besoin_investissement_produit
+                WHERE idEBI = ? AND statut = 1
+            ");
+            $stmtLignesActuelles->execute([$idEBI]);
+            $lignesActuelles = $stmtLignesActuelles->fetchAll(PDO::FETCH_ASSOC);
+
+            foreach ($lignesActuelles as $ligne) {
+                $bdBASI->prepare("
+                    UPDATE expression_besoin_investissement_produit
+                    SET quantite_sortie = quantite_demandee
+                    WHERE id = ?
+                ")->execute([$ligne['id']]);
+
+                $bdBASI->prepare("
+                    UPDATE product SET Stock_actuel = Stock_actuel - ? WHERE idP = ?
+                ")->execute([$ligne['quantite_demandee'], $ligne['id_produit']]);
+
+                insererHistoriqueEBIP($bdBASI, (int) $ligne['id'], $idEBI, (int) $ligne['id_produit'],
+                    (float) $ligne['quantite_demandee'], (float) $ligne['quantite_demandee'], 1,
+                    "Sortie de stock à la finalisation (par $sessionMatricule)", $dateEnregistrement, $sessionUserId);
+            }
+
+            $bdBASI->prepare("UPDATE expression_besoin_investissement SET idStatut = 2 WHERE id = ?")->execute([$idEBI]);
+            insererHistoriqueEBI($bdBASI, $idEBI, $nomExpression, $sessionIdDirection, $sessionUserId, 2,
+                "Finalisation et sortie de stock (par $sessionMatricule)", $dateEnregistrement);
+        }
+
+        $bdBASI->commit();
+
+        echo json_encode([
+            'status'  => 'success',
+            'message' => ($action === 'terminer')
+                ? 'Expression de besoin finalisée : sortie de stock effectuée.'
+                : 'Brouillon enregistré avec succès.',
+            'tmp' => $basiController->tokenencrypt($idEBI),
+        ]);
+    } catch (\Throwable $e) {
+        if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+        error_log('[EBI][enregistrerExpressionBesoinInvestissement] ' . $e->getMessage());
+        erreurSqlEB("Impossible d'enregistrer l'expression de besoin.");
+    }
+}
+
+/** Insère un instantané de l'en-tête dans historique_expression_besoin_investissement. */
+function insererHistoriqueEBI(PDO $bdBASI, int $idEBI, string $nomExpression, int $idDirection, int $idUtilisateur, int $idStatut, string $motif, string $dateEnregistrement): void {
+    $bdBASI->prepare("
+        INSERT INTO historique_expression_besoin_investissement
+            (idEBI, nom_expression, idDirection, idUtilisateur, idStatut, motif, dateEnregistrement)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+    ")->execute([$idEBI, $nomExpression, $idDirection, $idUtilisateur, $idStatut, $motif, $dateEnregistrement]);
+}
+
+/** Insère une ligne dans historique_expression_besoin_investissement_produit. */
+function insererHistoriqueEBIP(PDO $bdBASI, int $idEBIP, int $idEBI, int $idProduit, float $quantiteDemandee, float $quantiteSortie, int $statut, string $motif, string $dateEnregistrement, int $idUtilisateur): void {
+    $bdBASI->prepare("
+        INSERT INTO historique_expression_besoin_investissement_produit
+            (idEBIP, idEBI, id_produit, quantite_demandee, quantite_sortie, statut, idUtilisateur, motif, dateEnregistrement)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ")->execute([$idEBIP, $idEBI, $idProduit, $quantiteDemandee, $quantiteSortie, $statut, $idUtilisateur, $motif, $dateEnregistrement]);
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -622,6 +1021,13 @@ function detailExpressionBesoinDirection2(PDO $bdBASI, expressionBesoinControlle
    5 = detailExpressionBesoin        (pour modification ou Détail)
    6 = enregistrerExpressionBesoin   (création OU modification + réconciliation)
    7 = voirSuiviExpressionBesoin     (bouton "Voir" — suivi complet, tous statuts)
+
+   ── Investissement (visible uniquement si idDirection défini en session) ──
+   10 = chargerContexteDirection               (a-t-on accès à l'onglet Investissement ?)
+   13 = listerProduitsEligiblesInvestissement  (liste directe, quota > 0, pas de cascade catégorie)
+   14 = listerExpressionsBesoinInvestissement
+   15 = detailExpressionBesoinInvestissement
+   16 = enregistrerExpressionBesoinInvestissement (brouillon OU terminé → sortie immédiate)
 ═══════════════════════════════════════════════════════════════════════════ */
 try {
     switch ($option) {
@@ -652,11 +1058,26 @@ try {
         case 7:
             voirSuiviExpressionBesoin($bdBASI, $basiController, $sessionUserId);
             break;
-            case 8 :
 
-                  detailExpressionBesoinDirection2($bdBASI, $basiController);
+        case 10:
+            chargerContexteDirection($bdBASI, $sessionIdDirection);
             break;
 
+        case 13:
+            listerProduitsEligiblesInvestissement($bdBASI, $sessionIdDirection);
+            break;
+
+        case 14:
+            listerExpressionsBesoinInvestissement($bdBASI, $basiController, $sessionIdDirection);
+            break;
+
+        case 15:
+            detailExpressionBesoinInvestissement($bdBASI, $basiController, $sessionIdDirection);
+            break;
+
+        case 16:
+            enregistrerExpressionBesoinInvestissement($bdBASI, $basiController, $sessionUserId, $sessionMatricule, $sessionIdDirection);
+            break;
 
         default:
             http_response_code(400);
