@@ -134,3 +134,26 @@ html, body                    { height: 100%; }
        jusqu'à l'initialisation de DataTables ─────────────────────────── */
 #ld-table          { visibility: hidden; }
 #ld-table.ld-ready { visibility: visible; }
+
+
+
+/* ── Répartition des lignes Investissement (page Livraison) ─────────── */
+.dga-repartition-wrap{background:#f9fafb;border:1.5px dashed #d1d5db;border-radius:10px;padding:.85rem 1rem;margin:.5rem 0 1rem;}
+.dga-repartition-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.6rem;font-size:.76rem;font-weight:700;color:#374151;}
+.dga-repartition-ajouter{background:none;border:1.5px solid #1a7a5e;color:#1a7a5e;border-radius:7px;padding:.3rem .65rem;font-size:.72rem;font-weight:700;cursor:pointer;transition:all .15s;}
+.dga-repartition-ajouter:hover{background:#1a7a5e;color:#fff;}
+.dga-repartition-ligne{display:grid;grid-template-columns:1.3fr 1.4fr 100px 32px;gap:.5rem;align-items:center;margin-bottom:.4rem;}
+.dga-repartition-direction,.dga-repartition-mode{border:1.5px solid #e5e7eb;border-radius:7px;padding:.4rem .5rem;font-size:.78rem;color:#374151;background:#fff;}
+.dga-repartition-qte{border:1.5px solid #e5e7eb;border-radius:7px;padding:.4rem .5rem;font-size:.78rem;width:100%;}
+.dga-repartition-retirer{background:#fef2f2;color:#dc2626;border:1.5px solid #fee2e2;border-radius:7px;width:32px;height:32px;cursor:pointer;font-size:.75rem;}
+.dga-repartition-retirer:hover{background:#dc2626;color:#fff;}
+.dga-repartition-total{font-size:.75rem;color:#6b7280;margin-top:.4rem;text-align:right;}
+.dga-repartition-total-erreur{color:#dc2626;font-weight:700;}
+
+
+
+/* Absente de style_basi_18.css — même règle que sur les autres pages
+         du module (style_basi_36.css, liste-sorties-produits.php). */
+.dga-alerte-info{display:flex;align-items:flex-start;gap:.6rem;background:#eff6ff;border:1.5px solid #dbeafe;border-radius:10px;padding:.85rem 1rem;color:#1e40af;font-size:.82rem;font-weight:600;margin-bottom:1.1rem}
+.dga-cell-muted{color:#9ca3af}
+.dga-select-mode-invest{border:1.5px solid #e5e7eb;border-radius:7px;padding:.4rem .5rem;font-size:.78rem;color:#374151;background:#fff}

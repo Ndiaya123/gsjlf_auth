@@ -10,7 +10,7 @@
  *     (commande) ainsi que prix_reel / montant_total_ligne (lignes).
  */
 
-const DG_CONTROLLER_URL = '/dg_basi_controller'; // ← ajuster selon le chemin réel
+const DG_CONTROLLER_URL = '/personnel/dg_basi_controller'; // ← ajuster selon le chemin réel
 
 let dga_table = null;
 

@@ -10,6 +10,7 @@ const ANNEE_MIN_LIVRAISON = 2026;
 
 let dga_table = null;
 let dga_lignesCourantes = []; // lignes de la commande sélectionnée (avec quantité restante)
+let dga_modesInvest = {}; // { idPAPL: 'stock'|'directe' } — lignes Investissement uniquement
 
 document.addEventListener('DOMContentLoaded', function () {
     dga_renderTable([]);
@@ -125,10 +126,7 @@ function dga_renderTable(livraisons) {
             paginate: { previous: 'Précédent', next: 'Suivant' },
         },
         initComplete: function () {
-
             document.documentElement.classList.remove('ld-booting');
-            document.getElementById('lb-table')?.classList.add('lb-ready');
-
         }
     });
 }
@@ -143,6 +141,7 @@ function dga_ouvrirNouvelleLivraison() {
     document.getElementById('dgaFichierBL').value = '';
     document.getElementById('dgaCorpsLignes').innerHTML = '';
     dga_lignesCourantes = [];
+    dga_modesInvest = {};
 
     const sel = document.getElementById('dgaCommande');
     sel.innerHTML = '<option value="">Chargement…</option>';
@@ -199,12 +198,34 @@ function dga_chargerLignesCommande() {
         }
 
         dga_lignesCourantes = res.lignes || [];
+        dga_modesInvest = {};
+
+        // Chaque ligne appartient déjà à UNE direction précise (Restant à
+        // livrer = son propre plafond, déjà calculé côté serveur). Pour les
+        // lignes Investissement, seul le mode de remise (direct/stock) est
+        // à choisir — aucune direction ni quantité libre à saisir.
         document.getElementById('dgaCorpsLignes').innerHTML = dga_lignesCourantes.map(function (l) {
+            const estInvest = parseInt(l.id_type_product) === 2;
+            if (estInvest) dga_modesInvest[l.idPAPL] = 'stock'; // défaut
+
+            const celluleDirection = estInvest
+                ? `<span class="dga-pill-rubrique">${dga_escapeHtml(l.code_direction || l.nom_direction || '—')}</span>`
+                : '<span class="dga-cell-muted">—</span>';
+
+            const celluleMode = estInvest ? `
+                <select class="dga-select-mode-invest" data-idpapl="${l.idPAPL}" onchange="dga_modesInvest[this.dataset.idpapl] = this.value">
+                    <option value="stock" selected>Mettre en stock</option>
+                    <option value="directe">Donner directement au demandeur</option>
+                </select>
+            ` : '<span class="dga-cell-muted">—</span>';
+
             return `
                 <tr>
                     <td>${dga_escapeHtml(l.designation || '')}</td>
-                    <td>${dga_escapeHtml(l.quantite_restante)}</td>
+                    <td>${celluleDirection}</td>
+                    <td>${dga_fmtNombre(l.quantite_restante)}</td>
                     <td><input type="number" class="dga-inp-qte" data-idpapl="${l.idPAPL}" data-max="${l.quantite_restante}" min="0" max="${l.quantite_restante}" step="0.01" value="0" oninput="dga_plafonnerQuantite(this)"/></td>
+                    <td>${celluleMode}</td>
                 </tr>
             `;
         }).join('');
@@ -263,6 +284,15 @@ function dga_soumettreLivraison() {
         return;
     }
 
+    // Modes des lignes Investissement (déjà plafonnées individuellement par
+    // leur propre "Restant à livrer" — rien d'autre à valider ici).
+    const modes = {};
+    dga_lignesCourantes.forEach(function (ligne) {
+        if (parseInt(ligne.id_type_product) === 2) {
+            modes[ligne.idPAPL] = dga_modesInvest[ligne.idPAPL] || 'stock';
+        }
+    });
+
     Swal.fire({
         title: 'Confirmer la livraison',
         text: 'Cette opération est irréversible. Confirmez-vous vouloir enregistrer cette livraison ?',
@@ -281,6 +311,7 @@ function dga_soumettreLivraison() {
         fd.append('numero_livraison', document.getElementById('dgaNumeroLivraison').value.trim());
         fd.append('date_livraison', document.getElementById('dgaDateLivraison').value);
         fd.append('quantites', JSON.stringify(quantites));
+        fd.append('modes', JSON.stringify(modes));
         const fichier = document.getElementById('dgaFichierBL').files[0];
         if (fichier) fd.append('fichier_bon_livraison', fichier);
 
@@ -326,14 +357,26 @@ function dga_ouvrirConsulter(token) {
         }
 
         const l = res.livraison;
+        const LIBELLE_MODE_REPARTITION = { stock: 'Mis en stock', directe: 'Remis directement au demandeur' };
+        const aDesLignesInvest = (l.produits || []).some(p => parseInt(p.id_type_product) === 2);
+
         const produitsHtml = (l.produits || []).map(function (p) {
+            const estInvest = parseInt(p.id_type_product) === 2;
+            const reps = p.repartitions || [];
+
+            const cellulesInvest = aDesLignesInvest ? `
+                <td>${estInvest ? (reps.map(r => dga_escapeHtml(r.code_direction || r.nom_direction || '—')).join(', ') || '—') : '<span class="dga-cell-muted">—</span>'}</td>
+                <td>${estInvest ? (reps.map(r => `${LIBELLE_MODE_REPARTITION[r.mode] || r.mode} (${dga_fmtNombre(r.quantite)})`).join('<br/>') || '—') : '<span class="dga-cell-muted">—</span>'}</td>
+            ` : '';
+
             return `
                 <tr>
                     <td>${dga_escapeHtml(p.designation || '')}</td>
-                    <td>${dga_escapeHtml(p.quantite)}</td>
+                    <td>${dga_fmtNombre(p.quantite)}</td>
+                    ${cellulesInvest}
                 </tr>
             `;
-        }).join('') || '<tr><td colspan="2" style="text-align:center;color:#9ca3af;font-style:italic;">Aucune ligne.</td></tr>';
+        }).join('') || `<tr><td colspan="${aDesLignesInvest ? 4 : 2}" style="text-align:center;color:#9ca3af;font-style:italic;">Aucune ligne.</td></tr>`;
 
         document.getElementById('dgaContenuConsulter').innerHTML = `
             <div class="dga-detail-grid">
@@ -349,7 +392,7 @@ function dga_ouvrirConsulter(token) {
                 </a>
             ` : ''}
             <table class="dga-table-lignes">
-                <thead><tr><th>Désignation</th><th>Quantité reçue</th></tr></thead>
+                <thead><tr><th>Désignation</th><th>Quantité reçue</th>${aDesLignesInvest ? '<th>Direction</th><th>Répartition</th>' : ''}</tr></thead>
                 <tbody>${produitsHtml}</tbody>
             </table>
         `;
@@ -378,6 +421,17 @@ function dga_showLoader(msg = 'Chargement…') {
 function dga_hideLoader() { $('#dga-loader').remove(); }
 
 function dga_fmtDate(d) { return d ? new Date(d.replace(' ', 'T')).toLocaleDateString('fr-FR') : '—'; }
+
+/**
+ * Affiche un nombre sans décimales inutiles (les quantités sont toujours
+ * des entiers ici, mais la colonne SQL est un DECIMAL, donc PHP renvoie
+ * "4.00" en texte) — 4.00 → "4", mais 4.50 reste "4.5" si jamais un
+ * décimal existe vraiment.
+ */
+function dga_fmtNombre(v) {
+    const n = parseFloat(v);
+    return isNaN(n) ? dga_escapeHtml(v) : String(n);
+}
 
 function dga_ajaxErrorMessage(xhr) {
     if (xhr && xhr.responseJSON && xhr.responseJSON.message) return xhr.responseJSON.message;

@@ -11,7 +11,7 @@
  * back-end existant).
  */
 
-const VD_INFO_URL  = '/drh_basi_controller?option=9';   // ← ajuster selon le chemin réel
+const VD_INFO_URL  = '/personnel/drh_basi_controller?option=9';   // ← ajuster selon le chemin réel
 
 let vd_demande   = null;   // { idD, idTypeDemande, type_demande, demandeur, date_creation, tmp }
 let vd_estAchat  = true;
@@ -324,7 +324,7 @@ function df_majCompteur() {
 /* ═══════════════════════════ PASSER COMMANDE ═════════════════════════ */
 /* ═══════════════════════════ PASSER COMMANDE ═════════════════════════ */
 // Même contrôleur que VD_INFO_URL (drh_basi_controller.php), options 10/11/12.
-const PC_CONTROLLER_URL = '/drh_basi_controller'; // ← ajuster selon le chemin réel
+const PC_CONTROLLER_URL = '/personnel/drh_basi_controller'; // ← ajuster selon le chemin réel
 
 let pc_listesChargees  = false;
 let pc_fournisseurs    = [];

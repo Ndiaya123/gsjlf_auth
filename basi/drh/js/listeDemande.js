@@ -11,7 +11,7 @@
 //   - "Toutes les lignes demandes de paiement"→ type=paiement, afficherEpuisees=1
 // ════════════════════════════════════════════════════════════════════════
 
-const LD_API = '/drh_basi_controller'; // ← ajuster selon le chemin réel du contrôleur
+const LD_API = '/personnel/drh_basi_controller'; // ← ajuster selon le chemin réel du contrôleur
 const ld_api = {
     demandes: `${LD_API}?option=8`,
 };

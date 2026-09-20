@@ -106,6 +106,15 @@ table.dga-table-produits tbody td{padding:.55rem .75rem;border-bottom:1px solid 
 .dga-submit{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.35rem;border-radius:8px;font-size:.82rem;font-weight:700;background:#1a7a5e;color:#fff;border:none;cursor:pointer;min-width:170px;justify-content:center}
 .dga-submit:hover{background:#145f49}
 .dga-submit:disabled{opacity:.6;cursor:not-allowed}
+
+/* Absentes de ce fichier — utilisées sur les modales "Enregistrer et
+   poursuivre après / Terminer" (expression de besoin, produits d'investissement) */
+.dga-submit-poursuivre{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.15rem;border-radius:8px;font-size:.82rem;font-weight:700;background:#fff;color:#1a7a5e;border:1.5px solid #1a7a5e;cursor:pointer;justify-content:center}
+.dga-submit-poursuivre:hover{background:#ecfdf5}
+.dga-submit-poursuivre:disabled{opacity:.5;cursor:not-allowed}
+.dga-submit-soumettre{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.35rem;border-radius:8px;font-size:.82rem;font-weight:700;background:#1a7a5e;color:#fff;border:none;cursor:pointer;justify-content:center}
+.dga-submit-soumettre:hover{background:#145f49}
+.dga-submit-soumettre:disabled{opacity:.6;cursor:not-allowed}
 .dga-spinner.hidden{display:none !important}
 @keyframes dga-spin2{to{transform:rotate(360deg)}}
 .dga-spinner{animation:dga-spin2 1s linear infinite}

@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -12,6 +11,7 @@
     <link href="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
     <link href="/personnel/ressources/dist_assets/css/style_basi_18.css" rel="stylesheet" type="text/css"/>
+
 
     <script>document.documentElement.classList.add('ld-booting');</script>
 
@@ -206,12 +206,19 @@
                                                 <thead>
                                                 <tr>
                                                     <th>Désignation</th>
+                                                    <th>Direction</th>
                                                     <th>Restant à livrer</th>
                                                     <th>Quantité reçue</th>
+                                                    <th>Mode (Investissement)</th>
                                                 </tr>
                                                 </thead>
                                                 <tbody id="dgaCorpsLignes"></tbody>
                                             </table>
+
+                                            <div class="dga-alerte-info" style="margin-top:.85rem;">
+                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3" style="flex-shrink:0;"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg>
+                                                <span>Chaque ligne <strong>Investissement</strong> appartient déjà à une direction précise (indiquée entre parenthèses). Choisissez simplement si la quantité reçue est donnée directement au demandeur ou mise en stock pour sa direction.</span>
+                                            </div>
 
                                             <div class="dga-field" style="margin-top:1rem;">
                                                 <label for="dgaFichierBL">Bon de livraison <span style="color:#ef4444;">*</span></label>

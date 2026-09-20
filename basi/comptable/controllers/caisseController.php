@@ -703,8 +703,8 @@ function listerPaiements(PDO $bdBASI, caisseController $basiController): void {
         ]);
     } catch (\Throwable $e) {
 
-    echo $e;
-    die;
+        echo $e;
+        die;
         error_log('[Caisse][listerPaiements] ' . $e->getMessage());
         erreurSqlCaisse('Impossible de charger la liste des paiements.');
     }
@@ -1170,13 +1170,18 @@ function detailCommandeLivraison(PDO $bdBASI, caisseController $basiController):
 
         $stmtLignes = $bdBASI->prepare("
             SELECT
-                papl.id AS idPAPL, lb.designation, papl.quantite_reelle, papl.quantite_livree,
+                papl.id AS idPAPL, papl.idDL, lb.designation, papl.quantite_reelle, papl.quantite_livree,
                 papl.id_unite, papl.nb_unites,
-                (papl.quantite_reelle - papl.quantite_livree) AS quantite_restante
+                (papl.quantite_reelle - papl.quantite_livree) AS quantite_restante,
+                p.id_type_product, b.direction_id AS idDirection, d.nom_direction, d.code_direction
             FROM passer_achat_et_paiement_ligne papl
             JOIN demandes_ligne dal ON papl.idDL = dal.idDL
             JOIN ligneBudget    lb  ON dal.idLB  = lb.id
+            LEFT JOIN product   p   ON lb.id_produit = p.idP
+            LEFT JOIN budget    b   ON lb.budget_id   = b.id
+            LEFT JOIN direction d   ON b.direction_id = d.id
             WHERE papl.idPAP = ? AND papl.id_statut_PAPL = 1
+                  AND papl.quantite_reelle > papl.quantite_livree
             ORDER BY papl.id ASC
         ");
         $stmtLignes->execute([$idPAP]);
@@ -1217,16 +1222,40 @@ function detailLivraison(PDO $bdBASI, caisseController $basiController): void {
         }
 
         $stmtProduits = $bdBASI->prepare("
-            SELECT lp.id, lp.idP, lp.quantite, lp.id_unite, lp.piece_par_unite, lb.designation
+            SELECT lp.id, lp.idP, lp.quantite, lp.id_unite, lp.piece_par_unite, lb.designation,
+                   p.id_type_product
             FROM livraison_produit lp
             JOIN passer_achat_et_paiement_ligne papl ON lp.idPAPL = papl.id
             JOIN demandes_ligne dal ON papl.idDL = dal.idDL
             JOIN ligneBudget    lb  ON dal.idLB  = lb.id
+            LEFT JOIN product   p   ON lb.id_produit = p.idP
             WHERE lp.idL = ?
             ORDER BY lp.id ASC
         ");
         $stmtProduits->execute([$idL]);
-        $livraison['produits'] = $stmtProduits->fetchAll(PDO::FETCH_ASSOC);
+        $produits = $stmtProduits->fetchAll(PDO::FETCH_ASSOC);
+
+        // Pour les lignes Investissement uniquement : comment la quantité
+        // reçue a été répartie (direct au demandeur / mise en stock), et
+        // pour quelle direction — jamais renseigné pour le Fonctionnement.
+        $stmtRepartition = $bdBASI->prepare("
+            SELECT lpr.mode, lpr.quantite, lpr.idDirection, d.nom_direction, d.code_direction
+            FROM livraison_produit_repartition lpr
+            LEFT JOIN direction d ON lpr.idDirection = d.id
+            WHERE lpr.idLP = ?
+            ORDER BY lpr.id ASC
+        ");
+        foreach ($produits as &$p) {
+            if ((int) ($p['id_type_product'] ?? 0) === 2) {
+                $stmtRepartition->execute([$p['id']]);
+                $p['repartitions'] = $stmtRepartition->fetchAll(PDO::FETCH_ASSOC);
+            } else {
+                $p['repartitions'] = [];
+            }
+        }
+        unset($p);
+
+        $livraison['produits'] = $produits;
 
         echo json_encode(['status' => 'success', 'livraison' => $livraison]);
     } catch (\Throwable $e) {
@@ -1378,6 +1407,7 @@ function detailDossierComplet(PDO $bdBASI, caisseController $basiController): vo
  * précisé, traité ici comme optionnel comme les autres pièces jointes du
  * projet, à confirmer).
  */
+
 function creerLivraison(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void {
     try {
         $token = trim((string)($_POST['token'] ?? ''));
@@ -1393,6 +1423,15 @@ function creerLivraison(PDO $bdBASI, caisseController $basiController, int $sess
         $dateLivraison   = trim((string)($_POST['date_livraison'] ?? date('Y-m-d')));
         $quantitesSaisies = json_decode((string)($_POST['quantites'] ?? '[]'), true);
         if (!is_array($quantitesSaisies)) $quantitesSaisies = [];
+        // Mode de remise des lignes Investissement UNIQUEMENT :
+        // { idPAPL: 'directe'|'stock', ... } — absent ou ignoré pour les
+        // lignes Fonctionnement, qui continuent d'incrémenter Stock_actuel
+        // en totalité comme aujourd'hui. Chaque ligne appartient déjà à UNE
+        // direction précise (via idDL) : pas de saisie de direction/quantité
+        // libre ici, juste un choix de mode par ligne, déjà plafonnée par
+        // sa propre quantite_restante.
+        $modesSaisis = json_decode((string)($_POST['modes'] ?? '[]'), true);
+        if (!is_array($modesSaisis)) $modesSaisis = [];
 
         $stmtC = $bdBASI->prepare("
             SELECT id, id as numero, nom_commande, montant_total, montant_paye, idStatut
@@ -1450,10 +1489,12 @@ function creerLivraison(PDO $bdBASI, caisseController $basiController, int $sess
 
         // 2) Lignes reçues
         $stmtLigneInfo = $bdBASI->prepare("
-            SELECT papl.id, papl.quantite_reelle, papl.quantite_livree, papl.id_unite, papl.nb_unites, lb.id_produit as idProduit
+            SELECT papl.id, papl.idDL, papl.quantite_reelle, papl.quantite_livree, papl.id_unite, papl.nb_unites,
+                   lb.id_produit as idProduit, b.direction_id AS idDirection
             FROM passer_achat_et_paiement_ligne papl
             JOIN demandes_ligne dal ON papl.idDL = dal.idDL
             JOIN ligneBudget    lb  ON dal.idLB  = lb.id
+            LEFT JOIN budget    b   ON lb.budget_id = b.id
             WHERE papl.id = ? AND papl.idPAP = ? AND papl.id_statut_PAPL = 1
             LIMIT 1
         ");
@@ -1466,15 +1507,27 @@ function creerLivraison(PDO $bdBASI, caisseController $basiController, int $sess
         ");
         $stmtProduitType = $bdBASI->prepare("SELECT id_type_product FROM product WHERE idP = ? LIMIT 1");
         $stmtIncrementStock = $bdBASI->prepare("UPDATE product SET Stock_actuel = Stock_actuel + ? WHERE idP = ?");
+        $stmtInsertRepartition = $bdBASI->prepare("
+            INSERT INTO livraison_produit_repartition (idLP, idDirection, mode, idDL, quantite, idUtilisateur, dateEnregistrement)
+            VALUES (?, ?, ?, ?, ?, ?, ?)
+        ");
+        $stmtHistoRepartition = $bdBASI->prepare("
+            INSERT INTO historique_livraison_produit_repartition (idLPR, idLP, idDirection, mode, idDL, quantite, idUtilisateur, motif, dateEnregistrement)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ");
 
         foreach ($quantitesSaisies as $idPAPL => $quantiteSaisie) {
+            $idPAPL = (int) $idPAPL;
             $quantiteSaisie = (float) $quantiteSaisie;
             if ($quantiteSaisie <= 0) continue;
 
-            $stmtLigneInfo->execute([(int) $idPAPL, $idPAP]);
+            $stmtLigneInfo->execute([$idPAPL, $idPAP]);
             $ligne = $stmtLigneInfo->fetch(PDO::FETCH_ASSOC);
             if (!$ligne) continue;
 
+            // Plafond STRICT : chaque ligne appartient déjà à une direction
+            // précise, on ne peut jamais lui attribuer plus que ce qu'elle a
+            // elle-même commandé et pas encore reçu.
             $restant = (float) $ligne['quantite_reelle'] - (float) $ligne['quantite_livree'];
             if ($quantiteSaisie > $restant + 0.01) {
                 throw new \RuntimeException("La quantité reçue pour une ligne dépasse la quantité restant à livrer.");
@@ -1488,16 +1541,53 @@ function creerLivraison(PDO $bdBASI, caisseController $basiController, int $sess
 
             $idProduitLigne = !empty($ligne['idProduit']) ? (int) $ligne['idProduit'] : null;
 
-            $stmtInsertProduit->execute([$idL, (int) $idPAPL, $idProduitLigne, $quantiteSaisie, (int) $ligne['id_unite'], $piecesParUnite, $dateEnregistrement]);
-            $stmtUpdateQteLivree->execute([$quantiteSaisie, (int) $idPAPL]);
+            $stmtInsertProduit->execute([$idL, $idPAPL, $idProduitLigne, $quantiteSaisie, (int) $ligne['id_unite'], $piecesParUnite, $dateEnregistrement]);
+            $idLP = (int) $bdBASI->lastInsertId();
+            $stmtUpdateQteLivree->execute([$quantiteSaisie, $idPAPL]);
 
-            // Mise à jour du stock, uniquement pour les produits de type 1.
-            if ($idProduitLigne !== null) {
-                $stmtProduitType->execute([$idProduitLigne]);
-                $produit = $stmtProduitType->fetch(PDO::FETCH_ASSOC);
-                if ($produit && (int) $produit['id_type_product'] === 1) {
+            if ($idProduitLigne === null) continue;
+
+            $stmtProduitType->execute([$idProduitLigne]);
+            $produit = $stmtProduitType->fetch(PDO::FETCH_ASSOC);
+            $typeProduit = $produit ? (int) $produit['id_type_product'] : null;
+
+            if ($typeProduit === 1) {
+                // Fonctionnement : comportement inchangé, tout va au stock.
+                $stmtIncrementStock->execute([$piecesParUnite, $idProduitLigne]);
+                continue;
+            }
+
+            if ($typeProduit === 2) {
+                // Investissement : la direction et le demandeur viennent de
+                // LA LIGNE ELLE-MÊME (jamais d'une saisie libre côté client)
+                // — seul le mode (directe/stock) est choisi par le comptable.
+                $idDirectionLigne = (int) ($ligne['idDirection'] ?? 0);
+                $idDLLigne        = (int) $ligne['idDL'];
+                if ($idDirectionLigne <= 0) {
+                    throw new \RuntimeException("Aucune direction associée au budget de cette ligne Investissement — vérifiez la configuration du budget.");
+                }
+
+                $mode = (($modesSaisis[$idPAPL] ?? $modesSaisis[(string) $idPAPL] ?? 'stock') === 'directe') ? 'directe' : 'stock';
+
+                $stmtInsertRepartition->execute([
+                    $idLP, $idDirectionLigne, $mode, ($mode === 'directe' ? $idDLLigne : null),
+                    $quantiteSaisie, $sessionUserId, $dateEnregistrement,
+                ]);
+                $idLPR = (int) $bdBASI->lastInsertId();
+
+                $motifRepartition = $mode === 'stock'
+                    ? "Réception : mise en stock pour la direction (par $sessionMatricule)"
+                    : "Réception : remise directe au demandeur (par $sessionMatricule)";
+                $stmtHistoRepartition->execute([
+                    $idLPR, $idLP, $idDirectionLigne, $mode, ($mode === 'directe' ? $idDLLigne : null),
+                    $quantiteSaisie, $sessionUserId, $motifRepartition, $dateEnregistrement,
+                ]);
+
+                if ($mode === 'stock') {
                     $stmtIncrementStock->execute([$piecesParUnite, $idProduitLigne]);
                 }
+                // mode='directe' : remis en main propre, ne touche jamais
+                // Stock_actuel — cohérent avec la logique déjà établie.
             }
         }
 
@@ -2536,7 +2626,7 @@ function uploaderFD(PDO $bdBASI, caisseController $basiController, int $sessionU
         //     $dateEnregistrement, $idPAP,
         // ]);
 
-                $bdBASI->commit();
+        $bdBASI->commit();
 
         echo json_encode(['status' => 'success', 'message' => 'Bon de commande téléversé avec succès.']);
     } catch (\Throwable $e) {
