@@ -14,7 +14,7 @@
 // Historique : INSERT complet (copie colonnes budget + motif + dateEnregistrement)
 // ═══════════════════════════════════════════════════════════════════════
 
-const DFC_API = '/dfc_basi_controller';
+const DFC_API = '/personnel/dfc_basi_controller';
 const dfc_api = {
     tous      : `${DFC_API}?option=1`,
     pending   : `${DFC_API}?option=2`,

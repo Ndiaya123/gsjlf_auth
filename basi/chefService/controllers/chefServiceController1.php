@@ -135,6 +135,24 @@ $option = (int)$option;
 
 header('Content-Type: application/json; charset=utf-8');
 
+/**
+ * Ne conserve que le JSON attendu, en ignorant tout ce qui aurait pu être
+ * imprimé avant lui (avertissement PHP, notice, texte parasite...). Le
+ * JSON recherché commence toujours par "{" ou "[".
+ */
+function dga_nettoyerSortieJson(string $buffer): string {
+    $pos = strpos($buffer, '{');
+    $posCrochet = strpos($buffer, '[');
+    if ($posCrochet !== false && ($pos === false || $posCrochet < $pos)) $pos = $posCrochet;
+    return ($pos !== false) ? substr($buffer, $pos) : $buffer;
+}
+
+// ─── Tampon de sortie défensif ────────────────────────────────────────────
+// Le callback ci-dessus s'exécute automatiquement à la fin du script — y
+// compris après un exit — donc aucune sortie parasite ne peut plus jamais
+// corrompre la réponse JSON attendue par le JS.
+ob_start('dga_nettoyerSortieJson');
+
 /* ═══════════════════════════════════════════════════════════════════════════
    ACTIONS
 ═══════════════════════════════════════════════════════════════════════════ */
@@ -160,6 +178,9 @@ function listerExpressionsBesoinDirection(PDO $bdBASI, chefDirectionEBController
         // 0 = Tous les statuts (2, 3, 4, 5, 6 confondus).
         $statutFiltre = (int) inputValueChefDirEB('statut', 2);
         if (!in_array($statutFiltre, [0, 2, 3, 4, 5, 6], true)) $statutFiltre = 2;
+        // Circuit livraison/réception : 7 (Livrée), 8 (Clôturée), 9 (Clôturée avec
+        // solde) et 10 (Annulée) restent visibles et sont regroupées avec 6
+        // (Sortie totale) dans le filtre et les stats.
 
         // Statistiques par statut (Soumise/Validée/Rejetée/Terminée), sur le
         // même périmètre direction + intervalle d'années, INDÉPENDANTES du
@@ -167,14 +188,15 @@ function listerExpressionsBesoinDirection(PDO $bdBASI, chefDirectionEBController
         $stmtStats = $bdBASI->prepare("
             SELECT idStatut, COUNT(*) AS n
             FROM expression_besoin
-            WHERE idDirection = ? AND idStatut IN (2, 3, 4, 5, 6) AND YEAR(date_creation) BETWEEN ? AND ?
+            WHERE idDirection = ? AND idStatut IN (2, 3, 4, 5, 6, 7, 8, 9, 10) AND YEAR(date_creation) BETWEEN ? AND ?
             GROUP BY idStatut
         ");
         $stmtStats->execute([$sessionIdDirection, $anneeDebut, $anneeFin]);
         $stats = ['2' => 0, '3' => 0, '4' => 0, '5' => 0, '6' => 0];
         foreach ($stmtStats->fetchAll(PDO::FETCH_ASSOC) as $row) {
             $cle = (string)(int)$row['idStatut'];
-            if (isset($stats[$cle])) $stats[$cle] = (int)$row['n'];
+            if (in_array($cle, ['7', '8', '9', '10'], true)) $cle = '6'; // regroupées avec Sortie totale
+            if (isset($stats[$cle])) $stats[$cle] += (int)$row['n'];
         }
 
         $sql = "
@@ -189,7 +211,9 @@ function listerExpressionsBesoinDirection(PDO $bdBASI, chefDirectionEBController
 
         if ($statutFiltre === 0) {
             // "Tous" : les 5 statuts visibles au chef de direction (2, 3, 4, 5, 6).
-            $sql .= " AND eb.idStatut IN (2, 3, 4, 5, 6)";
+            $sql .= " AND eb.idStatut IN (2, 3, 4, 5, 6, 7, 8, 9, 10)";
+        } elseif ($statutFiltre === 6) {
+            $sql .= " AND eb.idStatut IN (6, 7, 8, 9, 10)";
         } else {
             $sql .= " AND eb.idStatut = ?";
             $params[] = $statutFiltre;
@@ -261,9 +285,9 @@ function detailExpressionBesoinDirection(PDO $bdBASI, chefDirectionEBController 
             } else {
                 $p['quantite_restante'] = max(0, $qteReelle - $qteSortie);
                 if ($qteReelle > 0 && $qteSortie >= $qteReelle - 0.001) {
-                    $p['statut_ligne'] = 'Livré';
+                    $p['statut_ligne'] = 'Sortie totale';
                 } elseif ($qteSortie > 0) {
-                    $p['statut_ligne'] = 'Partiellement livré';
+                    $p['statut_ligne'] = 'Sortie partielle';
                 } else {
                     $p['statut_ligne'] = 'En attente';
                 }
@@ -627,9 +651,19 @@ function detailSortiesExpressionBesoin(PDO $bdBASI, chefDirectionEBController $b
 /* ═══════════════════════════════════════════════════════════════════════════
    MODULE — Produits d'investissement (page listeProduitInvestissement.php)
    Vue "stock + création directe" pour le chef de service : le tableau des
-   produits disponibles sert lui-même de formulaire d'ajout au panier, et
-   "Terminer" déclenche une sortie de stock IMMÉDIATE (pas de validation
-   hiérarchique — c'est la direction qui consomme son propre quota).
+   produits disponibles sert lui-même de formulaire d'ajout au panier.
+   "Soumettre" passe la demande en Soumise (2) — AUCUNE sortie de stock à ce
+   stade. Une fois les produits en stock, c'est le COMPTABLE qui en a la
+   garde et qui effectue la sortie réelle, sur la page "Sorties de
+   produits" (même principe et mêmes tables que le Fonctionnement — voir
+   caisseController.php). Pas de validation hiérarchique (chef de
+   direction) sur cette demande : la direction consomme son propre quota,
+   seule la sortie physique passe par le comptable.
+   idStatut de expression_besoin_investissement :
+     1 = Brouillon (modifiable)
+     2 = Soumise (en attente de sortie par le comptable)
+     3 = Partiellement sorti (au moins une sortie effectuée, pas toutes)
+     4 = Terminé (toutes les lignes entièrement sorties)
    Même schéma que celui déjà mis en place sur expression-besoin.php côté
    Fonctionnement, adapté aux conventions de CE contrôleur
    ($sessionIdDirection = $_SESSION['tmpIdDirection'], classe
@@ -640,10 +674,15 @@ function detailSortiesExpressionBesoin(PDO $bdBASI, chefDirectionEBController $b
  * Calcule le quota disponible pour une direction sur un produit donné :
  * tout ce qui lui a été explicitement attribué en stock à la réception
  * (livraison_produit_repartition, mode='stock'), moins tout ce qu'elle a
- * déjà retiré via ce module. Jamais lu directement sur product.Stock_actuel,
- * qui reste un total physique partagé entre toutes les directions.
+ * déjà retiré via ce module (quantite_sortie), moins tout ce qui est déjà
+ * demandé mais pas encore sorti par le comptable (réservation — sinon une
+ * même quantité pourrait être redemandée deux fois avant traitement).
+ * $excludeIdEBI permet d'exclure l'expression en cours d'édition de cette
+ * réservation (sans quoi elle se pénaliserait elle-même à chaque saisie).
+ * Jamais lu directement sur product.Stock_actuel, qui reste un total
+ * physique partagé entre toutes les directions.
  */
-function calculerQuotaDirectionInvest(PDO $bdBASI, int $idDirection, int $idP): float {
+function calculerQuotaDirectionInvest(PDO $bdBASI, int $idDirection, int $idP, ?int $excludeIdEBI = null): float {
     $stmtRecu = $bdBASI->prepare("
         SELECT COALESCE(SUM(lpr.quantite), 0) AS total
         FROM livraison_produit_repartition lpr
@@ -662,7 +701,26 @@ function calculerQuotaDirectionInvest(PDO $bdBASI, int $idDirection, int $idP): 
     $stmtSorti->execute([$idP, $idDirection]);
     $sorti = (float) $stmtSorti->fetch(PDO::FETCH_ASSOC)['total'];
 
-    return max(0.0, $recu - $sorti);
+    // Réservation : demandé mais pas encore sorti, sur toute expression
+    // ACTIVE (Brouillon/Soumise/Partiellement sorti — donc pas Terminée),
+    // hors celle en cours d'édition le cas échéant.
+    $sqlReserve = "
+        SELECT COALESCE(SUM(ebip.quantite_demandee - ebip.quantite_sortie), 0) AS total
+        FROM expression_besoin_investissement_produit ebip
+        JOIN expression_besoin_investissement ebi ON ebip.idEBI = ebi.id
+        WHERE ebip.id_produit = ? AND ebi.idDirection = ? AND ebip.statut = 1
+              AND ebi.idStatut IN (1, 2, 3)
+    ";
+    $paramsReserve = [$idP, $idDirection];
+    if ($excludeIdEBI !== null) {
+        $sqlReserve .= " AND ebi.id != ?";
+        $paramsReserve[] = $excludeIdEBI;
+    }
+    $stmtReserve = $bdBASI->prepare($sqlReserve);
+    $stmtReserve->execute($paramsReserve);
+    $reserve = (float) $stmtReserve->fetch(PDO::FETCH_ASSOC)['total'];
+
+    return max(0.0, $recu - $sorti - $reserve);
 }
 
 /**
@@ -801,10 +859,13 @@ function detailExpressionBesoinInvestissement(PDO $bdBASI, chefDirectionEBContro
 /**
  * OPTION 9 — Crée (si pas de token) ou met à jour (si token fourni) une
  * expression de besoin investissement. Action 'poursuivre' → reste en
- * Brouillon. Action 'terminer' → vérifie le quota une dernière fois
- * (sécurité), puis déclenche IMMÉDIATEMENT la sortie de stock.
+ * Brouillon (1). Action 'soumettre' → passe en Soumise (2), en attente de
+ * sortie par le comptable — AUCUNE sortie de stock ici : une fois les
+ * produits en stock, c'est le comptable qui en a la garde et qui effectue
+ * la sortie réelle (page "Sorties de produits"), même principe que le
+ * Fonctionnement.
  *
- * Champs attendus : token (optionnel), action ('poursuivre'|'terminer'),
+ * Champs attendus : token (optionnel), action ('poursuivre'|'soumettre'),
  * produits : [{ idP, quantite }, ...] — liste COMPLÈTE voulue.
  */
 function enregistrerExpressionBesoinInvestissement(PDO $bdBASI, chefDirectionEBController $basiController, int $sessionUserId, string $sessionMatricule, int $sessionIdDirection): void {
@@ -837,18 +898,9 @@ function enregistrerExpressionBesoinInvestissement(PDO $bdBASI, chefDirectionEBC
         }
 
         // ── Vérification du quota (sécurité) ────────────────────────────
+        $idEBIPourExclusion = ($token !== '') ? (int) $basiController->tokendecrypt($token) : null;
         foreach ($produitsValides as $idP => $quantiteDemandee) {
-            $quotaDisponible = calculerQuotaDirectionInvest($bdBASI, $sessionIdDirection, $idP);
-            if ($token !== '') {
-                $idEBIExistant = (int) $basiController->tokendecrypt($token);
-                $stmtDejaReserve = $bdBASI->prepare("
-                    SELECT COALESCE(SUM(quantite_demandee), 0) AS total
-                    FROM expression_besoin_investissement_produit
-                    WHERE idEBI = ? AND id_produit = ? AND statut = 1
-                ");
-                $stmtDejaReserve->execute([$idEBIExistant, $idP]);
-                $quotaDisponible += (float) $stmtDejaReserve->fetch(PDO::FETCH_ASSOC)['total'];
-            }
+            $quotaDisponible = calculerQuotaDirectionInvest($bdBASI, $sessionIdDirection, $idP, $idEBIPourExclusion);
             if ($quantiteDemandee > $quotaDisponible + 0.001) {
                 echo json_encode(['status' => 'error', 'message' => "Quantité demandée supérieure au quota disponible pour un des produits ($quotaDisponible restant(s))."]);
                 return;
@@ -937,43 +989,22 @@ function enregistrerExpressionBesoinInvestissement(PDO $bdBASI, chefDirectionEBC
             }
         }
 
-        // ── Finalisation : sortie de stock immédiate ─────────────────────
-        if ($action === 'terminer') {
-            $stmtLignesActuelles = $bdBASI->prepare("
-                SELECT id, id_produit, quantite_demandee
-                FROM expression_besoin_investissement_produit
-                WHERE idEBI = ? AND statut = 1
-            ");
-            $stmtLignesActuelles->execute([$idEBI]);
-            $lignesActuelles = $stmtLignesActuelles->fetchAll(PDO::FETCH_ASSOC);
-
-            foreach ($lignesActuelles as $ligne) {
-                $bdBASI->prepare("
-                    UPDATE expression_besoin_investissement_produit
-                    SET quantite_sortie = quantite_demandee
-                    WHERE id = ?
-                ")->execute([$ligne['id']]);
-
-                $bdBASI->prepare("
-                    UPDATE product SET Stock_actuel = Stock_actuel - ? WHERE idP = ?
-                ")->execute([$ligne['quantite_demandee'], $ligne['id_produit']]);
-
-                insererHistoriqueEBIP($bdBASI, (int) $ligne['id'], $idEBI, (int) $ligne['id_produit'],
-                    (float) $ligne['quantite_demandee'], (float) $ligne['quantite_demandee'], 1,
-                    "Sortie de stock à la finalisation (par $sessionMatricule)", $dateEnregistrement, $sessionUserId);
-            }
-
+        // ── Soumission : ne fait QUE passer la demande en Soumise (2) —
+        // aucune sortie de stock ici. C'est le comptable qui, une fois les
+        // produits en stock sous sa garde, effectue la sortie réelle sur la
+        // page "Sorties de produits" (même principe que le Fonctionnement).
+        if ($action === 'soumettre') {
             $bdBASI->prepare("UPDATE expression_besoin_investissement SET idStatut = 2 WHERE id = ?")->execute([$idEBI]);
             insererHistoriqueEBI($bdBASI, $idEBI, $nomExpression, $sessionIdDirection, $sessionUserId, 2,
-                "Finalisation et sortie de stock (par $sessionMatricule)", $dateEnregistrement);
+                "Soumission de l'expression de besoin (par $sessionMatricule)", $dateEnregistrement);
         }
 
         $bdBASI->commit();
 
         echo json_encode([
             'status'  => 'success',
-            'message' => ($action === 'terminer')
-                ? 'Expression de besoin finalisée : sortie de stock effectuée.'
+            'message' => ($action === 'soumettre')
+                ? 'Expression de besoin soumise avec succès : en attente de sortie par le comptable.'
                 : 'Brouillon enregistré avec succès.',
             'tmp' => $basiController->tokenencrypt($idEBI),
         ]);
@@ -1000,6 +1031,309 @@ function insererHistoriqueEBIP(PDO $bdBASI, int $idEBIP, int $idEBI, int $idProd
             (idEBIP, idEBI, id_produit, quantite_demandee, quantite_sortie, statut, idUtilisateur, motif, dateEnregistrement)
         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
     ")->execute([$idEBIP, $idEBI, $idProduit, $quantiteDemandee, $quantiteSortie, $statut, $idUtilisateur, $motif, $dateEnregistrement]);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODULE — Catalogue des produits d'investissement (page
+   listeProduitsInvestissement.php, chef de service)
+   Équivalent Investissement de la gestion des produits Fonctionnement
+   (comptableController.php, cases 10/11/13/14). Différences imposées :
+     - id_Sous_categorie = NULL, id_sous_rubrique renseignée à la place ;
+     - id_type_product = 2 ;
+     - idUtilisateur trace le créateur — un chef de service ne modifie
+       QUE ses propres produits ;
+     - le Stock_actuel n'est visible, par produit, que pour son créateur
+       (masqué pour les produits des autres) ;
+     - le doublon est vérifié sur le NOM SEUL (globalement), pas par
+       sous-rubrique — cohérent avec la recherche-suggestion à la saisie.
+   Pas de désactivation/réactivation ici (non demandée pour ce module).
+═══════════════════════════════════════════════════════════════════════════ */
+
+/** OPTION 10 — Liste des rubriques actives, pour le select du formulaire. */
+function listerRubriquesPourProduit(PDO $bdBASI): void {
+    try {
+        $stmt = $bdBASI->query("SELECT id, nom_rubrique FROM rubrique WHERE statut = 1 ORDER BY nom_rubrique ASC");
+        echo json_encode(['status' => 'success', 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+    } catch (\Throwable $e) {
+        error_log('[ChefDirEB][listerRubriquesPourProduit] ' . $e->getMessage());
+        erreurSqlChefDirEB('Impossible de charger la liste des rubriques.');
+    }
+}
+
+/** OPTION 11 — Sous-rubriques actives d'une rubrique donnée. */
+function listerSousRubriquesPourProduit(PDO $bdBASI): void {
+    try {
+        $idRubrique = (int) inputValueChefDirEB('idRubrique', 0);
+        if ($idRubrique <= 0) { echo json_encode(['status' => 'error', 'message' => 'Rubrique manquante.']); return; }
+
+        $stmt = $bdBASI->prepare("
+            SELECT id, nom_sous_rubrique
+            FROM sousRubrique
+            WHERE rubrique_id = ? AND statut = 1
+            ORDER BY nom_sous_rubrique ASC
+        ");
+        $stmt->execute([$idRubrique]);
+        echo json_encode(['status' => 'success', 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+    } catch (\Throwable $e) {
+        error_log('[ChefDirEB][listerSousRubriquesPourProduit] ' . $e->getMessage());
+        erreurSqlChefDirEB('Impossible de charger la liste des sous-rubriques.');
+    }
+}
+
+/**
+ * OPTION 12 — Recherche-suggestion à la saisie : produits Investissement
+ * dont le nom COMMENCE par le texte saisi (insensible à la casse/accents
+ * n'est pas géré ici — LIKE simple, suffisant pour une saisie progressive).
+ * Utilisée pour proposer les produits déjà existants avant d'en créer un
+ * nouveau, et éviter les doublons.
+ */
+function rechercherProduitsInvestissement(PDO $bdBASI): void {
+    try {
+        $texte = trim((string) inputValueChefDirEB('texte', ''));
+        if (mb_strlen($texte) < 2) { echo json_encode(['status' => 'success', 'data' => []]); return; }
+
+        $stmt = $bdBASI->prepare("
+            SELECT p.idP, p.nomproduit, p.id_sous_rubrique AS idSousRubrique, sr.nom_sous_rubrique, r.nom_rubrique
+            FROM product p
+            LEFT JOIN sousRubrique sr ON p.id_sous_rubrique = sr.id
+            LEFT JOIN rubrique r ON sr.rubrique_id = r.id
+            WHERE p.id_type_product = 2 AND p.nomproduit LIKE CONCAT(?, '%')
+            ORDER BY p.nomproduit ASC
+            LIMIT 10
+        ");
+        $stmt->execute([$texte]);
+        echo json_encode(['status' => 'success', 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+    } catch (\Throwable $e) {
+        error_log('[ChefDirEB][rechercherProduitsInvestissement] ' . $e->getMessage());
+        erreurSqlChefDirEB('Impossible de rechercher des produits.');
+    }
+}
+
+/**
+ * OPTION 13 — Catalogue complet des produits Investissement (tous les chefs
+ * de service voient TOUS les produits), avec :
+ *   - le nom du créateur (jointure utilisateurs) ;
+ *   - le Stock_actuel MASQUÉ (null) pour les produits dont le créateur
+ *     n'est pas l'utilisateur connecté ;
+ *   - un indicateur "modifiable" (créateur = utilisateur connecté).
+ */
+function listerCatalogueProduitsInvestissement(PDO $bdBASI, int $sessionUserId): void {
+    try {
+        $stmt = $bdBASI->prepare("
+            SELECT p.idP, p.nomproduit, p.code_produit, p.Stock_actuel, p.Seuil_limite,
+                   p.retrait, p.id_statut, p.date_creation, p.idUtilisateur,
+                   r.nom_rubrique, sr.nom_sous_rubrique,
+                   CONCAT(u.prenom, ' ', u.nom) AS nom_createur
+            FROM product p
+            LEFT JOIN sousRubrique sr ON p.id_sous_rubrique = sr.id
+            LEFT JOIN rubrique r ON sr.rubrique_id = r.id
+            LEFT JOIN utilisateurs u ON p.idUtilisateur = u.id
+            WHERE p.id_type_product = 2
+            ORDER BY p.nomproduit ASC
+        ");
+        $stmt->execute();
+        $produits = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        foreach ($produits as &$p) {
+            $estProprietaire = ((int) $p['idUtilisateur'] === $sessionUserId);
+            $p['modifiable'] = $estProprietaire;
+            if (!$estProprietaire) {
+                $p['Stock_actuel'] = null; // masqué — pas le sien
+            }
+        }
+        unset($p);
+
+        echo json_encode(['status' => 'success', 'data' => $produits, 'nombre_total' => count($produits)]);
+    } catch (\Throwable $e) {
+        error_log('[ChefDirEB][listerCatalogueProduitsInvestissement] ' . $e->getMessage());
+        erreurSqlChefDirEB('Impossible de charger le catalogue des produits.');
+    }
+}
+
+/**
+ * OPTION 16 — Active/désactive un produit Investissement — réservé à son
+ * créateur, même règle que la modification.
+ */
+function toggleStatutProduitInvestissement(PDO $bdBASI, int $sessionUserId, string $sessionMatricule): void {
+    try {
+        $idP = (int) inputValueChefDirEB('idP', 0);
+        if ($idP <= 0) { echo json_encode(['status' => 'error', 'message' => 'Produit manquant.']); return; }
+
+        $stmtC = $bdBASI->prepare("SELECT * FROM product WHERE idP = ? AND id_type_product = 2 LIMIT 1");
+        $stmtC->execute([$idP]);
+        $produit = $stmtC->fetch(PDO::FETCH_ASSOC);
+        if (!$produit) { echo json_encode(['status' => 'error', 'message' => 'Produit introuvable.']); return; }
+
+        if ((int) $produit['idUtilisateur'] !== $sessionUserId) {
+            echo json_encode(['status' => 'error', 'message' => "Vous ne pouvez modifier que les produits que vous avez vous-même créés."]);
+            return;
+        }
+
+        $nouveauStatut = ((int) $produit['id_statut'] === 1) ? 0 : 1;
+
+        $bdBASI->beginTransaction();
+        $bdBASI->prepare("UPDATE product SET id_statut = ? WHERE idP = ?")->execute([$nouveauStatut, $idP]);
+        $bdBASI->prepare("
+            INSERT INTO historique_product
+                (product_id, nomproduit, code_produit, Stock_actuel, Seuil_limite, Total, id_Sous_categorie, retrait, id_statut, date_creation, id_type_product, motif, dateEnregistrement)
+            VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, 2, ?, NOW())
+        ")->execute([
+            $idP, $produit['nomproduit'], $produit['code_produit'], (int) $produit['Stock_actuel'], (int) $produit['Seuil_limite'],
+            (int) $produit['Total'], (int) $produit['retrait'], $nouveauStatut, $produit['date_creation'],
+            $nouveauStatut === 1 ? "Réactivation par $sessionMatricule" : "Désactivation par $sessionMatricule",
+        ]);
+        $bdBASI->commit();
+
+        echo json_encode(['status' => 'success', 'message' => $nouveauStatut === 1 ? 'Produit réactivé avec succès.' : 'Produit désactivé avec succès.']);
+    } catch (\Throwable $e) {
+        if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+        error_log('[ChefDirEB][toggleStatutProduitInvestissement] ' . $e->getMessage());
+        erreurSqlChefDirEB('Impossible de modifier le statut du produit.');
+    }
+}
+
+/**
+ * OPTION 17 — Statistiques Investissement adaptées au chef de service : le
+ * stock total n'est calculable que sur ses propres produits (le reste est
+ * masqué), le nombre de produits/état est en revanche visible pour tous.
+ */
+function statistiquesProduitsInvestissementChefService(PDO $bdBASI, int $sessionUserId): void {
+    try {
+        $stmtGlobal = $bdBASI->query("
+            SELECT COUNT(*) AS total,
+                   SUM(CASE WHEN id_statut = 1 THEN 1 ELSE 0 END) AS en_service,
+                   SUM(CASE WHEN id_statut = 0 THEN 1 ELSE 0 END) AS hors_service
+            FROM product
+            WHERE id_type_product = 2
+        ");
+        $global = $stmtGlobal->fetch(PDO::FETCH_ASSOC);
+
+        $stmtMoi = $bdBASI->prepare("
+            SELECT COUNT(*) AS mes_produits, COALESCE(SUM(Stock_actuel), 0) AS mon_stock_total
+            FROM product
+            WHERE id_type_product = 2 AND idUtilisateur = ?
+        ");
+        $stmtMoi->execute([$sessionUserId]);
+        $moi = $stmtMoi->fetch(PDO::FETCH_ASSOC);
+
+        echo json_encode([
+            'status' => 'success',
+            'stats'  => [
+                'total_produits'  => (int) $global['total'],
+                'en_service'      => (int) $global['en_service'],
+                'hors_service'    => (int) $global['hors_service'],
+                'mes_produits'    => (int) $moi['mes_produits'],
+                'mon_stock_total' => (float) $moi['mon_stock_total'],
+            ],
+        ]);
+    } catch (\Throwable $e) {
+        error_log('[ChefDirEB][statistiquesProduitsInvestissementChefService] ' . $e->getMessage());
+        erreurSqlChefDirEB('Impossible de charger les statistiques.');
+    }
+}
+
+/**
+ * OPTION 14 — Création d'un produit Investissement. Doublon vérifié sur le
+ * nom SEUL (globalement, tous créateurs confondus) — un produit ne peut
+ * jamais être ajouté deux fois, quelle que soit la sous-rubrique.
+ */
+function creerProduitInvestissement(PDO $bdBASI, int $sessionUserId, string $sessionMatricule): void {
+    try {
+        $nom = trim((string) inputValueChefDirEB('nom', ''));
+        $idSousRubrique = (int) inputValueChefDirEB('idSousRubrique', 0);
+        $seuil = (int) inputValueChefDirEB('seuil', 0);
+
+        if ($nom === '') { echo json_encode(['status' => 'error', 'message' => 'Le nom du produit est requis.']); return; }
+        if ($idSousRubrique <= 0) { echo json_encode(['status' => 'error', 'message' => 'La sous-rubrique est requise.']); return; }
+
+        $stmtCheck = $bdBASI->prepare("SELECT COUNT(*) FROM product WHERE nomproduit = ? AND id_type_product = 2");
+        $stmtCheck->execute([$nom]);
+        if ((int) $stmtCheck->fetchColumn() > 0) {
+            echo json_encode(['status' => 'error', 'message' => "Ce produit existe déjà — utilisez la recherche pour le retrouver plutôt que d'en créer un doublon."]);
+            return;
+        }
+
+        $dateCreation = date('Y-m-d H:i:s');
+
+        $bdBASI->beginTransaction();
+        $bdBASI->prepare("
+            INSERT INTO product (nomproduit, Stock_actuel, Seuil_limite, Total, id_Sous_categorie, id_sous_rubrique, retrait, id_statut, id_type_product, idUtilisateur, date_creation)
+            VALUES (?, 0, ?, 0, NULL, ?, 0, 1, 2, ?, ?)
+        ")->execute([$nom, $seuil, $idSousRubrique, $sessionUserId, $dateCreation]);
+        $newId = (int) $bdBASI->lastInsertId();
+
+        $codeProduit = 'INV-' . str_pad((string) $newId, 6, '0', STR_PAD_LEFT);
+        $bdBASI->prepare("UPDATE product SET code_produit = ? WHERE idP = ?")->execute([$codeProduit, $newId]);
+
+        $bdBASI->prepare("
+            INSERT INTO historique_product
+                (product_id, nomproduit, code_produit, Stock_actuel, Seuil_limite, Total, id_Sous_categorie, retrait, id_statut, date_creation, id_type_product, motif, dateEnregistrement)
+            VALUES (?, ?, ?, 0, ?, 0, NULL, 0, 1, ?, 2, ?, NOW())
+        ")->execute([$newId, $nom, $codeProduit, $seuil, $dateCreation, "Création par $sessionMatricule"]);
+
+        $bdBASI->commit();
+        echo json_encode(['status' => 'success', 'message' => 'Produit créé avec succès.', 'idP' => $newId]);
+    } catch (\Throwable $e) {
+        if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+        error_log('[ChefDirEB][creerProduitInvestissement] ' . $e->getMessage());
+        erreurSqlChefDirEB('Impossible de créer le produit.');
+    }
+}
+
+/**
+ * OPTION 15 — Modification d'un produit Investissement — réservée à son
+ * créateur (idUtilisateur = utilisateur connecté). Seuls nom, sous-rubrique
+ * et seuil d'alerte sont modifiables (stock/total/retrait intouchés ici,
+ * mêmes règles que le module Fonctionnement).
+ */
+function modifierProduitInvestissement(PDO $bdBASI, int $sessionUserId, string $sessionMatricule): void {
+    try {
+        $idP = (int) inputValueChefDirEB('idP', 0);
+        $nom = trim((string) inputValueChefDirEB('nom', ''));
+        $idSousRubrique = (int) inputValueChefDirEB('idSousRubrique', 0);
+        $seuil = (int) inputValueChefDirEB('seuil', 0);
+
+        if ($idP <= 0) { echo json_encode(['status' => 'error', 'message' => 'Produit manquant.']); return; }
+        if ($nom === '') { echo json_encode(['status' => 'error', 'message' => 'Le nom du produit est requis.']); return; }
+        if ($idSousRubrique <= 0) { echo json_encode(['status' => 'error', 'message' => 'La sous-rubrique est requise.']); return; }
+
+        $stmtC = $bdBASI->prepare("SELECT * FROM product WHERE idP = ? AND id_type_product = 2 LIMIT 1");
+        $stmtC->execute([$idP]);
+        $produit = $stmtC->fetch(PDO::FETCH_ASSOC);
+        if (!$produit) { echo json_encode(['status' => 'error', 'message' => 'Produit introuvable.']); return; }
+
+        if ((int) $produit['idUtilisateur'] !== $sessionUserId) {
+            echo json_encode(['status' => 'error', 'message' => "Vous ne pouvez modifier que les produits que vous avez vous-même créés."]);
+            return;
+        }
+
+        $stmtDup = $bdBASI->prepare("SELECT COUNT(*) FROM product WHERE nomproduit = ? AND id_type_product = 2 AND idP != ?");
+        $stmtDup->execute([$nom, $idP]);
+        if ((int) $stmtDup->fetchColumn() > 0) {
+            echo json_encode(['status' => 'error', 'message' => 'Un autre produit porte déjà ce nom.']);
+            return;
+        }
+
+        $bdBASI->beginTransaction();
+        $bdBASI->prepare("UPDATE product SET nomproduit = ?, id_sous_rubrique = ?, Seuil_limite = ? WHERE idP = ?")
+            ->execute([$nom, $idSousRubrique, $seuil, $idP]);
+
+        $bdBASI->prepare("
+            INSERT INTO historique_product
+                (product_id, nomproduit, code_produit, Stock_actuel, Seuil_limite, Total, id_Sous_categorie, retrait, id_statut, date_creation, id_type_product, motif, dateEnregistrement)
+            VALUES (?, ?, ?, ?, ?, ?, NULL, ?, ?, ?, 2, ?, NOW())
+        ")->execute([
+            $idP, $nom, $produit['code_produit'], (int) $produit['Stock_actuel'], $seuil, (int) $produit['Total'],
+            (int) $produit['retrait'], (int) $produit['id_statut'], $produit['date_creation'], "Modification par $sessionMatricule",
+        ]);
+
+        $bdBASI->commit();
+        echo json_encode(['status' => 'success', 'message' => 'Produit modifié avec succès.']);
+    } catch (\Throwable $e) {
+        if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+        error_log('[ChefDirEB][modifierProduitInvestissement] ' . $e->getMessage());
+        erreurSqlChefDirEB('Impossible de modifier le produit.');
+    }
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -1052,6 +1386,38 @@ try {
 
         case 9:
             enregistrerExpressionBesoinInvestissement($bdBASI, $basiController, $sessionUserId, $sessionMatricule, $sessionIdDirection);
+            break;
+
+        case 10:
+            listerRubriquesPourProduit($bdBASI);
+            break;
+
+        case 11:
+            listerSousRubriquesPourProduit($bdBASI);
+            break;
+
+        case 12:
+            rechercherProduitsInvestissement($bdBASI);
+            break;
+
+        case 13:
+            listerCatalogueProduitsInvestissement($bdBASI, $sessionUserId);
+            break;
+
+        case 14:
+            creerProduitInvestissement($bdBASI, $sessionUserId, $sessionMatricule);
+            break;
+
+        case 15:
+            modifierProduitInvestissement($bdBASI, $sessionUserId, $sessionMatricule);
+            break;
+
+        case 16:
+            toggleStatutProduitInvestissement($bdBASI, $sessionUserId, $sessionMatricule);
+            break;
+
+        case 17:
+            statistiquesProduitsInvestissementChefService($bdBASI, $sessionUserId);
             break;
 
         default:

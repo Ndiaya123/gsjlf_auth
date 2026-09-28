@@ -8,19 +8,42 @@
 
 const CAISSE_CONTROLLER_URL = '/personnel/cpt_caisse_basi_controller'; // ← ajuster selon le chemin réel
 
-const LIBELLES_STATUT_EB_SORTIE = { 1: 'Brouillon', 2: 'Soumise', 3: 'Validée', 4: 'Rejetée', 5: 'Partiellement livré', 6: 'Terminé'};
+const LIBELLES_STATUT_EB_SORTIE = { 1: 'Brouillon', 2: 'Soumise', 3: 'Validée', 4: 'Rejetée', 5: 'Sortie partielle', 6: 'Sortie totale', 7: 'Livrée', 8: 'Clôturée', 9: 'Clôturée avec solde', 10: 'Annulée'};
+const LIBELLES_STATUT_EBI_SORTIE = { 1: 'Brouillon', 2: 'Soumise', 3: 'Partiellement sorti', 4: 'Terminé' };
 
 let dga_table = null;
+let dga_tableInvest = null;
 let dga_tokenCourant = null;
 let dga_inventaireEnCours = false;
+let dga_typeSortieActif = 'fonctionnement'; // 'fonctionnement' | 'investissement' — piloté par la modale Sortie active
 
 document.addEventListener('DOMContentLoaded', function () {
     dga_renderTable([]);
     chargerExpressions();
+    dga_initCommutateurSortie();
 
     document.getElementById('dgaBtnConfirmerSortie')?.addEventListener('click', dga_confirmerSortie);
     document.getElementById('dga-filtre-statut-sortie')?.addEventListener('change', chargerExpressions);
+    document.getElementById('dga-filtre-statut-sortie-invest')?.addEventListener('change', chargerExpressionsInvest);
+    document.getElementById('dga-btn-ecarts')?.addEventListener('click', dga_ouvrirEcarts);
 });
+
+/* ────────────────────────── COMMUTATEUR TYPE ────────────────────────── */
+function dga_initCommutateurSortie() {
+    document.querySelectorAll('#dga-switch-type-sortie .dga-switch-btn').forEach(function (btn) {
+        btn.addEventListener('click', () => dga_activerPanneauSortie(btn.dataset.cible));
+    });
+    chargerExpressionsInvest();
+}
+
+function dga_activerPanneauSortie(nom) {
+    const estFonctionnement = nom === 'fonctionnement';
+    document.getElementById('dga-panel-sortie-fonctionnement').style.display = estFonctionnement ? '' : 'none';
+    document.getElementById('dga-panel-sortie-investissement').style.display = estFonctionnement ? 'none' : '';
+    document.querySelectorAll('#dga-switch-type-sortie .dga-switch-btn').forEach(function (btn) {
+        btn.classList.toggle('dga-switch-active', btn.dataset.cible === nom);
+    });
+}
 
 /* ────────────────────────── CHARGEMENT LISTE ───────────────────────── */
 function chargerExpressions() {
@@ -48,6 +71,8 @@ function chargerExpressions() {
         document.getElementById('dga-stat-a-sortir').textContent = stats['3'] ?? 0;
         document.getElementById('dga-stat-partiel').textContent = stats['5'] ?? 0;
         document.getElementById('dga-stat-termine').textContent = stats['6'] ?? 0;
+        const cptEcarts = document.getElementById('dga-ecarts-count');
+        if (cptEcarts) cptEcarts.textContent = res.ecartsOuverts ?? 0;
     }).fail(function (xhr) {
         dga_hideLoader();
         Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
@@ -79,11 +104,17 @@ function dga_renderTable(expressions) {
                     const statut = parseInt(row.idStatut);
                     let html = `<button type="button" class="dga-btn-voir-eb" onclick="dga_ouvrirVoirEB('${d}')">Voir</button>`;
 
-                    if (statut === 5 || statut === 6) {
+                    if (statut >= 5) {
                         html += `<button type="button" class="dga-btn-consulter-sortie" onclick="dga_ouvrirConsulterSortie('${d}')">Consulter sortie</button>`;
                     }
 
-                    if (statut !== 6) {
+                    // Renoncer au reste à sortir (rupture durable, besoin disparu) : sans
+                    // sortie effectuée la demande est annulée, sinon son solde est clôturé.
+                    if ((statut === 3 || statut === 5) && parseFloat(row.solde_a_sortir) > 0.001) {
+                        html += `<button type="button" class="dga-btn-cloturer" onclick="dga_cloturerSolde('${d}', ${statut}, ${parseFloat(row.solde_a_sortir)})">${statut === 3 ? 'Annuler la demande' : 'Clôturer le solde'}</button>`;
+                    }
+
+                    if (statut < 6) {
                         html += `
                             <button type="button" class="dga-btn-sortie" onclick="dga_ouvrirSortie('${d}')" ${dga_inventaireEnCours ? 'disabled title="Inventaire en cours"' : ''}>
                                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 12V8H6a2 2 0 010-4h12v4"/><path d="M4 6v14a2 2 0 002 2h14v-4"/><path d="M18 12a2 2 0 000 4h4v-4Z"/></svg>
@@ -107,16 +138,90 @@ function dga_renderTable(expressions) {
             paginate: { previous: 'Précédent', next: 'Suivant' },
         },
         initComplete: function () {
-
             document.documentElement.classList.remove('ld-booting');
-            document.getElementById('lb-table')?.classList.add('lb-ready');
-
         }
+    });
+}
+
+/* ═══════════════════════════ INVESTISSEMENT ══════════════════════════ */
+function chargerExpressionsInvest() {
+    const statutVal = document.getElementById('dga-filtre-statut-sortie-invest')?.value ?? '2,3';
+
+    $.ajax({
+        url: CAISSE_CONTROLLER_URL, method: 'POST', data: { option: 37, statut: statutVal }, dataType: 'json'
+    }).done(function (res) {
+        if (res.status !== 'success') {
+            Swal.fire('Erreur', res.message || 'Impossible de charger les sorties Investissement.', 'error');
+            return;
+        }
+
+        dga_inventaireEnCours = !!res.inventaireEnCours;
+        const banniere = document.getElementById('dga-alerte-inventaire');
+        if (banniere) banniere.style.display = dga_inventaireEnCours ? 'flex' : 'none';
+
+        dga_renderTableInvest(res.data || []);
+        document.getElementById('dga-stat-nombre-invest').textContent = res.nombre_total ?? 0;
+
+        const stats = res.stats || {};
+        document.getElementById('dga-stat-a-sortir-invest').textContent = stats['2'] ?? 0;
+        document.getElementById('dga-stat-partiel-invest').textContent = stats['3'] ?? 0;
+        document.getElementById('dga-stat-termine-invest').textContent = stats['4'] ?? 0;
+    }).fail(function (xhr) {
+        Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
+    });
+}
+
+function dga_renderTableInvest(expressions) {
+    if (dga_tableInvest) { try { dga_tableInvest.destroy(); } catch (e) {} dga_tableInvest = null; }
+
+    dga_tableInvest = $('#dga-table-sortie-invest').DataTable({
+        data: expressions,
+        columns: [
+            { data: 'nom_expression' },
+            { data: null },
+            { data: 'date_creation' },
+            { data: 'nombre_produits' },
+            { data: 'idStatut' },
+            { data: 'tmp', orderable: false, searchable: false },
+        ],
+        columnDefs: [
+            { targets: 0, render: d => dga_escapeHtml(d) },
+            { targets: 1, render: (d, t, row) => dga_escapeHtml(row.code_direction || row.nom_direction || '—') },
+            { targets: 2, render: d => dga_fmtDate(d) },
+            { targets: 4, render: d => `<span class="dga-badge-statut dga-statut-${d}">${LIBELLES_STATUT_EBI_SORTIE[d] || d}</span>` },
+            {
+                targets: 5,
+                render: (d, t, row) => {
+                    const statut = parseInt(row.idStatut);
+                    let html = '';
+                    if (statut !== 4) {
+                        html += `
+                            <button type="button" class="dga-btn-sortie" onclick="dga_ouvrirSortieInvest('${d}')" ${dga_inventaireEnCours ? 'disabled title="Inventaire en cours"' : ''}>
+                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 12V8H6a2 2 0 010-4h12v4"/><path d="M4 6v14a2 2 0 002 2h14v-4"/><path d="M18 12a2 2 0 000 4h4v-4Z"/></svg>
+                                Sortie
+                            </button>
+                        `;
+                    }
+                    return html;
+                },
+            },
+        ],
+        order: [[2, 'asc']],
+        language: {
+            emptyTable: 'Aucune expression de besoin Investissement à afficher.',
+            zeroRecords: 'Aucun résultat.',
+            search: 'Rechercher :',
+            lengthMenu: 'Afficher _MENU_ entrées',
+            info: 'Affichage de _START_ à _END_ sur _TOTAL_ entrées',
+            infoEmpty: 'Aucune entrée',
+            paginate: { previous: 'Précédent', next: 'Suivant' },
+        },
     });
 }
 
 /* ────────────────────────── OUVERTURE MODALE SORTIE ────────────────── */
 function dga_ouvrirSortie(token) {
+    dga_typeSortieActif = 'fonctionnement';
     if (dga_inventaireEnCours) {
         Swal.fire('Inventaire en cours', "Aucune sortie de stock n'est possible tant que l'inventaire est en cours.", 'warning');
         return;
@@ -147,28 +252,82 @@ function dga_ouvrirSortie(token) {
             banniereDejaSortie.style.display = 'none';
         }
 
-        const lignes = (e.lignes || []).filter(l => !l.entierement_servie);
+        dga_renderLignesSortie(e.lignes || [], l => l.idEBP);
 
-        document.getElementById('dgaCorpsSortie').innerHTML = lignes.length
-            ? lignes.map(function (l) {
-                const stockNul = l.max_sortable <= 0.001;
-                const dejaSortie = parseFloat(l.quantite_sortie || 0);
-                return `
-                    <tr>
-                        <td>${dga_escapeHtml(l.designation)}</td>
-                        <td>${dejaSortie > 0 ? dga_escapeHtml(dejaSortie) : '<span style="color:#d1d5db;">—</span>'}</td>
-                        <td>${dga_escapeHtml(l.quantite_restante)}</td>
-                        <td>${dga_escapeHtml(l.stock_disponible)}</td>
-                        <td>
-                            <input type="number" class="dga-inp-qte-sortie" data-idebp="${l.idEBP}" data-max="${l.max_sortable}"
-                                   min="0" max="${l.max_sortable}" step="0.01" value="${stockNul ? 0 : l.max_sortable}"
-                                   oninput="dga_plafonnerQuantiteSortie(this)" ${stockNul ? 'disabled' : ''}/>
-                        </td>
-                        <td>${stockNul ? '<span class="dga-badge-partiel" style="background:#fee2e2;color:#991b1b;">Stock nul</span>' : ''}</td>
-                    </tr>
-                `;
-            }).join('')
-            : '<tr><td colspan="6" style="text-align:center;color:#9ca3af;font-style:italic;">Toutes les lignes sont déjà entièrement servies.</td></tr>';
+        new bootstrap.Modal(document.getElementById('modalSortie')).show();
+    }).fail(function (xhr) {
+        dga_hideLoader();
+        Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
+    });
+}
+
+/**
+ * Rend le corps du tableau de la modale Sortie — factorisé entre
+ * Fonctionnement (clé idEBP) et Investissement (clé idEBIP), qui partagent
+ * la même modale et la même structure de colonnes.
+ */
+function dga_renderLignesSortie(lignesBrutes, getId) {
+    const lignes = lignesBrutes.filter(l => !l.entierement_servie);
+
+    document.getElementById('dgaCorpsSortie').innerHTML = lignes.length
+        ? lignes.map(function (l) {
+            const stockNul = l.max_sortable <= 0.001;
+            const dejaSortie = parseFloat(l.quantite_sortie || 0);
+            return `
+                <tr>
+                    <td>${dga_escapeHtml(l.designation)}</td>
+                    <td>${dejaSortie > 0 ? dga_escapeHtml(dejaSortie) : '<span style="color:#d1d5db;">—</span>'}</td>
+                    <td>${dga_escapeHtml(l.quantite_restante)}</td>
+                    <td>${dga_escapeHtml(l.stock_disponible)}</td>
+                    <td>
+                        <input type="number" class="dga-inp-qte-sortie" data-id="${getId(l)}" data-max="${l.max_sortable}"
+                               min="0" max="${l.max_sortable}" step="0.01" value="${stockNul ? 0 : l.max_sortable}"
+                               oninput="dga_plafonnerQuantiteSortie(this)" ${stockNul ? 'disabled' : ''}/>
+                    </td>
+                    <td>${stockNul ? '<span class="dga-badge-partiel" style="background:#fee2e2;color:#991b1b;">Stock nul</span>' : ''}</td>
+                </tr>
+            `;
+        }).join('')
+        : '<tr><td colspan="6" style="text-align:center;color:#9ca3af;font-style:italic;">Toutes les lignes sont déjà entièrement servies.</td></tr>';
+}
+
+/**
+ * Ouverture de la modale Sortie pour une expression Investissement — même
+ * modale que le Fonctionnement, alimentée par l'option 38.
+ */
+function dga_ouvrirSortieInvest(token) {
+    dga_typeSortieActif = 'investissement';
+    if (dga_inventaireEnCours) {
+        Swal.fire('Inventaire en cours', "Aucune sortie de stock n'est possible tant que l'inventaire est en cours.", 'warning');
+        return;
+    }
+
+    dga_showLoader('Chargement du détail…');
+
+    $.ajax({
+        url: CAISSE_CONTROLLER_URL, method: 'POST', data: { option: 38, token: token }, dataType: 'json'
+    }).done(function (res) {
+        dga_hideLoader();
+        if (res.status !== 'success') {
+            Swal.fire('Erreur', res.message || 'Impossible de charger le détail.', 'error');
+            return;
+        }
+
+        dga_tokenCourant = token;
+        const e = res.expression;
+        document.getElementById('sortieModalTitre').textContent = 'Sortie Investissement — ' + e.nom_expression;
+        document.getElementById('dgaErreurSortie').style.display = 'none';
+
+        const banniereDejaSortie = document.getElementById('dgaInfoDejaSortie');
+        if (parseInt(e.idStatut) === 3) {
+            const nombreLignesCommencees = (e.lignes || []).filter(l => parseFloat(l.quantite_sortie || 0) > 0).length;
+            banniereDejaSortie.textContent = `Cette expression de besoin est partiellement sortie : ${nombreLignesCommencees} produit(s) ont déjà été sortis (au moins en partie).`;
+            banniereDejaSortie.style.display = 'flex';
+        } else {
+            banniereDejaSortie.style.display = 'none';
+        }
+
+        dga_renderLignesSortie(e.lignes || [], l => l.idEBIP);
 
         new bootstrap.Modal(document.getElementById('modalSortie')).show();
     }).fail(function (xhr) {
@@ -195,6 +354,10 @@ function dga_confirmerSortie() {
         return;
     }
 
+    const estInvest = dga_typeSortieActif === 'investissement';
+    const cleId = estInvest ? 'idEBIP' : 'idEBP';
+    const optionSortie = estInvest ? 39 : 28;
+
     const erreurBox = document.getElementById('dgaErreurSortie');
     erreurBox.style.display = 'none';
 
@@ -206,7 +369,7 @@ function dga_confirmerSortie() {
         const max = parseFloat(input.dataset.max) || 0;
         if (val > max + 0.001) depassement = true;
         if (val > 0) auMoinsUne = true;
-        quantites.push({ idEBP: input.dataset.idebp, quantite: val });
+        quantites.push({ [cleId]: input.dataset.id, quantite: val });
     });
 
     if (depassement) {
@@ -239,7 +402,7 @@ function dga_confirmerSortie() {
         $.ajax({
             url: CAISSE_CONTROLLER_URL,
             method: 'POST',
-            data: JSON.stringify({ option: 28, token: dga_tokenCourant, quantites: quantites }),
+            data: JSON.stringify({ option: optionSortie, token: dga_tokenCourant, quantites: quantites }),
             contentType: 'application/json',
             dataType: 'json',
         }).done(function (res) {
@@ -250,7 +413,7 @@ function dga_confirmerSortie() {
                 const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalSortie'));
                 if (modalInstance) modalInstance.hide();
                 Swal.fire({ title: 'Succès', text: res.message || 'Sortie enregistrée avec succès.', icon: 'success', confirmButtonColor: '#1a7a5e' });
-                chargerExpressions();
+                if (estInvest) chargerExpressionsInvest(); else chargerExpressions();
             } else {
                 erreurBox.textContent = res.message || 'Une erreur est survenue.';
                 erreurBox.style.display = 'block';
@@ -268,8 +431,9 @@ function dga_confirmerSortie() {
 function dga_badgeLigneSortie(statutLigne) {
     const map = {
         'Brouillon': 'dga-ligne-attente',
-        'Partiellement livré': 'dga-ligne-partiel',
-        'Livré': 'dga-ligne-livre',
+        'Annulée': 'dga-ligne-attente',
+        'Sortie partielle': 'dga-ligne-partiel',
+        'Sortie totale': 'dga-ligne-livre',
     };
     const cls = map[statutLigne] || 'dga-ligne-attente';
     return `<span class="dga-badge-ligne ${cls}">${statutLigne}</span>`;
@@ -398,6 +562,123 @@ function dga_ouvrirConsulterSortie(token) {
     }).fail(function (xhr) {
         dga_hideLoader();
         Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
+    });
+}
+
+/* ────────────────────────── CLÔTURE DU SOLDE ─────────────────────────── */
+/**
+ * Renonce à sortir le reste d'une demande. Un motif est obligatoire (tracé
+ * dans l'historique). Sans sortie effectuée, la demande est annulée ; sinon
+ * elle sera close (avec solde) une fois toutes les livraisons reçues.
+ */
+function dga_cloturerSolde(token, statut, solde) {
+    const nb = String(Math.round(solde * 100) / 100);
+    const annulation = statut === 3;
+    Swal.fire({
+        title: annulation ? 'Annuler cette demande ?' : 'Clôturer le solde ?',
+        html: annulation
+            ? `Aucun produit n'a été sorti : la demande sera <strong>annulée</strong> (${nb} unité(s) non sorties).`
+            : `Le reste à sortir (<strong>${nb}</strong> unité(s)) sera <strong>définitivement annulé</strong>. Les produits déjà sortis suivent leur livraison normalement.`,
+        icon: 'warning',
+        input: 'textarea',
+        inputLabel: 'Motif (obligatoire)',
+        inputPlaceholder: 'Ex. : rupture durable de stock, besoin disparu…',
+        inputAttributes: { maxlength: 500 },
+        showCancelButton: true,
+        confirmButtonText: annulation ? 'Annuler la demande' : 'Clôturer le solde',
+        confirmButtonColor: '#9a3412',
+        cancelButtonText: 'Retour',
+        cancelButtonColor: '#6b7280',
+        inputValidator: v => (!v || !v.trim()) ? 'Le motif est obligatoire.' : undefined,
+    }).then(function (result) {
+        if (!result.isConfirmed) return;
+        $.ajax({
+            url: CAISSE_CONTROLLER_URL, method: 'POST', data: { option: 45, token: token, commentaire: result.value.trim() }, dataType: 'json'
+        }).done(function (res) {
+            if (res.status === 'success') {
+                Swal.fire({ title: 'Succès', text: res.message, icon: 'success', confirmButtonColor: '#1a7a5e' });
+                chargerExpressions();
+            } else {
+                Swal.fire('Erreur', res.message || 'Une erreur est survenue.', 'error');
+            }
+        }).fail(function (xhr) {
+            Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
+        });
+    });
+}
+
+/* ────────────────────────── ÉCARTS DE RÉCEPTION ──────────────────────── */
+function dga_ouvrirEcarts() {
+    dga_showLoader('Chargement des écarts…');
+    $.ajax({
+        url: CAISSE_CONTROLLER_URL, method: 'POST', data: { option: 43 }, dataType: 'json'
+    }).done(function (res) {
+        dga_hideLoader();
+        if (res.status !== 'success') {
+            Swal.fire('Erreur', res.message || 'Impossible de charger les écarts.', 'error');
+            return;
+        }
+        document.getElementById('dgaErreurEcarts').style.display = 'none';
+        const nb = v => String(parseFloat(v));
+        document.getElementById('dgaCorpsEcarts').innerHTML = (res.data || []).length
+            ? res.data.map(e => `
+                <tr>
+                    <td><strong>${dga_escapeHtml(e.numero_bon)}</strong><div class="dga-ecart-motif">${dga_escapeHtml(e.nom_expression)}</div></td>
+                    <td>${dga_escapeHtml(e.designation)}</td>
+                    <td><strong style="color:#991b1b;">${nb(e.quantite_ecart)}</strong></td>
+                    <td>${dga_escapeHtml(e.demandeur || '—')}
+                        <div class="dga-ecart-motif">${dga_fmtDate(e.dateSignalement)} — « ${dga_escapeHtml(e.commentaire)} »</div></td>
+                    <td>
+                        <div class="dga-ecart-actions">
+                            <select id="dgaResolution-${e.id}">
+                                <option value="correction_livraison">Correction de la livraison (à remettre)</option>
+                                <option value="retour_stock">Retour en stock (redevient à sortir)</option>
+                                <option value="perte">Perte (stock inchangé)</option>
+                            </select>
+                            <input type="text" id="dgaComm-${e.id}" maxlength="500" placeholder="Commentaire (obligatoire)">
+                            <button type="button" class="dga-btn-sortie" onclick="dga_regulariserEcart(${e.id})">Régulariser</button>
+                        </div>
+                    </td>
+                </tr>`).join('')
+            : '<tr><td colspan="5" style="text-align:center;color:#9ca3af;font-style:italic;">Aucun écart à régulariser.</td></tr>';
+        const el = document.getElementById('modalEcarts');
+        (bootstrap.Modal.getInstance(el) || new bootstrap.Modal(el)).show();
+    }).fail(function (xhr) {
+        dga_hideLoader();
+        Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
+    });
+}
+
+function dga_regulariserEcart(idEcart) {
+    const resolution = document.getElementById('dgaResolution-' + idEcart).value;
+    const commentaire = document.getElementById('dgaComm-' + idEcart).value.trim();
+    const erreurBox = document.getElementById('dgaErreurEcarts');
+    erreurBox.style.display = 'none';
+
+    if (!commentaire) {
+        erreurBox.textContent = 'Un commentaire est obligatoire pour régulariser un écart.';
+        erreurBox.style.display = 'block';
+        return;
+    }
+    if (resolution === 'retour_stock' && dga_inventaireEnCours) {
+        erreurBox.textContent = "Un inventaire est en cours : aucun retour en stock n'est possible pour le moment.";
+        erreurBox.style.display = 'block';
+        return;
+    }
+
+    $.ajax({
+        url: CAISSE_CONTROLLER_URL, method: 'POST', data: { option: 44, idEcart: idEcart, resolution: resolution, commentaire: commentaire }, dataType: 'json'
+    }).done(function (res) {
+        if (res.status === 'success') {
+            chargerExpressions();
+            dga_ouvrirEcarts(); // recharge la liste des écarts restants
+        } else {
+            erreurBox.textContent = res.message || 'Une erreur est survenue.';
+            erreurBox.style.display = 'block';
+        }
+    }).fail(function (xhr) {
+        erreurBox.textContent = dga_ajaxErrorMessage(xhr);
+        erreurBox.style.display = 'block';
     });
 }
 

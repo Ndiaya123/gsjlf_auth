@@ -145,6 +145,12 @@ function insertHistoriqueLigneBudget(PDO $pdo, array $ligne, $statut, $idStatut,
 }
 
 // ─── PHPMailer Gmail ──────────────────────────────────────────────────────────
+// ⚠️ Adresse à confirmer — utilisée pour les relances DFC → responsable des
+// achats (option 22, envoyerRelanceResponsableAchats).
+if (!defined('RESPONSABLE_ACHATS_EMAIL_DFC')) {
+    define('RESPONSABLE_ACHATS_EMAIL_DFC', 'ndiaya.ndao@uahb.sn');
+}
+
 function envoyerMail(string $sujet, string $htmlBody, string $to = 'ndiaya.ndao@uahb.sn'): void
 {
     try {
@@ -370,7 +376,8 @@ function detailDossier(PDO $bdBASI, dfcController $dfcController): void {
                 lb.designation,
                 papl.quantite_reelle,
                 papl.prix_reel,
-                papl.montant_total_ligne
+                papl.montant_total_ligne,
+                papl.id_statut_PAPL
             FROM passer_achat_et_paiement_ligne papl
             JOIN demandes_ligne dal ON papl.idDL = dal.idDL
             JOIN ligneBudget    lb  ON dal.idLB  = lb.id
@@ -449,11 +456,315 @@ function avisFavorable(PDO $bdBASI, dfcController $dfcController, int $sessionUs
         erreurSqlDfc("Impossible d'enregistrer l'avis favorable.");
     }
 }
+/**
+ * OPTION 19 — Modifie la quantité d'une ligne ACHAT (idTypePAP = 1) avant
+ * l'avis favorable. Recalcule montant_total_ligne, synchronise
+ * demandes_ligne (quantite, qte_commandee, qte_restant), puis recalcule le
+ * montant_total du dossier (somme des lignes actives).
+ *
+ * Champs attendus : token (du dossier), idPAPL, quantite (nouvelle valeur).
+ */
+function modifierQuantiteLigneAchat(PDO $bdBASI, dfcController $dfcController, int $sessionUserId, string $sessionMatricule): void {
+    try {
+        $token = trim((string) inputValueDfc('token', ''));
+        $idPAPL = (int) inputValueDfc('idPAPL', 0);
+        $nouvelleQuantite = (float) inputValueDfc('quantite', -1);
+
+        if ($token === '' || $idPAPL <= 0) { echo json_encode(['status' => 'error', 'message' => 'Paramètres manquants.']); return; }
+        if ($nouvelleQuantite <= 0) { echo json_encode(['status' => 'error', 'message' => 'La quantité doit être strictement supérieure à zéro. Pour retirer entièrement cette ligne, utilisez plutôt "Supprimer".']); return; }
+
+        $idPAP = (int) $dfcController->tokendecrypt($token);
+        if ($idPAP <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+
+        $stmtC = $bdBASI->prepare("SELECT id FROM passer_achat_et_paiement WHERE id = ? AND idStatut = 2 AND idTypePAP = 1 LIMIT 1");
+        $stmtC->execute([$idPAP]);
+        if (!$stmtC->fetch()) { echo json_encode(['status' => 'error', 'message' => 'Dossier introuvable, déjà traité, ou pas de type Achat.']); return; }
+
+        $stmtL = $bdBASI->prepare("SELECT id, idDL, quantite_reelle, prix_reel, montant_total_ligne, date_ajout, id_unite, nb_unites, pieces_par_unite, modifie_par_dfc FROM passer_achat_et_paiement_ligne WHERE id = ? AND idPAP = ? AND id_statut_PAPL = 1 LIMIT 1");
+        $stmtL->execute([$idPAPL, $idPAP]);
+        $ligne = $stmtL->fetch(PDO::FETCH_ASSOC);
+        if (!$ligne) { echo json_encode(['status' => 'error', 'message' => 'Ligne introuvable ou déjà annulée.']); return; }
+
+        // La DFC ne peut que DIMINUER une ligne, jamais l'augmenter — pour
+        // retirer entièrement la ligne, elle doit l'annuler ("Supprimer").
+        if ($nouvelleQuantite >= (float) $ligne['quantite_reelle']) {
+            echo json_encode(['status' => 'error', 'message' => 'La quantité ne peut être que diminuée par rapport à la valeur actuelle (' . $ligne['quantite_reelle'] . ') — pour l\'augmenter, contactez la responsable des achats.']);
+            return;
+        }
+
+        $nouveauMontantLigne = $nouvelleQuantite * (float) $ligne['prix_reel'];
+        date_default_timezone_set('Africa/Dakar');
+        $dateEnregistrement = date('Y-m-d H:i:s');
+
+        $bdBASI->beginTransaction();
+
+        // Instantané AVANT modification (valeurs encore en vigueur ici).
+        dfc_historiserLignePAP($bdBASI, $ligne, $idPAP, "Quantité modifiée par la DFC (par $sessionMatricule)", $dateEnregistrement);
+
+        $bdBASI->prepare("UPDATE passer_achat_et_paiement_ligne SET quantite_reelle = ?, montant_total_ligne = ?, modifie_par_dfc = 1 WHERE id = ?")
+            ->execute([$nouvelleQuantite, $nouveauMontantLigne, $idPAPL]);
+
+        $bdBASI->prepare("UPDATE demandes_ligne SET quantite = ?, qte_commandee = ?, qte_restant = 0 WHERE idDL = ?")
+            ->execute([$nouvelleQuantite, $nouvelleQuantite, $ligne['idDL']]);
+
+        dfc_recalculerMontantTotalDossier($bdBASI, $idPAP);
+
+        $bdBASI->commit();
+        echo json_encode(['status' => 'success', 'message' => 'Quantité modifiée avec succès.']);
+    } catch (\Throwable $e) {
+        if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+        error_log('[DFC][modifierQuantiteLigneAchat] ' . $e->getMessage());
+        erreurSqlDfc('Impossible de modifier la quantité de cette ligne.');
+    }
+}
+
+/**
+ * OPTION 20 — Modifie le montant d'une ligne PAIEMENT (idTypePAP = 2) avant
+ * l'avis favorable. Synchronise demandes_ligne.montant_total, puis
+ * recalcule le montant_total du dossier.
+ *
+ * Champs attendus : token (du dossier), idPAPL, montant (nouvelle valeur).
+ */
+function modifierMontantLignePaiement(PDO $bdBASI, dfcController $dfcController, int $sessionUserId, string $sessionMatricule): void {
+    try {
+        $token = trim((string) inputValueDfc('token', ''));
+        $idPAPL = (int) inputValueDfc('idPAPL', 0);
+        $nouveauMontant = (float) inputValueDfc('montant', -1);
+
+        if ($token === '' || $idPAPL <= 0) { echo json_encode(['status' => 'error', 'message' => 'Paramètres manquants.']); return; }
+        if ($nouveauMontant <= 0) { echo json_encode(['status' => 'error', 'message' => 'Le montant doit être strictement supérieur à zéro. Pour retirer entièrement cette ligne, utilisez plutôt "Supprimer".']); return; }
+
+        $idPAP = (int) $dfcController->tokendecrypt($token);
+        if ($idPAP <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+
+        $stmtC = $bdBASI->prepare("SELECT id FROM passer_achat_et_paiement WHERE id = ? AND idStatut = 2 AND idTypePAP = 2 LIMIT 1");
+        $stmtC->execute([$idPAP]);
+        if (!$stmtC->fetch()) { echo json_encode(['status' => 'error', 'message' => 'Dossier introuvable, déjà traité, ou pas de type Paiement.']); return; }
+
+        $stmtL = $bdBASI->prepare("SELECT id, idDL, quantite_reelle, prix_reel, montant_total_ligne, date_ajout, id_unite, nb_unites, pieces_par_unite, modifie_par_dfc FROM passer_achat_et_paiement_ligne WHERE id = ? AND idPAP = ? AND id_statut_PAPL = 1 LIMIT 1");
+        $stmtL->execute([$idPAPL, $idPAP]);
+        $ligne = $stmtL->fetch(PDO::FETCH_ASSOC);
+        if (!$ligne) { echo json_encode(['status' => 'error', 'message' => 'Ligne introuvable ou déjà annulée.']); return; }
+
+        // La DFC ne peut que DIMINUER une ligne, jamais l'augmenter — pour
+        // retirer entièrement la ligne, elle doit l'annuler ("Supprimer").
+        if ($nouveauMontant >= (float) $ligne['montant_total_ligne']) {
+            echo json_encode(['status' => 'error', 'message' => 'Le montant ne peut être que diminué par rapport à la valeur actuelle (' . $ligne['montant_total_ligne'] . ') — pour l\'augmenter, contactez la responsable des achats.']);
+            return;
+        }
+
+        date_default_timezone_set('Africa/Dakar');
+        $dateEnregistrement = date('Y-m-d H:i:s');
+
+        $bdBASI->beginTransaction();
+
+        // Instantané AVANT modification (valeurs encore en vigueur ici).
+        dfc_historiserLignePAP($bdBASI, $ligne, $idPAP, "Montant modifié par la DFC (par $sessionMatricule)", $dateEnregistrement);
+
+        $bdBASI->prepare("UPDATE passer_achat_et_paiement_ligne SET montant_total_ligne = ?, modifie_par_dfc = 1 WHERE id = ?")
+            ->execute([$nouveauMontant, $idPAPL]);
+
+        $bdBASI->prepare("UPDATE demandes_ligne SET montant_total = ? WHERE idDL = ?")
+            ->execute([$nouveauMontant, $ligne['idDL']]);
+
+        dfc_recalculerMontantTotalDossier($bdBASI, $idPAP);
+
+        $bdBASI->commit();
+        echo json_encode(['status' => 'success', 'message' => 'Montant modifié avec succès.']);
+    } catch (\Throwable $e) {
+        if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+        error_log('[DFC][modifierMontantLignePaiement] ' . $e->getMessage());
+        erreurSqlDfc('Impossible de modifier le montant de cette ligne.');
+    }
+}
+
+/**
+ * OPTION 21 — Annule une ligne (Achat ou Paiement) avant l'avis favorable.
+ * Passe id_statut_PAPL à 0, remet à zéro la demande correspondante, et
+ * recalcule le montant_total du dossier.
+ *
+ * Champs attendus : token (du dossier), idPAPL.
+ */
+function annulerLignePAP(PDO $bdBASI, dfcController $dfcController, int $sessionUserId, string $sessionMatricule): void {
+    try {
+        $token = trim((string) inputValueDfc('token', ''));
+        $idPAPL = (int) inputValueDfc('idPAPL', 0);
+        if ($token === '' || $idPAPL <= 0) { echo json_encode(['status' => 'error', 'message' => 'Paramètres manquants.']); return; }
+
+        $idPAP = (int) $dfcController->tokendecrypt($token);
+        if ($idPAP <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+
+        $stmtC = $bdBASI->prepare("SELECT idTypePAP FROM passer_achat_et_paiement WHERE id = ? AND idStatut = 2 LIMIT 1");
+        $stmtC->execute([$idPAP]);
+        $dossier = $stmtC->fetch(PDO::FETCH_ASSOC);
+        if (!$dossier) { echo json_encode(['status' => 'error', 'message' => 'Dossier introuvable ou déjà traité.']); return; }
+
+        $stmtL = $bdBASI->prepare("SELECT id, idDL, quantite_reelle, prix_reel, montant_total_ligne, date_ajout, id_unite, nb_unites, pieces_par_unite, modifie_par_dfc FROM passer_achat_et_paiement_ligne WHERE id = ? AND idPAP = ? AND id_statut_PAPL = 1 LIMIT 1");
+        $stmtL->execute([$idPAPL, $idPAP]);
+        $ligne = $stmtL->fetch(PDO::FETCH_ASSOC);
+        if (!$ligne) { echo json_encode(['status' => 'error', 'message' => 'Ligne introuvable ou déjà annulée.']); return; }
+
+        // Sécurité : impossible de supprimer la dernière ligne active du dossier.
+        $stmtCount = $bdBASI->prepare("SELECT COUNT(*) FROM passer_achat_et_paiement_ligne WHERE idPAP = ? AND id_statut_PAPL = 1");
+        $stmtCount->execute([$idPAP]);
+        if ((int) $stmtCount->fetchColumn() <= 1) {
+            echo json_encode(['status' => 'error', 'message' => 'Impossible de supprimer la dernière ligne active du dossier — il doit en rester au moins une.']);
+            return;
+        }
+
+        date_default_timezone_set('Africa/Dakar');
+        $dateEnregistrement = date('Y-m-d H:i:s');
+
+        $bdBASI->beginTransaction();
+
+        // Instantané AVANT annulation (valeurs encore en vigueur ici,
+        // id_statut_PAPL = 1 puisque la ligne était encore active).
+        dfc_historiserLignePAP($bdBASI, $ligne, $idPAP, "Ligne annulée par la DFC (par $sessionMatricule)", $dateEnregistrement);
+
+        $bdBASI->prepare("UPDATE passer_achat_et_paiement_ligne SET id_statut_PAPL = 0 WHERE id = ?")->execute([$idPAPL]);
+
+        if ((int) $dossier['idTypePAP'] === 1) {
+            $bdBASI->prepare("UPDATE demandes_ligne SET quantite = 0, qte_commandee = 0, qte_restant = 0 WHERE idDL = ?")
+                ->execute([$ligne['idDL']]);
+        } else {
+            $bdBASI->prepare("UPDATE demandes_ligne SET montant_total = 0 WHERE idDL = ?")
+                ->execute([$ligne['idDL']]);
+        }
+
+        dfc_recalculerMontantTotalDossier($bdBASI, $idPAP);
+
+        $bdBASI->commit();
+        echo json_encode(['status' => 'success', 'message' => 'Ligne supprimée avec succès.']);
+    } catch (\Throwable $e) {
+        if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+        error_log('[DFC][annulerLignePAP] ' . $e->getMessage());
+        erreurSqlDfc("Impossible de supprimer cette ligne.");
+    }
+}
+
+/** Recalcule passer_achat_et_paiement.montant_total = somme des lignes actives. */
+function dfc_recalculerMontantTotalDossier(PDO $bdBASI, int $idPAP): void {
+    $stmt = $bdBASI->prepare("
+        SELECT COALESCE(SUM(montant_total_ligne), 0) AS total
+        FROM passer_achat_et_paiement_ligne
+        WHERE idPAP = ? AND id_statut_PAPL = 1
+    ");
+    $stmt->execute([$idPAP]);
+    $total = (float) $stmt->fetch(PDO::FETCH_ASSOC)['total'];
+    $bdBASI->prepare("UPDATE passer_achat_et_paiement SET montant_total = ? WHERE id = ?")->execute([$total, $idPAP]);
+}
+
+/**
+ * Insère un instantané de l'ÉTAT DE LA LIGNE juste AVANT sa modification ou
+ * son annulation (donc les valeurs passées ici sont les valeurs encore en
+ * vigueur au moment de l'appel, PAS les nouvelles). La ligne historique la
+ * plus ancienne pour un idPAPL donné représente donc l'état initial, avant
+ * la toute première modification par la DFC.
+ * Reprend l'intégralité des colonnes de passer_achat_et_paiement_ligne
+ * (idPAP, idDL, prix_reel, quantite_reelle, montant_total_ligne, date_ajout,
+ * id_unite, nb_unites, pieces_par_unite, id_statut_PAPL, modifie_par_dfc),
+ * plus idPAPL/motif/dateEnregistrement propres à cette table d'historique —
+ * schéma confirmé via les INSERT déjà existants ailleurs dans ce projet.
+ */
+function dfc_historiserLignePAP(PDO $bdBASI, array $ligne, int $idPAP, string $motif, string $dateEnregistrement): void {
+    $bdBASI->prepare("
+        INSERT INTO historique_passer_achat_et_paiement_ligne
+            (idPAPL, idPAP, idDL, prix_reel, quantite_reelle, montant_total_ligne, date_ajout,
+             id_unite, nb_unites, pieces_par_unite, id_statut_PAPL, modifie_par_dfc, motif, dateEnregistrement)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    ")->execute([
+        $ligne['id'], $idPAP, $ligne['idDL'], $ligne['prix_reel'], $ligne['quantite_reelle'],
+        $ligne['montant_total_ligne'], $ligne['date_ajout'], $ligne['id_unite'], $ligne['nb_unites'],
+        $ligne['pieces_par_unite'], 1, (int) $ligne['modifie_par_dfc'], $motif, $dateEnregistrement,
+    ]);
+}
+
+/**
+ * OPTION 22 — Envoie un e-mail de relance à la responsable des achats pour
+ * un dossier toujours en attente. Réutilise envoyerMail() déjà présente
+ * dans ce fichier.
+ * ⚠️ L'adresse de la responsable des achats est à confirmer — voir la
+ * constante RESPONSABLE_ACHATS_EMAIL_DFC ci-dessous.
+ */
+function envoyerRelanceResponsableAchats(PDO $bdBASI, dfcController $dfcController, int $sessionUserId, string $sessionMatricule): void {
+    try {
+        $token = trim((string) inputValueDfc('token', ''));
+        $commentaire = trim((string) inputValueDfc('commentaire', ''));
+        if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
+        if ($commentaire === '') { echo json_encode(['status' => 'error', 'message' => 'Le commentaire est requis pour la relance.']); return; }
+
+        $idPAP = (int) $dfcController->tokendecrypt($token);
+        if ($idPAP <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+
+        $stmtC = $bdBASI->prepare("SELECT id, nom_commande FROM passer_achat_et_paiement WHERE id = ? LIMIT 1");
+        $stmtC->execute([$idPAP]);
+        $dossier = $stmtC->fetch(PDO::FETCH_ASSOC);
+        if (!$dossier) { echo json_encode(['status' => 'error', 'message' => 'Dossier introuvable.']); return; }
+
+        date_default_timezone_set('Africa/Dakar');
+        $dateEnregistrement = date('Y-m-d H:i:s');
+
+        $bdBASI->beginTransaction();
+
+        $bdBASI->prepare("
+            INSERT INTO commentaire_dossier_pap (idPAP, idUtilisateur, commentaire, dateEnregistrement)
+            VALUES (?, ?, ?, ?)
+        ")->execute([$idPAP, $sessionUserId, $commentaire, $dateEnregistrement]);
+        $idCommentaire = (int) $bdBASI->lastInsertId();
+
+        $bdBASI->prepare("
+            INSERT INTO historique_commentaire_dossier_pap (idCommentaire, idPAP, idUtilisateur, commentaire, motif, dateEnregistrement)
+            VALUES (?, ?, ?, ?, ?, ?)
+        ")->execute([$idCommentaire, $idPAP, $sessionUserId, $commentaire, "Relance envoyée par $sessionMatricule", $dateEnregistrement]);
+
+        $bdBASI->commit();
+
+        $sujet = "Relance — Dossier #{$idPAP} en attente";
+        $corpsHtml = "<p>Le dossier <strong>" . htmlspecialchars($dossier['nom_commande']) . "</strong> (#{$idPAP}) est toujours en attente de votre part.</p>"
+            . "<p><strong>Commentaire de la DFC :</strong><br>" . nl2br(htmlspecialchars($commentaire)) . "</p>";
+        envoyerMail($sujet, $corpsHtml, RESPONSABLE_ACHATS_EMAIL_DFC);
+
+        echo json_encode(['status' => 'success', 'message' => 'Relance envoyée avec succès.']);
+    } catch (\Throwable $e) {
+        if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+        error_log('[DFC][envoyerRelanceResponsableAchats] ' . $e->getMessage());
+        erreurSqlDfc("Impossible d'envoyer la relance.");
+    }
+}
+
+/** OPTION 23 — Liste des commentaires d'un dossier (affichage responsable achats + DFC). */
+function listerCommentairesDossier(PDO $bdBASI, dfcController $dfcController): void {
+    try {
+        $token = trim((string) inputValueDfc('token', ''));
+        if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
+        $idPAP = (int) $dfcController->tokendecrypt($token);
+        if ($idPAP <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+
+        $stmt = $bdBASI->prepare("
+            SELECT c.id, c.commentaire, c.dateEnregistrement, CONCAT(u.prenom, ' ', u.nom) AS auteur
+            FROM commentaire_dossier_pap c
+            LEFT JOIN utilisateurs u ON c.idUtilisateur = u.id
+            WHERE c.idPAP = ?
+            ORDER BY c.dateEnregistrement DESC
+        ");
+        $stmt->execute([$idPAP]);
+        echo json_encode(['status' => 'success', 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+    } catch (\Throwable $e) {
+        error_log('[DFC][listerCommentairesDossier] ' . $e->getMessage());
+        erreurSqlDfc('Impossible de charger les commentaires.');
+    }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    ROUTAGE
    16 = listerDossiers    (passer_achat_et_paiement.idStatut = 2)
    17 = detailDossier     (facture définitive OU justificatif(s) de paiement)
    18 = avisFavorable     (idStatut 2 → 3)
+   19 = modifierQuantiteLigneAchat    (Achat uniquement)
+   20 = modifierMontantLignePaiement  (Paiement uniquement)
+   21 = annulerLignePAP               (les deux types)
+   22 = envoyerRelanceResponsableAchats (+ enregistre un commentaire)
+   23 = listerCommentairesDossier
 ═══════════════════════════════════════════════════════════════════════════ */
 switch ($option) {
 
@@ -653,7 +964,7 @@ switch ($option) {
             $bdBASI->commit();
 
 
-          //  $email = $b_u['email'];
+            //  $email = $b_u['email'];
             $email = "ndiaya.ndao@uahb.sn";
             $prenom = ucfirst(mb_strtoupper($b_u['prenom']));
             $nom = mb_strtoupper($dfcController->fctRetirerAccents($b_u['nom']));
@@ -1079,6 +1390,27 @@ switch ($option) {
     case 18:
         avisFavorable($bdBASI, $dfcController, $sessionUserId, $sessionMatricule);
         break;
+
+    case 19:
+        modifierQuantiteLigneAchat($bdBASI, $dfcController, $sessionUserId, $sessionMatricule);
+        break;
+
+    case 20:
+        modifierMontantLignePaiement($bdBASI, $dfcController, $sessionUserId, $sessionMatricule);
+        break;
+
+    case 21:
+        annulerLignePAP($bdBASI, $dfcController, $sessionUserId, $sessionMatricule);
+        break;
+
+    case 22:
+        envoyerRelanceResponsableAchats($bdBASI, $dfcController, $sessionUserId, $sessionMatricule);
+        break;
+
+    case 23:
+        listerCommentairesDossier($bdBASI, $dfcController);
+        break;
+
 
 
 

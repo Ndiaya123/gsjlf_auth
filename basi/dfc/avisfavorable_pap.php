@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -13,6 +12,37 @@
     <link href="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
     <link href="/personnel/ressources/dist_assets/css/style_basi_22.css" rel="stylesheet" type="text/css"/>
+
+    <style>
+        /* Nouvelles classes introduites pour la modification/annulation de
+           ligne et le bloc relance/commentaires — définies ici par
+           précaution, cette page n'ayant pas la visibilité sur le contenu
+           réel de style_basi_22.css. */
+        .dga-ligne-annulee{opacity:.5;text-decoration:line-through}
+        .dga-inp-ligne{width:100px;border:1.5px solid #e5e7eb;border-radius:6px;padding:.3rem .5rem;font-size:.82rem}
+        .dga-hint-diminution{font-size:.68rem;color:#9ca3af;margin-top:.2rem;white-space:nowrap}
+        .dga-inp-ligne:focus{outline:none;border-color:#1a7a5e}
+        .dga-btn-editer-ligne{background:#eff6ff;color:#1d4ed8;border:1.5px solid #dbeafe;border-radius:6px;padding:.3rem .55rem;font-size:.72rem;font-weight:700;cursor:pointer}
+        .dga-btn-editer-ligne:hover{background:#1d4ed8;color:#fff}
+        .dga-btn-annuler-ligne{background:#fef2f2;color:#991b1b;border:1.5px solid #fee2e2;border-radius:6px;padding:.3rem .55rem;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:.35rem}
+        .dga-btn-annuler-ligne:hover{background:#991b1b;color:#fff}
+        .dga-btn-enregistrer-ligne{background:#ecfdf5;color:#059669;border:1.5px solid #d1fae5;border-radius:6px;padding:.3rem .55rem;font-size:.72rem;font-weight:700;cursor:pointer}
+        .dga-btn-enregistrer-ligne:hover{background:#059669;color:#fff}
+        .dga-btn-annuler-edition-ligne{background:#fff;color:#6b7280;border:1.5px solid #e5e7eb;border-radius:6px;padding:.3rem .55rem;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:.35rem}
+
+        .dga-relance-form{display:flex;gap:.6rem;align-items:flex-start}
+        .dga-textarea{flex:1;border:1.5px solid #e5e7eb;border-radius:9px;padding:.6rem .8rem;font-size:.83rem;font-family:inherit;resize:vertical;min-height:52px}
+        .dga-textarea:focus{outline:none;border-color:#1a7a5e;box-shadow:0 0 0 3px rgba(26,122,94,.1)}
+        .dga-btn-relance{display:flex;align-items:center;gap:.4rem;background:#1a7a5e;color:#fff;border:none;border-radius:9px;padding:.6rem 1rem;font-size:.8rem;font-weight:700;cursor:pointer;white-space:nowrap}
+        .dga-btn-relance:hover{background:#145f49}
+        .dga-btn-relance:disabled{opacity:.6;cursor:not-allowed}
+
+        .dga-commentaire-item{background:#f9fafb;border-radius:10px;padding:.75rem .9rem;margin-bottom:.55rem}
+        .dga-commentaire-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem;flex-wrap:wrap;gap:.4rem}
+        .dga-commentaire-auteur{font-size:.78rem;font-weight:700;color:#374151}
+        .dga-commentaire-date{font-size:.7rem;color:#9ca3af}
+        .dga-commentaire-texte{font-size:.83rem;color:#374151;white-space:pre-wrap}
+    </style>
 
     <script>document.documentElement.classList.add('ld-booting');</script>
 
@@ -217,9 +247,10 @@
                                                 <thead>
                                                 <tr>
                                                     <th>Désignation</th>
-                                                    <th>Qté commandée</th>
+                                                    <th id="dgaEnteteQteOuMontant">Qté commandée</th>
                                                     <th>Prix réel</th>
                                                     <th>Montant</th>
+                                                    <th>Action</th>
                                                 </tr>
                                                 </thead>
                                                 <tbody id="dgaBodyLignesDetail"></tbody>
@@ -231,9 +262,25 @@
                                             <div id="dgaListeDocuments"></div>
                                         </div>
 
+                                        <div class="dga-bloc">
+                                            <h3 class="dga-bloc-title">Relance et commentaires</h3>
+                                            <div class="dga-relance-form">
+                                                <textarea id="dgaTexteCommentaire" class="dga-textarea" rows="2" placeholder="Pourquoi ce dossier est-il toujours en attente ? (envoyé par e-mail à la responsable des achats)"></textarea>
+                                                <button type="button" class="dga-btn-relance" id="dgaBtnEnvoyerRelance">
+                                                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M22 2L11 13"/><path d="M22 2l-7 20-4-9-9-4 20-7z"/></svg>
+                                                    Envoyer la relance
+                                                </button>
+                                            </div>
+                                            <div id="dgaListeCommentaires" style="margin-top:.9rem;"></div>
+                                        </div>
+
                                     </div>
                                     <div class="dga-actions">
                                         <button type="button" class="dga-cancel" data-bs-dismiss="modal">Fermer</button>
+                                        <button type="button" class="dga-btn-avis" id="dgaBtnValiderDossier" style="display:none;">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                                            Valider
+                                        </button>
                                     </div>
                                 </div>
                             </div>

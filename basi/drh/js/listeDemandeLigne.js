@@ -545,7 +545,7 @@ function pc_remplirLignes() {
                 <td>${vd_escapeHtml(row.designation || '')}</td>
                 <td class="vd-cell-muted">${vd_escapeHtml(row.unite || '—')}</td>
                 <td><input type="number" class="vd-modal-inp pc-nb-pieces" min="1" step="1" inputmode="numeric"
-                           max="${qteMax}" value="${qteMax}"/></td>
+                           max="${qteMax}" value="${qteMax}" readonly/></td>
                 <td class="pc-cell-ppu">${cellulePPU}</td>
             </tr>
         `);

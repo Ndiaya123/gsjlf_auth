@@ -11,7 +11,7 @@
  *   - Envoyer à la caisse (idStatut = 4 uniquement) : idStatut 4 → 6.
  */
 
-const drh_basi_controller_URL = '/drh_basi_controller'; // ← ajuster selon le chemin réel
+const drh_basi_controller_URL = '/personnel/drh_basi_controller'; // ← ajuster selon le chemin réel
 
 const LIBELLES_STATUT = {
     1: 'En attente', 2: 'Validée', 3: 'Avis favorable', 4: 'Acceptée',
@@ -241,24 +241,24 @@ function dga_renderActions(token, row) {
     }
 
     if (statut === 4 && parseInt(row.idTypePAP) === 1 && row.bc_uploade !== true) {
-      //  html += `
-         //   <button type="button" class="dga-btn-bc" onclick="dga_ouvrirUploadBC('${token}')">
-             //   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
-              //  Uploader le BC
-           // </button>
-       // `;
+        //  html += `
+        //   <button type="button" class="dga-btn-bc" onclick="dga_ouvrirUploadBC('${token}')">
+        //   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="17 8 12 3 7 8"/><line x1="12" y1="3" x2="12" y2="15"/></svg>
+        //  Uploader le BC
+        // </button>
+        // `;
     }
 
     // "Passer en caisse" : pour un paiement, toujours disponible à ce statut ;
     // pour un achat, uniquement si le BC a déjà été téléversé (bc_uploade).
     const peutPasserEnCaisse = statut === 4 && (parseInt(row.idTypePAP) === 2 || row.bc_uploade === true);
     if (peutPasserEnCaisse) {
-       // html += `
-       //     <button type="button" class="dga-btn-caisse" onclick="dga_confirmerEnvoyerCaisse('${token}')">
-             //   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
-            //   Caisse
-         //  </button>
-    //    `;
+        // html += `
+        //     <button type="button" class="dga-btn-caisse" onclick="dga_confirmerEnvoyerCaisse('${token}')">
+        //   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+        //   Caisse
+        //  </button>
+        //    `;
     }
 
     if (statut === 7) {
@@ -310,7 +310,38 @@ function dga_ouvrirDetail(token) {
         const lignes = res.lignes || [];
         bodyLignes.innerHTML = lignes.length ? lignes.map(function (l) {
             const valeur = estAchat ? l.prix_reel : l.montant_total_ligne;
-            return `<tr><td>${vd_escapeHtml(l.designation || '')}</td><td>${l.quantite_reelle ?? '—'}</td><td>${valeur !== null && valeur !== undefined ? vd_formatMontant(valeur) : '—'}</td></tr>`;
+            const estAnnulee = parseInt(l.id_statut_PAPL) === 0;
+            const estModifiee = !estAnnulee && parseInt(l.modifie_par_dfc) === 1;
+
+            let badge = '';
+            let ligneInitiale = '';
+            if (estAnnulee) {
+                badge = ' <span class="dga-badge-ligne dga-badge-ligne-annulee">Annulée par la DFC</span>';
+            } else if (estModifiee) {
+                badge = ' <span class="dga-badge-ligne dga-badge-ligne-modifiee">Modifiée par la DFC</span>';
+            }
+
+            // Valeur initiale (avant la toute première modification), si
+            // le contrôleur a pu la retrouver dans l'historique — uniquement
+            // pertinent si la ligne a été modifiée (une ligne seulement
+            // annulée sans modification préalable n'a pas de valeur différente).
+            // Affichée "ancien → nouveau" pour une comparaison directe, sans
+            // avoir à croiser avec la colonne Quantité/Montant.
+            if (estModifiee && (l.quantite_reelle_initiale !== undefined)) {
+                const valeurInitiale = estAchat ? l.quantite_reelle_initiale : l.montant_total_ligne_initial;
+                const valeurActuelle = estAchat ? l.quantite_reelle : l.montant_total_ligne;
+                if (valeurInitiale !== null && valeurInitiale !== undefined) {
+                    const libelle = estAchat ? 'Quantité' : 'Montant';
+                    const fmt = estAchat ? vd_escapeHtml : vd_formatMontant;
+                    ligneInitiale = `<div class="dga-valeur-initiale">${libelle} : <s>${fmt(valeurInitiale)}</s> → <strong>${fmt(valeurActuelle)}</strong> <span class="dga-valeur-initiale-date">(modifiée le ${dga_fmtDate(l.date_modification)})</span></div>`;
+                }
+            }
+
+            return `<tr${estAnnulee ? ' class="dga-ligne-annulee-drh"' : ''}>
+                <td>${vd_escapeHtml(l.designation || '')}${badge}${ligneInitiale}</td>
+                <td>${l.quantite_reelle ?? '—'}</td>
+                <td>${valeur !== null && valeur !== undefined ? vd_formatMontant(valeur) : '—'}</td>
+            </tr>`;
         }).join('') : '<tr><td colspan="3" style="color:#9ca3af;font-style:italic;">Aucune ligne.</td></tr>';
 
         const titreDoc = document.getElementById('detailTitreDocuments');

@@ -239,6 +239,11 @@ RewriteRule ^compta_associe_ligne_budget_demande/(.*)/(.*)$ basi/comptable/add-l
 RewriteRule ^basi-scripts.bundle.35.js$ basi/comptable/js/add-lines-to-demandes.js [L]
 
 
+RewriteRule ^compta_basi_liste_des_produits_investissement$ basi/comptable/listeProduitInvestissement.php [L]
+RewriteRule ^basi-scripts.bundle.38.js$ basi/comptable/js/listeProduitInvestissement.js [L]
+
+
+
 
 
 #DRH
@@ -287,9 +292,7 @@ RewriteRule ^caisse_basi_liste_des_paiements$ basi/caisse/listePaiements.php [L]
 RewriteRule ^basi-scripts.bundle.36.js$ basi/comptable/js/listePaiements.js [L]
 RewriteRule ^arrete-caisse-pdf$ basi/caisse/arrete_caisse.php [L]
 
-
 #basi personnel
-
 RewriteRule ^personnel_basi_controller$ basi/personnel/controllers/personnelController.php [L]
 RewriteRule ^personnel_basi_expression_besoin$ basi/personnel/expression_besoin.php [L]
 RewriteRule ^basi-scripts.bundle.29.js$ basi/personnel/js/expression_besoin.js [L]
@@ -301,6 +304,12 @@ RewriteRule ^opterateur_basi_inventaire$ basi/operateur/inventaire.php [L]
 RewriteRule ^basi-scripts.bundle.33.js$ basi/operateur/js/inventaire.js [L]
 RewriteRule ^operateur_basi_inventaire-pdf-vierge/(.*)$ basi/operateur/inventaireVierge.php?token=$1 [L]
 
+
+
+# magasinier
+RewriteRule ^magasinier_basi_controller$ basi/magasinier/controllers/magasinierController.php [L]
+RewriteRule ^magasinier_basi_inventaire$ basi/magasinier/produitAlivrer.php [L]
+RewriteRule ^basi-scripts.bundle.39.js$ basi/magasinier/js/produitAlivrer.js [L]
 
 
 

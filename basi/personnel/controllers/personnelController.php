@@ -42,7 +42,7 @@
  *     historisant chaque changement individuellement.
  *   - "Voir" (option 7) : vue de suivi de l'évolution, quel que soit le
  *     statut — pour chaque produit : quantité demandée / validée / sortie /
- *     restante + statut de ligne (En attente / Partiellement livré / Livré),
+ *     restante + statut de ligne (En attente / Sorti du stock / Livré / Reçu partiellement / Reçu),
  *     motif de rejet le cas échéant (dernière ligne d'historique idStatut=4),
  *     et historique complet des changements de statut de l'en-tête.
  */
@@ -124,6 +124,421 @@ function inputValueEB(string $key, $default = null) {
 function erreurSqlEB(string $message = "Erreur lors de l'accès à la base de données."): void {
     http_response_code(500);
     echo json_encode(['status'=>'error','message'=>$message]);
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   LOGIQUE PARTAGÉE DU CIRCUIT (fusionnée depuis ebWorkflow.php)
+   Identique dans caisseController.php, magasinierController.php et
+   personnelController.php : toute correction doit être reportée dans les
+   TROIS fichiers pour rester cohérente (voir aussi recalculerStatutsEB.php
+   et cronReceptionPresumee.php, qui incluent encore ebWorkflow.php).
+═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * ebWorkflow.php — logique PARTAGÉE du circuit "Expression de besoin"
+ * (Fonctionnement) : bons de sortie, écarts, clôture avec solde et calcul
+ * central des statuts.
+ *
+ * Inclus par les acteurs du circuit :
+ *   - caisseController.php        (comptable : bon à chaque sortie, écarts, clôture du solde)
+ *   - magasinierController.php    (magasinier : livre bon par bon)
+ *   - personnelController.php     (demandeur : confirme / signale un écart bon par bon)
+ *   - cronReceptionPresumee.php   (tâche planifiée : réception présumée)
+ *
+ * ⚠️ À placer À CÔTÉ de bdBASI.php (même dossier) : les contrôleurs l'incluent
+ * avec le même préfixe relatif que bdBASI.php — include_once('../../../ebWorkflow.php').
+ *
+ * ── Principe ───────────────────────────────────────────────────────────────
+ * Les QUANTITÉS sont la source de vérité ; les statuts en sont DÉDUITS par
+ * ebw_recalculerStatutBon() / ebw_recalculerStatutEB(), au lieu de
+ * transitions codées séparément dans chaque contrôleur. Les compteurs
+ * cumulés de expression_besoin_produit (quantite_sortie / quantite_livree /
+ * quantite_recue) restent maintenus en parallèle des lignes de bon (mêmes
+ * transactions) : ils alimentent les écrans existants.
+ *
+ * ── Quantités restantes ────────────────────────────────────────────────────
+ *   reste à sortir   = validée − annulée − Σ sorties            (par ligne de demande)
+ *   reste à livrer   = sortie − livrée                          (par ligne de bon)
+ *   reste à recevoir = livrée − reçue − écart − perdue          (par ligne de bon)
+ *
+ * ── Statuts de la demande (expression_besoin.idStatut) ─────────────────────
+ *   1 Brouillon | 2 Soumise | 3 Validée | 4 Rejetée
+ *   5 Sortie partielle : au moins une sortie, il reste des quantités à sortir
+ *   6 Sortie totale    : plus rien à sortir, il reste à livrer
+ *   7 Livrée           : tout ce qui est sorti est remis, reste à confirmer
+ *                        (ou un écart est en attente de régularisation)
+ *   8 Clôturée         : tout est reçu
+ *   9 Clôturée avec solde : comme 8, mais une partie n'a jamais été sortie
+ *                        (solde annulé par le comptable, avec motif)
+ *  10 Annulée          : solde annulé avant toute sortie
+ *
+ * ── Statuts d'un bon (bon_sortie_eb.idStatut) ──────────────────────────────
+ *   1 Sortie enregistrée | 2 Livraison partielle | 3 Livré
+ *   4 Réception partielle | 5 Reçu
+ *   6 Écart signalé (le demandeur déclare avoir reçu moins que "livré")
+ *   7 Clos avec écart (écart régularisé : correction, retour en stock ou perte)
+ */
+
+const EBW_EPS = 0.001;
+
+/** Statuts d'en-tête qui relèvent du circuit calculé (jamais 1, 2, 4). */
+const EBW_STATUTS_CALCULES = [3, 5, 6, 7, 8, 9, 10];
+
+/** Résolutions possibles d'un écart de réception. */
+const EBW_RESOLUTIONS_ECART = ['correction_livraison', 'retour_stock', 'perte'];
+
+/** Erreur métier : son message est destiné à l'utilisateur. */
+class EbwException extends RuntimeException {}
+
+/**
+ * Crée l'en-tête d'un bon de sortie (une action de sortie du comptable) et
+ * lui attribue son numéro BS-000123. Retourne l'id du bon.
+ */
+function ebw_creerBonSortie(PDO $bd, int $idEB, int $idUtilisateur, string $dateSortie, string $motif): int {
+    $bd->prepare("
+        INSERT INTO bon_sortie_eb (idEB, numero_bon, idStatut, idUtilisateurSortie, dateSortie)
+        VALUES (?, '', 1, ?, ?)
+    ")->execute([$idEB, $idUtilisateur, $dateSortie]);
+    $idBS = (int) $bd->lastInsertId();
+
+    $numero = 'BS-' . str_pad((string) $idBS, 6, '0', STR_PAD_LEFT);
+    $bd->prepare("UPDATE bon_sortie_eb SET numero_bon = ? WHERE id = ?")->execute([$numero, $idBS]);
+
+    ebw_historiserBon($bd, $idBS, $motif, $idUtilisateur, $dateSortie);
+    return $idBS;
+}
+
+/** Ajoute une ligne au bon (quantité sortie du stock pour une ligne de demande). */
+function ebw_ajouterLigneBon(PDO $bd, int $idBS, int $idEBP, int $idP, float $quantite, int $idUtilisateur, string $motif, string $date): int {
+    $bd->prepare("
+        INSERT INTO bon_sortie_eb_ligne (idBS, idEBP, idP, quantite_sortie, quantite_livree, quantite_recue)
+        VALUES (?, ?, ?, ?, 0, 0)
+    ")->execute([$idBS, $idEBP, $idP, $quantite]);
+    $idBSL = (int) $bd->lastInsertId();
+    ebw_historiserLigneBon($bd, $idBSL, $motif, $idUtilisateur, $date);
+    return $idBSL;
+}
+
+/** Instantané de l'en-tête du bon (à chaque création / changement de statut). */
+function ebw_historiserBon(PDO $bd, int $idBS, string $motif, int $idUtilisateur, string $date): void {
+    $bd->prepare("
+        INSERT INTO historique_bon_sortie_eb (idBS, idEB, numero_bon, idStatut, motif, idUtilisateur, dateEnregistrement)
+        SELECT id, idEB, numero_bon, idStatut, ?, ?, ?
+        FROM bon_sortie_eb
+        WHERE id = ?
+    ")->execute([$motif, $idUtilisateur, $date, $idBS]);
+}
+
+/** Instantané d'une ligne de bon (à chaque création / livraison / réception / écart). */
+function ebw_historiserLigneBon(PDO $bd, int $idBSL, string $motif, int $idUtilisateur, string $date): void {
+    $bd->prepare("
+        INSERT INTO historique_bon_sortie_eb_ligne
+            (idBSL, idBS, idEBP, idP, quantite_sortie, quantite_livree, quantite_recue, quantite_ecart, quantite_perdue, motif, idUtilisateur, dateEnregistrement)
+        SELECT id, idBS, idEBP, idP, quantite_sortie, quantite_livree, quantite_recue, quantite_ecart, quantite_perdue, ?, ?, ?
+        FROM bon_sortie_eb_ligne
+        WHERE id = ?
+    ")->execute([$motif, $idUtilisateur, $date, $idBSL]);
+}
+
+/** Instantané d'une ligne de demande (compteurs cumulés + quantité annulée). */
+function ebw_historiserEBP(PDO $bd, int $idEBP, string $motif, int $idUtilisateur, string $date): void {
+    $bd->prepare("
+        INSERT INTO historique_expression_besoin_produit
+            (idEBP, idEB, idP, quantite, quantite_reelle, quantite_sortie, quantite_livree, quantite_recue, quantite_annulee, statut, motif, dateEnregistrement, idUtilisateur)
+        SELECT id, idEB, idP, quantite, quantite_reelle, quantite_sortie, quantite_livree, quantite_recue, quantite_annulee, statut, ?, ?, ?
+        FROM expression_besoin_produit
+        WHERE id = ?
+    ")->execute([$motif, $date, $idUtilisateur, $idEBP]);
+}
+
+/**
+ * Déduit le statut d'un bon de ses lignes et le met à jour s'il change.
+ * Retourne le statut résultant.
+ */
+function ebw_recalculerStatutBon(PDO $bd, int $idBS, int $idUtilisateur, string $motif, string $date): int {
+    $stmt = $bd->prepare("
+        SELECT COALESCE(SUM(quantite_sortie), 0)  AS s,
+               COALESCE(SUM(quantite_livree), 0)  AS l,
+               COALESCE(SUM(quantite_recue), 0)   AS r,
+               COALESCE(SUM(quantite_ecart), 0)   AS e,
+               COALESCE(SUM(quantite_perdue), 0)  AS p
+        FROM bon_sortie_eb_ligne WHERE idBS = ?
+    ");
+    $stmt->execute([$idBS]);
+    $t = $stmt->fetch(PDO::FETCH_ASSOC);
+    $s = (float) $t['s']; $l = (float) $t['l']; $r = (float) $t['r']; $e = (float) $t['e']; $p = (float) $t['p'];
+
+    // Un écart a-t-il déjà été régularisé sur ce bon ? (détermine 5 Reçu / 7 Clos avec écart)
+    $stmtR = $bd->prepare("SELECT COUNT(*) FROM ecart_bon_sortie_eb WHERE idBS = ? AND statut = 2");
+    $stmtR->execute([$idBS]);
+    $aRegularisation = ((int) $stmtR->fetchColumn() > 0) || $p > EBW_EPS;
+
+    if     ($e > EBW_EPS)                                     $nouveau = 6; // Écart signalé
+    elseif ($s <= EBW_EPS)                                    $nouveau = $aRegularisation ? 7 : 1; // bon vidé par un retour en stock
+    elseif ($r + $p >= $s - EBW_EPS)                          $nouveau = $aRegularisation ? 7 : 5; // Reçu / Clos avec écart
+    elseif ($r + $p > EBW_EPS)                                $nouveau = 4; // Réception partielle
+    elseif ($l >= $s - EBW_EPS)                               $nouveau = 3; // Livré
+    elseif ($l > EBW_EPS)                                     $nouveau = 2; // Livraison partielle
+    else                                                      $nouveau = 1; // Sortie enregistrée
+
+    $stmtC = $bd->prepare("SELECT idStatut FROM bon_sortie_eb WHERE id = ?");
+    $stmtC->execute([$idBS]);
+    $actuel = (int) $stmtC->fetchColumn();
+
+    if ($nouveau !== $actuel) {
+        $bd->prepare("UPDATE bon_sortie_eb SET idStatut = ? WHERE id = ?")->execute([$nouveau, $idBS]);
+        ebw_historiserBon($bd, $idBS, $motif, $idUtilisateur, $date);
+    }
+    return $nouveau;
+}
+
+/**
+ * Déduit le statut de la DEMANDE des quantités de ses lignes actives et le
+ * met à jour (avec historique) s'il change. Ne touche jamais aux statuts
+ * hors circuit (1 Brouillon, 2 Soumise, 4 Rejetée). Retourne le statut
+ * résultant, ou null si la demande n'est pas dans le circuit calculé.
+ */
+function ebw_recalculerStatutEB(PDO $bd, int $idEB, string $motif, string $date): ?int {
+    $stmtE = $bd->prepare("SELECT idStatut FROM expression_besoin WHERE id = ? LIMIT 1");
+    $stmtE->execute([$idEB]);
+    $actuel = $stmtE->fetchColumn();
+    if ($actuel === false || !in_array((int) $actuel, EBW_STATUTS_CALCULES, true)) return null;
+    $actuel = (int) $actuel;
+
+    // Niveau demande : reste à sortir net du solde annulé.
+    $stmt = $bd->prepare("
+        SELECT COALESCE(SUM(quantite_sortie), 0)  AS total_sortie,
+               COALESCE(SUM(quantite_annulee), 0) AS total_annulee,
+               COALESCE(SUM(GREATEST(COALESCE(quantite_reelle, 0) - quantite_annulee, 0)), 0) AS net_valide,
+               COALESCE(SUM(GREATEST(COALESCE(quantite_reelle, 0) - quantite_annulee - quantite_sortie, 0)), 0) AS reste_a_sortir
+        FROM expression_besoin_produit
+        WHERE idEB = ? AND statut = 1
+    ");
+    $stmt->execute([$idEB]);
+    $q = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    // Niveau bons : reste à livrer / à recevoir / écarts ouverts.
+    $stmtB = $bd->prepare("
+        SELECT COALESCE(SUM(GREATEST(bl.quantite_sortie - bl.quantite_livree, 0)), 0) AS reste_a_livrer,
+               COALESCE(SUM(GREATEST(bl.quantite_livree - bl.quantite_recue - bl.quantite_ecart - bl.quantite_perdue, 0)), 0) AS reste_a_recevoir,
+               COALESCE(SUM(bl.quantite_ecart), 0) AS ecart_ouvert
+        FROM bon_sortie_eb_ligne bl
+        JOIN bon_sortie_eb bs ON bs.id = bl.idBS
+        JOIN expression_besoin_produit ebp ON ebp.id = bl.idEBP AND ebp.statut = 1
+        WHERE bs.idEB = ?
+    ");
+    $stmtB->execute([$idEB]);
+    $b = $stmtB->fetch(PDO::FETCH_ASSOC);
+
+    if ((float) $q['total_sortie'] <= EBW_EPS) {
+        // Rien de sorti : Validée, ou Annulée si tout le solde a été renoncé.
+        $nouveau = ((float) $q['net_valide'] <= EBW_EPS && (float) $q['total_annulee'] > EBW_EPS) ? 10 : 3;
+    }
+    elseif ((float) $q['reste_a_sortir']   > EBW_EPS) $nouveau = 5; // Sortie partielle
+    elseif ((float) $b['reste_a_livrer']   > EBW_EPS) $nouveau = 6; // Sortie totale
+    elseif ((float) $b['reste_a_recevoir'] > EBW_EPS || (float) $b['ecart_ouvert'] > EBW_EPS) $nouveau = 7; // Livrée
+    else $nouveau = ((float) $q['total_annulee'] > EBW_EPS) ? 9 : 8; // Clôturée (avec solde ?)
+
+    if ($nouveau !== $actuel) {
+        $bd->prepare("UPDATE expression_besoin SET idStatut = ? WHERE id = ?")->execute([$nouveau, $idEB]);
+        $bd->prepare("
+            INSERT INTO historique_expression_besoin
+                (idEB, nom_expression, idUtilisateur, idDirection, date_creation, idStatut, motif, dateEnregistrement)
+            SELECT id, nom_expression, idUtilisateur, idDirection, date_creation, idStatut, ?, ?
+            FROM expression_besoin
+            WHERE id = ?
+        ")->execute([$motif, $date, $idEB]);
+    }
+    return $nouveau;
+}
+
+/**
+ * Le demandeur déclare n'avoir PAS reçu $quantite alors que le bon la marque
+ * "livrée". Le plafond est le reste à recevoir de la ligne de bon. La
+ * quantité passe en écart ouvert (le bon passe à 6 Écart signalé) jusqu'à
+ * régularisation par le comptable. Retourne l'id de l'écart.
+ */
+function ebw_signalerEcart(PDO $bd, int $idBSL, float $quantite, string $commentaire, int $idUtilisateur, string $motif, string $date): int {
+    $commentaire = trim($commentaire);
+    if ($quantite <= EBW_EPS) throw new EbwException("La quantité d'écart doit être supérieure à zéro.");
+    if ($commentaire === '')  throw new EbwException("Un commentaire est obligatoire pour signaler un écart de réception.");
+
+    $stmt = $bd->prepare("
+        SELECT bl.id, bl.idBS, bl.idEBP, bl.quantite_livree, bl.quantite_recue, bl.quantite_ecart, bl.quantite_perdue, bs.idEB
+        FROM bon_sortie_eb_ligne bl JOIN bon_sortie_eb bs ON bs.id = bl.idBS
+        WHERE bl.id = ? FOR UPDATE
+    ");
+    $stmt->execute([$idBSL]);
+    $l = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$l) throw new EbwException("Ligne de bon introuvable.");
+
+    $reste = (float) $l['quantite_livree'] - (float) $l['quantite_recue'] - (float) $l['quantite_ecart'] - (float) $l['quantite_perdue'];
+    if ($quantite > $reste + EBW_EPS) throw new EbwException("L'écart déclaré dépasse ce qui restait à confirmer pour cette ligne.");
+
+    $bd->prepare("UPDATE bon_sortie_eb_ligne SET quantite_ecart = quantite_ecart + ? WHERE id = ?")->execute([$quantite, $idBSL]);
+    $bd->prepare("
+        INSERT INTO ecart_bon_sortie_eb (idBSL, idBS, idEB, idEBP, quantite_ecart, commentaire, idUtilisateurSignale, dateSignalement, statut)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, 1)
+    ")->execute([$idBSL, $l['idBS'], $l['idEB'], $l['idEBP'], $quantite, $commentaire, $idUtilisateur, $date]);
+    $idEcart = (int) $bd->lastInsertId();
+
+    ebw_historiserLigneBon($bd, $idBSL, $motif, $idUtilisateur, $date);
+    return $idEcart;
+}
+
+/**
+ * Régularise un écart ouvert (comptable, garant du stock).
+ *  - correction_livraison : la livraison avait été enregistrée en trop ; la
+ *    quantité redevient "à livrer" (le magasinier doit la remettre).
+ *  - retour_stock : les produits n'ont jamais quitté le magasin ; ils sont
+ *    remis en stock et redeviennent "à sortir" (le comptable peut ressortir
+ *    ou annuler le solde).
+ *  - perte : les produits sont perdus ; l'écart est clos, le stock reste
+ *    décrémenté.
+ */
+function ebw_regulariserEcart(PDO $bd, int $idEcart, string $resolution, string $commentaire, int $idUtilisateur, string $matricule, string $date): void {
+    $commentaire = trim($commentaire);
+    if (!in_array($resolution, EBW_RESOLUTIONS_ECART, true)) throw new EbwException("Résolution invalide.");
+    if ($commentaire === '') throw new EbwException("Un commentaire est obligatoire pour régulariser un écart.");
+
+    $stmt = $bd->prepare("SELECT * FROM ecart_bon_sortie_eb WHERE id = ? FOR UPDATE");
+    $stmt->execute([$idEcart]);
+    $ecart = $stmt->fetch(PDO::FETCH_ASSOC);
+    if (!$ecart || (int) $ecart['statut'] !== 1) throw new EbwException("Écart introuvable ou déjà régularisé.");
+
+    $q = (float) $ecart['quantite_ecart'];
+    $stmtL = $bd->prepare("SELECT * FROM bon_sortie_eb_ligne WHERE id = ? FOR UPDATE");
+    $stmtL->execute([$ecart['idBSL']]);
+    $bl = $stmtL->fetch(PDO::FETCH_ASSOC);
+    if (!$bl || (float) $bl['quantite_ecart'] < $q - EBW_EPS) throw new EbwException("Incohérence : la ligne de bon ne porte plus cet écart.");
+
+    $motif = "Écart de réception régularisé — {$resolution} (par $matricule)";
+
+    if ($resolution === 'correction_livraison') {
+        $bd->prepare("UPDATE bon_sortie_eb_ligne SET quantite_livree = quantite_livree - ?, quantite_ecart = quantite_ecart - ? WHERE id = ?")
+            ->execute([$q, $q, $bl['id']]);
+        $bd->prepare("UPDATE expression_besoin_produit SET quantite_livree = quantite_livree - ?, dateEnregistrement = ? WHERE id = ?")
+            ->execute([$q, $date, $bl['idEBP']]);
+    }
+    elseif ($resolution === 'retour_stock') {
+        $bd->prepare("UPDATE bon_sortie_eb_ligne SET quantite_sortie = quantite_sortie - ?, quantite_livree = quantite_livree - ?, quantite_ecart = quantite_ecart - ? WHERE id = ?")
+            ->execute([$q, $q, $q, $bl['id']]);
+        $bd->prepare("UPDATE expression_besoin_produit SET quantite_sortie = quantite_sortie - ?, quantite_livree = quantite_livree - ?, dateEnregistrement = ? WHERE id = ?")
+            ->execute([$q, $q, $date, $bl['idEBP']]);
+        $bd->prepare("UPDATE product SET Stock_actuel = Stock_actuel + ?, retrait = GREATEST(retrait - ?, 0) WHERE idP = ?")
+            ->execute([$q, $q, $bl['idP']]);
+        $bd->prepare("
+            INSERT INTO historique_product
+                (product_id, nomproduit, code_produit, Stock_actuel, Seuil_limite, Total, id_Sous_categorie, retrait, id_statut, date_creation, id_type_product, motif, dateEnregistrement)
+            SELECT idP, nomproduit, code_produit, Stock_actuel, Seuil_limite, Total, id_Sous_categorie, retrait, id_statut, date_creation, id_type_product, ?, ?
+            FROM product WHERE idP = ?
+        ")->execute([$motif, $date, $bl['idP']]);
+    }
+    else { // perte
+        $bd->prepare("UPDATE bon_sortie_eb_ligne SET quantite_ecart = quantite_ecart - ?, quantite_perdue = quantite_perdue + ? WHERE id = ?")
+            ->execute([$q, $q, $bl['id']]);
+    }
+
+    $bd->prepare("
+        UPDATE ecart_bon_sortie_eb
+        SET statut = 2, resolution = ?, commentaireResolution = ?, idUtilisateurResolution = ?, dateResolution = ?
+        WHERE id = ?
+    ")->execute([$resolution, $commentaire, $idUtilisateur, $date, $idEcart]);
+
+    ebw_historiserLigneBon($bd, (int) $bl['id'], $motif, $idUtilisateur, $date);
+    ebw_historiserEBP($bd, (int) $bl['idEBP'], $motif, $idUtilisateur, $date);
+    ebw_recalculerStatutBon($bd, (int) $bl['idBS'], $idUtilisateur, $motif, $date);
+    ebw_recalculerStatutEB($bd, (int) $ecart['idEB'], $motif, $date);
+}
+
+/**
+ * Clôture avec solde : le comptable renonce à sortir le reste (rupture
+ * durable, besoin disparu). Le reste à sortir de chaque ligne passe en
+ * quantite_annulee ; la demande évolue ensuite selon ce qui a déjà été
+ * sorti (9 Clôturée avec solde une fois tout reçu, 10 Annulée si rien
+ * n'avait été sorti). Motif obligatoire. Retourne [nouveauStatut, soldeTotal].
+ */
+function ebw_cloturerSolde(PDO $bd, int $idEB, string $commentaire, int $idUtilisateur, string $matricule, string $date): array {
+    $commentaire = trim($commentaire);
+    if ($commentaire === '') throw new EbwException("Un motif est obligatoire pour clôturer le solde d'une demande.");
+
+    $stmtE = $bd->prepare("SELECT idStatut FROM expression_besoin WHERE id = ? FOR UPDATE");
+    $stmtE->execute([$idEB]);
+    $statut = $stmtE->fetchColumn();
+    if ($statut === false || !in_array((int) $statut, [3, 5], true)) {
+        throw new EbwException("Seule une demande Validée ou en Sortie partielle peut voir son solde clôturé.");
+    }
+
+    $stmtL = $bd->prepare("
+        SELECT id, COALESCE(quantite_reelle, 0) AS reelle, quantite_sortie, quantite_annulee
+        FROM expression_besoin_produit WHERE idEB = ? AND statut = 1 FOR UPDATE
+    ");
+    $stmtL->execute([$idEB]);
+
+    $motif = "Solde annulé par le comptable : {$commentaire} (par $matricule)";
+    $total = 0.0;
+    foreach ($stmtL->fetchAll(PDO::FETCH_ASSOC) as $l) {
+        $solde = max(0.0, (float) $l['reelle'] - (float) $l['quantite_annulee'] - (float) $l['quantite_sortie']);
+        if ($solde <= EBW_EPS) continue;
+        $bd->prepare("UPDATE expression_besoin_produit SET quantite_annulee = quantite_annulee + ?, dateEnregistrement = ? WHERE id = ?")
+            ->execute([$solde, $date, $l['id']]);
+        ebw_historiserEBP($bd, (int) $l['id'], $motif, $idUtilisateur, $date);
+        $total += $solde;
+    }
+    if ($total <= EBW_EPS) throw new EbwException("Il n'y a aucun solde à clôturer sur cette demande.");
+
+    $nouveau = ebw_recalculerStatutEB($bd, $idEB, $motif, $date);
+    return [$nouveau, $total];
+}
+
+/**
+ * Réception présumée : toute quantité livrée depuis plus de $delaiJours
+ * jours et jamais confirmée ni contestée est réputée reçue. Traitée par
+ * demande, chacune dans sa propre transaction (une erreur n'en bloque pas
+ * les autres). Le demandeur est l'acteur tracé, le motif précise
+ * l'automatisme. Retourne le nombre de lignes de bon régularisées.
+ */
+function ebw_receptionPresumee(PDO $bd, int $delaiJours, string $date): int {
+    $stmt = $bd->prepare("
+        SELECT bl.id AS idBSL, bl.idBS, bl.idEBP, bs.idEB, eb.idUtilisateur AS idDemandeur,
+               (bl.quantite_livree - bl.quantite_recue - bl.quantite_ecart - bl.quantite_perdue) AS reste
+        FROM bon_sortie_eb_ligne bl
+        JOIN bon_sortie_eb bs ON bs.id = bl.idBS
+        JOIN expression_besoin eb ON eb.id = bs.idEB
+        WHERE bl.date_derniere_livraison IS NOT NULL
+          AND bl.date_derniere_livraison <= DATE_SUB(?, INTERVAL ? DAY)
+          AND (bl.quantite_livree - bl.quantite_recue - bl.quantite_ecart - bl.quantite_perdue) > ?
+        ORDER BY bs.idEB, bl.id
+    ");
+    $stmt->execute([$date, $delaiJours, EBW_EPS]);
+    $parDemande = [];
+    foreach ($stmt->fetchAll(PDO::FETCH_ASSOC) as $r) $parDemande[(int) $r['idEB']][] = $r;
+
+    $motif = "Réception présumée automatiquement (aucune confirmation ni contestation sous $delaiJours jours)";
+    $nb = 0;
+    foreach ($parDemande as $idEB => $lignes) {
+        try {
+            $bd->beginTransaction();
+            $bons = [];
+            foreach ($lignes as $r) {
+                $reste = (float) $r['reste'];
+                $acteur = (int) $r['idDemandeur'];
+                $bd->prepare("UPDATE bon_sortie_eb_ligne SET quantite_recue = quantite_recue + ? WHERE id = ?")->execute([$reste, $r['idBSL']]);
+                $bd->prepare("UPDATE expression_besoin_produit SET quantite_recue = quantite_recue + ?, dateEnregistrement = ? WHERE id = ?")->execute([$reste, $date, $r['idEBP']]);
+                ebw_historiserLigneBon($bd, (int) $r['idBSL'], $motif, $acteur, $date);
+                ebw_historiserEBP($bd, (int) $r['idEBP'], $motif, $acteur, $date);
+                $bons[(int) $r['idBS']] = $acteur;
+                $nb++;
+            }
+            foreach ($bons as $idBS => $acteur) ebw_recalculerStatutBon($bd, $idBS, $acteur, $motif, $date);
+            ebw_recalculerStatutEB($bd, $idEB, $motif, $date);
+            $bd->commit();
+        } catch (\Throwable $e) {
+            if ($bd->inTransaction()) $bd->rollBack();
+            error_log("[ebWorkflow][receptionPresumee] demande $idEB : " . $e->getMessage());
+        }
+    }
+    return $nb;
 }
 
 // ─── Lecture de l'option ──────────────────────────────────────────────────────
@@ -322,9 +737,12 @@ function voirSuiviExpressionBesoin(PDO $bdBASI, expressionBesoinController $basi
             return;
         }
 
-        // ── Produits : demandée / validée / sortie / restante / statut ligne ─
+        // ── Produits : demandée / validée / sortie / livrée / reçue / restante ─
         $stmtProduits = $bdBASI->prepare("
             SELECT ebp.id AS idEBP, ebp.idP, ebp.quantite, ebp.quantite_reelle, ebp.quantite_sortie,
+                   ebp.quantite_livree, ebp.quantite_recue, ebp.quantite_annulee,
+                   (SELECT COALESCE(SUM(bl.quantite_ecart), 0)  FROM bon_sortie_eb_ligne bl WHERE bl.idEBP = ebp.id) AS quantite_ecart,
+                   (SELECT COALESCE(SUM(bl.quantite_perdue), 0) FROM bon_sortie_eb_ligne bl WHERE bl.idEBP = ebp.id) AS quantite_perdue,
                    p.nomproduit as designation
             FROM expression_besoin_produit ebp
             JOIN product p ON ebp.idP = p.idP
@@ -334,19 +752,50 @@ function voirSuiviExpressionBesoin(PDO $bdBASI, expressionBesoinController $basi
         $stmtProduits->execute([$idEB]);
         $produits = $stmtProduits->fetchAll(PDO::FETCH_ASSOC);
 
+        // Statut de ligne à 4 étapes désormais : la sortie comptable
+        // (décrémentation administrative du stock) est DISTINCTE de la
+        // livraison physique (remise par le magasinier) et de la réception
+        // (confirmée par le demandeur lui-même, via "Reçu").
         foreach ($produits as &$p) {
             $qteReelle  = $p['quantite_reelle'] !== null ? (float) $p['quantite_reelle'] : null;
             $qteSortie  = (float) ($p['quantite_sortie'] ?? 0);
+            $qteLivree  = (float) ($p['quantite_livree'] ?? 0);
+            $qteRecue   = (float) ($p['quantite_recue'] ?? 0);
+            $qteAnnulee = (float) ($p['quantite_annulee'] ?? 0);
+            $qteEcart   = (float) ($p['quantite_ecart'] ?? 0);   // signalé, en attente du comptable
+            $qtePerdue  = (float) ($p['quantite_perdue'] ?? 0);  // régularisé en perte
+
+            $resteARecevoir = max(0, $qteLivree - $qteRecue - $qteEcart - $qtePerdue); // livré, pas encore confirmé
+            $resteALivrer   = max(0, $qteSortie - $qteLivree);                         // sorti, pas encore remis
+            $p['quantite_restante_a_recevoir'] = $resteARecevoir;
+            $p['quantite_restante_a_livrer']   = $resteALivrer;
+            $p['peut_confirmer_reception'] = ($resteARecevoir > 0.001);
 
             if ($qteReelle === null) {
                 $p['quantite_restante'] = null;
                 $p['statut_ligne'] = 'En attente';
             } else {
-                $p['quantite_restante'] = max(0, $qteReelle - $qteSortie);
-                if ($qteReelle > 0 && $qteSortie >= $qteReelle - 0.001) {
-                    $p['statut_ligne'] = 'Livré';
-                } elseif ($qteSortie > 0) {
-                    $p['statut_ligne'] = 'Partiellement livré';
+                $cible = max(0, $qteReelle - $qteAnnulee);                 // validée, nette du solde annulé
+                $p['quantite_restante'] = max(0, $cible - $qteSortie);     // reste à sortir
+                // Le statut suit la prochaine action attendue, dans l'ordre :
+                // 1) un écart déclaré attend la régularisation du comptable ;
+                // 2) le demandeur doit confirmer ce qui lui a été remis ;
+                // 3) le magasinier doit remettre ce qui a été sorti ;
+                // 4) tout ce qui a été remis est réglé : "Reçu" si la quantité
+                //    validée (nette du solde annulé) est entièrement traitée,
+                //    "Reçu partiellement" sinon (le reste est à sortir).
+                if ($qteEcart > 0.001) {
+                    $p['statut_ligne'] = 'Écart signalé — en attente du comptable';
+                } elseif ($resteARecevoir > 0.001) {
+                    $p['statut_ligne'] = 'Livré — en attente de votre confirmation';
+                } elseif ($resteALivrer > 0.001) {
+                    $p['statut_ligne'] = 'Sorti du stock — en attente du magasinier';
+                } elseif ($qteRecue + $qtePerdue > 0.001) {
+                    $p['statut_ligne'] = ($qteRecue + $qtePerdue >= $cible - 0.001)
+                        ? ($qteAnnulee > 0.001 ? 'Reçu — solde annulé' : 'Reçu')
+                        : 'Reçu partiellement';
+                } elseif ($qteAnnulee > 0.001 && $cible <= 0.001) {
+                    $p['statut_ligne'] = 'Annulée';
                 } else {
                     $p['statut_ligne'] = 'En attente';
                 }
@@ -378,6 +827,32 @@ function voirSuiviExpressionBesoin(PDO $bdBASI, expressionBesoinController $basi
         $historique = $stmtHisto->fetchAll(PDO::FETCH_ASSOC);
 
         $expression['produits']    = $produits;
+
+        // ── Bons de sortie : chaque sortie du comptable = un bon, livré puis
+        // confirmé bon par bon (suivi des livraisons partielles et successives).
+        $stmtBons = $bdBASI->prepare("SELECT id, numero_bon, dateSortie, idStatut FROM bon_sortie_eb WHERE idEB = ? ORDER BY dateSortie ASC, id ASC");
+        $stmtBons->execute([$idEB]);
+        $bons = $stmtBons->fetchAll(PDO::FETCH_ASSOC);
+        $stmtBonLignes = $bdBASI->prepare("
+            SELECT bl.id AS idBSL, bl.quantite_sortie, bl.quantite_livree, bl.quantite_recue, bl.quantite_ecart, bl.quantite_perdue, p.nomproduit AS designation
+            FROM bon_sortie_eb_ligne bl
+            JOIN product p ON bl.idP = p.idP
+            WHERE bl.idBS = ?
+            ORDER BY bl.id ASC
+        ");
+        foreach ($bons as &$b) {
+            $stmtBonLignes->execute([$b['id']]);
+            $b['lignes'] = $stmtBonLignes->fetchAll(PDO::FETCH_ASSOC);
+            $b['peut_confirmer'] = false;
+            foreach ($b['lignes'] as &$bl) {
+                $bl['quantite_restante_a_recevoir'] = max(0, (float) $bl['quantite_livree'] - (float) $bl['quantite_recue'] - (float) $bl['quantite_ecart'] - (float) $bl['quantite_perdue']);
+                $bl['peut_confirmer_reception'] = ($bl['quantite_restante_a_recevoir'] > 0.001);
+                if ($bl['peut_confirmer_reception']) $b['peut_confirmer'] = true;
+            }
+            unset($bl);
+        }
+        unset($b);
+        $expression['bons'] = $bons;
         $expression['motif_rejet'] = $motifRejet;
         $expression['historique']  = $historique;
 
@@ -1012,6 +1487,132 @@ function insererHistoriqueEBIP(PDO $bdBASI, int $idEBIP, int $idEBI, int $idProd
     ")->execute([$idEBIP, $idEBI, $idProduit, $quantiteDemandee, $quantiteSortie, $statut, $idUtilisateur, $motif, $dateEnregistrement]);
 }
 
+/**
+ * OPTION 17 — Le demandeur confirme la réception, bon par bon et ligne par
+ * ligne. Pour chaque ligne il indique :
+ *   - quantite : la quantité RÉELLEMENT reçue ;
+ *   - ecart    : la quantité marquée "livrée" mais NON reçue (optionnel) —
+ *                un commentaire est alors obligatoire ; l'écart est transmis
+ *                au comptable pour régularisation (le bon passe à "Écart
+ *                signalé").
+ * Contrôle serveur : quantite + ecart ≤ reste à recevoir de la ligne de bon
+ * (livrée − reçue − écart − perdue). Réservé au demandeur de la demande.
+ *
+ * Champs attendus : token, quantites: [{ idBSL, quantite, ecart?, commentaire? }, ...]
+ */
+function confirmerReceptionDemandeur(PDO $bdBASI, expressionBesoinController $basiController, int $sessionUserId, string $sessionMatricule): void {
+    try {
+        $token = trim((string) inputValueEB('token', ''));
+        if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
+        $idEB = (int) $basiController->tokendecrypt($token);
+        if ($idEB <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+
+        $saisies = inputValueEB('quantites', []);
+        if (!is_array($saisies)) $saisies = [];
+        $parLigne = [];
+        foreach ($saisies as $q) {
+            $idBSL = (int) ($q['idBSL'] ?? 0);
+            if ($idBSL <= 0) continue;
+            $parLigne[$idBSL] = [
+                'recue'       => (float) ($q['quantite'] ?? 0),
+                'ecart'       => (float) ($q['ecart'] ?? 0),
+                'commentaire' => trim((string) ($q['commentaire'] ?? '')),
+            ];
+        }
+
+        $stmtC = $bdBASI->prepare("SELECT id FROM expression_besoin WHERE id = ? AND idUtilisateur = ? LIMIT 1");
+        $stmtC->execute([$idEB, $sessionUserId]);
+        if (!$stmtC->fetch()) { echo json_encode(['status' => 'error', 'message' => "Expression de besoin introuvable ou vous n'en êtes pas le demandeur."]); return; }
+
+        date_default_timezone_set('Africa/Dakar');
+        $dateEnregistrement = date('Y-m-d H:i:s');
+        $motifRecu  = "Réception confirmée par le demandeur (par $sessionMatricule)";
+        $motifEcart = "Écart de réception signalé par le demandeur (par $sessionMatricule)";
+
+        $bdBASI->beginTransaction();
+
+        // Uniquement les lignes de bons DE CETTE demande (le token ne peut donc
+        // pas servir à confirmer la ligne d'un bon appartenant à une autre).
+        $stmtLignes = $bdBASI->prepare("
+            SELECT bl.id AS idBSL, bl.idBS, bl.idEBP, bl.quantite_livree, bl.quantite_recue, bl.quantite_ecart, bl.quantite_perdue
+            FROM bon_sortie_eb_ligne bl
+            JOIN bon_sortie_eb bs ON bs.id = bl.idBS
+            WHERE bs.idEB = ?
+            FOR UPDATE
+        ");
+        $stmtLignes->execute([$idEB]);
+        $lignes = $stmtLignes->fetchAll(PDO::FETCH_ASSOC);
+        if (empty($lignes)) {
+            $bdBASI->rollBack();
+            echo json_encode(['status' => 'error', 'message' => 'Aucun bon de sortie pour cette expression de besoin.']);
+            return;
+        }
+
+        $stmtRecueBon = $bdBASI->prepare("UPDATE bon_sortie_eb_ligne SET quantite_recue = quantite_recue + ? WHERE id = ?");
+        $stmtRecueEBP = $bdBASI->prepare("UPDATE expression_besoin_produit SET quantite_recue = quantite_recue + ?, dateEnregistrement = ? WHERE id = ?");
+
+        $auMoinsUneAction = false;
+        $ecartSignale = false;
+        $bonsTouches = [];
+        foreach ($lignes as $l) {
+            $idBSL = (int) $l['idBSL'];
+            if (!isset($parLigne[$idBSL])) continue;
+            $recue = $parLigne[$idBSL]['recue'];
+            $ecart = $parLigne[$idBSL]['ecart'];
+            if ($recue < 0 || $ecart < 0) { $bdBASI->rollBack(); echo json_encode(['status' => 'error', 'message' => 'Les quantités ne peuvent pas être négatives.']); return; }
+            if ($recue <= 0.001 && $ecart <= 0.001) continue;
+
+            $restant = max(0, (float) $l['quantite_livree'] - (float) $l['quantite_recue'] - (float) $l['quantite_ecart'] - (float) $l['quantite_perdue']);
+
+            // Garde-fou serveur : reçu + écart jamais plus que ce qui restait à confirmer dans CE bon.
+            if ($recue + $ecart > $restant + 0.001) {
+                $bdBASI->rollBack();
+                echo json_encode(['status' => 'error', 'message' => "La quantité reçue et l'écart déclaré dépassent ce qui vous a été remis dans ce bon pour au moins une ligne."]);
+                return;
+            }
+
+            if ($recue > 0.001) {
+                $stmtRecueBon->execute([$recue, $idBSL]);
+                $stmtRecueEBP->execute([$recue, $dateEnregistrement, $l['idEBP']]);
+                ebw_historiserLigneBon($bdBASI, $idBSL, $motifRecu, $sessionUserId, $dateEnregistrement);
+                ebw_historiserEBP($bdBASI, (int) $l['idEBP'], $motifRecu, $sessionUserId, $dateEnregistrement);
+            }
+            if ($ecart > 0.001) {
+                ebw_signalerEcart($bdBASI, $idBSL, $ecart, $parLigne[$idBSL]['commentaire'], $sessionUserId, $motifEcart, $dateEnregistrement);
+                $ecartSignale = true;
+            }
+            $bonsTouches[(int) $l['idBS']] = true;
+            $auMoinsUneAction = true;
+        }
+
+        if (!$auMoinsUneAction) {
+            $bdBASI->rollBack();
+            echo json_encode(['status' => 'error', 'message' => "Aucune réception confirmée : veuillez saisir au moins une quantité reçue ou un écart."]);
+            return;
+        }
+
+        // Statuts DÉDUITS des quantités : d'abord les bons, puis la demande
+        // (8 Clôturée / 9 Clôturée avec solde dès que tout est sorti, livré
+        // ET reçu, sans écart en attente).
+        foreach (array_keys($bonsTouches) as $idBS) {
+            ebw_recalculerStatutBon($bdBASI, $idBS, $sessionUserId, $motifRecu, $dateEnregistrement);
+        }
+        ebw_recalculerStatutEB($bdBASI, $idEB, $motifRecu, $dateEnregistrement);
+
+        $bdBASI->commit();
+        echo json_encode(['status' => 'success', 'message' => $ecartSignale
+            ? "Réception enregistrée. L'écart signalé a été transmis au comptable pour régularisation."
+            : 'Réception confirmée avec succès.']);
+    } catch (EbwException $e) {
+        if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+        echo json_encode(['status' => 'error', 'message' => $e->getMessage()]);
+    } catch (\Throwable $e) {
+        if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+        error_log('[EB][confirmerReceptionDemandeur] ' . $e->getMessage());
+        erreurSqlEB('Impossible de confirmer la réception.');
+    }
+}
+
 /* ═══════════════════════════════════════════════════════════════════════════
    ROUTAGE
    1 = listerExpressionsBesoin       (ses propres demandes, filtrable par années)
@@ -1077,6 +1678,10 @@ try {
 
         case 16:
             enregistrerExpressionBesoinInvestissement($bdBASI, $basiController, $sessionUserId, $sessionMatricule, $sessionIdDirection);
+            break;
+
+        case 17:
+            confirmerReceptionDemandeur($bdBASI, $basiController, $sessionUserId, $sessionMatricule);
             break;
 
         default:

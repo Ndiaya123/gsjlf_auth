@@ -380,7 +380,7 @@
 </script>
 
 <!-- Script métier budget fonctionnement -->
-<script src="/basi-scripts.bundle.10.js"></script>
+<script src="/personnel/basi-scripts.bundle.10.js"></script>
 
 
 

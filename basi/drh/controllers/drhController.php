@@ -2317,14 +2317,17 @@ function detailOperation(PDO $bdBASI, drhController $basiController): void {
         $estAchat = ((int)$dossier['idTypePAP'] === 1);
         $reponse  = ['status' => 'success', 'dossier' => $dossier];
 
-        // Lignes (actives uniquement, id_statut_PAPL = 1)
+        // Toutes les lignes (actives ET annulées) — le front-end distingue
+        // via id_statut_PAPL, et signale les modifications via modifie_par_dfc,
+        // pour que le responsable des achats voie les ajustements de la DFC.
         $stmtLignes = $bdBASI->prepare("
             SELECT
-                papl.id AS idPAPL, lb.designation, papl.quantite_reelle, papl.prix_reel, papl.montant_total_ligne
+                papl.id AS idPAPL, lb.designation, papl.quantite_reelle, papl.prix_reel, papl.montant_total_ligne,
+                papl.id_statut_PAPL, papl.modifie_par_dfc
             FROM passer_achat_et_paiement_ligne papl
             JOIN demandes_ligne dal ON papl.idDL = dal.idDL
             JOIN ligneBudget    lb  ON dal.idLB  = lb.id
-            WHERE papl.idPAP = ? AND papl.id_statut_PAPL = 1
+            WHERE papl.idPAP = ?
             ORDER BY papl.id ASC
         ");
         $stmtLignes->execute([$idPAP]);
@@ -2775,7 +2778,7 @@ function demanderFactureProforma(PDO $bdBASI, int $sessionUserId): void {
         $stmtDesactiver = $bdBASI->prepare("
             UPDATE demande_proforma SET statut = 0 WHERE statut = 1
         ");
-                    $stmtDesactiver->execute();
+        $stmtDesactiver->execute();
 
         // foreach ($idDLs as $idDL) {
         //     $stmtDesactiver->execute([$idDL]);

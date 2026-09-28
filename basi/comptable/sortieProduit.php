@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -12,6 +11,36 @@
     <link href="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
     <link href="/personnel/ressources/dist_assets/css/style_basi_35.css" rel="stylesheet" type="text/css"/>
+
+    <style>
+        /* Absente de style_basi_35.css — même règle que style_basi_36.css
+           (page listeProduitInvestissement.php). */
+        .dga-switch-type{display:inline-flex;background:#f3f4f6;border-radius:99px;padding:.25rem;gap:.15rem;margin-bottom:1.25rem}
+        .dga-switch-btn{background:none;border:none;padding:.45rem 1.1rem;border-radius:99px;font-size:.8rem;font-weight:600;color:#6b7280;cursor:pointer;transition:all .15s}
+        .dga-switch-btn:hover{color:#111827}
+        .dga-switch-active{background:#fff;color:#1a7a5e;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+        /* Badges des statuts 7 (Livrée) et 8 (Clôturée) du circuit livraison/réception. */
+        .dga-statut-7{background:#dbeafe;color:#1e40af}
+        .dga-statut-8{background:#d1fae5;color:#065f46}
+        /* Circuit livraison/réception : statuts 7-10, clôture du solde, écarts */
+        .dga-statut-7{background:#dbeafe;color:#1e40af}
+        .dga-statut-8{background:#d1fae5;color:#065f46}
+        .dga-statut-9{background:#e0e7ff;color:#3730a3}
+        .dga-statut-10{background:#f3f4f6;color:#6b7280}
+        .dga-btn-cloturer{background:#fff7ed;color:#9a3412;border:1.5px solid #fed7aa;border-radius:7px;padding:.35rem .7rem;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:.35rem}
+        .dga-btn-cloturer:hover{background:#9a3412;color:#fff}
+        .dga-btn-ecarts{display:inline-flex;align-items:center;gap:.4rem;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:9px;padding:.5rem .9rem;font-size:.78rem;font-weight:700;cursor:pointer}
+        .dga-btn-ecarts:hover{background:#991b1b;color:#fff}
+        .dga-btn-ecarts .dga-ecarts-count{background:#991b1b;color:#fff;border-radius:99px;padding:.05rem .45rem;font-size:.7rem}
+        .dga-btn-ecarts:hover .dga-ecarts-count{background:#fff;color:#991b1b}
+        .dga-ligne-ecart{background:#fee2e2;color:#991b1b}
+        table.dga-table-ecarts{width:100%;border-collapse:collapse;font-size:.82rem}
+        table.dga-table-ecarts thead th{background:#f8f9fa;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;padding:.55rem .6rem;text-align:left;border-bottom:2px solid #e9ecef}
+        table.dga-table-ecarts tbody td{padding:.6rem;border-bottom:1px solid #f3f4f6;color:#374151;vertical-align:top}
+        .dga-ecart-motif{font-size:.75rem;color:#6b7280;margin-top:.15rem}
+        .dga-ecart-actions{display:flex;flex-direction:column;gap:.35rem;min-width:230px}
+        .dga-ecart-actions select,.dga-ecart-actions input{border:1.5px solid #e5e7eb;border-radius:7px;padding:.35rem .5rem;font-size:.78rem;width:100%}
+    </style>
 
     <script>document.documentElement.classList.add('ld-booting');</script>
 
@@ -113,59 +142,68 @@
                                     </svg>
                                     Sorties de produits
                                 </h1>
-                                <p>Expressions de besoin validées, en attente de sortie de stock</p>
+                                <p>Demandes en attente de sortie de stock — Fonctionnement et Investissement</p>
                             </div>
                         </div>
 
-                        <!-- ══ ALERTE INVENTAIRE EN COURS ══ -->
+                        <!-- ══ ALERTE INVENTAIRE EN COURS (partagée) ══ -->
                         <div class="dga-alerte-inventaire" id="dga-alerte-inventaire">
                             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" style="flex-shrink:0;"><path d="M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
                             <span>Un inventaire est en cours : aucune sortie de stock ne peut être effectuée pour le moment. Les boutons "Sortie" sont désactivés jusqu'à la fin de l'inventaire.</span>
                         </div>
 
-                        <!-- ══ STATISTIQUES ══ -->
-                        <div class="dga-stats-grid">
-                            <div class="dga-stat-card">
-                                <div class="dga-stat-icon">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
-                                </div>
-                                <div>
-                                    <div class="dga-stat-lbl">Résultats affichés</div>
-                                    <div class="dga-stat-val" id="dga-stat-nombre">0</div>
-                                </div>
-                            </div>
-                            <div class="dga-stat-card dga-sc-a-sortir">
-                                <div class="dga-stat-icon">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 12V8H6a2 2 0 010-4h12v4"/><path d="M4 6v14a2 2 0 002 2h14v-4"/><path d="M18 12a2 2 0 000 4h4v-4Z"/></svg>
-                                </div>
-                                <div>
-                                    <div class="dga-stat-lbl">À sortir</div>
-                                    <div class="dga-stat-val" id="dga-stat-a-sortir">0</div>
-                                </div>
-                            </div>
-                            <div class="dga-stat-card dga-sc-partiel">
-                                <div class="dga-stat-icon">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
-                                </div>
-                                <div>
-                                    <div class="dga-stat-lbl">Partiellement livré</div>
-                                    <div class="dga-stat-val" id="dga-stat-partiel">0</div>
-                                </div>
-                            </div>
-                            <div class="dga-stat-card dga-sc-terminee">
-                                <div class="dga-stat-icon">
-                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
-                                </div>
-                                <div>
-                                    <div class="dga-stat-lbl">Terminées</div>
-                                    <div class="dga-stat-val" id="dga-stat-termine">0</div>
-                                </div>
-                            </div>
+                        <!-- ══ COMMUTATEUR ══ -->
+                        <div class="dga-switch-type" id="dga-switch-type-sortie">
+                            <button type="button" class="dga-switch-btn dga-switch-active" data-cible="fonctionnement">Fonctionnement</button>
+                            <button type="button" class="dga-switch-btn" data-cible="investissement">Investissement</button>
                         </div>
 
-                        <!-- ══ CARTE LISTE ══ -->
-                        <div class="dga-card">
-                            <div class="dga-card-head">
+                        <!-- ══ PANNEAU FONCTIONNEMENT ══ -->
+                        <div id="dga-panel-sortie-fonctionnement">
+
+                            <!-- ══ STATISTIQUES ══ -->
+                            <div class="dga-stats-grid">
+                                <div class="dga-stat-card">
+                                    <div class="dga-stat-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="dga-stat-lbl">Résultats affichés</div>
+                                        <div class="dga-stat-val" id="dga-stat-nombre">0</div>
+                                    </div>
+                                </div>
+                                <div class="dga-stat-card dga-sc-a-sortir">
+                                    <div class="dga-stat-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 12V8H6a2 2 0 010-4h12v4"/><path d="M4 6v14a2 2 0 002 2h14v-4"/><path d="M18 12a2 2 0 000 4h4v-4Z"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="dga-stat-lbl">À sortir</div>
+                                        <div class="dga-stat-val" id="dga-stat-a-sortir">0</div>
+                                    </div>
+                                </div>
+                                <div class="dga-stat-card dga-sc-partiel">
+                                    <div class="dga-stat-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="dga-stat-lbl">Sortie partielle</div>
+                                        <div class="dga-stat-val" id="dga-stat-partiel">0</div>
+                                    </div>
+                                </div>
+                                <div class="dga-stat-card dga-sc-terminee">
+                                    <div class="dga-stat-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="dga-stat-lbl">Sortie totale</div>
+                                        <div class="dga-stat-val" id="dga-stat-termine">0</div>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- ══ CARTE LISTE ══ -->
+                            <div class="dga-card">
+                                <div class="dga-card-head">
                                 <span class="dga-card-title">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                         <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
@@ -173,37 +211,156 @@
                                     </svg>
                                     Expressions de besoin
                                 </span>
+                                </div>
+
+                                <div class="dga-filters">
+                                    <div class="dga-filter-group">
+                                        <label class="dga-filter-label" for="dga-filtre-statut-sortie">Statut</label>
+                                        <select id="dga-filtre-statut-sortie" class="dga-inp-annee">
+                                            <option value="3,5" selected>À traiter (À sortir + Sortie partielle)</option>
+                                            <option value="3">À sortir</option>
+                                            <option value="5">Sortie partielle</option>
+                                            <option value="6">Sortie totale</option>
+                                            <option value="3,5,6">Tous</option>
+                                        </select>
+                                    </div>
+                                    <button type="button" class="dga-btn-ecarts" id="dga-btn-ecarts">
+                                        Écarts de réception à régulariser <span class="dga-ecarts-count" id="dga-ecarts-count">0</span>
+                                    </button>
+                                </div>
+
+                                <table id="dga-table-sortie" class="display" style="width:100%">
+                                    <thead>
+                                    <tr>
+                                        <th>Nom</th>
+                                        <th>Demandeur</th>
+                                        <th>Date de création</th>
+                                        <th>Nb. produits</th>
+                                        <th>Statut</th>
+                                        <th>Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
                             </div>
 
-                            <div class="dga-filters">
-                                <div class="dga-filter-group">
-                                    <label class="dga-filter-label" for="dga-filtre-statut-sortie">Statut</label>
-                                    <select id="dga-filtre-statut-sortie" class="dga-inp-annee">
-                                        <option value="3,5" selected>À traiter (À sortir + Partiel)</option>
-                                        <option value="3">À sortir</option>
-                                        <option value="5">Partiellement livré</option>
-                                        <option value="6">Terminé</option>
-                                        <option value="3,5,6">Tous</option>
-                                    </select>
+                        </div><!-- /#dga-panel-sortie-fonctionnement -->
+
+                        <!-- ══ PANNEAU INVESTISSEMENT ══ -->
+                        <div id="dga-panel-sortie-investissement" style="display:none;">
+
+                            <!-- ══ STATISTIQUES ══ -->
+                            <div class="dga-stats-grid">
+                                <div class="dga-stat-card">
+                                    <div class="dga-stat-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="dga-stat-lbl">Résultats affichés</div>
+                                        <div class="dga-stat-val" id="dga-stat-nombre-invest">0</div>
+                                    </div>
+                                </div>
+                                <div class="dga-stat-card dga-sc-a-sortir">
+                                    <div class="dga-stat-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 12V8H6a2 2 0 010-4h12v4"/><path d="M4 6v14a2 2 0 002 2h14v-4"/><path d="M18 12a2 2 0 000 4h4v-4Z"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="dga-stat-lbl">Soumises</div>
+                                        <div class="dga-stat-val" id="dga-stat-a-sortir-invest">0</div>
+                                    </div>
+                                </div>
+                                <div class="dga-stat-card dga-sc-partiel">
+                                    <div class="dga-stat-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="dga-stat-lbl">Partiellement sorti</div>
+                                        <div class="dga-stat-val" id="dga-stat-partiel-invest">0</div>
+                                    </div>
+                                </div>
+                                <div class="dga-stat-card dga-sc-terminee">
+                                    <div class="dga-stat-icon">
+                                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                                    </div>
+                                    <div>
+                                        <div class="dga-stat-lbl">Terminées</div>
+                                        <div class="dga-stat-val" id="dga-stat-termine-invest">0</div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <table id="dga-table-sortie" class="display" style="width:100%">
-                                <thead>
-                                <tr>
-                                    <th>Nom</th>
-                                    <th>Demandeur</th>
-                                    <th>Date de création</th>
-                                    <th>Nb. produits</th>
-                                    <th>Statut</th>
-                                    <th>Action</th>
-                                </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
+                            <!-- ══ CARTE LISTE ══ -->
+                            <div class="dga-card">
+                                <div class="dga-card-head">
+                                    <span class="dga-card-title">
+                                        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                            <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                                            <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+                                        </svg>
+                                        Expressions de besoin Investissement
+                                    </span>
+                                </div>
+
+                                <div class="dga-filters">
+                                    <div class="dga-filter-group">
+                                        <label class="dga-filter-label" for="dga-filtre-statut-sortie-invest">Statut</label>
+                                        <select id="dga-filtre-statut-sortie-invest" class="dga-inp-annee">
+                                            <option value="2,3" selected>À traiter (Soumises + Partiel)</option>
+                                            <option value="2">Soumises</option>
+                                            <option value="3">Partiellement sorti</option>
+                                            <option value="4">Terminé</option>
+                                            <option value="2,3,4">Tous</option>
+                                        </select>
+                                    </div>
+                                </div>
+
+                                <table id="dga-table-sortie-invest" class="display" style="width:100%">
+                                    <thead>
+                                    <tr>
+                                        <th>Nom</th>
+                                        <th>Direction</th>
+                                        <th>Date de création</th>
+                                        <th>Nb. produits</th>
+                                        <th>Statut</th>
+                                        <th>Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+
+                        </div><!-- /#dga-panel-sortie-investissement -->
 
                         <!-- ══ MODALE : Sortie ══ -->
+                        <!-- ══ MODALE : Écarts de réception à régulariser ══ -->
+                        <div class="modal fade dga-modal" id="modalEcarts" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width:980px;">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h2>Écarts de réception à régulariser</h2>
+                                        <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                                            <span class="svg-icon svg-icon-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black"/><rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black"/></svg></span>
+                                        </div>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div id="dgaErreurEcarts" class="dga-erreur-generale" style="display:none;"></div>
+                                        <div class="dga-alerte-info" style="margin-bottom:1rem;">
+                                            Le demandeur déclare n'avoir pas reçu ces produits, pourtant marqués « livrés » par le magasinier. Choisissez la régularisation :
+                                            <strong>correction de la livraison</strong> (le magasinier doit les remettre), <strong>retour en stock</strong>
+                                            (jamais sortis du magasin : ils redeviennent « à sortir ») ou <strong>perte</strong> (stock inchangé, écart clos).
+                                        </div>
+                                        <table class="dga-table-ecarts">
+                                            <thead><tr><th>Bon / Demande</th><th>Produit</th><th>Non reçu</th><th>Déclaré par</th><th>Régularisation</th></tr></thead>
+                                            <tbody id="dgaCorpsEcarts"></tbody>
+                                        </table>
+                                    </div>
+                                    <div class="dga-actions">
+                                        <button type="button" class="dga-cancel" data-bs-dismiss="modal">Fermer</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
                         <div class="modal fade dga-modal" id="modalSortie" tabindex="-1" aria-hidden="true">
                             <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable">
                                 <div class="modal-content">
@@ -318,5 +475,4 @@
 </html>
 
 
-</body>
-</html>
+x²
