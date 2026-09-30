@@ -27,6 +27,8 @@
         .dga-statut-8{background:#d1fae5;color:#065f46}
         .dga-statut-9{background:#e0e7ff;color:#3730a3}
         .dga-statut-10{background:#f3f4f6;color:#6b7280}
+        .dga-btn-avis{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .95rem;border-radius:8px;font-size:.78rem;font-weight:700;background:#1a7a5e;color:#fff;border:none;cursor:pointer;transition:all .18s}
+        .dga-btn-avis:hover{background:#145f49}
         .dga-btn-cloturer{background:#fff7ed;color:#9a3412;border:1.5px solid #fed7aa;border-radius:7px;padding:.35rem .7rem;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:.35rem}
         .dga-btn-cloturer:hover{background:#9a3412;color:#fff}
         .dga-btn-ecarts{display:inline-flex;align-items:center;gap:.4rem;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:9px;padding:.5rem .9rem;font-size:.78rem;font-weight:700;cursor:pointer}
@@ -312,6 +314,9 @@
                                             <option value="2,3,4">Tous</option>
                                         </select>
                                     </div>
+                                    <button type="button" class="dga-btn-ecarts" id="dga-btn-ecarts-invest">
+                                        Écarts de réception à régulariser <span class="dga-ecarts-count" id="dga-ecarts-count-invest">0</span>
+                                    </button>
                                 </div>
 
                                 <table id="dga-table-sortie-invest" class="display" style="width:100%">
@@ -330,6 +335,30 @@
                             </div>
 
                         </div><!-- /#dga-panel-sortie-investissement -->
+
+                        <!-- ══ MODALE : Écarts de réception Investissement à régulariser ══ -->
+                        <div class="modal fade dga-modal" id="modalEcartsInvest" tabindex="-1" aria-hidden="true">
+                            <div class="modal-dialog modal-dialog-centered modal-dialog-scrollable" style="max-width:980px;">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h2>Écarts de réception Investissement à régulariser</h2>
+                                        <div class="btn btn-sm btn-icon btn-active-color-primary" data-bs-dismiss="modal">
+                                            <span class="svg-icon svg-icon-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"><rect opacity="0.5" x="6" y="17.3137" width="16" height="2" rx="1" transform="rotate(-45 6 17.3137)" fill="black"/><rect x="7.41422" y="6" width="16" height="2" rx="1" transform="rotate(45 7.41422 6)" fill="black"/></svg></span>
+                                        </div>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div id="dgaErreurEcartsInvest" class="dga-erreur-generale" style="display:none;"></div>
+                                        <table class="dga-table-ecarts">
+                                            <thead><tr><th>Bon / Demande</th><th>Produit</th><th>Non reçu</th><th>Déclaré par</th><th>Régularisation</th></tr></thead>
+                                            <tbody id="dgaCorpsEcartsInvest"></tbody>
+                                        </table>
+                                    </div>
+                                    <div class="dga-actions">
+                                        <button type="button" class="dga-cancel" data-bs-dismiss="modal">Fermer</button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
 
                         <!-- ══ MODALE : Sortie ══ -->
                         <!-- ══ MODALE : Écarts de réception à régulariser ══ -->
@@ -474,5 +503,3 @@
 </body>
 </html>
 
-
-x²

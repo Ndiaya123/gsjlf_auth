@@ -14,6 +14,12 @@
 
     <style>
         /* Classes propres à cette page, en plus de style_basi_36.css. */
+        .dga-switch-type{display:inline-flex;background:#f3f4f6;border-radius:99px;padding:.25rem;gap:.15rem;margin-bottom:1.25rem}
+        .dga-switch-btn{background:none;border:none;padding:.45rem 1.1rem;border-radius:99px;font-size:.8rem;font-weight:600;color:#6b7280;cursor:pointer;transition:all .15s}
+        .dga-switch-btn:hover{color:#111827}
+        .dga-switch-active{background:#fff;color:#1a7a5e;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+        .dga-btn-avis{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .95rem;border-radius:8px;font-size:.78rem;font-weight:700;background:#1a7a5e;color:#fff;border:none;cursor:pointer;transition:all .18s}
+        .dga-btn-avis:hover{background:#145f49}
         .dga-inp-qte-livraison{width:100px;border:1.5px solid #e5e7eb;border-radius:6px;padding:.35rem .5rem;font-size:.82rem}
         .dga-inp-qte-livraison:focus{outline:none;border-color:#1a7a5e}
         .dga-inp-qte-livraison:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed}
@@ -123,20 +129,28 @@
                             </div>
                         </div>
 
-                        <!-- ══ STATISTIQUE ══ -->
-                        <div class="dga-stat-card" id="dga-stat-card-livraison">
-                            <div class="dga-stat-icon">
-                                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
-                            </div>
-                            <div>
-                                <div class="dga-stat-lbl">Bons à livrer</div>
-                                <div class="dga-stat-val" id="dga-stat-nombre">0</div>
-                            </div>
+                        <!-- ══ COMMUTATEUR TYPE ══ -->
+                        <div class="dga-switch-type" id="dga-switch-type-livraison">
+                            <button type="button" class="dga-switch-btn dga-switch-active" data-cible="fonctionnement">Fonctionnement</button>
+                            <button type="button" class="dga-switch-btn" data-cible="investissement">Investissement</button>
                         </div>
 
-                        <!-- ══ CARTE LISTE ══ -->
-                        <div class="dga-card">
-                            <div class="dga-card-head">
+                        <div id="dga-panel-livraison-fonctionnement">
+
+                            <!-- ══ STATISTIQUE ══ -->
+                            <div class="dga-stat-card" id="dga-stat-card-livraison">
+                                <div class="dga-stat-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
+                                </div>
+                                <div>
+                                    <div class="dga-stat-lbl">Bons à livrer</div>
+                                    <div class="dga-stat-val" id="dga-stat-nombre">0</div>
+                                </div>
+                            </div>
+
+                            <!-- ══ CARTE LISTE ══ -->
+                            <div class="dga-card">
+                                <div class="dga-card-head">
                                 <span class="dga-card-title">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
                                         <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
@@ -144,22 +158,66 @@
                                     </svg>
                                     À préparer et remettre
                                 </span>
+                                </div>
+
+                                <table id="dga-table-livraison" class="display" style="width:100%">
+                                    <thead>
+                                    <tr>
+                                        <th>N° bon</th>
+                                        <th>Expression de besoin</th>
+                                        <th>Demandeur</th>
+                                        <th>Date de sortie</th>
+                                        <th>Lignes à livrer</th>
+                                        <th>Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
                             </div>
 
-                            <table id="dga-table-livraison" class="display" style="width:100%">
-                                <thead>
-                                <tr>
-                                    <th>N° bon</th>
-                                    <th>Expression de besoin</th>
-                                    <th>Demandeur</th>
-                                    <th>Date de sortie</th>
-                                    <th>Lignes à livrer</th>
-                                    <th>Action</th>
-                                </tr>
-                                </thead>
-                                <tbody></tbody>
-                            </table>
-                        </div>
+                        </div><!-- /#dga-panel-livraison-fonctionnement -->
+
+                        <div id="dga-panel-livraison-investissement" style="display:none;">
+
+                            <!-- ══ STATISTIQUE ══ -->
+                            <div class="dga-stat-card" id="dga-stat-card-livraison-invest">
+                                <div class="dga-stat-icon">
+                                    <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/><line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/></svg>
+                                </div>
+                                <div>
+                                    <div class="dga-stat-lbl">Bons Investissement à livrer</div>
+                                    <div class="dga-stat-val" id="dga-stat-nombre-invest">0</div>
+                                </div>
+                            </div>
+
+                            <!-- ══ CARTE LISTE ══ -->
+                            <div class="dga-card">
+                                <div class="dga-card-head">
+                                <span class="dga-card-title">
+                                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
+                                        <line x1="8" y1="6" x2="21" y2="6"/><line x1="8" y1="12" x2="21" y2="12"/>
+                                        <line x1="8" y1="18" x2="21" y2="18"/><line x1="3" y1="6" x2="3.01" y2="6"/>
+                                    </svg>
+                                    À préparer et remettre — Investissement
+                                </span>
+                                </div>
+
+                                <table id="dga-table-livraison-invest" class="display" style="width:100%">
+                                    <thead>
+                                    <tr>
+                                        <th>N° bon</th>
+                                        <th>Expression de besoin</th>
+                                        <th>Direction</th>
+                                        <th>Date de sortie</th>
+                                        <th>Lignes à livrer</th>
+                                        <th>Action</th>
+                                    </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+
+                        </div><!-- /#dga-panel-livraison-investissement -->
 
                         <!-- ══ MODALE : Détail / confirmation de livraison ══ -->
                         <div class="modal fade dga-modal" id="modalLivraison" tabindex="-1" aria-hidden="true">
@@ -176,7 +234,7 @@
                                         <p style="margin-bottom:1rem;font-size:.85rem;color:#374151;" id="dgaInfoDemandeur"></p>
 
                                         <table class="dga-table-produits">
-                                            <thead><tr><th>Produit</th><th>Déjà livré</th><th>Restant à livrer</th><th>Quantité à remettre</th></tr></thead>
+                                            <thead><tr><th>Produit</th><th>Déjà livré</th><th>Restant à livrer</th><th>Quantité à remettre (fixée par le comptable)</th></tr></thead>
                                             <tbody id="dgaCorpsLivraison"></tbody>
                                         </table>
                                     </div>

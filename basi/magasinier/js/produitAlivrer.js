@@ -9,13 +9,33 @@
 const MAGASINIER_CONTROLLER_URL = '/personnel/magasinier_basi_controller'; // ← ajuster selon le chemin réel
 
 let dga_table = null;
+let dga_tableInvest = null;
 let dga_tokenCourant = null;
+let dga_typeLivraisonActif = 'fonctionnement'; // 'fonctionnement' | 'investissement' — piloté par la modale active
 
 document.addEventListener('DOMContentLoaded', function () {
     dga_renderTable([]);
     chargerExpressions();
+    dga_initCommutateurLivraison();
     document.getElementById('dgaBtnConfirmerLivraison')?.addEventListener('click', dga_confirmerLivraison);
 });
+
+/* ────────────────────────── COMMUTATEUR TYPE ────────────────────────── */
+function dga_initCommutateurLivraison() {
+    document.querySelectorAll('#dga-switch-type-livraison .dga-switch-btn').forEach(function (btn) {
+        btn.addEventListener('click', () => dga_activerPanneauLivraison(btn.dataset.cible));
+    });
+    chargerExpressionsInvest();
+}
+
+function dga_activerPanneauLivraison(nom) {
+    const estFonctionnement = nom === 'fonctionnement';
+    document.getElementById('dga-panel-livraison-fonctionnement').style.display = estFonctionnement ? '' : 'none';
+    document.getElementById('dga-panel-livraison-investissement').style.display = estFonctionnement ? 'none' : '';
+    document.querySelectorAll('#dga-switch-type-livraison .dga-switch-btn').forEach(function (btn) {
+        btn.classList.toggle('dga-switch-active', btn.dataset.cible === nom);
+    });
+}
 
 /* ────────────────────────── CHARGEMENT LISTE ─────────────────────── */
 function chargerExpressions() {
@@ -57,7 +77,7 @@ function dga_renderTable(expressions) {
             {
                 targets: 5,
                 render: (d) => `
-                    <button type="button" class="dga-btn-avis" onclick="dga_ouvrirLivraison('${d}')">
+                    <button type="button" class="dga-btn-avis" onclick="dga_ouvrirLivraisonFonctionnement('${d}')">
                         <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
                         Préparer / Livrer
                     </button>
@@ -80,12 +100,75 @@ function dga_renderTable(expressions) {
     });
 }
 
+/* ────────────────────────── LISTE — INVESTISSEMENT ───────────────── */
+function chargerExpressionsInvest() {
+    $.ajax({
+        url: MAGASINIER_CONTROLLER_URL, method: 'POST', data: { option: 4 }, dataType: 'json'
+    }).done(function (res) {
+        if (res.status !== 'success') return;
+        dga_renderTableInvest(res.data || []);
+        document.getElementById('dga-stat-nombre-invest').textContent = res.nombre_total ?? 0;
+    });
+}
+
+function dga_renderTableInvest(bons) {
+    if (dga_tableInvest) { try { dga_tableInvest.destroy(); } catch (e) {} dga_tableInvest = null; }
+
+    dga_tableInvest = $('#dga-table-livraison-invest').DataTable({
+        data: bons,
+        columns: [
+            { data: 'numero_bon' },
+            { data: 'nom_expression' },
+            { data: null },
+            { data: 'dateSortie' },
+            { data: 'nombre_lignes_a_livrer' },
+            { data: 'tmp', orderable: false, searchable: false },
+        ],
+        columnDefs: [
+            { targets: 0, render: d => `<strong>${dga_escapeHtml(d)}</strong>` },
+            { targets: 1, render: d => dga_escapeHtml(d) },
+            { targets: 2, render: (d, t, row) => dga_escapeHtml(row.code_direction || row.nom_direction || '—') },
+            { targets: 3, render: d => dga_fmtDate(d) },
+            {
+                targets: 5,
+                render: (d) => `
+                    <button type="button" class="dga-btn-avis" onclick="dga_ouvrirLivraisonInvest('${d}')">
+                        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg>
+                        Préparer / Livrer
+                    </button>
+                `,
+            },
+        ],
+        order: [[3, 'asc']],
+        language: {
+            emptyTable: 'Aucun produit Investissement à livrer pour le moment.',
+            zeroRecords: 'Aucun résultat.',
+            search: 'Rechercher :',
+            lengthMenu: 'Afficher _MENU_ entrées',
+            info: 'Affichage de _START_ à _END_ sur _TOTAL_ entrées',
+            infoEmpty: 'Aucune entrée',
+            paginate: { previous: 'Précédent', next: 'Suivant' },
+        },
+    });
+}
+
+function dga_ouvrirLivraisonInvest(token) {
+    dga_typeLivraisonActif = 'investissement';
+    dga_ouvrirLivraison(token);
+}
+
 /* ────────────────────────── DÉTAIL / CONFIRMATION ────────────────── */
+function dga_ouvrirLivraisonFonctionnement(token) {
+    dga_typeLivraisonActif = 'fonctionnement';
+    dga_ouvrirLivraison(token);
+}
+
 function dga_ouvrirLivraison(token) {
     dga_showLoader('Chargement du détail…');
+    const optionDetail = dga_typeLivraisonActif === 'investissement' ? 5 : 2;
 
     $.ajax({
-        url: MAGASINIER_CONTROLLER_URL, method: 'POST', data: { option: 2, token: token }, dataType: 'json'
+        url: MAGASINIER_CONTROLLER_URL, method: 'POST', data: { option: optionDetail, token: token }, dataType: 'json'
     }).done(function (res) {
         dga_hideLoader();
         if (res.status !== 'success') {
@@ -96,7 +179,10 @@ function dga_ouvrirLivraison(token) {
         dga_tokenCourant = token;
         const e = res.bon;
         document.getElementById('livraisonModalTitre').textContent = 'Livraison — ' + e.numero_bon;
-        document.getElementById('dgaInfoDemandeur').innerHTML = `<strong>Expression de besoin :</strong> ${dga_escapeHtml(e.nom_expression)}<br/><strong>Demandeur :</strong> ${dga_escapeHtml(e.demandeur || '—')}`;
+        const infoActeur = dga_typeLivraisonActif === 'investissement'
+            ? `<strong>Direction :</strong> ${dga_escapeHtml(e.code_direction || e.nom_direction || '—')}`
+            : `<strong>Demandeur :</strong> ${dga_escapeHtml(e.demandeur || '—')}`;
+        document.getElementById('dgaInfoDemandeur').innerHTML = `<strong>Expression de besoin :</strong> ${dga_escapeHtml(e.nom_expression)}<br/>${infoActeur}`;
         document.getElementById('dgaErreurLivraison').style.display = 'none';
 
         const lignes = (e.lignes || []).filter(l => !l.entierement_livree);
@@ -109,8 +195,8 @@ function dga_ouvrirLivraison(token) {
                         <td>${dga_fmtNombre(l.quantite_restante_a_livrer)}</td>
                         <td>
                             <input type="number" class="dga-inp-qte-livraison" data-id="${l.idBSL}" data-max="${l.quantite_restante_a_livrer}"
-                                   min="0" max="${l.quantite_restante_a_livrer}" step="0.01" value="${l.quantite_restante_a_livrer}"
-                                   oninput="dga_plafonnerQuantiteLivraison(this)"/>
+                                   value="${l.quantite_restante_a_livrer}" readonly disabled
+                                   title="Quantité fixée par la sortie du comptable — non modifiable"/>
                         </td>
                     </tr>
                 `;
@@ -122,17 +208,6 @@ function dga_ouvrirLivraison(token) {
         dga_hideLoader();
         Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
     });
-}
-
-function dga_plafonnerQuantiteLivraison(input) {
-    const max = parseFloat(input.dataset.max);
-    const val = parseFloat(input.value);
-    if (!isNaN(val) && !isNaN(max) && val > max) {
-        input.value = max;
-        input.style.borderColor = '#dc2626';
-        setTimeout(() => { input.style.borderColor = ''; }, 800);
-    }
-    if (!isNaN(val) && val < 0) input.value = 0;
 }
 
 function dga_confirmerLivraison() {
@@ -177,10 +252,12 @@ function dga_confirmerLivraison() {
         btn.disabled = true;
         btn.querySelector('.dga-spinner').classList.remove('hidden');
 
+        const optionConfirmer = dga_typeLivraisonActif === 'investissement' ? 6 : 3;
+
         $.ajax({
             url: MAGASINIER_CONTROLLER_URL,
             method: 'POST',
-            data: JSON.stringify({ option: 3, token: dga_tokenCourant, quantites: quantites }),
+            data: JSON.stringify({ option: optionConfirmer, token: dga_tokenCourant, quantites: quantites }),
             contentType: 'application/json',
             dataType: 'json',
         }).done(function (res) {
@@ -191,7 +268,7 @@ function dga_confirmerLivraison() {
                 const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalLivraison'));
                 if (modalInstance) modalInstance.hide();
                 Swal.fire({ title: 'Succès', text: res.message || 'Livraison enregistrée avec succès.', icon: 'success', confirmButtonColor: '#1a7a5e' });
-                chargerExpressions();
+                if (dga_typeLivraisonActif === 'investissement') chargerExpressionsInvest(); else chargerExpressions();
             } else {
                 erreurBox.textContent = res.message || 'Une erreur est survenue.';
                 erreurBox.style.display = 'block';

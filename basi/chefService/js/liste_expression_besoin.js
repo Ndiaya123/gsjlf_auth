@@ -9,7 +9,7 @@
 const CHEF_DIR_EB_CONTROLLER_URL = '/personnel/chef_service_basi_controller_1'; // ← ajuster selon le chemin réel
 const ANNEE_MIN_EB = 2026;
 
-const LIBELLES_STATUT_EB = { 1: 'Brouillon', 2: 'Soumise', 3: 'Validée', 4: 'Rejetée', 5: 'Partiellement livré', 6: 'Terminé' };
+const LIBELLES_STATUT_EB = { 2: 'Soumise', 3: 'Validée', 4: 'Rejetée', 5: 'Sortie partielle', 6: 'Sortie totale', 7: 'Livrée', 8: 'Clôturée', 9: 'Clôturée avec solde', 10: 'Annulée' };
 
 let dga_table = null;
 let dga_tokenCourant = null;
@@ -118,8 +118,7 @@ function dga_renderTable(expressions) {
                     if (statut === 2) {
                         html += `<button type="button" class="dga-btn-valider" onclick="dga_ouvrirValidation('${d}')">Valider</button>`;
                         html += `<button type="button" class="dga-btn-rejeter" onclick="dga_confirmerRejet('${d}')">Rejeter</button>`;
-                        html += `<button type="button" class="dga-btn-consulter" onclick="dga_ouvrirConsulter('${d}')">Consulter</button>`;
-                    } else if (statut === 5 || statut === 6) {
+                    } else if (statut >= 5) {
                         html += `<button type="button" class="dga-btn-consulter" onclick="dga_ouvrirConsulter('${d}')">Consulter</button>`;
                         html += `<button type="button" class="dga-btn-consulter dga-btn-sorties-info" onclick="dga_ouvrirInfoSorties('${d}')">Informations sur les sorties</button>`;
                     } else {
@@ -139,12 +138,6 @@ function dga_renderTable(expressions) {
             infoEmpty: 'Aucune entrée',
             paginate: { previous: 'Précédent', next: 'Suivant' },
         },
-        initComplete: function () {
-
-            document.documentElement.classList.remove('ld-booting');
-            document.getElementById('lb-table')?.classList.add('lb-ready');
-
-        }
     });
 }
 
@@ -305,9 +298,9 @@ function dga_ouvrirConsulter(token) {
 
         const badgeLigne = (statutLigne) => {
             const map = {
-                'Brouillon ': 'background:#fef3c7;color:#92400e;',
-                'Partiellement livré': 'background:#dbeafe;color:#1d4ed8;',
-                'Livré': 'background:#d1fae5;color:#047857;',
+                'En attente': 'background:#fef3c7;color:#92400e;',
+                'Sortie partielle': 'background:#dbeafe;color:#1d4ed8;',
+                'Sortie totale': 'background:#d1fae5;color:#047857;',
             };
             const style = map[statutLigne] || map['En attente'];
             return `<span style="display:inline-flex;align-items:center;padding:.2rem .55rem;border-radius:99px;font-size:.66rem;font-weight:800;text-transform:uppercase;${style}">${statutLigne}</span>`;
