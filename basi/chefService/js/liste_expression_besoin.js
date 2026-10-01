@@ -165,7 +165,7 @@ function dga_ouvrirValidation(token) {
                     <td>${dga_escapeHtml(p.quantite)}</td>
                     <td>
                         <input type="number" class="dga-inp-qte-reelle" data-idebp="${p.idEBP}" data-max="${p.quantite}"
-                               min="0" max="${p.quantite}" step="0.01" value="${p.quantite}"
+                               min="0" max="${p.quantite}" step="1" value="${p.quantite}"
                                oninput="dga_plafonnerQuantiteReelle(this)"/>
                     </td>
                 </tr>
@@ -181,12 +181,15 @@ function dga_ouvrirValidation(token) {
 
 function dga_plafonnerQuantiteReelle(input) {
     const max = parseFloat(input.dataset.max);
-    const val = parseFloat(input.value);
+    let val = parseFloat(input.value);
+    if (!isNaN(val)) val = Math.round(val); // les produits sont des unités entières
     if (!isNaN(val) && !isNaN(max) && val > max) {
-        input.value = max;
+        val = max;
         input.style.borderColor = '#dc2626';
         setTimeout(() => { input.style.borderColor = ''; }, 800);
     }
+    if (!isNaN(val) && val < 0) val = 0;
+    if (!isNaN(val)) input.value = val;
 }
 
 function dga_confirmerValidation() {
@@ -299,8 +302,13 @@ function dga_ouvrirConsulter(token) {
         const badgeLigne = (statutLigne) => {
             const map = {
                 'En attente': 'background:#fef3c7;color:#92400e;',
-                'Sortie partielle': 'background:#dbeafe;color:#1d4ed8;',
-                'Sortie totale': 'background:#d1fae5;color:#047857;',
+                'Sorti du stock — en attente du magasinier': 'background:#dbeafe;color:#1d4ed8;',
+                'Livré — en attente de confirmation du demandeur': 'background:#e0e7ff;color:#3730a3;',
+                'Écart signalé — en attente du comptable': 'background:#fee2e2;color:#991b1b;',
+                'Reçu partiellement': 'background:#dbeafe;color:#1d4ed8;',
+                'Reçu': 'background:#d1fae5;color:#047857;',
+                'Reçu — solde annulé': 'background:#d1fae5;color:#047857;',
+                'Annulée': 'background:#f3f4f6;color:#6b7280;',
             };
             const style = map[statutLigne] || map['En attente'];
             return `<span style="display:inline-flex;align-items:center;padding:.2rem .55rem;border-radius:99px;font-size:.66rem;font-weight:800;text-transform:uppercase;${style}">${statutLigne}</span>`;
@@ -312,10 +320,38 @@ function dga_ouvrirConsulter(token) {
                 <td>${dga_escapeHtml(p.quantite)}</td>
                 <td>${p.quantite_reelle !== null && p.quantite_reelle !== undefined ? dga_escapeHtml(p.quantite_reelle) : '—'}</td>
                 <td>${p.quantite_sortie !== null && p.quantite_sortie !== undefined ? dga_escapeHtml(p.quantite_sortie) : '—'}</td>
-                <td>${p.quantite_restante !== null && p.quantite_restante !== undefined ? dga_escapeHtml(p.quantite_restante) : '—'}</td>
+                <td>${p.quantite_livree !== null && p.quantite_livree !== undefined ? dga_escapeHtml(p.quantite_livree) : '—'}</td>
+                <td>${p.quantite_recue !== null && p.quantite_recue !== undefined ? dga_escapeHtml(p.quantite_recue) : '—'}</td>
                 <td>${badgeLigne(p.statut_ligne || 'En attente')}</td>
             </tr>`;
-        }).join('') || '<tr><td colspan="6" style="text-align:center;color:#9ca3af;font-style:italic;">Aucun produit.</td></tr>';
+        }).join('') || '<tr><td colspan="7" style="text-align:center;color:#9ca3af;font-style:italic;">Aucun produit.</td></tr>';
+
+        const LIBELLES_STATUT_BON = { 1: 'Sortie enregistrée', 2: 'Livraison partielle', 3: 'Livré', 4: 'Réception partielle', 5: 'Reçu', 6: 'Écart signalé', 7: 'Clos avec écart' };
+        const bonsHtml = (e.bons || []).length ? `
+            <h4 style="font-size:.8rem;font-weight:800;color:#111827;margin:1.2rem 0 .5rem;">Bons de sortie (${e.bons.length})</h4>
+            ${e.bons.map(function (b) {
+            const lignesBon = (b.lignes || []).map(l => `
+                    <tr>
+                        <td>${dga_escapeHtml(l.designation)}</td>
+                        <td>${dga_escapeHtml(l.quantite_sortie)}</td>
+                        <td>${dga_escapeHtml(l.quantite_livree)}</td>
+                        <td>${dga_escapeHtml(l.quantite_recue)}</td>
+                        <td>${parseFloat(l.quantite_ecart) > 0 ? `<span style="color:#991b1b;">${dga_escapeHtml(l.quantite_ecart)}</span>` : '—'}</td>
+                    </tr>`).join('');
+            return `
+                    <div style="border:1px solid #e9ecef;border-radius:10px;padding:.7rem .85rem;margin-bottom:.6rem;">
+                        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.4rem;">
+                            <span style="font-weight:800;font-size:.82rem;">${dga_escapeHtml(b.numero_bon)}
+                                <span style="font-weight:400;color:#9ca3af;"> — sorti le ${dga_fmtDate(b.dateSortie)}</span></span>
+                            <span style="display:inline-flex;padding:.2rem .55rem;border-radius:99px;font-size:.66rem;font-weight:800;background:#f3f4f6;color:#374151;">${LIBELLES_STATUT_BON[b.idStatut] || b.idStatut}</span>
+                        </div>
+                        <table class="dga-table-produits">
+                            <thead><tr><th>Produit</th><th>Sorti</th><th>Livré</th><th>Reçu</th><th>Écart</th></tr></thead>
+                            <tbody>${lignesBon}</tbody>
+                        </table>
+                    </div>`;
+        }).join('')}
+        ` : '<p style="font-size:.8rem;color:#9ca3af;font-style:italic;margin-top:1rem;">Aucune sortie effectuée pour le moment.</p>';
 
         const historiqueRows = (e.historique || []).map(function (h) {
             return `
@@ -335,9 +371,10 @@ function dga_ouvrirConsulter(token) {
             </p>
             ${motifRejetHtml}
             <table class="dga-table-produits">
-                <thead><tr><th>Désignation</th><th>Demandée</th><th>Validée</th><th>Sortie</th><th>Restante</th><th>Statut</th></tr></thead>
+                <thead><tr><th>Désignation</th><th>Demandée</th><th>Validée</th><th>Sortie</th><th>Livrée</th><th>Reçue</th><th>Statut</th></tr></thead>
                 <tbody>${lignes}</tbody>
             </table>
+            ${bonsHtml}
             <h4 style="font-size:.8rem;font-weight:800;color:#111827;margin:1.2rem 0 .5rem;">Historique</h4>
             <ul style="list-style:none;padding:0;margin:0;">${historiqueRows}</ul>
         `;
@@ -364,31 +401,37 @@ function dga_ouvrirInfoSorties(token) {
         const e = res.expression;
         document.getElementById('infoSortiesModalTitre').textContent = 'Sorties — ' + e.nom_expression;
 
-        const lignes = e.lignes || [];
-        const sectionsHtml = lignes.length
-            ? lignes.map(function (l) {
-                const sortiesHtml = (l.sorties || []).length
-                    ? l.sorties.map(function (s) {
-                        return `<tr><td>${dga_fmtDateHeure(s.date_sortie)}</td><td>${dga_escapeHtml(s.quantite_sortie)}</td><td>${s.utilisateur ? dga_escapeHtml(s.utilisateur) : '—'}</td></tr>`;
-                    }).join('')
-                    : '<tr><td colspan="3" style="text-align:center;color:#9ca3af;font-style:italic;">Aucune sortie enregistrée pour ce produit.</td></tr>';
+        // Regroupé PAR BON (une sortie réelle du comptable), plus lisible
+        // que l'ancien regroupement par produit — et ça montre enfin où en
+        // est chaque bon (livré ? reçu ? un écart en attente ?).
+        const LIBELLES_STATUT_BON_IS = { 1: 'Sortie enregistrée', 2: 'Livraison partielle', 3: 'Livré', 4: 'Réception partielle', 5: 'Reçu', 6: 'Écart signalé', 7: 'Clos avec écart' };
+        const bons = e.bons || [];
+        const sectionsHtml = bons.length
+            ? bons.map(function (b) {
+                const lignesHtml = (b.lignes || []).map(function (l) {
+                    return `<tr>
+                        <td>${dga_escapeHtml(l.designation)}</td>
+                        <td>${dga_escapeHtml(l.quantite_sortie)}</td>
+                        <td>${dga_escapeHtml(l.quantite_livree)}</td>
+                        <td>${dga_escapeHtml(l.quantite_recue)}</td>
+                        <td>${parseFloat(l.quantite_ecart) > 0 ? `<span style="color:#991b1b;">${dga_escapeHtml(l.quantite_ecart)}</span>` : '—'}</td>
+                    </tr>`;
+                }).join('') || '<tr><td colspan="5" style="text-align:center;color:#9ca3af;font-style:italic;">Aucune ligne.</td></tr>';
 
                 return `
                     <div class="dga-section-produit">
-                        <div class="dga-section-produit-titre">${dga_escapeHtml(l.designation)}</div>
-                        <div class="dga-section-produit-qtes">
-                            Quantité demandée : <strong>${dga_escapeHtml(l.quantite)}</strong>
-                            — Quantité réelle : <strong>${l.quantite_reelle !== null ? dga_escapeHtml(l.quantite_reelle) : '—'}</strong>
-                            — Quantité sortie : <strong>${dga_escapeHtml(l.quantite_sortie)}</strong>
+                        <div class="dga-section-produit-titre" style="display:flex;justify-content:space-between;align-items:center;">
+                            <span>${dga_escapeHtml(b.numero_bon)} <span style="font-weight:400;color:#9ca3af;font-size:.78rem;">— sorti le ${dga_fmtDateHeure(b.dateSortie)}${b.utilisateurSortie ? ' par ' + dga_escapeHtml(b.utilisateurSortie) : ''}</span></span>
+                            <span style="display:inline-flex;padding:.2rem .55rem;border-radius:99px;font-size:.66rem;font-weight:800;background:#f3f4f6;color:#374151;">${LIBELLES_STATUT_BON_IS[b.idStatut] || b.idStatut}</span>
                         </div>
                         <table class="dga-table-sorties-detail">
-                            <thead><tr><th>Date de sortie</th><th>Quantité sortie</th><th>Utilisateur</th></tr></thead>
-                            <tbody>${sortiesHtml}</tbody>
+                            <thead><tr><th>Produit</th><th>Sorti</th><th>Livré</th><th>Reçu</th><th>Écart</th></tr></thead>
+                            <tbody>${lignesHtml}</tbody>
                         </table>
                     </div>
                 `;
             }).join('')
-            : '<p style="text-align:center;color:#9ca3af;font-style:italic;">Aucun produit.</p>';
+            : '<p style="text-align:center;color:#9ca3af;font-style:italic;">Aucune sortie effectuée pour le moment.</p>';
 
         document.getElementById('dgaContenuInfoSorties').innerHTML = `
             <p style="margin-bottom:1rem;font-size:.85rem;color:#374151;">

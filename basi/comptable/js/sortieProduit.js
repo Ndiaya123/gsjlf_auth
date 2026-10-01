@@ -289,7 +289,7 @@ function dga_renderLignesSortie(lignesBrutes, getId) {
                     <td>${dga_escapeHtml(l.stock_disponible)}</td>
                     <td>
                         <input type="number" class="dga-inp-qte-sortie" data-id="${getId(l)}" data-max="${l.max_sortable}"
-                               min="0" max="${l.max_sortable}" step="0.01" value="${stockNul ? 0 : l.max_sortable}"
+                               min="0" max="${l.max_sortable}" step="1" value="${stockNul ? 0 : l.max_sortable}"
                                oninput="dga_plafonnerQuantiteSortie(this)" ${stockNul ? 'disabled' : ''}/>
                     </td>
                     <td>${stockNul ? '<span class="dga-badge-partiel" style="background:#fee2e2;color:#991b1b;">Stock nul</span>' : ''}</td>
@@ -346,13 +346,15 @@ function dga_ouvrirSortieInvest(token) {
 
 function dga_plafonnerQuantiteSortie(input) {
     const max = parseFloat(input.dataset.max);
-    const val = parseFloat(input.value);
+    let val = parseFloat(input.value);
+    if (!isNaN(val)) val = Math.round(val); // les produits sont des unités entières
     if (!isNaN(val) && !isNaN(max) && val > max) {
-        input.value = max;
+        val = max;
         input.style.borderColor = '#dc2626';
         setTimeout(() => { input.style.borderColor = ''; }, 800);
     }
-    if (!isNaN(val) && val < 0) input.value = 0;
+    if (!isNaN(val) && val < 0) val = 0;
+    if (!isNaN(val)) input.value = val;
 }
 
 /* ────────────────────────── CONFIRMATION SORTIE ────────────────────── */

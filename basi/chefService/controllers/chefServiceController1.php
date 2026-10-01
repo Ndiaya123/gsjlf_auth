@@ -113,6 +113,11 @@ function inputValueChefDirEB(string $key, $default = null) {
     if (isset($_GET[$key]))                return $_GET[$key];
     return $default;
 }
+/** Les produits sont des unités entières — jamais de quantité à virgule. */
+function estEntierPositif($valeur): bool {
+    return is_numeric($valeur) && (float) $valeur == (int) $valeur && (int) $valeur > 0;
+}
+
 function erreurSqlChefDirEB(string $message = "Erreur lors de l'accès à la base de données."): void {
     http_response_code(500);
     echo json_encode(['status'=>'error','message'=>$message]);
@@ -262,10 +267,15 @@ function detailExpressionBesoinDirection(PDO $bdBASI, chefDirectionEBController 
             return;
         }
 
-        // ── Produits : demandée / validée / sortie / restante / statut ligne
-        // (même logique que le "Voir" côté personnel — expressionBesoinController.php).
+        // ── Produits : demandée / validée / sortie / livrée / reçue / annulée —
+        // même logique que le "Voir" côté personnel (personnelController.php),
+        // ENFIN alignée ici : jusqu'ici cette vue datait d'avant les bons de
+        // sortie et ne montrait ni livraison, ni réception, ni écarts.
         $stmtProduits = $bdBASI->prepare("
             SELECT ebp.id AS idEBP, ebp.idP, ebp.quantite, ebp.quantite_reelle, ebp.quantite_sortie,
+                   ebp.quantite_livree, ebp.quantite_recue, ebp.quantite_annulee,
+                   (SELECT COALESCE(SUM(bl.quantite_ecart), 0)  FROM bon_sortie_eb_ligne bl WHERE bl.idEBP = ebp.id) AS quantite_ecart,
+                   (SELECT COALESCE(SUM(bl.quantite_perdue), 0) FROM bon_sortie_eb_ligne bl WHERE bl.idEBP = ebp.id) AS quantite_perdue,
                    p.nomproduit as designation
             FROM expression_besoin_produit ebp
             JOIN product p ON ebp.idP = p.idP
@@ -276,18 +286,35 @@ function detailExpressionBesoinDirection(PDO $bdBASI, chefDirectionEBController 
         $produits = $stmtProduits->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($produits as &$p) {
-            $qteReelle = $p['quantite_reelle'] !== null ? (float) $p['quantite_reelle'] : null;
-            $qteSortie = (float) ($p['quantite_sortie'] ?? 0);
+            $qteReelle  = $p['quantite_reelle'] !== null ? (float) $p['quantite_reelle'] : null;
+            $qteSortie  = (float) ($p['quantite_sortie'] ?? 0);
+            $qteLivree  = (float) ($p['quantite_livree'] ?? 0);
+            $qteRecue   = (float) ($p['quantite_recue'] ?? 0);
+            $qteAnnulee = (float) ($p['quantite_annulee'] ?? 0);
+            $qteEcart   = (float) ($p['quantite_ecart'] ?? 0);
+            $qtePerdue  = (float) ($p['quantite_perdue'] ?? 0);
 
             if ($qteReelle === null) {
                 $p['quantite_restante'] = null;
                 $p['statut_ligne'] = 'En attente';
             } else {
-                $p['quantite_restante'] = max(0, $qteReelle - $qteSortie);
-                if ($qteReelle > 0 && $qteSortie >= $qteReelle - 0.001) {
-                    $p['statut_ligne'] = 'Sortie totale';
-                } elseif ($qteSortie > 0) {
-                    $p['statut_ligne'] = 'Sortie partielle';
+                $cible = max(0, $qteReelle - $qteAnnulee);
+                $p['quantite_restante'] = max(0, $cible - $qteSortie);
+                $resteALivrer   = max(0, $qteSortie - $qteLivree);
+                $resteARecevoir = max(0, $qteLivree - $qteRecue - $qteEcart - $qtePerdue);
+
+                if ($qteEcart > 0.001) {
+                    $p['statut_ligne'] = 'Écart signalé — en attente du comptable';
+                } elseif ($resteARecevoir > 0.001) {
+                    $p['statut_ligne'] = 'Livré — en attente de confirmation du demandeur';
+                } elseif ($resteALivrer > 0.001) {
+                    $p['statut_ligne'] = 'Sorti du stock — en attente du magasinier';
+                } elseif ($qteRecue + $qtePerdue > 0.001) {
+                    $p['statut_ligne'] = ($qteRecue + $qtePerdue >= $cible - 0.001)
+                        ? ($qteAnnulee > 0.001 ? 'Reçu — solde annulé' : 'Reçu')
+                        : 'Reçu partiellement';
+                } elseif ($qteAnnulee > 0.001 && $cible <= 0.001) {
+                    $p['statut_ligne'] = 'Annulée';
                 } else {
                     $p['statut_ligne'] = 'En attente';
                 }
@@ -295,6 +322,26 @@ function detailExpressionBesoinDirection(PDO $bdBASI, chefDirectionEBController 
         }
         unset($p);
         $expression['produits'] = $produits;
+
+        // ── Bons de sortie (un par action du comptable), avec leurs lignes —
+        // c'est ce qui manquait le plus : sans eux, impossible de distinguer
+        // plusieurs sorties successives ni de voir où en est chacune.
+        $stmtBons = $bdBASI->prepare("SELECT id, numero_bon, dateSortie, idStatut FROM bon_sortie_eb WHERE idEB = ? ORDER BY dateSortie ASC, id ASC");
+        $stmtBons->execute([$idEB]);
+        $bons = $stmtBons->fetchAll(PDO::FETCH_ASSOC);
+        $stmtBonLignes = $bdBASI->prepare("
+            SELECT bl.id AS idBSL, bl.quantite_sortie, bl.quantite_livree, bl.quantite_recue, bl.quantite_ecart, bl.quantite_perdue, p.nomproduit AS designation
+            FROM bon_sortie_eb_ligne bl
+            JOIN product p ON bl.idP = p.idP
+            WHERE bl.idBS = ?
+            ORDER BY bl.id ASC
+        ");
+        foreach ($bons as &$b) {
+            $stmtBonLignes->execute([$b['id']]);
+            $b['lignes'] = $stmtBonLignes->fetchAll(PDO::FETCH_ASSOC);
+        }
+        unset($b);
+        $expression['bons'] = $bons;
 
         // ── Motif de rejet (dernière transition vers idStatut = 4) ──────────
         $motifRejet = null;
@@ -384,6 +431,10 @@ function validerExpressionBesoin(PDO $bdBASI, chefDirectionEBController $basiCon
             }
             if ($quantiteReelle > $lignesActives[$idEBP] + 0.001) {
                 echo json_encode(['status' => 'error', 'message' => 'La quantité réelle ne peut jamais être supérieure à la quantité demandée.']);
+                return;
+            }
+            if ($quantiteReelle > 0 && !estEntierPositif($quantiteReelle)) {
+                echo json_encode(['status' => 'error', 'message' => 'Les quantités doivent être des nombres entiers.']);
                 return;
             }
             $quantitesValidees[$idEBP] = $quantiteReelle;
@@ -596,51 +647,36 @@ function detailSortiesExpressionBesoin(PDO $bdBASI, chefDirectionEBController $b
         $stmtLignes->execute([$idEB]);
         $lignes = $stmtLignes->fetchAll(PDO::FETCH_ASSOC);
 
-        // Détail événement par événement (chaque sortie effectuée), à partir
-        // de l'historique — motif préfixé "Sortie de stock" lors de chaque
-        // sortie effective (cf. caisseController.php::effectuerSortieExpressionBesoin).
-        $stmtHisto = $bdBASI->prepare("
-            SELECT h.idEBP, h.quantite_sortie, h.dateEnregistrement, h.motif,
-                   CONCAT(u.prenom, ' ', u.nom) AS utilisateur
-            FROM historique_expression_besoin_produit h
-            LEFT JOIN utilisateurs u ON h.idUtilisateur = u.id
-            WHERE h.idEB = ? AND h.motif LIKE 'Sortie de stock%'
-            ORDER BY h.dateEnregistrement ASC, h.idEBP ASC
+        // Bons de sortie réels (un par action du comptable) — remplace l'ancienne
+        // reconstruction par différence d'historique, devenue inutile depuis que
+        // ces événements sont directement représentés par une table dédiée.
+        // Chaque bon porte aussi son état de livraison/réception.
+        $stmtBons = $bdBASI->prepare("
+            SELECT bs.id, bs.numero_bon, bs.dateSortie, bs.idStatut,
+                   CONCAT(u.prenom, ' ', u.nom) AS utilisateurSortie
+            FROM bon_sortie_eb bs
+            LEFT JOIN utilisateurs u ON bs.idUtilisateurSortie = u.id
+            WHERE bs.idEB = ?
+            ORDER BY bs.dateSortie ASC, bs.id ASC
         ");
-        $stmtHisto->execute([$idEB]);
-        $historique = $stmtHisto->fetchAll(PDO::FETCH_ASSOC);
+        $stmtBons->execute([$idEB]);
+        $bons = $stmtBons->fetchAll(PDO::FETCH_ASSOC);
 
-        // Regroupe l'historique par ligne, et calcule la quantité sortie à
-        // CHAQUE événement (delta entre deux instantanés successifs — chaque
-        // ligne d'historique stockant la valeur cumulative quantite_sortie
-        // au moment de l'action).
-        $dernierParLigne = [];
-        foreach ($lignes as &$l) {
-            $l['sorties'] = [];
+        $stmtBonLignes = $bdBASI->prepare("
+            SELECT bl.id AS idBSL, bl.quantite_sortie, bl.quantite_livree, bl.quantite_recue, bl.quantite_ecart, bl.quantite_perdue, p.nomproduit AS designation
+            FROM bon_sortie_eb_ligne bl
+            JOIN product p ON bl.idP = p.idP
+            WHERE bl.idBS = ?
+            ORDER BY bl.id ASC
+        ");
+        foreach ($bons as &$b) {
+            $stmtBonLignes->execute([$b['id']]);
+            $b['lignes'] = $stmtBonLignes->fetchAll(PDO::FETCH_ASSOC);
         }
-        unset($l);
-        $lignesParId = [];
-        foreach ($lignes as &$l) { $lignesParId[(int)$l['idEBP']] = &$l; }
-        unset($l);
-
-        foreach ($historique as $h) {
-            $idEBP = (int) $h['idEBP'];
-            if (!isset($lignesParId[$idEBP])) continue;
-            $cumulActuel = (float) $h['quantite_sortie'];
-            $cumulPrecedent = $dernierParLigne[$idEBP] ?? 0.0;
-            $delta = $cumulActuel - $cumulPrecedent;
-            $dernierParLigne[$idEBP] = $cumulActuel;
-
-            if ($delta > 0.001) {
-                $lignesParId[$idEBP]['sorties'][] = [
-                    'quantite_sortie' => $delta,
-                    'date_sortie'     => $h['dateEnregistrement'],
-                    'utilisateur'     => $h['utilisateur'],
-                ];
-            }
-        }
+        unset($b);
 
         $expression['lignes'] = $lignes;
+        $expression['bons'] = $bons;
         echo json_encode(['status' => 'success', 'expression' => $expression]);
     } catch (\Throwable $e) {
         error_log('[ChefDirEB][detailSortiesExpressionBesoin] ' . $e->getMessage());
@@ -1092,6 +1128,8 @@ function rechercherProduitsInvestissement(PDO $bdBASI): void {
         $texte = trim((string) inputValueChefDirEB('texte', ''));
         if (mb_strlen($texte) < 2) { echo json_encode(['status' => 'success', 'data' => []]); return; }
 
+        // Catalogue global : un produit ne peut exister qu'une seule fois,
+        // tous créateurs confondus.
         $stmt = $bdBASI->prepare("
             SELECT p.idP, p.nomproduit, p.id_sous_rubrique AS idSousRubrique, sr.nom_sous_rubrique, r.nom_rubrique
             FROM product p
@@ -1110,18 +1148,20 @@ function rechercherProduitsInvestissement(PDO $bdBASI): void {
 }
 
 /**
- * OPTION 13 — Catalogue complet des produits Investissement (tous les chefs
- * de service voient TOUS les produits), avec :
- *   - le nom du créateur (jointure utilisateurs) ;
- *   - le Stock_actuel MASQUÉ (null) pour les produits dont le créateur
- *     n'est pas l'utilisateur connecté ;
- *   - un indicateur "modifiable" (créateur = utilisateur connecté).
+ * OPTION 13 — Catalogue COMPLET des produits Investissement (tous les chefs
+ * de service voient tous les produits, comme à l'origine). Deux choses
+ * varient selon le chef de service connecté :
+ *   - Stock + bouton "Détail" : visibles uniquement si SA direction a déjà
+ *     reçu du stock de ce produit (EXISTS dans livraison_produit_repartition,
+ *     mode='stock') — sinon le stock est masqué (null) et le détail inutile.
+ *   - Modifier / Activer / Désactiver : réservés au créateur du produit
+ *     (idUtilisateur = utilisateur connecté), comme à l'origine.
  */
-function listerCatalogueProduitsInvestissement(PDO $bdBASI, int $sessionUserId): void {
+function listerCatalogueProduitsInvestissement(PDO $bdBASI, int $sessionUserId, int $sessionIdDirection): void {
     try {
         $stmt = $bdBASI->prepare("
-            SELECT p.idP, p.nomproduit, p.code_produit, p.Stock_actuel, p.Seuil_limite,
-                   p.retrait, p.id_statut, p.date_creation, p.idUtilisateur,
+            SELECT p.idP, p.nomproduit, p.code_produit, p.Seuil_limite,
+                   p.id_statut, p.date_creation, p.idUtilisateur,
                    r.nom_rubrique, sr.nom_sous_rubrique,
                    CONCAT(u.prenom, ' ', u.nom) AS nom_createur
             FROM product p
@@ -1134,12 +1174,51 @@ function listerCatalogueProduitsInvestissement(PDO $bdBASI, int $sessionUserId):
         $stmt->execute();
         $produits = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
+        $stmtRecu = $bdBASI->prepare("
+            SELECT COALESCE(SUM(lpr.quantite), 0)
+            FROM livraison_produit_repartition lpr
+            JOIN livraison_produit lp ON lpr.idLP = lp.id
+            WHERE lpr.mode = 'stock' AND lp.idP = ? AND lpr.idDirection = ?
+        ");
+        $stmtSorti = $bdBASI->prepare("
+            SELECT COALESCE(SUM(ebip.quantite_sortie), 0)
+            FROM expression_besoin_investissement_produit ebip
+            JOIN expression_besoin_investissement ebi ON ebip.idEBI = ebi.id
+            WHERE ebip.id_produit = ? AND ebip.statut = 1 AND ebi.idDirection = ?
+        ");
+        $stmtReserve = $bdBASI->prepare("
+            SELECT COALESCE(SUM(ebip.quantite_demandee - ebip.quantite_sortie), 0)
+            FROM expression_besoin_investissement_produit ebip
+            JOIN expression_besoin_investissement ebi ON ebip.idEBI = ebi.id
+            WHERE ebip.id_produit = ? AND ebip.statut = 1 AND ebi.idDirection = ? AND ebi.idStatut IN (1, 2, 3)
+        ");
+
         foreach ($produits as &$p) {
-            $estProprietaire = ((int) $p['idUtilisateur'] === $sessionUserId);
-            $p['modifiable'] = $estProprietaire;
-            if (!$estProprietaire) {
-                $p['Stock_actuel'] = null; // masqué — pas le sien
+            $p['modifiable'] = ((int) $p['idUtilisateur'] === $sessionUserId); // créateur uniquement
+            $idP = (int) $p['idP'];
+
+            $stmtRecu->execute([$idP, $sessionIdDirection]);
+            $recu = (float) $stmtRecu->fetchColumn();
+
+            if ($recu <= 0.001) {
+                // Sa direction n'a jamais rien reçu de ce produit : stock,
+                // retrait et détail n'ont pas de sens pour elle — p.retrait
+                // est un compteur GLOBAL (toutes directions confondues), donc
+                // masqué pour la même raison que Stock_actuel.
+                $p['Stock_actuel'] = null;
+                $p['retrait'] = null;
+                $p['peut_voir_detail'] = false;
+                continue;
             }
+
+            $stmtSorti->execute([$idP, $sessionIdDirection]);
+            $sorti = (float) $stmtSorti->fetchColumn();
+            $stmtReserve->execute([$idP, $sessionIdDirection]);
+            $reserve = (float) $stmtReserve->fetchColumn();
+
+            $p['Stock_actuel'] = max(0.0, $recu - $sorti - $reserve); // disponible pour SA direction
+            $p['retrait'] = $sorti; // "retrait" affiché = quantité sortie pour SA direction, pas le compteur global
+            $p['peut_voir_detail'] = true;
         }
         unset($p);
 
@@ -1193,11 +1272,16 @@ function toggleStatutProduitInvestissement(PDO $bdBASI, int $sessionUserId, stri
 }
 
 /**
- * OPTION 17 — Statistiques Investissement adaptées au chef de service : le
- * stock total n'est calculable que sur ses propres produits (le reste est
- * masqué), le nombre de produits/état est en revanche visible pour tous.
+ * OPTION 17 — Statistiques Investissement : total du catalogue GLOBAL (tous
+ * créateurs confondus, comme la liste elle-même), et "Produits avec stock"/
+ * "Stock total" qui portent sur TOUS les produits que SA DIRECTION a déjà
+ * reçus (via livraison_produit_repartition) — pas sur ce que l'utilisateur
+ * connecté a personnellement créé. Ainsi, un chef de service qui en
+ * remplace un autre à la tête de la même direction voit exactement les
+ * mêmes chiffres que son prédécesseur, quel que soit le créateur d'origine
+ * de chaque produit.
  */
-function statistiquesProduitsInvestissementChefService(PDO $bdBASI, int $sessionUserId): void {
+function statistiquesProduitsInvestissementChefService(PDO $bdBASI, int $sessionUserId, int $sessionIdDirection): void {
     try {
         $stmtGlobal = $bdBASI->query("
             SELECT COUNT(*) AS total,
@@ -1208,13 +1292,31 @@ function statistiquesProduitsInvestissementChefService(PDO $bdBASI, int $session
         ");
         $global = $stmtGlobal->fetch(PDO::FETCH_ASSOC);
 
-        $stmtMoi = $bdBASI->prepare("
-            SELECT COUNT(*) AS mes_produits, COALESCE(SUM(Stock_actuel), 0) AS mon_stock_total
-            FROM product
-            WHERE id_type_product = 2 AND idUtilisateur = ?
+        // Produits que SA DIRECTION a déjà reçus au moins une fois — même
+        // critère que celui qui démasque le stock dans le tableau du catalogue.
+        $stmtRecus = $bdBASI->prepare("
+            SELECT DISTINCT lp.idP
+            FROM livraison_produit_repartition lpr
+            JOIN livraison_produit lp ON lpr.idLP = lp.id
+            JOIN product p ON p.idP = lp.idP AND p.id_type_product = 2
+            WHERE lpr.mode = 'stock' AND lpr.idDirection = ?
         ");
-        $stmtMoi->execute([$sessionUserId]);
-        $moi = $stmtMoi->fetch(PDO::FETCH_ASSOC);
+        $stmtRecus->execute([$sessionIdDirection]);
+        $produitsRecus = $stmtRecus->fetchAll(PDO::FETCH_COLUMN);
+
+        $stockTotalDirection = 0.0;
+        if ($produitsRecus) {
+            $stmtDispo = $bdBASI->prepare("
+                SELECT
+                    (SELECT COALESCE(SUM(lpr.quantite), 0) FROM livraison_produit_repartition lpr JOIN livraison_produit lp ON lpr.idLP = lp.id WHERE lpr.mode = 'stock' AND lp.idP = ? AND lpr.idDirection = ?)
+                  - (SELECT COALESCE(SUM(ebip.quantite_sortie), 0) FROM expression_besoin_investissement_produit ebip JOIN expression_besoin_investissement ebi ON ebip.idEBI = ebi.id WHERE ebip.id_produit = ? AND ebip.statut = 1 AND ebi.idDirection = ?)
+                  - (SELECT COALESCE(SUM(ebip.quantite_demandee - ebip.quantite_sortie), 0) FROM expression_besoin_investissement_produit ebip JOIN expression_besoin_investissement ebi ON ebip.idEBI = ebi.id WHERE ebip.id_produit = ? AND ebip.statut = 1 AND ebi.idDirection = ? AND ebi.idStatut IN (1, 2, 3))
+            ");
+            foreach ($produitsRecus as $idP) {
+                $stmtDispo->execute([$idP, $sessionIdDirection, $idP, $sessionIdDirection, $idP, $sessionIdDirection]);
+                $stockTotalDirection += max(0.0, (float) $stmtDispo->fetchColumn());
+            }
+        }
 
         echo json_encode([
             'status' => 'success',
@@ -1222,13 +1324,96 @@ function statistiquesProduitsInvestissementChefService(PDO $bdBASI, int $session
                 'total_produits'  => (int) $global['total'],
                 'en_service'      => (int) $global['en_service'],
                 'hors_service'    => (int) $global['hors_service'],
-                'mes_produits'    => (int) $moi['mes_produits'],
-                'mon_stock_total' => (float) $moi['mon_stock_total'],
+                'mes_produits'    => count($produitsRecus),
+                'mon_stock_total' => $stockTotalDirection,
             ],
         ]);
     } catch (\Throwable $e) {
         error_log('[ChefDirEB][statistiquesProduitsInvestissementChefService] ' . $e->getMessage());
         erreurSqlChefDirEB('Impossible de charger les statistiques.');
+    }
+}
+
+/**
+ * OPTION 18 — Détail de la répartition par direction d'UN produit
+ * Investissement (bouton "Détail") — miroir exact de
+ * detailRepartitionProduitInvestissement dans caisseController.php, pour
+ * que le créateur du produit ait la même visibilité que le comptable sur
+ * où en est son stock.
+ */
+function detailRepartitionProduitInvestissementChefService(PDO $bdBASI, int $sessionIdDirection): void {
+    try {
+        $idP = (int) inputValueChefDirEB('idP', 0);
+        if ($idP <= 0) { echo json_encode(['status' => 'error', 'message' => 'Produit manquant.']); return; }
+
+        $stmtProduit = $bdBASI->prepare("SELECT nomproduit, Stock_actuel FROM product WHERE idP = ? AND id_type_product = 2 LIMIT 1");
+        $stmtProduit->execute([$idP]);
+        $produit = $stmtProduit->fetch(PDO::FETCH_ASSOC);
+        if (!$produit) { echo json_encode(['status' => 'error', 'message' => 'Produit introuvable.']); return; }
+
+        // Le détail n'a de sens que si SA direction a déjà reçu du stock de
+        // ce produit — sinon rien à montrer qui la concerne.
+        $stmtExiste = $bdBASI->prepare("
+            SELECT 1 FROM livraison_produit_repartition lpr
+            JOIN livraison_produit lp ON lpr.idLP = lp.id
+            WHERE lpr.mode = 'stock' AND lp.idP = ? AND lpr.idDirection = ?
+            LIMIT 1
+        ");
+        $stmtExiste->execute([$idP, $sessionIdDirection]);
+        if (!$stmtExiste->fetch()) {
+            echo json_encode(['status' => 'error', 'message' => "Votre direction n'a jamais reçu de stock de ce produit."]);
+            return;
+        }
+
+        $stmtRecu = $bdBASI->prepare("
+            SELECT COALESCE(SUM(lpr.quantite), 0)
+            FROM livraison_produit_repartition lpr
+            JOIN livraison_produit lp ON lpr.idLP = lp.id
+            WHERE lpr.mode = 'stock' AND lp.idP = ? AND lpr.idDirection = ?
+        ");
+        $stmtRecu->execute([$idP, $sessionIdDirection]);
+        $recu = (float) $stmtRecu->fetchColumn();
+
+        $stmtSorti = $bdBASI->prepare("
+            SELECT COALESCE(SUM(ebip.quantite_sortie), 0)
+            FROM expression_besoin_investissement_produit ebip
+            JOIN expression_besoin_investissement ebi ON ebip.idEBI = ebi.id
+            WHERE ebip.id_produit = ? AND ebip.statut = 1 AND ebi.idDirection = ?
+        ");
+        $stmtSorti->execute([$idP, $sessionIdDirection]);
+        $sorti = (float) $stmtSorti->fetchColumn();
+
+        $stmtReserve = $bdBASI->prepare("
+            SELECT COALESCE(SUM(ebip.quantite_demandee - ebip.quantite_sortie), 0)
+            FROM expression_besoin_investissement_produit ebip
+            JOIN expression_besoin_investissement ebi ON ebip.idEBI = ebi.id
+            WHERE ebip.id_produit = ? AND ebip.statut = 1 AND ebi.idDirection = ? AND ebi.idStatut IN (1, 2, 3)
+        ");
+        $stmtReserve->execute([$idP, $sessionIdDirection]);
+        $reserve = (float) $stmtReserve->fetchColumn();
+
+        $stmtDirection = $bdBASI->prepare("SELECT nom_direction, code_direction FROM direction WHERE id = ?");
+        $stmtDirection->execute([$sessionIdDirection]);
+        $direction = $stmtDirection->fetch(PDO::FETCH_ASSOC);
+
+        $repartition = [[
+            'idDirection'         => $sessionIdDirection,
+            'nom_direction'       => $direction['nom_direction'] ?? null,
+            'code_direction'      => $direction['code_direction'] ?? null,
+            'quantite_recue'      => $recu,
+            'quantite_sortie'     => $sorti,
+            'quantite_reservee'   => $reserve,
+            'quantite_disponible' => max(0.0, $recu - $sorti - $reserve),
+        ]];
+
+        echo json_encode([
+            'status'      => 'success',
+            'produit'     => ['idP' => $idP, 'nomproduit' => $produit['nomproduit'], 'stock_actuel' => (float) $produit['Stock_actuel']],
+            'repartition' => $repartition,
+        ]);
+    } catch (\Throwable $e) {
+        error_log('[ChefDirEB][detailRepartitionProduitInvestissementChefService] ' . $e->getMessage());
+        erreurSqlChefDirEB('Impossible de charger la répartition de ce produit.');
     }
 }
 
@@ -1401,7 +1586,7 @@ try {
             break;
 
         case 13:
-            listerCatalogueProduitsInvestissement($bdBASI, $sessionUserId);
+            listerCatalogueProduitsInvestissement($bdBASI, $sessionUserId, $sessionIdDirection);
             break;
 
         case 14:
@@ -1417,7 +1602,11 @@ try {
             break;
 
         case 17:
-            statistiquesProduitsInvestissementChefService($bdBASI, $sessionUserId);
+            statistiquesProduitsInvestissementChefService($bdBASI, $sessionUserId, $sessionIdDirection);
+            break;
+
+        case 18:
+            detailRepartitionProduitInvestissementChefService($bdBASI, $sessionIdDirection);
             break;
 
         default:

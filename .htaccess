@@ -296,6 +296,8 @@ RewriteRule ^arrete-caisse-pdf$ basi/caisse/arrete_caisse.php [L]
 RewriteRule ^personnel_basi_controller$ basi/personnel/controllers/personnelController.php [L]
 RewriteRule ^personnel_basi_expression_besoin$ basi/personnel/expression_besoin.php [L]
 RewriteRule ^basi-scripts.bundle.29.js$ basi/personnel/js/expression_besoin.js [L]
+RewriteRule ^personnel_basi_reception_produits$ basi/personnel/receptionproduits.php [L]
+RewriteRule ^basi-scripts.bundle.40.js$ basi/personnel/js/receptionproduits.js [L]
 
 
 # operateur

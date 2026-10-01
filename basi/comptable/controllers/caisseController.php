@@ -131,6 +131,11 @@ function inputValueCaisse(string $key, $default = null) {
     return $default;
 }
 
+/** Les produits sont des unités entières — jamais de quantité à virgule. */
+function estEntierPositif($valeur): bool {
+    return is_numeric($valeur) && (float) $valeur == (int) $valeur && (int) $valeur > 0;
+}
+
 function erreurSqlCaisse(string $message = "Erreur lors de l'accès à la base de données."): void {
     http_response_code(500);
     echo json_encode(['status'=>'error','message'=>$message]);
@@ -2881,6 +2886,12 @@ function effectuerSortieExpressionBesoin(PDO $bdBASI, caisseController $basiCont
             $quantiteSaisie = $quantitesParLigne[$idEBP];
             if ($quantiteSaisie <= 0) continue; // rien à sortir pour cette ligne
 
+            if (!estEntierPositif($quantiteSaisie)) {
+                $bdBASI->rollBack();
+                echo json_encode(['status' => 'error', 'message' => "Les quantités sorties doivent être des nombres entiers."]);
+                return;
+            }
+
             // Garde-fou serveur : jamais plus que MIN(restant, stock).
             if ($quantiteSaisie > $maxSortable + 0.001) {
                 $bdBASI->rollBack();
@@ -3157,6 +3168,12 @@ function effectuerSortieExpressionBesoinInvestissement(PDO $bdBASI, caisseContro
 
             $quantiteSaisie = $quantitesParLigne[$idEBIP];
             if ($quantiteSaisie <= 0) continue;
+
+            if (!estEntierPositif($quantiteSaisie)) {
+                $bdBASI->rollBack();
+                echo json_encode(['status' => 'error', 'message' => "Les quantités sorties doivent être des nombres entiers."]);
+                return;
+            }
 
             if ($quantiteSaisie > $maxSortable + 0.001) {
                 $bdBASI->rollBack();

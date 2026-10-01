@@ -1,136 +1,134 @@
 /**
- * chef-direction-expression-besoin-scripts.bundle.js
- * Page "Expressions de besoin — Ma direction" (profil Chef de direction) :
- * liste filtrable par intervalle d'années, Valider (quantite_reelle par
- * ligne, jamais > quantité demandée) / Rejeter (motif obligatoire, e-mail
- * automatique au créateur), Consulter en lecture seule.
+ * listeProduitsInvestissement.js
+ * Catalogue des produits Investissement (profil Chef de service) : tous les
+ * chefs de service voient tous les produits, mais ne modifient que les
+ * leurs, et ne voient le stock global que de ceux qu'ils ont créés.
  */
 
-const CHEF_DIR_EB_CONTROLLER_URL = '/uahb/chef_service_basi_controller_1'; // ← ajuster selon le chemin réel
-const ANNEE_MIN_EB = 2026;
-
-const LIBELLES_STATUT_EB = { 2: 'Soumise', 3: 'Validée', 4: 'Rejetée', 5: 'Sortie partielle', 6: 'Sortie totale', 7: 'Livrée', 8: 'Clôturée', 9: 'Clôturée avec solde', 10: 'Annulée' };
+const CATALOGUE_CONTROLLER_URL = '/personnel/chef_service_basi_controller_1';
 
 let dga_table = null;
-let dga_tokenCourant = null;
+let dga_tokenProduitCourant = null; // idP en cours de modification (null = création)
+let dga_debounceRecherche = null;
 
 document.addEventListener('DOMContentLoaded', function () {
-    dga_renderTable([]);
-    initSelectsAnnees();
-    chargerExpressions();
+    chargerCatalogue();
 
-    document.getElementById('dga-btn-appliquer-filtres')?.addEventListener('click', chargerExpressions);
-    document.getElementById('dga-filtre-statut')?.addEventListener('change', chargerExpressions);
-    document.getElementById('dga-btn-reset-filtres')?.addEventListener('click', function () {
-        const anneeCourante = new Date().getFullYear();
-        document.getElementById('dga-annee-debut').value = '';
-        document.getElementById('dga-annee-fin').value = anneeCourante;
-        document.getElementById('dga-filtre-statut').value = '2';
-        chargerExpressions();
+    document.getElementById('dga-btn-nouveau-produit')?.addEventListener('click', dga_ouvrirNouveauProduit);
+    document.getElementById('dgaRubriqueProduit')?.addEventListener('change', dga_chargerSousRubriques);
+    document.getElementById('dgaBtnEnregistrerProduit')?.addEventListener('click', dga_soumettreProduit);
+    document.getElementById('dgaNomProduit')?.addEventListener('input', dga_onSaisieNomProduit);
+
+    // Ferme les suggestions si on clique ailleurs.
+    document.addEventListener('click', function (e) {
+        const wrap = document.getElementById('dgaNomProduit')?.closest('.dga-autocomplete-wrap');
+        if (wrap && !wrap.contains(e.target)) {
+            document.getElementById('dgaAutocompleteListe').classList.remove('dga-visible');
+        }
     });
-
-    document.getElementById('dgaBtnConfirmerValider')?.addEventListener('click', dga_confirmerValidation);
 });
 
-/* ────────────────────────── ANNÉES (filtres) ───────────────────────── */
-function initSelectsAnnees() {
-    const anneeCourante = new Date().getFullYear();
-    const debutSel = document.getElementById('dga-annee-debut');
-    const finSel   = document.getElementById('dga-annee-fin');
-    if (!debutSel || !finSel) return;
-
-    const anneeMax = Math.max(anneeCourante, ANNEE_MIN_EB);
-    let options = '';
-    for (let a = ANNEE_MIN_EB; a <= anneeMax; a++) {
-        options += `<option value="${a}">${a}</option>`;
-    }
-
-    debutSel.innerHTML = '<option value="">Toutes</option>' + options;
-    finSel.innerHTML   = options;
-
-    debutSel.value = '';
-    finSel.value   = anneeCourante;
-}
-
-/* ────────────────────────── CHARGEMENT LISTE ───────────────────────── */
-function chargerExpressions() {
-    const anneeDebutVal = document.getElementById('dga-annee-debut').value;
-    const anneeFinVal   = document.getElementById('dga-annee-fin').value;
-    const statutVal     = document.getElementById('dga-filtre-statut').value;
-
-    if (anneeDebutVal !== '' && anneeFinVal !== '' && parseInt(anneeDebutVal) > parseInt(anneeFinVal)) {
-        Swal.fire('Intervalle invalide', "« Année de début » ne peut pas être supérieure à « Année de fin ».", 'warning');
-        return;
-    }
-
-    dga_showLoader('Chargement des expressions de besoin…');
-
+/* ────────────────────────── CHARGEMENT CATALOGUE ─────────────────────── */
+function chargerCatalogue() {
+    dga_showLoader('Chargement du catalogue…');
     $.ajax({
-        url: CHEF_DIR_EB_CONTROLLER_URL,
-        method: 'POST',
-        data: { option: 1, anneeDebut: anneeDebutVal, anneeFin: anneeFinVal, statut: statutVal },
-        dataType: 'json'
+        url: CATALOGUE_CONTROLLER_URL, method: 'POST', data: { option: 13 }, dataType: 'json'
     }).done(function (res) {
         dga_hideLoader();
         if (res.status !== 'success') {
-            Swal.fire('Erreur', res.message || 'Impossible de charger les expressions de besoin.', 'error');
+            Swal.fire('Erreur', res.message || 'Impossible de charger le catalogue.', 'error');
             return;
         }
         dga_renderTable(res.data || []);
         document.getElementById('dga-stat-nombre').textContent = res.nombre_total ?? 0;
-
-        const stats = res.stats || {};
-        document.getElementById('dga-stat-soumise').textContent = stats['2'] ?? 0;
-        document.getElementById('dga-stat-validee').textContent = stats['3'] ?? 0;
-        document.getElementById('dga-stat-rejetee').textContent = stats['4'] ?? 0;
-        document.getElementById('dga-stat-partiel').textContent = stats['5'] ?? 0;
-        document.getElementById('dga-stat-terminee').textContent = stats['6'] ?? 0;
     }).fail(function (xhr) {
         dga_hideLoader();
         Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
     });
+
+    chargerStatistiques();
 }
 
-/* ───────────────────────────── TABLE ────────────────────────────── */
-function dga_renderTable(expressions) {
+function chargerStatistiques() {
+    $.ajax({
+        url: CATALOGUE_CONTROLLER_URL, method: 'POST', data: { option: 17 }, dataType: 'json'
+    }).done(function (res) {
+        if (res.status !== 'success') return;
+        const s = res.stats || {};
+        document.getElementById('dga-stat-en-service').textContent = s.en_service ?? 0;
+        document.getElementById('dga-stat-hors-service').textContent = s.hors_service ?? 0;
+        document.getElementById('dga-stat-mes-produits').textContent = s.mes_produits ?? 0;
+        document.getElementById('dga-stat-mon-stock').textContent = dga_fmtNombre(s.mon_stock_total ?? 0);
+    });
+}
+
+function dga_renderTable(produits) {
     if (dga_table) { try { dga_table.destroy(); } catch (e) {} dga_table = null; }
 
-    dga_table = $('#dga-table-eb').DataTable({
-        data: expressions,
+    dga_table = $('#dga-table-catalogue').DataTable({
+        data: produits,
         columns: [
-            { data: 'nom_expression' },
-            { data: 'demandeur' },
+            { data: null },
+            { data: null },
+            { data: 'nomproduit' },
+            { data: 'Stock_actuel' },
+            { data: 'retrait' },
             { data: 'date_creation' },
-            { data: 'nombre_produits' },
-            { data: 'idStatut' },
-            { data: 'tmp', orderable: false, searchable: false },
+            { data: 'id_statut' },
+            { data: 'nom_createur' },
+            { data: null, orderable: false, searchable: false },
         ],
         columnDefs: [
-            { targets: 0, render: d => dga_escapeHtml(d) },
-            { targets: 1, render: d => dga_escapeHtml(d) },
-            { targets: 2, render: d => dga_fmtDate(d) },
-            { targets: 4, render: d => `<span class="dga-badge-statut dga-statut-${d}">${LIBELLES_STATUT_EB[d] || d}</span>` },
+            { targets: 0, render: (d, t, row) => row.nom_rubrique ? dga_escapeHtml(row.nom_rubrique) : '<span class="dga-cell-muted">—</span>' },
+            { targets: 1, render: (d, t, row) => row.nom_sous_rubrique ? dga_escapeHtml(row.nom_sous_rubrique) : '<span class="dga-cell-muted">—</span>' },
+            { targets: 2, render: d => `<span style="font-weight:700;color:#111827;">${dga_escapeHtml(d)}</span>` },
             {
-                targets: 5,
+                targets: 3,
+                render: d => (d === null || d === undefined)
+                    ? '<span class="dga-cell-muted" title="Votre direction n\'a jamais reçu de stock de ce produit">—</span>'
+                    : `<span class="dga-quota-val">${dga_fmtNombre(d)}</span>`,
+            },
+            {
+                targets: 4,
+                render: d => (d === null || d === undefined)
+                    ? '<span class="dga-cell-muted" title="Votre direction n\'a jamais reçu de stock de ce produit">—</span>'
+                    : dga_fmtNombre(d),
+            },
+            { targets: 5, render: d => dga_fmtDate(d) },
+            {
+                targets: 6,
+                render: d => parseInt(d) === 1
+                    ? '<span class="dga-badge-statut dga-statut-1" style="background:#ecfdf5;color:#059669;">En service</span>'
+                    : '<span class="dga-badge-statut" style="background:#fef2f2;color:#991b1b;">Hors service</span>',
+            },
+            {
+                targets: 7,
                 render: (d, t, row) => {
-                    const statut = parseInt(row.idStatut);
-                    let html = '';
-                    if (statut === 2) {
-                        html += `<button type="button" class="dga-btn-valider" onclick="dga_ouvrirValidation('${d}')">Valider</button>`;
-                        html += `<button type="button" class="dga-btn-rejeter" onclick="dga_confirmerRejet('${d}')">Rejeter</button>`;
-                    } else if (statut >= 5) {
-                        html += `<button type="button" class="dga-btn-consulter" onclick="dga_ouvrirConsulter('${d}')">Consulter</button>`;
-                        html += `<button type="button" class="dga-btn-consulter dga-btn-sorties-info" onclick="dga_ouvrirInfoSorties('${d}')">Informations sur les sorties</button>`;
-                    } else {
-                        html += `<button type="button" class="dga-btn-consulter" onclick="dga_ouvrirConsulter('${d}')">Consulter</button>`;
-                    }
-                    return html;
+                    const estMoi = !!row.modifiable; // modifiable = créateur, dans ce modèle
+                    return `<span class="dga-badge-createur ${estMoi ? 'dga-badge-createur-moi' : 'dga-badge-createur-autre'}">${dga_escapeHtml(d || '—')}${estMoi ? ' (vous)' : ''}</span>`;
+                },
+            },
+            {
+                targets: 8,
+                render: (d, t, row) => {
+                    const btnDetail = row.peut_voir_detail
+                        ? `<button type="button" class="dga-btn-detail-produit" onclick="dga_ouvrirDetailRepartition(${row.idP})">Détail</button>`
+                        : '';
+                    if (!row.modifiable) return btnDetail || '<span class="dga-cell-muted">—</span>';
+                    const estActif = parseInt(row.id_statut) === 1;
+                    return `
+                        ${btnDetail}
+                        <button type="button" class="dga-btn-modifier-produit" onclick="dga_ouvrirModifierProduit(${row.idP})">Modifier</button>
+                        <button type="button" class="dga-btn-toggle-produit ${estActif ? 'dga-btn-desactiver' : 'dga-btn-activer'}" onclick="dga_toggleStatutProduit(${row.idP}, '${dga_escapeHtml(row.nomproduit)}', ${estActif})">
+                            ${estActif ? 'Désactiver' : 'Activer'}
+                        </button>
+                    `;
                 },
             },
         ],
-        order: [[2, 'desc']],
+        order: [[2, 'asc']],
         language: {
-            emptyTable: 'Aucune expression de besoin à afficher.',
+            emptyTable: 'Aucun produit Investissement au catalogue pour le moment.',
             zeroRecords: 'Aucun résultat.',
             search: 'Rechercher :',
             lengthMenu: 'Afficher _MENU_ entrées',
@@ -138,95 +136,184 @@ function dga_renderTable(expressions) {
             infoEmpty: 'Aucune entrée',
             paginate: { previous: 'Précédent', next: 'Suivant' },
         },
+        initComplete: function () {
+            document.documentElement.classList.remove('ld-booting');
+        },
     });
 }
 
-/* ────────────────────────── VALIDATION ─────────────────────────────── */
-function dga_ouvrirValidation(token) {
-    dga_showLoader('Chargement…');
-    $.ajax({
-        url: CHEF_DIR_EB_CONTROLLER_URL, method: 'POST', data: { option: 2, token: token }, dataType: 'json'
-    }).done(function (res) {
-        dga_hideLoader();
-        if (res.status !== 'success') {
-            Swal.fire('Erreur', res.message || 'Impossible de charger le détail.', 'error');
-            return;
+/* ────────────────────────── OUVERTURE MODALE ─────────────────────────── */
+function dga_ouvrirNouveauProduit() {
+    dga_tokenProduitCourant = null;
+    document.getElementById('produitModalTitre').textContent = 'Nouveau produit';
+    document.getElementById('dgaErreurGeneraleProduit').style.display = 'none';
+    document.getElementById('dgaNomProduit').value = '';
+    document.getElementById('dgaNomProduit').disabled = false;
+    document.getElementById('dgaSeuilProduit').value = 0;
+    document.getElementById('dgaSousRubriqueProduit').innerHTML = '<option value="">—</option>';
+    document.getElementById('dgaSousRubriqueProduit').disabled = true;
+    dga_chargerRubriques();
+    new bootstrap.Modal(document.getElementById('modalProduitInvest')).show();
+}
+
+function dga_ouvrirModifierProduit(idP) {
+    const row = dga_table.rows().data().toArray().find(r => parseInt(r.idP) === parseInt(idP));
+    if (!row) return;
+
+    dga_tokenProduitCourant = idP;
+    document.getElementById('produitModalTitre').textContent = 'Modifier — ' + row.nomproduit;
+    document.getElementById('dgaErreurGeneraleProduit').style.display = 'none';
+    document.getElementById('dgaNomProduit').value = row.nomproduit;
+    document.getElementById('dgaNomProduit').disabled = true; // pas de recherche-suggestion en modification
+    document.getElementById('dgaSeuilProduit').value = row.Seuil_limite ?? 0;
+    document.getElementById('dgaAutocompleteListe').classList.remove('dga-visible');
+
+    dga_chargerRubriques(function () {
+        // Présélectionne la rubrique/sous-rubrique actuelles une fois les
+        // listes chargées.
+        const selRubrique = document.getElementById('dgaRubriqueProduit');
+        const rubriqueTrouvee = [...selRubrique.options].find(o => o.text === row.nom_rubrique);
+        if (rubriqueTrouvee) {
+            selRubrique.value = rubriqueTrouvee.value;
+            dga_chargerSousRubriques(function () {
+                document.getElementById('dgaSousRubriqueProduit').value = row.idSousRubrique || '';
+            });
         }
+    });
 
-        dga_tokenCourant = token;
-        const e = res.expression;
-        document.getElementById('validerModalTitre').textContent = 'Valider — ' + e.nom_expression;
-        document.getElementById('dgaErreurValider').style.display = 'none';
+    new bootstrap.Modal(document.getElementById('modalProduitInvest')).show();
+}
 
-        document.getElementById('dgaCorpsValider').innerHTML = (e.produits || []).map(function (p) {
-            return `
-                <tr>
-                    <td>${dga_escapeHtml(p.designation)}</td>
-                    <td>${dga_escapeHtml(p.quantite)}</td>
-                    <td>
-                        <input type="number" class="dga-inp-qte-reelle" data-idebp="${p.idEBP}" data-max="${p.quantite}"
-                               min="0" max="${p.quantite}" step="0.01" value="${p.quantite}"
-                               oninput="dga_plafonnerQuantiteReelle(this)"/>
-                    </td>
-                </tr>
-            `;
-        }).join('') || '<tr><td colspan="3" style="text-align:center;color:#9ca3af;font-style:italic;">Aucun produit.</td></tr>';
-
-        new bootstrap.Modal(document.getElementById('modalValider')).show();
-    }).fail(function (xhr) {
-        dga_hideLoader();
-        Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
+/* ────────────────────────── CASCADE RUBRIQUE ─────────────────────────── */
+function dga_chargerRubriques(callback) {
+    const sel = document.getElementById('dgaRubriqueProduit');
+    sel.innerHTML = '<option value="">Chargement…</option>';
+    $.ajax({
+        url: CATALOGUE_CONTROLLER_URL, method: 'POST', data: { option: 10 }, dataType: 'json'
+    }).done(function (res) {
+        if (res.status !== 'success') { sel.innerHTML = '<option value="">Erreur</option>'; return; }
+        const rubriques = res.data || [];
+        sel.innerHTML = '<option value="">Sélectionner…</option>' + rubriques.map(r => `<option value="${r.id}">${dga_escapeHtml(r.nom_rubrique)}</option>`).join('');
+        if (typeof callback === 'function') callback();
     });
 }
 
-function dga_plafonnerQuantiteReelle(input) {
-    const max = parseFloat(input.dataset.max);
-    const val = parseFloat(input.value);
-    if (!isNaN(val) && !isNaN(max) && val > max) {
-        input.value = max;
-        input.style.borderColor = '#dc2626';
-        setTimeout(() => { input.style.borderColor = ''; }, 800);
+function dga_chargerSousRubriques(callback) {
+    const idRubrique = document.getElementById('dgaRubriqueProduit').value;
+    const sel = document.getElementById('dgaSousRubriqueProduit');
+
+    if (!idRubrique) {
+        sel.innerHTML = '<option value="">—</option>';
+        sel.disabled = true;
+        return;
     }
+
+    sel.innerHTML = '<option value="">Chargement…</option>';
+    $.ajax({
+        url: CATALOGUE_CONTROLLER_URL, method: 'POST', data: { option: 11, idRubrique: idRubrique }, dataType: 'json'
+    }).done(function (res) {
+        if (res.status !== 'success') { sel.innerHTML = '<option value="">Erreur</option>'; return; }
+        const sousRubriques = res.data || [];
+        sel.innerHTML = '<option value="">Sélectionner…</option>' + sousRubriques.map(sr => `<option value="${sr.id}">${dga_escapeHtml(sr.nom_sous_rubrique)}</option>`).join('');
+        sel.disabled = false;
+        if (typeof callback === 'function') callback();
+    });
 }
 
-function dga_confirmerValidation() {
-    const erreurBox = document.getElementById('dgaErreurValider');
+/* ────────────────────────── RECHERCHE-SUGGESTION ─────────────────────── */
+function dga_onSaisieNomProduit() {
+    const texte = document.getElementById('dgaNomProduit').value.trim();
+    const listeEl = document.getElementById('dgaAutocompleteListe');
+
+    clearTimeout(dga_debounceRecherche);
+
+    if (texte.length < 2) {
+        listeEl.classList.remove('dga-visible');
+        return;
+    }
+
+    // Petite temporisation pour éviter une requête à chaque frappe.
+    dga_debounceRecherche = setTimeout(function () {
+        $.ajax({
+            url: CATALOGUE_CONTROLLER_URL, method: 'POST', data: { option: 12, texte: texte }, dataType: 'json'
+        }).done(function (res) {
+            if (res.status !== 'success') return;
+            dga_renderSuggestions(res.data || []);
+        });
+    }, 250);
+}
+
+function dga_renderSuggestions(produits) {
+    const listeEl = document.getElementById('dgaAutocompleteListe');
+
+    if (!produits.length) {
+        listeEl.innerHTML = '<div class="dga-autocomplete-vide">Aucun produit existant ne correspond — vous pouvez continuer la saisie pour en créer un nouveau.</div>';
+        listeEl.classList.add('dga-visible');
+        return;
+    }
+
+    listeEl.innerHTML = produits.map(function (p) {
+        const rubriqueTxt = p.nom_rubrique ? `${dga_escapeHtml(p.nom_rubrique)}${p.nom_sous_rubrique ? ' / ' + dga_escapeHtml(p.nom_sous_rubrique) : ''}` : 'Rubrique non définie';
+        return `
+            <div class="dga-autocomplete-item" onclick="dga_choisirSuggestion('${dga_escapeHtml(p.nomproduit)}')">
+                <div class="dga-autocomplete-item-nom">${dga_escapeHtml(p.nomproduit)}</div>
+                <div class="dga-autocomplete-item-meta">${rubriqueTxt} — déjà existant</div>
+            </div>
+        `;
+    }).join('');
+    listeEl.classList.add('dga-visible');
+}
+
+function dga_choisirSuggestion(nom) {
+    document.getElementById('dgaNomProduit').value = nom;
+    document.getElementById('dgaAutocompleteListe').classList.remove('dga-visible');
+    Swal.fire({
+        title: 'Produit déjà existant',
+        text: `« ${nom} » existe déjà au catalogue. Si c'est bien ce produit, annulez cette création — sinon, modifiez le nom pour créer un produit différent.`,
+        icon: 'info',
+        confirmButtonColor: '#1a7a5e',
+    });
+}
+
+/* ────────────────────────── SOUMISSION ───────────────────────────────── */
+function dga_soumettreProduit() {
+    const erreurBox = document.getElementById('dgaErreurGeneraleProduit');
     erreurBox.style.display = 'none';
 
-    const lignes = [];
-    let depassement = false;
-    document.querySelectorAll('.dga-inp-qte-reelle').forEach(function (input) {
-        const val = parseFloat(input.value) || 0;
-        const max = parseFloat(input.dataset.max) || 0;
-        if (val > max + 0.001) depassement = true;
-        lignes.push({ idEBP: input.dataset.idebp, quantite_reelle: val });
-    });
+    const nom = document.getElementById('dgaNomProduit').value.trim();
+    const idSousRubrique = document.getElementById('dgaSousRubriqueProduit').value;
+    const seuil = document.getElementById('dgaSeuilProduit').value;
 
-    if (depassement) {
-        erreurBox.textContent = 'La quantité réelle ne peut jamais dépasser la quantité demandée.';
+    if (!nom) {
+        erreurBox.textContent = 'Le nom du produit est requis.';
+        erreurBox.style.display = 'block';
+        return;
+    }
+    if (!idSousRubrique) {
+        erreurBox.textContent = 'La sous-rubrique est requise.';
         erreurBox.style.display = 'block';
         return;
     }
 
-    const btn = document.getElementById('dgaBtnConfirmerValider');
+    const option = dga_tokenProduitCourant ? 15 : 14;
+    const payload = { option: option, nom: nom, idSousRubrique: idSousRubrique, seuil: seuil };
+    if (dga_tokenProduitCourant) payload.idP = dga_tokenProduitCourant;
+
+    const btn = document.getElementById('dgaBtnEnregistrerProduit');
     btn.disabled = true;
     btn.querySelector('.dga-spinner').classList.remove('hidden');
 
     $.ajax({
-        url: CHEF_DIR_EB_CONTROLLER_URL,
-        method: 'POST',
-        data: JSON.stringify({ option: 3, token: dga_tokenCourant, lignes: lignes }),
-        contentType: 'application/json',
-        dataType: 'json',
+        url: CATALOGUE_CONTROLLER_URL, method: 'POST', data: payload, dataType: 'json'
     }).done(function (res) {
         btn.disabled = false;
         btn.querySelector('.dga-spinner').classList.add('hidden');
 
         if (res.status === 'success') {
-            const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalValider'));
+            const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalProduitInvest'));
             if (modalInstance) modalInstance.hide();
-            Swal.fire({ title: 'Succès', text: res.message || 'Expression de besoin validée avec succès.', icon: 'success', confirmButtonColor: '#1a7a5e' });
-            chargerExpressions();
+            Swal.fire({ title: 'Succès', text: res.message, icon: 'success', confirmButtonColor: '#1a7a5e', timer: 1500, showConfirmButton: false });
+            chargerCatalogue();
         } else {
             erreurBox.textContent = res.message || 'Une erreur est survenue.';
             erreurBox.style.display = 'block';
@@ -239,47 +326,40 @@ function dga_confirmerValidation() {
     });
 }
 
-/* ────────────────────────── REJET ──────────────────────────────────── */
-function dga_confirmerRejet(token) {
+/* ────────────────────────── ACTIVER / DÉSACTIVER ─────────────────────── */
+function dga_toggleStatutProduit(idP, nom, estActif) {
     Swal.fire({
-        title: "Rejeter l'expression de besoin",
-        input: 'textarea',
-        inputLabel: 'Motif du rejet *',
-        inputPlaceholder: 'Précisez le motif du rejet…',
+        title: estActif ? 'Désactiver ce produit ?' : 'Activer ce produit ?',
+        text: `« ${nom} » ${estActif ? 'ne sera plus proposé pour les demandes tant qu\'il reste désactivé.' : 'redevient disponible pour les demandes.'}`,
+        icon: 'warning',
         showCancelButton: true,
-        confirmButtonText: 'Rejeter',
+        confirmButtonText: estActif ? 'Désactiver' : 'Activer',
+        confirmButtonColor: estActif ? '#dc2626' : '#1a7a5e',
         cancelButtonText: 'Annuler',
-        confirmButtonColor: '#dc2626',
         cancelButtonColor: '#6b7280',
-        inputValidator: (value) => {
-            if (!value || !value.trim()) return 'Le motif du rejet est obligatoire.';
-        },
     }).then(function (result) {
         if (!result.isConfirmed) return;
 
-        dga_showLoader('Rejet en cours…');
         $.ajax({
-            url: CHEF_DIR_EB_CONTROLLER_URL, method: 'POST', data: { option: 4, token: token, motif: result.value.trim() }, dataType: 'json'
+            url: CATALOGUE_CONTROLLER_URL, method: 'POST', data: { option: 16, idP: idP }, dataType: 'json'
         }).done(function (res) {
-            dga_hideLoader();
             if (res.status === 'success') {
-                Swal.fire({ title: 'Succès', text: res.message || 'Expression de besoin rejetée avec succès.', icon: 'success', confirmButtonColor: '#1a7a5e' });
-                chargerExpressions();
+                Swal.fire({ title: 'Succès', text: res.message, icon: 'success', confirmButtonColor: '#1a7a5e', timer: 1500, showConfirmButton: false });
+                chargerCatalogue();
             } else {
                 Swal.fire('Erreur', res.message || 'Une erreur est survenue.', 'error');
             }
         }).fail(function (xhr) {
-            dga_hideLoader();
             Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
         });
     });
 }
 
-/* ────────────────────────── CONSULTER ──────────────────────────────── */
-function dga_ouvrirConsulter(token) {
+/* ────────────────────────── DÉTAIL PAR DIRECTION ─────────────────────── */
+function dga_ouvrirDetailRepartition(idP) {
     dga_showLoader('Chargement du détail…');
     $.ajax({
-        url: CHEF_DIR_EB_CONTROLLER_URL, method: 'POST', data: { option: 2, token: token }, dataType: 'json'
+        url: CATALOGUE_CONTROLLER_URL, method: 'POST', data: { option: 18, idP: idP }, dataType: 'json'
     }).done(function (res) {
         dga_hideLoader();
         if (res.status !== 'success') {
@@ -287,118 +367,33 @@ function dga_ouvrirConsulter(token) {
             return;
         }
 
-        const e = res.expression;
-        document.getElementById('consulterModalTitre').textContent = 'Détail — ' + e.nom_expression;
+        const produit = res.produit;
+        const repartition = res.repartition || [];
+        document.getElementById('detailRepartitionModalTitre').textContent = 'Répartition — ' + produit.nomproduit;
 
-        const motifRejetHtml = (parseInt(e.idStatut) === 4 && e.motif_rejet)
-            ? `<div style="margin-bottom:1rem;padding:.7rem .9rem;border-radius:9px;background:#fef2f2;border:1.5px solid #fecaca;color:#991b1b;font-size:.82rem;font-weight:600;">
-                   <strong>Motif du rejet :</strong> ${dga_escapeHtml(e.motif_rejet)}
-               </div>`
-            : '';
-
-        const badgeLigne = (statutLigne) => {
-            const map = {
-                'En attente': 'background:#fef3c7;color:#92400e;',
-                'Sortie partielle': 'background:#dbeafe;color:#1d4ed8;',
-                'Sortie totale': 'background:#d1fae5;color:#047857;',
-            };
-            const style = map[statutLigne] || map['En attente'];
-            return `<span style="display:inline-flex;align-items:center;padding:.2rem .55rem;border-radius:99px;font-size:.66rem;font-weight:800;text-transform:uppercase;${style}">${statutLigne}</span>`;
-        };
-
-        const lignes = (e.produits || []).map(function (p) {
-            return `<tr>
-                <td>${dga_escapeHtml(p.designation)}</td>
-                <td>${dga_escapeHtml(p.quantite)}</td>
-                <td>${p.quantite_reelle !== null && p.quantite_reelle !== undefined ? dga_escapeHtml(p.quantite_reelle) : '—'}</td>
-                <td>${p.quantite_sortie !== null && p.quantite_sortie !== undefined ? dga_escapeHtml(p.quantite_sortie) : '—'}</td>
-                <td>${p.quantite_restante !== null && p.quantite_restante !== undefined ? dga_escapeHtml(p.quantite_restante) : '—'}</td>
-                <td>${badgeLigne(p.statut_ligne || 'En attente')}</td>
-            </tr>`;
-        }).join('') || '<tr><td colspan="6" style="text-align:center;color:#9ca3af;font-style:italic;">Aucun produit.</td></tr>';
-
-        const historiqueRows = (e.historique || []).map(function (h) {
+        const lignes = repartition.map(function (r) {
             return `
-                <li style="padding:.4rem 0;font-size:.8rem;color:#374151;border-bottom:1px dashed #f3f4f6;">
-                    <strong>${dga_fmtDateHeure(h.dateEnregistrement)}</strong>
-                    — ${LIBELLES_STATUT_EB[h.idStatut] || h.idStatut}
-                    ${h.motif ? `<span style="color:#9ca3af;font-size:.76rem;"> (${dga_escapeHtml(h.motif)})</span>` : ''}
-                </li>
+                <tr>
+                    <td>${dga_escapeHtml(r.code_direction || r.nom_direction || '—')}</td>
+                    <td>${dga_fmtNombre(r.quantite_recue)}</td>
+                    <td>${dga_fmtNombre(r.quantite_sortie)}</td>
+                    <td>${parseFloat(r.quantite_reservee) > 0 ? dga_fmtNombre(r.quantite_reservee) : '<span class="dga-cell-muted">0</span>'}</td>
+                    <td><span class="dga-qte-dispo">${dga_fmtNombre(r.quantite_disponible)}</span></td>
+                </tr>
             `;
-        }).join('') || '<li style="font-size:.8rem;color:#9ca3af;font-style:italic;">Aucun historique.</li>';
+        }).join('') || '<tr><td colspan="5" style="text-align:center;color:#9ca3af;font-style:italic;">Aucune direction n\'a encore reçu ce produit en stock.</td></tr>';
 
-        document.getElementById('dgaContenuConsulter').innerHTML = `
+        document.getElementById('dgaContenuDetailRepartition').innerHTML = `
             <p style="margin-bottom:1rem;font-size:.85rem;color:#374151;">
-                <strong>Demandeur :</strong> ${dga_escapeHtml(e.demandeur)}<br/>
-                <strong>Date de création :</strong> ${dga_fmtDate(e.date_creation)}<br/>
-                <strong>Statut :</strong> <span class="dga-badge-statut dga-statut-${e.idStatut}">${LIBELLES_STATUT_EB[e.idStatut] || e.idStatut}</span>
+                <strong>Stock global actuel :</strong> <span class="dga-qte-dispo">${dga_fmtNombre(produit.stock_actuel)}</span>
             </p>
-            ${motifRejetHtml}
             <table class="dga-table-produits">
-                <thead><tr><th>Désignation</th><th>Demandée</th><th>Validée</th><th>Sortie</th><th>Restante</th><th>Statut</th></tr></thead>
+                <thead><tr><th>Direction</th><th>Reçu</th><th>Sorti</th><th>Réservé</th><th>Disponible</th></tr></thead>
                 <tbody>${lignes}</tbody>
             </table>
-            <h4 style="font-size:.8rem;font-weight:800;color:#111827;margin:1.2rem 0 .5rem;">Historique</h4>
-            <ul style="list-style:none;padding:0;margin:0;">${historiqueRows}</ul>
         `;
 
-        new bootstrap.Modal(document.getElementById('modalConsulterEB')).show();
-    }).fail(function (xhr) {
-        dga_hideLoader();
-        Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
-    });
-}
-
-/* ────────────────────────── INFORMATIONS SUR LES SORTIES ───────────── */
-function dga_ouvrirInfoSorties(token) {
-    dga_showLoader('Chargement des informations…');
-    $.ajax({
-        url: CHEF_DIR_EB_CONTROLLER_URL, method: 'POST', data: { option: 5, token: token }, dataType: 'json'
-    }).done(function (res) {
-        dga_hideLoader();
-        if (res.status !== 'success') {
-            Swal.fire('Erreur', res.message || 'Impossible de charger les informations sur les sorties.', 'error');
-            return;
-        }
-
-        const e = res.expression;
-        document.getElementById('infoSortiesModalTitre').textContent = 'Sorties — ' + e.nom_expression;
-
-        const lignes = e.lignes || [];
-        const sectionsHtml = lignes.length
-            ? lignes.map(function (l) {
-                const sortiesHtml = (l.sorties || []).length
-                    ? l.sorties.map(function (s) {
-                        return `<tr><td>${dga_fmtDateHeure(s.date_sortie)}</td><td>${dga_escapeHtml(s.quantite_sortie)}</td><td>${s.utilisateur ? dga_escapeHtml(s.utilisateur) : '—'}</td></tr>`;
-                    }).join('')
-                    : '<tr><td colspan="3" style="text-align:center;color:#9ca3af;font-style:italic;">Aucune sortie enregistrée pour ce produit.</td></tr>';
-
-                return `
-                    <div class="dga-section-produit">
-                        <div class="dga-section-produit-titre">${dga_escapeHtml(l.designation)}</div>
-                        <div class="dga-section-produit-qtes">
-                            Quantité demandée : <strong>${dga_escapeHtml(l.quantite)}</strong>
-                            — Quantité réelle : <strong>${l.quantite_reelle !== null ? dga_escapeHtml(l.quantite_reelle) : '—'}</strong>
-                            — Quantité sortie : <strong>${dga_escapeHtml(l.quantite_sortie)}</strong>
-                        </div>
-                        <table class="dga-table-sorties-detail">
-                            <thead><tr><th>Date de sortie</th><th>Quantité sortie</th><th>Utilisateur</th></tr></thead>
-                            <tbody>${sortiesHtml}</tbody>
-                        </table>
-                    </div>
-                `;
-            }).join('')
-            : '<p style="text-align:center;color:#9ca3af;font-style:italic;">Aucun produit.</p>';
-
-        document.getElementById('dgaContenuInfoSorties').innerHTML = `
-            <p style="margin-bottom:1rem;font-size:.85rem;color:#374151;">
-                <strong>Demandeur :</strong> ${dga_escapeHtml(e.demandeur)}<br/>
-                <strong>Date de création :</strong> ${dga_fmtDate(e.date_creation)}
-            </p>
-            ${sectionsHtml}
-        `;
-
-        new bootstrap.Modal(document.getElementById('modalInfoSorties')).show();
+        new bootstrap.Modal(document.getElementById('modalDetailRepartition')).show();
     }).fail(function (xhr) {
         dga_hideLoader();
         Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
@@ -412,9 +407,7 @@ function dga_showLoader(msg = 'Chargement…') {
         <div id="dga-loader">
             <div class="dga-loader-bg"></div>
             <div class="dga-loader-box">
-                <svg class="dga-loader-spin" viewBox="0 0 50 50">
-                    <circle cx="25" cy="25" r="20" fill="none" stroke-width="4"/>
-                </svg>
+                <svg class="dga-loader-spin" viewBox="0 0 50 50"><circle cx="25" cy="25" r="20" fill="none" stroke-width="4"/></svg>
                 <p>${msg}</p>
             </div>
         </div>`);
@@ -423,10 +416,9 @@ function dga_hideLoader() { $('#dga-loader').remove(); }
 
 function dga_fmtDate(d) { return d ? new Date(d.replace(' ', 'T')).toLocaleDateString('fr-FR') : '—'; }
 
-function dga_fmtDateHeure(d) {
-    if (!d) return '—';
-    const dt = new Date(d.replace(' ', 'T'));
-    return dt.toLocaleDateString('fr-FR') + ' à ' + dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+function dga_fmtNombre(v) {
+    const n = parseFloat(v);
+    return isNaN(n) ? dga_escapeHtml(v) : String(n);
 }
 
 function dga_ajaxErrorMessage(xhr) {

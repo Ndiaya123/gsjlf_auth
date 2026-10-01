@@ -123,8 +123,8 @@ var KTDatatablesServerSide = function () {
             initComplete: function () {
                 hideLoader();
 
-                    document.documentElement.classList.remove('ld-booting');
-                    document.getElementById('lb-table')?.classList.add('lb-ready');
+                document.documentElement.classList.remove('ld-booting');
+                document.getElementById('lb-table')?.classList.add('lb-ready');
 
 
             }
@@ -304,9 +304,153 @@ submitButton1.addEventListener('click', function (e) {
 });
 
 
+// ─── SUGGESTIONS ANTI-DOUBLON ─────────────────────────────────────────────────
+// Pendant la saisie, affiche les rubriques existantes qui correspondent
+// (insensible à la casse et aux accents). Si le nom saisi existe déjà à
+// l'identique, le bouton d'envoi est désactivé.
+
+function initSuggestionsRubrique(inputId, boxId, submitBtn, getExcludeTmp) {
+    const input = document.getElementById(inputId);
+    const box = document.getElementById(boxId);
+    if (!input || !box) return { reset: function () {} };
+
+    const MIN_CHARS = 2;
+    let timer = null;
+    let xhr = null;
+
+    function esc(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    function sansAccents(s) {
+        return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    }
+
+    // Met en surbrillance la partie du nom qui correspond à la saisie
+    function surligner(nom, q) {
+        const n = sansAccents(nom);
+        const qn = sansAccents(q.trim());
+        const i = n.indexOf(qn);
+        if (i === -1 || !qn || n.length !== nom.length) return esc(nom);
+        return esc(nom.slice(0, i)) + '<mark>' + esc(nom.slice(i, i + qn.length)) + '</mark>' + esc(nom.slice(i + qn.length));
+    }
+
+    function bloquerEnvoi(bloquer) {
+        if (!submitBtn) return;
+        // Ne pas toucher au bouton pendant un envoi en cours
+        if (submitBtn.getAttribute('data-kt-indicator') === 'on') return;
+        submitBtn.disabled = bloquer;
+    }
+
+    function reset() {
+        clearTimeout(timer);
+        if (xhr) { xhr.abort(); xhr = null; }
+        box.classList.remove('is-open');
+        box.innerHTML = '';
+        bloquerEnvoi(false);
+    }
+
+    function afficher(liste, q) {
+        if (!input.value.trim()) { reset(); return; }
+
+        if (liste.length === 0) {
+            box.innerHTML = '<div class="cat-suggest-msg ok">✓ Aucune rubrique similaire — ce nom est disponible.</div>';
+            box.classList.add('is-open');
+            bloquerEnvoi(false);
+            return;
+        }
+
+        const exacte = liste.some(function (r) { return r.exact; });
+
+        let html = '<div class="cat-suggest-head">Rubriques existantes correspondantes (' + liste.length + ')</div><ul>';
+        liste.forEach(function (r) {
+            html += '<li class="' + (r.exact ? 'is-exact' : '') + '">' +
+                '<span>' + surligner(r.nom, q) + '</span>' +
+                (r.exact ? '<span class="cat-suggest-badge">Existe déjà</span>' : '') +
+                '</li>';
+        });
+        html += '</ul>';
+
+        if (exacte) {
+            html += '<div class="cat-suggest-msg err">Cette rubrique existe déjà. Veuillez choisir un autre nom.</div>';
+        } else {
+            html += '<div class="cat-suggest-msg info">Vérifiez que votre rubrique ne figure pas déjà dans cette liste.</div>';
+        }
+
+        box.innerHTML = html;
+        box.classList.add('is-open');
+        bloquerEnvoi(exacte);
+    }
+
+    function rechercher() {
+        const q = input.value.trim();
+
+        if (q.length < MIN_CHARS) { reset(); return; }
+
+        if (xhr) xhr.abort();
+
+        xhr = $.ajax({
+            type: 'POST',
+            url: '/personnel/chef_service_basi_controller',
+            data: { option: 53, q: q, tmp: getExcludeTmp ? getExcludeTmp() : '' },
+            success: function (resp) {
+                let liste = resp;
+                if (typeof resp === 'string') {
+                    try { liste = JSON.parse(resp); } catch (e) { liste = null; }
+                }
+                // Ignore une réponse arrivée après une nouvelle frappe
+                if (input.value.trim() !== q) return;
+                if (Array.isArray(liste)) {
+                    afficher(liste, q);
+                } else {
+                    reset();
+                }
+            },
+            complete: function () { xhr = null; }
+        });
+    }
+
+    input.addEventListener('input', function () {
+        clearTimeout(timer);
+        // Tant que la recherche n'a pas répondu, on ne bloque pas sur un ancien résultat
+        bloquerEnvoi(false);
+        timer = setTimeout(rechercher, 250);
+    });
+
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && box.classList.contains('is-open')) {
+            e.stopPropagation(); // ferme la liste sans fermer le modal
+            box.classList.remove('is-open');
+        }
+    });
+
+    return { reset: reset };
+}
+
+const suggestAjout = initSuggestionsRubrique(
+    'nom_rubrique',
+    'nom_rubrique_suggest',
+    document.getElementById('formRubrique_submit'),
+    null
+);
+
+const suggestModif = initSuggestionsRubrique(
+    'nom_rubrique_up',
+    'nom_rubrique_up_suggest',
+    document.getElementById('formRubriqueUpdate_submit'),
+    function () { return document.getElementById('tmp').value; } // exclut la rubrique éditée
+);
+
+$('#kt_modal_new_rubrique').on('hidden.bs.modal', function () { suggestAjout.reset(); });
+$('#kt_modal_update_rubrique').on('hidden.bs.modal', function () { suggestModif.reset(); });
+
+
 function videRubrique() {
     document.getElementById("nom_rubrique").value = "";
     $("#formRubrique")[0].reset();
+    suggestAjout.reset();
 }
 
 function closeRubrique() {
@@ -321,6 +465,7 @@ function modifierRubrique(e1, e2) {
     document.getElementById("tmp").value = e1;
     document.getElementById("nom_rubrique_up").value = e2;
     document.getElementById("original_nom").value = e2;
+    suggestModif.reset();
 
     $("#kt_modal_update_rubrique").modal('show');
 }
@@ -486,6 +631,7 @@ function videRubriqueUpdate() {
     document.getElementById("nom_rubrique_up").value = "";
     document.getElementById("original_nom").value = "";
     $("#formRubriqueUpdate")[0].reset();
+    suggestModif.reset();
 }
 
 function closeRubriqueUpdate() {

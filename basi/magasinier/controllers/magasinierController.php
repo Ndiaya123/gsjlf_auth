@@ -91,6 +91,11 @@ function inputValueMagasinier(string $key, $default = null) {
     if (isset($_GET[$key]))                return $_GET[$key];
     return $default;
 }
+/** Les produits sont des unités entières — jamais de quantité à virgule. */
+function estEntierPositif($valeur): bool {
+    return is_numeric($valeur) && (float) $valeur == (int) $valeur && (int) $valeur > 0;
+}
+
 function erreurSqlMagasinier(string $message = "Erreur lors de l'accès à la base de données."): void {
     http_response_code(500);
     echo json_encode(['status'=>'error','message'=>$message]);
@@ -1005,6 +1010,12 @@ function confirmerLivraisonBon(PDO $bdBASI, magasinierController $basiController
             $quantiteSaisie = $quantitesParLigne[$idBSL];
             if ($quantiteSaisie <= 0) continue;
 
+            if (!estEntierPositif($quantiteSaisie)) {
+                $bdBASI->rollBack();
+                echo json_encode(['status' => 'error', 'message' => "Les quantités livrées doivent être des nombres entiers."]);
+                return;
+            }
+
             // Garde-fou serveur : jamais plus que ce qui a été sorti dans CE bon.
             if ($quantiteSaisie > $restant + 0.001) {
                 $bdBASI->rollBack();
@@ -1179,6 +1190,12 @@ function confirmerLivraisonBonInvestissement(PDO $bdBASI, magasinierController $
 
             $quantiteSaisie = $quantitesParLigne[$idBSL];
             if ($quantiteSaisie <= 0) continue;
+
+            if (!estEntierPositif($quantiteSaisie)) {
+                $bdBASI->rollBack();
+                echo json_encode(['status' => 'error', 'message' => "Les quantités livrées doivent être des nombres entiers."]);
+                return;
+            }
 
             if ($quantiteSaisie > $restant + 0.001) {
                 $bdBASI->rollBack();

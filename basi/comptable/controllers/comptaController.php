@@ -819,6 +819,170 @@ ORDER BY sr.id ASC;
         break;
 
 
+// ─── CASE 10 : Suggestions de catégories existantes (anti-doublon) ────────────
+// Reçoit : q (texte saisi), tmp (optionnel, id chiffré à exclure en modification)
+// Renvoie : [{ "nom": "Ordinateurs", "exact": false }, ...]  (8 max)
+
+    case 10:
+
+        header('Content-Type: application/json; charset=utf-8');
+
+        try {
+            $q = trim($_POST['q'] ?? '');
+
+            if (mb_strlen($q, 'UTF-8') < 2) {
+                echo json_encode(array());
+                die;
+            }
+
+            // En modification : on exclut la catégorie en cours d'édition
+            $excludeId = !empty($_POST['tmp']) ? (int)$basiController->tokendecrypt($_POST['tmp']) : 0;
+
+            $stmt = $bdBASI->prepare("SELECT id, nom_categorie FROM categorie WHERE statut != 4 AND id != ?");
+            $stmt->execute([$excludeId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Comparaison insensible à la casse, aux accents et aux espaces multiples
+            $normaliser = function ($s) use ($basiController) {
+                $s = $basiController->fctRetirerAccents(trim($s));
+                $s = mb_strtolower($s, 'UTF-8');
+                return preg_replace('/\s+/u', ' ', $s);
+            };
+
+            $recherche = $normaliser($q);
+            $resultats = array();
+
+            foreach ($rows as $r) {
+                $nomNormalise = $normaliser($r['nom_categorie']);
+                $pos = mb_strpos($nomNormalise, $recherche, 0, 'UTF-8');
+
+                if ($pos === false) {
+                    continue;
+                }
+
+                $exact = ($nomNormalise === $recherche);
+                $resultats[] = array(
+                    'nom'   => $r['nom_categorie'],
+                    'exact' => $exact,
+                    // 0 = identique, 1 = commence par la saisie, 2 = contient la saisie
+                    'rang'  => $exact ? 0 : ($pos === 0 ? 1 : 2)
+                );
+            }
+
+            usort($resultats, function ($a, $b) {
+                if ($a['rang'] !== $b['rang']) {
+                    return $a['rang'] - $b['rang'];
+                }
+                return strcasecmp($a['nom'], $b['nom']);
+            });
+
+            $sortie = array();
+            foreach (array_slice($resultats, 0, 8) as $r) {
+                $sortie[] = array('nom' => $r['nom'], 'exact' => $r['exact']);
+            }
+
+            echo json_encode($sortie);
+            die;
+
+        } catch (\Throwable $th) {
+            error_log("Erreur case 10 : " . $th->getMessage());
+            echo json_encode(array());
+            die;
+        }
+        break;
+
+
+// ─── CASE 11 : Suggestions de sous-catégories existantes (anti-doublon) ───────
+// Reçoit : q (texte saisi), categorie_id (optionnel, catégorie choisie),
+//          tmp (optionnel, id chiffré de la sous-catégorie à exclure en modification)
+// Renvoie : [{ "nom": "Portables", "categorie": "Ordinateurs",
+//              "memeCategorie": true, "exact": false }, ...]  (10 max)
+// "exact" = même nom ET même catégorie → doublon réel (bloquant)
+
+    case 11:
+
+        header('Content-Type: application/json; charset=utf-8');
+
+        try {
+            $q = trim($_POST['q'] ?? '');
+
+            if (mb_strlen($q, 'UTF-8') < 2) {
+                echo json_encode(array());
+                die;
+            }
+
+            $categorieId = (int)($_POST['categorie_id'] ?? 0);
+            $excludeId = !empty($_POST['tmp']) ? (int)$basiController->tokendecrypt($_POST['tmp']) : 0;
+
+            $stmt = $bdBASI->prepare("
+                SELECT sr.id, sr.nom_sous_categorie, sr.categorie_id, c.nom_categorie
+                FROM souscategorie sr
+                INNER JOIN categorie c ON c.id = sr.categorie_id
+                WHERE sr.statut != 4 AND c.statut != 4 AND sr.id != ?
+            ");
+            $stmt->execute([$excludeId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Comparaison insensible à la casse, aux accents et aux espaces multiples
+            $normaliser = function ($s) use ($basiController) {
+                $s = $basiController->fctRetirerAccents(trim($s));
+                $s = mb_strtolower($s, 'UTF-8');
+                return preg_replace('/\s+/u', ' ', $s);
+            };
+
+            $recherche = $normaliser($q);
+            $resultats = array();
+
+            foreach ($rows as $r) {
+                $nomNormalise = $normaliser($r['nom_sous_categorie']);
+                $pos = mb_strpos($nomNormalise, $recherche, 0, 'UTF-8');
+
+                if ($pos === false) {
+                    continue;
+                }
+
+                $memeCategorie = ($categorieId > 0 && (int)$r['categorie_id'] === $categorieId);
+                $identique = ($nomNormalise === $recherche);
+
+                $resultats[] = array(
+                    'nom'           => $r['nom_sous_categorie'],
+                    'categorie'     => $r['nom_categorie'],
+                    'memeCategorie' => $memeCategorie,
+                    'exact'         => $identique && $memeCategorie,
+                    'identique'     => $identique,
+                    'prefixe'       => ($pos === 0)
+                );
+            }
+
+            // Tri : doublon réel > même catégorie > nom identique ailleurs > commence par > contient
+            usort($resultats, function ($a, $b) {
+                foreach (array('exact', 'memeCategorie', 'identique', 'prefixe') as $cle) {
+                    if ($a[$cle] !== $b[$cle]) {
+                        return $a[$cle] ? -1 : 1;
+                    }
+                }
+                return strcasecmp($a['nom'], $b['nom']);
+            });
+
+            $sortie = array();
+            foreach (array_slice($resultats, 0, 10) as $r) {
+                $sortie[] = array(
+                    'nom'           => $r['nom'],
+                    'categorie'     => $r['categorie'],
+                    'memeCategorie' => $r['memeCategorie'],
+                    'exact'         => $r['exact']
+                );
+            }
+
+            echo json_encode($sortie);
+            die;
+
+        } catch (\Throwable $th) {
+            error_log("Erreur case 11 : " . $th->getMessage());
+            echo json_encode(array());
+            die;
+        }
+        break;
 
 
     default :

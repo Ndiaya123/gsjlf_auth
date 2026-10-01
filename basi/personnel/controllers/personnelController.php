@@ -71,7 +71,10 @@ checkSessionEB();
 
 $sessionUserId      = (int)$_SESSION['tmpIdBASI'];
 $sessionMatricule   = trim($_SESSION['tmpMatricule']);
-$sessionIdDirection = (int)($_SESSION['user_direction'] ?? 0);
+$sessionIdDirection = (int)($_SESSION['user_direction'] ?? 0); // direction d'appartenance — TOUT employé (Fonctionnement)
+// idDirection dont l'utilisateur est le DIRECTEUR — seule cette variable
+// autorise l'Investissement (même convention que chef_service_basi_controller.php).
+$sessionIdDirectionDirecteur = (int)($_SESSION['tmpIdDirection'] ?? 0);
 
 // ─── Classe contrôleur ────────────────────────────────────────────────────────
 class expressionBesoinController extends BDBASI
@@ -121,6 +124,11 @@ function inputValueEB(string $key, $default = null) {
     if (isset($_GET[$key]))                return $_GET[$key];
     return $default;
 }
+/** Les produits sont des unités entières — jamais de quantité à virgule. */
+function estEntierPositif($valeur): bool {
+    return is_numeric($valeur) && (float) $valeur == (int) $valeur && (int) $valeur > 0;
+}
+
 function erreurSqlEB(string $message = "Erreur lors de l'accès à la base de données."): void {
     http_response_code(500);
     echo json_encode(['status'=>'error','message'=>$message]);
@@ -1204,6 +1212,10 @@ function enregistrerExpressionBesoin(PDO $bdBASI, expressionBesoinController $ba
                 echo json_encode(['status' => 'error', 'message' => 'La quantité doit être strictement supérieure à zéro pour chaque produit.']);
                 return;
             }
+            if (!estEntierPositif($quantite)) {
+                echo json_encode(['status' => 'error', 'message' => 'Les quantités demandées doivent être des nombres entiers.']);
+                return;
+            }
             if (isset($vus[$idP])) {
                 echo json_encode(['status' => 'error', 'message' => 'Un même produit ne peut être ajouté qu\'une seule fois.']);
                 return;
@@ -1379,20 +1391,20 @@ function insererHistoriqueEBP(PDO $bdBASI, int $idEBP, int $idEB, int $idP, floa
  * Indique si l'utilisateur connecté a accès à l'onglet Investissement
  * (idDirection renseigné en session) et le nom de sa direction.
  */
-function chargerContexteDirection(PDO $bdBASI, int $sessionIdDirection): void {
+function chargerContexteDirection(PDO $bdBASI, int $sessionIdDirectionDirecteur): void {
     try {
-        if ($sessionIdDirection <= 0) {
+        if ($sessionIdDirectionDirecteur <= 0) {
             echo json_encode(['status' => 'success', 'aDirection' => false]);
             return;
         }
         $stmt = $bdBASI->prepare("SELECT id, nom_direction FROM direction WHERE id = ? LIMIT 1");
-        $stmt->execute([$sessionIdDirection]);
+        $stmt->execute([$sessionIdDirectionDirecteur]);
         $direction = $stmt->fetch(PDO::FETCH_ASSOC);
 
         echo json_encode([
             'status'      => 'success',
             'aDirection'  => (bool) $direction,
-            'idDirection' => $sessionIdDirection,
+            'idDirection' => $sessionIdDirectionDirecteur,
             'nomDirection'=> $direction['nom_direction'] ?? null,
         ]);
     } catch (\Throwable $e) {
@@ -1440,9 +1452,9 @@ function calculerQuotaDirection(PDO $bdBASI, int $idDirection, int $idP): float 
  * livraison_produit_repartition pour cette direction (mode='stock') — pas
  * tout le catalogue Investissement — pour rester performant.
  */
-function listerProduitsEligiblesInvestissement(PDO $bdBASI, int $sessionIdDirection): void {
+function listerProduitsEligiblesInvestissement(PDO $bdBASI, int $sessionIdDirectionDirecteur): void {
     try {
-        if ($sessionIdDirection <= 0) {
+        if ($sessionIdDirectionDirecteur <= 0) {
             echo json_encode(['status' => 'error', 'message' => "Aucune direction associée à votre compte."]);
             return;
         }
@@ -1453,7 +1465,7 @@ function listerProduitsEligiblesInvestissement(PDO $bdBASI, int $sessionIdDirect
             JOIN livraison_produit lp ON lpr.idLP = lp.id
             WHERE lpr.mode = 'stock' AND lpr.idDirection = ?
         ");
-        $stmtCandidats->execute([$sessionIdDirection]);
+        $stmtCandidats->execute([$sessionIdDirectionDirecteur]);
         $idsCandidats = array_column($stmtCandidats->fetchAll(PDO::FETCH_ASSOC), 'idP');
 
         if (empty($idsCandidats)) {
@@ -1483,7 +1495,7 @@ function listerProduitsEligiblesInvestissement(PDO $bdBASI, int $sessionIdDirect
 
         $resultat = [];
         foreach ($produits as $p) {
-            $quota = calculerQuotaDirection($bdBASI, $sessionIdDirection, (int) $p['idP']);
+            $quota = calculerQuotaDirection($bdBASI, $sessionIdDirectionDirecteur, (int) $p['idP']);
             if ($quota <= 0.001) continue;
 
             $stmtRubrique->execute([$p['idP']]);
@@ -1507,9 +1519,9 @@ function listerProduitsEligiblesInvestissement(PDO $bdBASI, int $sessionIdDirect
  * l'utilisateur connecté (partagée entre tous les chefs de service qui se
  * succèdent à la tête de cette direction — jamais filtrée par idUtilisateur).
  */
-function listerExpressionsBesoinInvestissement(PDO $bdBASI, expressionBesoinController $basiController, int $sessionIdDirection): void {
+function listerExpressionsBesoinInvestissement(PDO $bdBASI, expressionBesoinController $basiController, int $sessionIdDirectionDirecteur): void {
     try {
-        if ($sessionIdDirection <= 0) {
+        if ($sessionIdDirectionDirecteur <= 0) {
             echo json_encode(['status' => 'error', 'message' => "Aucune direction associée à votre compte."]);
             return;
         }
@@ -1521,7 +1533,7 @@ function listerExpressionsBesoinInvestissement(PDO $bdBASI, expressionBesoinCont
             WHERE ebi.idDirection = ?
             ORDER BY ebi.date_creation DESC, ebi.id DESC
         ");
-        $stmt->execute([$sessionIdDirection]);
+        $stmt->execute([$sessionIdDirectionDirecteur]);
         $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
         foreach ($rows as &$r) {
@@ -1542,9 +1554,9 @@ function listerExpressionsBesoinInvestissement(PDO $bdBASI, expressionBesoinCont
  * idUtilisateur : n'importe quel chef de service de cette direction (passé
  * ou présent) peut la consulter/modifier tant qu'elle est en Brouillon.
  */
-function detailExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoinController $basiController, int $sessionIdDirection): void {
+function detailExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoinController $basiController, int $sessionIdDirectionDirecteur): void {
     try {
-        if ($sessionIdDirection <= 0) {
+        if ($sessionIdDirectionDirecteur <= 0) {
             echo json_encode(['status' => 'error', 'message' => "Aucune direction associée à votre compte."]);
             return;
         }
@@ -1559,7 +1571,7 @@ function detailExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoinContr
             WHERE id = ? AND idDirection = ?
             LIMIT 1
         ");
-        $stmt->execute([$idEBI, $sessionIdDirection]);
+        $stmt->execute([$idEBI, $sessionIdDirectionDirecteur]);
         $expression = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$expression) {
             echo json_encode(['status' => 'error', 'message' => 'Expression de besoin introuvable.']);
@@ -1597,9 +1609,9 @@ function detailExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoinContr
  *   - action : 'poursuivre' | 'terminer'
  *   - produits : [{ idP, quantite }, ...] — liste COMPLÈTE voulue
  */
-function enregistrerExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoinController $basiController, int $sessionUserId, string $sessionMatricule, int $sessionIdDirection): void {
+function enregistrerExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoinController $basiController, int $sessionUserId, string $sessionMatricule, int $sessionIdDirectionDirecteur): void {
     try {
-        if ($sessionIdDirection <= 0) {
+        if ($sessionIdDirectionDirecteur <= 0) {
             echo json_encode(['status' => 'error', 'message' => "Aucune direction associée à votre compte."]);
             return;
         }
@@ -1619,6 +1631,10 @@ function enregistrerExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoin
                 echo json_encode(['status' => 'error', 'message' => 'La quantité doit être strictement supérieure à zéro pour chaque produit.']);
                 return;
             }
+            if (!estEntierPositif($quantite)) {
+                echo json_encode(['status' => 'error', 'message' => 'Les quantités demandées doivent être des nombres entiers.']);
+                return;
+            }
             if (isset($vus[$idP])) {
                 echo json_encode(['status' => 'error', 'message' => 'Un même produit ne peut être ajouté qu\'une seule fois.']);
                 return;
@@ -1634,7 +1650,7 @@ function enregistrerExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoin
         // ── Vérification du quota (sécurité, en plus du filtrage déjà fait
         // côté catalogue) — jamais faire confiance uniquement au client. ──
         foreach ($produitsValides as $idP => $quantiteDemandee) {
-            $quotaDisponible = calculerQuotaDirection($bdBASI, $sessionIdDirection, $idP);
+            $quotaDisponible = calculerQuotaDirection($bdBASI, $sessionIdDirectionDirecteur, $idP);
             // En modification, il faut réintégrer la quantité déjà réservée
             // par CETTE MÊME expression avant de comparer (sinon on se
             // pénaliserait soi-même à chaque modification).
@@ -1666,10 +1682,10 @@ function enregistrerExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoin
             $bdBASI->prepare("
                 INSERT INTO expression_besoin_investissement (nom_expression, idDirection, idUtilisateur, date_creation, idStatut, dateEnregistrement)
                 VALUES (?, ?, ?, CURDATE(), ?, ?)
-            ")->execute([$nomExpression, $sessionIdDirection, $sessionUserId, $idStatut, $dateEnregistrement]);
+            ")->execute([$nomExpression, $sessionIdDirectionDirecteur, $sessionUserId, $idStatut, $dateEnregistrement]);
             $idEBI = (int) $bdBASI->lastInsertId();
 
-            insererHistoriqueEBI($bdBASI, $idEBI, $nomExpression, $sessionIdDirection, $sessionUserId, $idStatut,
+            insererHistoriqueEBI($bdBASI, $idEBI, $nomExpression, $sessionIdDirectionDirecteur, $sessionUserId, $idStatut,
                 "Création de l'expression de besoin investissement (par $sessionMatricule)", $dateEnregistrement);
         } else {
             $idEBI = (int) $basiController->tokendecrypt($token);
@@ -1681,7 +1697,7 @@ function enregistrerExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoin
                 WHERE id = ? AND idDirection = ?
                 LIMIT 1
             ");
-            $stmtC->execute([$idEBI, $sessionIdDirection]);
+            $stmtC->execute([$idEBI, $sessionIdDirectionDirecteur]);
             $expression = $stmtC->fetch(PDO::FETCH_ASSOC);
             if (!$expression) {
                 echo json_encode(['status' => 'error', 'message' => 'Expression de besoin introuvable.']);
@@ -1742,7 +1758,7 @@ function enregistrerExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoin
         // caisseController.php), exactement comme pour le Fonctionnement.
         if ($action === 'terminer') {
             $bdBASI->prepare("UPDATE expression_besoin_investissement SET idStatut = 2 WHERE id = ?")->execute([$idEBI]);
-            insererHistoriqueEBI($bdBASI, $idEBI, $nomExpression, $sessionIdDirection, $sessionUserId, 2,
+            insererHistoriqueEBI($bdBASI, $idEBI, $nomExpression, $sessionIdDirectionDirecteur, $sessionUserId, 2,
                 "Soumission au comptable pour sortie de stock (par $sessionMatricule)", $dateEnregistrement);
         }
 
@@ -1853,6 +1869,11 @@ function confirmerReceptionDemandeur(PDO $bdBASI, expressionBesoinController $ba
             $recue = $parLigne[$idBSL]['recue'];
             $ecart = $parLigne[$idBSL]['ecart'];
             if ($recue < 0 || $ecart < 0) { $bdBASI->rollBack(); echo json_encode(['status' => 'error', 'message' => 'Les quantités ne peuvent pas être négatives.']); return; }
+            if (($recue > 0 && !estEntierPositif($recue)) || ($ecart > 0 && !estEntierPositif($ecart))) {
+                $bdBASI->rollBack();
+                echo json_encode(['status' => 'error', 'message' => 'Les quantités doivent être des nombres entiers.']);
+                return;
+            }
             if ($recue <= 0.001 && $ecart <= 0.001) continue;
 
             $restant = max(0, (float) $l['quantite_livree'] - (float) $l['quantite_recue'] - (float) $l['quantite_ecart'] - (float) $l['quantite_perdue']);
@@ -1919,9 +1940,9 @@ function confirmerReceptionDemandeur(PDO $bdBASI, expressionBesoinController $ba
  * de service : quantités par ligne (demandée/sortie/livrée/reçue), bons de
  * sortie, et bouton "Reçu" dès qu'une ligne de bon reste à confirmer.
  */
-function voirSuiviExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoinController $basiController, int $sessionIdDirection): void {
+function voirSuiviExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoinController $basiController, int $sessionIdDirectionDirecteur): void {
     try {
-        if ($sessionIdDirection <= 0) {
+        if ($sessionIdDirectionDirecteur <= 0) {
             echo json_encode(['status' => 'error', 'message' => "Aucune direction associée à votre compte."]);
             return;
         }
@@ -1936,7 +1957,7 @@ function voirSuiviExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoinCo
             WHERE id = ? AND idDirection = ?
             LIMIT 1
         ");
-        $stmt->execute([$idEBI, $sessionIdDirection]);
+        $stmt->execute([$idEBI, $sessionIdDirectionDirecteur]);
         $expression = $stmt->fetch(PDO::FETCH_ASSOC);
         if (!$expression) {
             echo json_encode(['status' => 'error', 'message' => 'Expression de besoin introuvable.']);
@@ -2043,9 +2064,9 @@ function voirSuiviExpressionBesoinInvestissement(PDO $bdBASI, expressionBesoinCo
  *
  * Champs attendus : token, quantites: [{ idBSL, quantite, ecart?, commentaire? }, ...]
  */
-function confirmerReceptionDemandeurInvestissement(PDO $bdBASI, expressionBesoinController $basiController, int $sessionUserId, string $sessionMatricule, int $sessionIdDirection): void {
+function confirmerReceptionDemandeurInvestissement(PDO $bdBASI, expressionBesoinController $basiController, int $sessionUserId, string $sessionMatricule, int $sessionIdDirectionDirecteur): void {
     try {
-        if ($sessionIdDirection <= 0) {
+        if ($sessionIdDirectionDirecteur <= 0) {
             echo json_encode(['status' => 'error', 'message' => "Aucune direction associée à votre compte."]);
             return;
         }
@@ -2068,7 +2089,7 @@ function confirmerReceptionDemandeurInvestissement(PDO $bdBASI, expressionBesoin
         }
 
         $stmtC = $bdBASI->prepare("SELECT id FROM expression_besoin_investissement WHERE id = ? AND idDirection = ? LIMIT 1");
-        $stmtC->execute([$idEBI, $sessionIdDirection]);
+        $stmtC->execute([$idEBI, $sessionIdDirectionDirecteur]);
         if (!$stmtC->fetch()) { echo json_encode(['status' => 'error', 'message' => "Expression de besoin introuvable ou hors de votre direction."]); return; }
 
         date_default_timezone_set('Africa/Dakar');
@@ -2105,6 +2126,11 @@ function confirmerReceptionDemandeurInvestissement(PDO $bdBASI, expressionBesoin
             $recue = $parLigne[$idBSL]['recue'];
             $ecart = $parLigne[$idBSL]['ecart'];
             if ($recue < 0 || $ecart < 0) { $bdBASI->rollBack(); echo json_encode(['status' => 'error', 'message' => 'Les quantités ne peuvent pas être négatives.']); return; }
+            if (($recue > 0 && !estEntierPositif($recue)) || ($ecart > 0 && !estEntierPositif($ecart))) {
+                $bdBASI->rollBack();
+                echo json_encode(['status' => 'error', 'message' => 'Les quantités doivent être des nombres entiers.']);
+                return;
+            }
             if ($recue <= 0.001 && $ecart <= 0.001) continue;
 
             $restant = max(0, (float) $l['quantite_livree'] - (float) $l['quantite_recue'] - (float) $l['quantite_ecart'] - (float) $l['quantite_perdue']);
@@ -2150,6 +2176,214 @@ function confirmerReceptionDemandeurInvestissement(PDO $bdBASI, expressionBesoin
     } catch (\Throwable $e) {
         if ($bdBASI->inTransaction()) $bdBASI->rollBack();
         error_log('[EBI][confirmerReceptionDemandeurInvestissement] ' . $e->getMessage());
+        erreurSqlEB('Impossible de confirmer la réception.');
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODULE — Page dédiée "Réception des produits" : liste en un seul endroit
+   tous les bons (Fonctionnement + Investissement) ayant au moins une ligne
+   remise par le magasinier mais pas encore confirmée par ce demandeur,
+   quelle que soit l'expression de besoin d'origine.
+═══════════════════════════════════════════════════════════════════════════ */
+
+/**
+ * OPTION 20 — Liste des bons en attente de confirmation, tous types
+ * confondus. Fonctionnement : bons des expressions dont l'utilisateur est
+ * le demandeur. Investissement : bons des expressions de sa direction
+ * (même règle que le reste du module Investissement — la direction entière
+ * partage la confirmation, pas un seul individu).
+ */
+function listerBonsAConfirmer(PDO $bdBASI, expressionBesoinController $basiController, int $sessionUserId, int $sessionIdDirectionDirecteur): void {
+    try {
+        $stmtF = $bdBASI->prepare("
+            SELECT bs.id, bs.numero_bon, bs.dateSortie, eb.nom_expression,
+                   'fonctionnement' AS type,
+                   (SELECT COUNT(*) FROM bon_sortie_eb_ligne bl
+                    WHERE bl.idBS = bs.id AND (bl.quantite_livree - bl.quantite_recue - bl.quantite_ecart - bl.quantite_perdue) > 0) AS nombre_lignes_a_confirmer
+            FROM bon_sortie_eb bs
+            JOIN expression_besoin eb ON eb.id = bs.idEB
+            WHERE eb.idUtilisateur = ?
+            HAVING nombre_lignes_a_confirmer > 0
+        ");
+        $stmtF->execute([$sessionUserId]);
+        $bonsFonctionnement = $stmtF->fetchAll(PDO::FETCH_ASSOC);
+
+        $bonsInvestissement = [];
+        if ($sessionIdDirectionDirecteur > 0) {
+            $stmtI = $bdBASI->prepare("
+                SELECT bs.id, bs.numero_bon, bs.dateSortie, ebi.nom_expression,
+                       'investissement' AS type,
+                       (SELECT COUNT(*) FROM bon_sortie_ebi_ligne bl
+                        WHERE bl.idBS = bs.id AND (bl.quantite_livree - bl.quantite_recue - bl.quantite_ecart - bl.quantite_perdue) > 0) AS nombre_lignes_a_confirmer
+                FROM bon_sortie_ebi bs
+                JOIN expression_besoin_investissement ebi ON ebi.id = bs.idEBI
+                WHERE ebi.idDirection = ?
+                HAVING nombre_lignes_a_confirmer > 0
+            ");
+            $stmtI->execute([$sessionIdDirectionDirecteur]);
+            $bonsInvestissement = $stmtI->fetchAll(PDO::FETCH_ASSOC);
+        }
+
+        $tous = array_merge($bonsFonctionnement, $bonsInvestissement);
+        usort($tous, fn($a, $b) => strcmp($a['dateSortie'], $b['dateSortie']));
+
+        foreach ($tous as &$b) {
+            $b['tmp'] = $basiController->tokenencrypt($b['type'][0] . $b['id']); // préfixe f/i + id, décodé côté détail
+        }
+        unset($b);
+
+        echo json_encode(['status' => 'success', 'data' => $tous, 'nombre_total' => count($tous)]);
+    } catch (\Throwable $e) {
+        error_log('[EB][listerBonsAConfirmer] ' . $e->getMessage());
+        erreurSqlEB('Impossible de charger la liste des réceptions en attente.');
+    }
+}
+
+/**
+ * OPTION 21 — Détail d'UN bon (Fonctionnement ou Investissement, déduit du
+ * préfixe du token) pour la page de réception : lignes encore à confirmer.
+ */
+function detailBonReception(PDO $bdBASI, expressionBesoinController $basiController, int $sessionUserId, int $sessionIdDirectionDirecteur): void {
+    try {
+        $token = trim((string) inputValueEB('token', ''));
+        if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
+        $decode = (string) $basiController->tokendecrypt($token);
+        $type = $decode[0] ?? '';
+        $idBS = (int) substr($decode, 1);
+        if ($idBS <= 0 || !in_array($type, ['f', 'i'], true)) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+
+        if ($type === 'f') {
+            $stmtC = $bdBASI->prepare("
+                SELECT bs.id, bs.numero_bon, bs.dateSortie, eb.nom_expression
+                FROM bon_sortie_eb bs JOIN expression_besoin eb ON eb.id = bs.idEB
+                WHERE bs.id = ? AND eb.idUtilisateur = ?
+                LIMIT 1
+            ");
+            $stmtC->execute([$idBS, $sessionUserId]);
+        } else {
+            $stmtC = $bdBASI->prepare("
+                SELECT bs.id, bs.numero_bon, bs.dateSortie, ebi.nom_expression
+                FROM bon_sortie_ebi bs JOIN expression_besoin_investissement ebi ON ebi.id = bs.idEBI
+                WHERE bs.id = ? AND ebi.idDirection = ?
+                LIMIT 1
+            ");
+            $stmtC->execute([$idBS, $sessionIdDirectionDirecteur]);
+        }
+        $bon = $stmtC->fetch(PDO::FETCH_ASSOC);
+        if (!$bon) { echo json_encode(['status' => 'error', 'message' => 'Bon introuvable.']); return; }
+
+        $table = $type === 'f' ? 'bon_sortie_eb_ligne' : 'bon_sortie_ebi_ligne';
+        $colProduit = $type === 'f' ? 'idP' : 'id_produit';
+        $stmtLignes = $bdBASI->prepare("
+            SELECT bl.id AS idBSL, bl.quantite_livree, bl.quantite_recue, bl.quantite_ecart, bl.quantite_perdue, p.nomproduit AS designation
+            FROM $table bl
+            JOIN product p ON bl.$colProduit = p.idP
+            WHERE bl.idBS = ?
+            ORDER BY bl.id ASC
+        ");
+        $stmtLignes->execute([$idBS]);
+        $lignes = $stmtLignes->fetchAll(PDO::FETCH_ASSOC);
+
+        $lignes = array_values(array_filter(array_map(function ($l) {
+            $l['quantite_restante_a_recevoir'] = max(0, (int) $l['quantite_livree'] - (int) $l['quantite_recue'] - (int) $l['quantite_ecart'] - (int) $l['quantite_perdue']);
+            return $l['quantite_restante_a_recevoir'] > 0 ? $l : null;
+        }, $lignes)));
+
+        $bon['type'] = $type === 'f' ? 'fonctionnement' : 'investissement';
+        $bon['lignes'] = $lignes;
+        echo json_encode(['status' => 'success', 'bon' => $bon]);
+    } catch (\Throwable $e) {
+        error_log('[EB][detailBonReception] ' . $e->getMessage());
+        erreurSqlEB('Impossible de charger le détail du bon.');
+    }
+}
+
+/**
+ * OPTION 22 — Confirme la réception d'UN bon depuis la page dédiée.
+ * La quantité reçue est TOUJOURS la totalité de ce qui restait à confirmer
+ * sur chaque ligne du bon (pas de saisie partielle, pas d'écart pour
+ * l'instant — cette page ne les propose pas). Réutilise directement
+ * confirmerReceptionDemandeur / confirmerReceptionDemandeurInvestissement
+ * en leur transmettant le token décodé de la bonne expression de besoin.
+ */
+function confirmerReceptionBon(PDO $bdBASI, expressionBesoinController $basiController, int $sessionUserId, string $sessionMatricule, int $sessionIdDirectionDirecteur): void {
+    try {
+        $token = trim((string) inputValueEB('token', ''));
+        if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
+        $decode = (string) $basiController->tokendecrypt($token);
+        $type = $decode[0] ?? '';
+        $idBS = (int) substr($decode, 1);
+        if ($idBS <= 0 || !in_array($type, ['f', 'i'], true)) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+
+        date_default_timezone_set('Africa/Dakar');
+        $dateEnregistrement = date('Y-m-d H:i:s');
+        $motif = "Réception confirmée par le demandeur, depuis la page Réception des produits (par $sessionMatricule)";
+
+        if ($type === 'f') {
+            $stmtEB = $bdBASI->prepare("SELECT eb.id FROM bon_sortie_eb bs JOIN expression_besoin eb ON eb.id = bs.idEB WHERE bs.id = ? AND eb.idUtilisateur = ? LIMIT 1");
+            $stmtEB->execute([$idBS, $sessionUserId]);
+            $idEB = (int) $stmtEB->fetchColumn();
+            if ($idEB <= 0) { echo json_encode(['status' => 'error', 'message' => 'Bon introuvable.']); return; }
+
+            $bdBASI->beginTransaction();
+            $stmtLignes = $bdBASI->prepare("SELECT id AS idBSL, idEBP, quantite_livree, quantite_recue, quantite_ecart, quantite_perdue FROM bon_sortie_eb_ligne WHERE idBS = ? FOR UPDATE");
+            $stmtLignes->execute([$idBS]);
+            $lignes = $stmtLignes->fetchAll(PDO::FETCH_ASSOC);
+
+            $stmtRecueBon = $bdBASI->prepare("UPDATE bon_sortie_eb_ligne SET quantite_recue = quantite_recue + ? WHERE id = ?");
+            $stmtRecueEBP = $bdBASI->prepare("UPDATE expression_besoin_produit SET quantite_recue = quantite_recue + ?, dateEnregistrement = ? WHERE id = ?");
+
+            $auMoinsUne = false;
+            foreach ($lignes as $l) {
+                $restant = max(0, (int) $l['quantite_livree'] - (int) $l['quantite_recue'] - (int) $l['quantite_ecart'] - (int) $l['quantite_perdue']);
+                if ($restant <= 0) continue;
+                $stmtRecueBon->execute([$restant, $l['idBSL']]);
+                $stmtRecueEBP->execute([$restant, $dateEnregistrement, $l['idEBP']]);
+                ebw_historiserLigneBon($bdBASI, (int) $l['idBSL'], $motif, $sessionUserId, $dateEnregistrement);
+                ebw_historiserEBP($bdBASI, (int) $l['idEBP'], $motif, $sessionUserId, $dateEnregistrement);
+                $auMoinsUne = true;
+            }
+            if (!$auMoinsUne) { $bdBASI->rollBack(); echo json_encode(['status' => 'error', 'message' => 'Ce bon est déjà entièrement confirmé.']); return; }
+
+            ebw_recalculerStatutBon($bdBASI, $idBS, $sessionUserId, $motif, $dateEnregistrement);
+            ebw_recalculerStatutEB($bdBASI, $idEB, $motif, $dateEnregistrement);
+            $bdBASI->commit();
+        } else {
+            $stmtEB = $bdBASI->prepare("SELECT ebi.id FROM bon_sortie_ebi bs JOIN expression_besoin_investissement ebi ON ebi.id = bs.idEBI WHERE bs.id = ? AND ebi.idDirection = ? LIMIT 1");
+            $stmtEB->execute([$idBS, $sessionIdDirectionDirecteur]);
+            $idEBI = (int) $stmtEB->fetchColumn();
+            if ($idEBI <= 0) { echo json_encode(['status' => 'error', 'message' => 'Bon introuvable.']); return; }
+
+            $bdBASI->beginTransaction();
+            $stmtLignes = $bdBASI->prepare("SELECT id AS idBSL, idEBIP, quantite_livree, quantite_recue, quantite_ecart, quantite_perdue FROM bon_sortie_ebi_ligne WHERE idBS = ? FOR UPDATE");
+            $stmtLignes->execute([$idBS]);
+            $lignes = $stmtLignes->fetchAll(PDO::FETCH_ASSOC);
+
+            $stmtRecueBon  = $bdBASI->prepare("UPDATE bon_sortie_ebi_ligne SET quantite_recue = quantite_recue + ? WHERE id = ?");
+            $stmtRecueEBIP = $bdBASI->prepare("UPDATE expression_besoin_investissement_produit SET quantite_recue = quantite_recue + ?, dateEnregistrement = ? WHERE id = ?");
+
+            $auMoinsUne = false;
+            foreach ($lignes as $l) {
+                $restant = max(0, (int) $l['quantite_livree'] - (int) $l['quantite_recue'] - (int) $l['quantite_ecart'] - (int) $l['quantite_perdue']);
+                if ($restant <= 0) continue;
+                $stmtRecueBon->execute([$restant, $l['idBSL']]);
+                $stmtRecueEBIP->execute([$restant, $dateEnregistrement, $l['idEBIP']]);
+                ebwi_historiserLigneBon($bdBASI, (int) $l['idBSL'], $motif, $sessionUserId, $dateEnregistrement);
+                ebwi_historiserEBIP($bdBASI, (int) $l['idEBIP'], $motif, $sessionUserId, $dateEnregistrement);
+                $auMoinsUne = true;
+            }
+            if (!$auMoinsUne) { $bdBASI->rollBack(); echo json_encode(['status' => 'error', 'message' => 'Ce bon est déjà entièrement confirmé.']); return; }
+
+            ebwi_recalculerStatutBon($bdBASI, $idBS, $sessionUserId, $motif, $dateEnregistrement);
+            ebwi_recalculerStatutEBI($bdBASI, $idEBI, $motif, $dateEnregistrement);
+            $bdBASI->commit();
+        }
+
+        echo json_encode(['status' => 'success', 'message' => 'Réception confirmée avec succès.']);
+    } catch (\Throwable $e) {
+        if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+        error_log('[EB][confirmerReceptionBon] ' . $e->getMessage());
         erreurSqlEB('Impossible de confirmer la réception.');
     }
 }
@@ -2202,23 +2436,23 @@ try {
             break;
 
         case 10:
-            chargerContexteDirection($bdBASI, $sessionIdDirection);
+            chargerContexteDirection($bdBASI, $sessionIdDirectionDirecteur);
             break;
 
         case 13:
-            listerProduitsEligiblesInvestissement($bdBASI, $sessionIdDirection);
+            listerProduitsEligiblesInvestissement($bdBASI, $sessionIdDirectionDirecteur);
             break;
 
         case 14:
-            listerExpressionsBesoinInvestissement($bdBASI, $basiController, $sessionIdDirection);
+            listerExpressionsBesoinInvestissement($bdBASI, $basiController, $sessionIdDirectionDirecteur);
             break;
 
         case 15:
-            detailExpressionBesoinInvestissement($bdBASI, $basiController, $sessionIdDirection);
+            detailExpressionBesoinInvestissement($bdBASI, $basiController, $sessionIdDirectionDirecteur);
             break;
 
         case 16:
-            enregistrerExpressionBesoinInvestissement($bdBASI, $basiController, $sessionUserId, $sessionMatricule, $sessionIdDirection);
+            enregistrerExpressionBesoinInvestissement($bdBASI, $basiController, $sessionUserId, $sessionMatricule, $sessionIdDirectionDirecteur);
             break;
 
         case 17:
@@ -2226,11 +2460,23 @@ try {
             break;
 
         case 18:
-            voirSuiviExpressionBesoinInvestissement($bdBASI, $basiController, $sessionIdDirection);
+            voirSuiviExpressionBesoinInvestissement($bdBASI, $basiController, $sessionIdDirectionDirecteur);
             break;
 
         case 19:
-            confirmerReceptionDemandeurInvestissement($bdBASI, $basiController, $sessionUserId, $sessionMatricule, $sessionIdDirection);
+            confirmerReceptionDemandeurInvestissement($bdBASI, $basiController, $sessionUserId, $sessionMatricule, $sessionIdDirectionDirecteur);
+            break;
+
+        case 20:
+            listerBonsAConfirmer($bdBASI, $basiController, $sessionUserId, $sessionIdDirectionDirecteur);
+            break;
+
+        case 21:
+            detailBonReception($bdBASI, $basiController, $sessionUserId, $sessionIdDirectionDirecteur);
+            break;
+
+        case 22:
+            confirmerReceptionBon($bdBASI, $basiController, $sessionUserId, $sessionMatricule, $sessionIdDirectionDirecteur);
             break;
 
         default:

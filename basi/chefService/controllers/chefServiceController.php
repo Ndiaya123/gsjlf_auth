@@ -2903,6 +2903,138 @@ ORDER BY dl.idDL ASC;
             echo json_encode(['success' => false, 'message' => 'Impossible de charger le suivi de la demande.']);
         }
         break;
+
+// ─── CASE 53 : Suggestions de rubriques existantes (anti-doublon) ────────────
+// Reçoit : q (texte saisi), tmp (optionnel, id chiffré à exclure en modification)
+// Renvoie : [{ "nom": "Fournitures", "exact": false }, ...]  (8 max)
+
+    case 53:
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $q = trim($_POST['q'] ?? '');
+            if (mb_strlen($q, 'UTF-8') < 2) { echo json_encode([]); exit; }
+
+            $excludeId = !empty($_POST['tmp']) ? (int)$basiController->tokendecrypt($_POST['tmp']) : 0;
+
+            $stmt = $bdBASI->prepare("SELECT id, nom_rubrique FROM rubrique WHERE statut != 4 AND id != ?");
+            $stmt->execute([$excludeId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            // Comparaison insensible à la casse, aux accents et aux espaces multiples
+            $normaliser = function ($s) use ($basiController) {
+                $s = mb_strtolower($basiController->fctRetirerAccents(trim($s)), 'UTF-8');
+                return preg_replace('/\s+/u', ' ', $s);
+            };
+
+            $recherche = $normaliser($q);
+            $resultats = [];
+            foreach ($rows as $r) {
+                $n = $normaliser($r['nom_rubrique']);
+                $pos = mb_strpos($n, $recherche, 0, 'UTF-8');
+                if ($pos === false) continue;
+                $exact = ($n === $recherche);
+                $resultats[] = [
+                    'nom'   => $r['nom_rubrique'],
+                    'exact' => $exact,
+                    'rang'  => $exact ? 0 : ($pos === 0 ? 1 : 2) // identique > commence par > contient
+                ];
+            }
+
+            usort($resultats, function ($a, $b) {
+                if ($a['rang'] !== $b['rang']) return $a['rang'] - $b['rang'];
+                return strcasecmp($a['nom'], $b['nom']);
+            });
+
+            $sortie = [];
+            foreach (array_slice($resultats, 0, 8) as $r) {
+                $sortie[] = ['nom' => $r['nom'], 'exact' => $r['exact']];
+            }
+            echo json_encode($sortie);
+            exit;
+
+        } catch (\Throwable $th) {
+            error_log('Erreur case 53 : ' . $th->getMessage());
+            echo json_encode([]);
+            exit;
+        }
+        break;
+
+
+// ─── CASE 54 : Suggestions de sous-rubriques existantes (anti-doublon) ───────
+// Reçoit : q (texte saisi), rubrique_id (optionnel, rubrique choisie),
+//          tmp (optionnel, id chiffré de la sous-rubrique à exclure en modification)
+// Renvoie : [{ "nom": "Papeterie", "rubrique": "Fournitures",
+//              "memeRubrique": true, "exact": false }, ...]  (10 max)
+// "exact" = même nom ET même rubrique → doublon réel (bloquant)
+
+    case 54:
+        header('Content-Type: application/json; charset=utf-8');
+        try {
+            $q = trim($_POST['q'] ?? '');
+            if (mb_strlen($q, 'UTF-8') < 2) { echo json_encode([]); exit; }
+
+            $rubriqueId = (int)($_POST['rubrique_id'] ?? 0);
+            $excludeId  = !empty($_POST['tmp']) ? (int)$basiController->tokendecrypt($_POST['tmp']) : 0;
+
+            $stmt = $bdBASI->prepare("
+                SELECT sr.id, sr.nom_sous_rubrique, sr.rubrique_id, ru.nom_rubrique
+                FROM sousRubrique sr
+                INNER JOIN rubrique ru ON ru.id = sr.rubrique_id
+                WHERE sr.statut != 4 AND ru.statut != 4 AND sr.id != ?
+            ");
+            $stmt->execute([$excludeId]);
+            $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+            $normaliser = function ($s) use ($basiController) {
+                $s = mb_strtolower($basiController->fctRetirerAccents(trim($s)), 'UTF-8');
+                return preg_replace('/\s+/u', ' ', $s);
+            };
+
+            $recherche = $normaliser($q);
+            $resultats = [];
+            foreach ($rows as $r) {
+                $n = $normaliser($r['nom_sous_rubrique']);
+                $pos = mb_strpos($n, $recherche, 0, 'UTF-8');
+                if ($pos === false) continue;
+                $memeRubrique = ($rubriqueId > 0 && (int)$r['rubrique_id'] === $rubriqueId);
+                $identique = ($n === $recherche);
+                $resultats[] = [
+                    'nom'          => $r['nom_sous_rubrique'],
+                    'rubrique'     => $r['nom_rubrique'],
+                    'memeRubrique' => $memeRubrique,
+                    'exact'        => $identique && $memeRubrique,
+                    'identique'    => $identique,
+                    'prefixe'      => ($pos === 0)
+                ];
+            }
+
+            // Tri : doublon réel > même rubrique > nom identique ailleurs > commence par > contient
+            usort($resultats, function ($a, $b) {
+                foreach (['exact', 'memeRubrique', 'identique', 'prefixe'] as $cle) {
+                    if ($a[$cle] !== $b[$cle]) return $a[$cle] ? -1 : 1;
+                }
+                return strcasecmp($a['nom'], $b['nom']);
+            });
+
+            $sortie = [];
+            foreach (array_slice($resultats, 0, 10) as $r) {
+                $sortie[] = [
+                    'nom'          => $r['nom'],
+                    'rubrique'     => $r['rubrique'],
+                    'memeRubrique' => $r['memeRubrique'],
+                    'exact'        => $r['exact']
+                ];
+            }
+            echo json_encode($sortie);
+            exit;
+
+        } catch (\Throwable $th) {
+            error_log('Erreur case 54 : ' . $th->getMessage());
+            echo json_encode([]);
+            exit;
+        }
+        break;
+
     default:
         header('Content-Type: application/json; charset=utf-8');
         http_response_code(400);

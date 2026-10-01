@@ -302,15 +302,6 @@ function dga_ouvrirVoir(token) {
         }).join('')}
         ` : '';
 
-        // Bouton "Reçu" — visible dès qu'au moins une ligne a été remise
-        // par le magasinier mais pas encore confirmée par le demandeur.
-        const aQuelqueChoseAConfirmer = (e.bons || []).some(b => b.peut_confirmer);
-        const receptionHtml = aQuelqueChoseAConfirmer
-            ? `<button type="button" class="dga-submit" id="dgaBtnConfirmerReception" style="margin-bottom:1rem;" onclick="dga_confirmerReception()">
-                   <span>Reçu — confirmer la réception</span>
-               </button>`
-            : '';
-
         const historiqueRows = (e.historique || []).map(function (h) {
             return `
                 <li>
@@ -326,141 +317,12 @@ function dga_ouvrirVoir(token) {
             <ul class="dga-liste-historique">${historiqueRows}</ul>
         `;
 
-        document.getElementById('voirEbContenu').innerHTML = enteteHtml + motifRejetHtml + receptionHtml + produitsHtml + bonsHtml + historiqueHtml;
+        document.getElementById('voirEbContenu').innerHTML = enteteHtml + motifRejetHtml + produitsHtml + bonsHtml + historiqueHtml;
 
         new bootstrap.Modal(document.getElementById('modalVoirEB')).show();
     }).fail(function (xhr) {
         dga_hideLoader();
         Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
-    });
-}
-
-/**
- * Saisie d'un écart : "Non reçu" ajuste automatiquement "Reçu" (reste − écart)
- * et fait apparaître le champ motif, obligatoire dès qu'un écart est déclaré.
- */
-function dga_onEcartChange(input) {
-    const id = input.dataset.id;
-    const max = parseFloat(input.dataset.max) || 0;
-    let ecart = parseFloat(input.value) || 0;
-    if (ecart < 0) ecart = 0;
-    if (ecart > max) { ecart = max; input.value = String(max); }
-    const recue = document.querySelector('.dga-swal-qte-recue[data-id="' + id + '"]');
-    if (recue) recue.value = String(Math.round((max - ecart) * 100) / 100);
-    const ligneComm = document.querySelector('.dga-swal-ligne-comm[data-id="' + id + '"]');
-    if (ligneComm) ligneComm.style.display = ecart > 0 ? '' : 'none';
-}
-
-/**
- * "Reçu" : le demandeur indique, LIGNE PAR LIGNE ET BON PAR BON :
- *   - Reçu     : la quantité réellement reçue (de 0 au reste à confirmer) ;
- *   - Non reçu : la quantité marquée "livrée" mais qu'il n'a PAS reçue — un
- *                motif est alors obligatoire, l'écart est transmis au comptable.
- * Il peut aussi confirmer une partie seulement (Reçu + Non reçu < remis) ;
- * le reste demeure à confirmer. Le serveur revalide strictement le plafond.
- */
-function dga_confirmerReception() {
-    const bons = dga_bonsVoirCourant.filter(b => b.peut_confirmer);
-    if (!bons.length) return;
-
-    const nb = v => String(parseFloat(v));
-    const blocsHtml = bons.map(function (b) {
-        const lignes = (b.lignes || []).filter(l => l.peut_confirmer_reception).map(l => `
-            <tr>
-                <td style="text-align:left;padding:.35rem .5rem;">${dga_escapeHtml(l.designation)}</td>
-                <td style="padding:.35rem .5rem;">${nb(l.quantite_restante_a_recevoir)}</td>
-                <td style="padding:.35rem .5rem;">
-                    <input type="number" class="swal2-input dga-swal-qte-recue" data-id="${l.idBSL}" data-max="${l.quantite_restante_a_recevoir}"
-                           min="0" max="${l.quantite_restante_a_recevoir}" step="0.01" value="${l.quantite_restante_a_recevoir}"
-                           style="width:90px;margin:0;height:2.2rem;font-size:.9rem;">
-                </td>
-                <td style="padding:.35rem .5rem;">
-                    <input type="number" class="swal2-input dga-swal-ecart" data-id="${l.idBSL}" data-max="${l.quantite_restante_a_recevoir}"
-                           min="0" max="${l.quantite_restante_a_recevoir}" step="0.01" value="0" oninput="dga_onEcartChange(this)"
-                           style="width:90px;margin:0;height:2.2rem;font-size:.9rem;">
-                </td>
-            </tr>
-            <tr class="dga-swal-ligne-comm" data-id="${l.idBSL}" style="display:none;">
-                <td colspan="4" style="padding:0 .5rem .5rem;">
-                    <input type="text" class="swal2-input dga-swal-comm" data-id="${l.idBSL}" maxlength="500"
-                           placeholder="Motif de l'écart (obligatoire) : ex. colis incomplet, produit non remis…"
-                           style="width:100%;margin:0;height:2.2rem;font-size:.85rem;">
-                </td>
-            </tr>`).join('');
-        return `
-            <div style="text-align:left;font-weight:800;font-size:.8rem;margin:.8rem 0 .25rem;color:#111827;">
-                ${dga_escapeHtml(b.numero_bon)} <span style="font-weight:400;color:#9ca3af;">— sorti le ${dga_fmtDate(b.dateSortie)}</span>
-            </div>
-            <table style="width:100%;font-size:.85rem;border-collapse:collapse;">
-                <thead><tr style="color:#9ca3af;font-size:.68rem;text-transform:uppercase;">
-                    <th style="text-align:left;padding:.3rem .5rem;">Produit</th>
-                    <th style="padding:.3rem .5rem;">Remis (à confirmer)</th>
-                    <th style="padding:.3rem .5rem;">Reçu</th>
-                    <th style="padding:.3rem .5rem;">Non reçu</th>
-                </tr></thead>
-                <tbody>${lignes}</tbody>
-            </table>`;
-    }).join('');
-
-    Swal.fire({
-        title: 'Confirmer la réception',
-        width: 720,
-        html: `
-            <p style="font-size:.85rem;color:#6b7280;margin-bottom:.4rem;">
-                Indiquez la quantité <strong>réellement reçue</strong> pour chaque produit. Si un produit marqué « livré »
-                ne vous a <strong>pas</strong> été remis, saisissez-le dans « Non reçu » et précisez le motif : le comptable
-                régularisera. Vous pouvez aussi confirmer une partie seulement, le reste demeurera à confirmer.
-            </p>${blocsHtml}`,
-        showCancelButton: true,
-        confirmButtonText: 'Confirmer',
-        confirmButtonColor: '#1a7a5e',
-        cancelButtonText: 'Annuler',
-        cancelButtonColor: '#6b7280',
-        preConfirm: function () {
-            const quantites = [];
-            let auMoinsUne = false, depasse = false, motifManquant = false;
-            document.querySelectorAll('.dga-swal-qte-recue').forEach(function (inp) {
-                const id = inp.dataset.id;
-                const max = parseFloat(inp.dataset.max) || 0;
-                const recue = parseFloat(inp.value) || 0;
-                const ecart = parseFloat(document.querySelector('.dga-swal-ecart[data-id="' + id + '"]')?.value) || 0;
-                const comm = (document.querySelector('.dga-swal-comm[data-id="' + id + '"]')?.value || '').trim();
-                if (recue < 0 || ecart < 0 || recue + ecart > max + 0.001) depasse = true;
-                if (ecart > 0 && !comm) motifManquant = true;
-                if (recue > 0 || ecart > 0) auMoinsUne = true;
-                quantites.push({ idBSL: id, quantite: recue, ecart: ecart, commentaire: comm });
-            });
-            if (depasse) { Swal.showValidationMessage('Reçu + non reçu dépasse ce qui vous a été remis pour une ligne.'); return false; }
-            if (motifManquant) { Swal.showValidationMessage("Précisez le motif de chaque écart déclaré."); return false; }
-            if (!auMoinsUne) { Swal.showValidationMessage('Saisissez au moins une quantité reçue ou un écart.'); return false; }
-            return quantites;
-        },
-    }).then(function (result) {
-        if (!result.isConfirmed) return;
-
-        const btn = document.getElementById('dgaBtnConfirmerReception');
-        if (btn) btn.disabled = true;
-
-        $.ajax({
-            url: EB_CONTROLLER_URL,
-            method: 'POST',
-            data: JSON.stringify({ option: 17, token: dga_tokenVoirCourant, quantites: result.value }),
-            contentType: 'application/json',
-            dataType: 'json',
-        }).done(function (res) {
-            if (res.status === 'success') {
-                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalVoirEB'));
-                if (modalInstance) modalInstance.hide();
-                Swal.fire({ title: 'Succès', text: res.message || 'Réception confirmée avec succès.', icon: 'success', confirmButtonColor: '#1a7a5e' });
-                chargerExpressions();
-            } else {
-                if (btn) btn.disabled = false;
-                Swal.fire('Erreur', res.message || 'Une erreur est survenue.', 'error');
-            }
-        }).fail(function (xhr) {
-            if (btn) btn.disabled = false;
-            Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
-        });
     });
 }
 
@@ -578,7 +440,7 @@ function dga_ajouterProduitPanier() {
     const selProduit = document.getElementById('dgaProduit');
     const idP = selProduit.value;
     const designation = selProduit.selectedOptions[0]?.dataset.designation || '';
-    const quantite = parseFloat(document.getElementById('dgaQuantite').value) || 0;
+    const quantite = parseInt(document.getElementById('dgaQuantite').value, 10) || 0;
     const erreurBox = document.getElementById('dgaErreurGenerale');
     erreurBox.style.display = 'none';
 
@@ -924,7 +786,7 @@ function dga_ajouterProduitPanierInvest() {
     const idP = selProduit.value;
     const designation = selProduit.selectedOptions[0]?.dataset.designation || '';
     const quota = parseFloat(selProduit.selectedOptions[0]?.dataset.quota || 0);
-    const quantite = parseFloat(document.getElementById('dgaQuantiteInvest').value) || 0;
+    const quantite = parseInt(document.getElementById('dgaQuantiteInvest').value, 10) || 0;
     const erreurBox = document.getElementById('dgaErreurGeneraleInvest');
     erreurBox.style.display = 'none';
 
@@ -1125,19 +987,11 @@ function dga_ouvrirDetailInvest(token) {
         }).join('')}
         ` : '';
 
-        const aQuelqueChoseAConfirmer = (e.bons || []).some(b => b.peut_confirmer);
-        const receptionHtml = aQuelqueChoseAConfirmer
-            ? `<button type="button" class="dga-submit" id="dgaBtnConfirmerReceptionInvest" style="margin-bottom:1rem;" onclick="dga_confirmerReceptionInvest()">
-                   <span>Reçu — confirmer la réception</span>
-               </button>`
-            : '';
-
         document.getElementById('dgaContenuDetailEBI').innerHTML = `
             <p style="margin-bottom:1rem;font-size:.85rem;color:#374151;">
                 <strong>Date de création :</strong> ${dga_fmtDate(e.date_creation)}<br/>
                 <strong>Statut :</strong> <span class="dga-badge-statut dga-statut-${e.idStatut}">${LIBELLES_STATUT_EBI[e.idStatut] || e.idStatut}</span>
             </p>
-            ${receptionHtml}
             <table class="dga-table-produits">
                 <thead><tr><th>Désignation</th><th>Demandée</th><th>Sortie</th><th>Livrée</th><th>Reçue</th><th>Statut</th></tr></thead>
                 <tbody>${lignes}</tbody>
@@ -1150,126 +1004,4 @@ function dga_ouvrirDetailInvest(token) {
         dga_hideLoader();
         Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
     });
-}
-
-/**
- * "Reçu" (Investissement) — mêmes règles que le Fonctionnement : quantité
- * reçue et/ou écart, ligne par ligne et bon par bon, plafonné à ce qui a
- * été remis.
- */
-function dga_confirmerReceptionInvest() {
-    const bons = dga_bonsDetailEbiCourant.filter(b => b.peut_confirmer);
-    if (!bons.length) return;
-
-    const nb = v => String(parseFloat(v));
-    const blocsHtml = bons.map(function (b) {
-        const lignes = (b.lignes || []).filter(l => l.peut_confirmer_reception).map(l => `
-            <tr>
-                <td style="text-align:left;padding:.35rem .5rem;">${dga_escapeHtml(l.designation)}</td>
-                <td style="padding:.35rem .5rem;">${nb(l.quantite_restante_a_recevoir)}</td>
-                <td style="padding:.35rem .5rem;">
-                    <input type="number" class="swal2-input dga-swal-qte-recue-invest" data-id="${l.idBSL}" data-max="${l.quantite_restante_a_recevoir}"
-                           min="0" max="${l.quantite_restante_a_recevoir}" step="0.01" value="${l.quantite_restante_a_recevoir}"
-                           style="width:90px;margin:0;height:2.2rem;font-size:.9rem;">
-                </td>
-                <td style="padding:.35rem .5rem;">
-                    <input type="number" class="swal2-input dga-swal-ecart-invest" data-id="${l.idBSL}" data-max="${l.quantite_restante_a_recevoir}"
-                           min="0" max="${l.quantite_restante_a_recevoir}" step="0.01" value="0" oninput="dga_onEcartChangeInvest(this)"
-                           style="width:90px;margin:0;height:2.2rem;font-size:.9rem;">
-                </td>
-            </tr>
-            <tr class="dga-swal-ligne-comm-invest" data-id="${l.idBSL}" style="display:none;">
-                <td colspan="4" style="padding:0 .5rem .5rem;">
-                    <input type="text" class="swal2-input dga-swal-comm-invest" data-id="${l.idBSL}" maxlength="500"
-                           placeholder="Motif de l'écart (obligatoire) : ex. colis incomplet, produit non remis…"
-                           style="width:100%;margin:0;height:2.2rem;font-size:.85rem;">
-                </td>
-            </tr>`).join('');
-        return `
-            <div style="text-align:left;font-weight:800;font-size:.8rem;margin:.8rem 0 .25rem;color:#111827;">
-                ${dga_escapeHtml(b.numero_bon)} <span style="font-weight:400;color:#9ca3af;">— sorti le ${dga_fmtDate(b.dateSortie)}</span>
-            </div>
-            <table style="width:100%;font-size:.85rem;border-collapse:collapse;">
-                <thead><tr style="color:#9ca3af;font-size:.68rem;text-transform:uppercase;">
-                    <th style="text-align:left;padding:.3rem .5rem;">Produit</th>
-                    <th style="padding:.3rem .5rem;">Remis (à confirmer)</th>
-                    <th style="padding:.3rem .5rem;">Reçu</th>
-                    <th style="padding:.3rem .5rem;">Non reçu</th>
-                </tr></thead>
-                <tbody>${lignes}</tbody>
-            </table>`;
-    }).join('');
-
-    Swal.fire({
-        title: 'Confirmer la réception',
-        width: 720,
-        html: `
-            <p style="font-size:.85rem;color:#6b7280;margin-bottom:.4rem;">
-                Indiquez la quantité <strong>réellement reçue</strong> pour chaque produit. Si un produit marqué « livré »
-                ne vous a <strong>pas</strong> été remis, saisissez-le dans « Non reçu » et précisez le motif : le comptable
-                régularisera.
-            </p>${blocsHtml}`,
-        showCancelButton: true,
-        confirmButtonText: 'Confirmer',
-        confirmButtonColor: '#1a7a5e',
-        cancelButtonText: 'Annuler',
-        cancelButtonColor: '#6b7280',
-        preConfirm: function () {
-            const quantites = [];
-            let auMoinsUne = false, depasse = false, motifManquant = false;
-            document.querySelectorAll('.dga-swal-qte-recue-invest').forEach(function (inp) {
-                const id = inp.dataset.id;
-                const max = parseFloat(inp.dataset.max) || 0;
-                const recue = parseFloat(inp.value) || 0;
-                const ecart = parseFloat(document.querySelector('.dga-swal-ecart-invest[data-id="' + id + '"]')?.value) || 0;
-                const comm = (document.querySelector('.dga-swal-comm-invest[data-id="' + id + '"]')?.value || '').trim();
-                if (recue < 0 || ecart < 0 || recue + ecart > max + 0.001) depasse = true;
-                if (ecart > 0 && !comm) motifManquant = true;
-                if (recue > 0 || ecart > 0) auMoinsUne = true;
-                quantites.push({ idBSL: id, quantite: recue, ecart: ecart, commentaire: comm });
-            });
-            if (depasse) { Swal.showValidationMessage('Reçu + non reçu dépasse ce qui vous a été remis pour une ligne.'); return false; }
-            if (motifManquant) { Swal.showValidationMessage("Précisez le motif de chaque écart déclaré."); return false; }
-            if (!auMoinsUne) { Swal.showValidationMessage('Saisissez au moins une quantité reçue ou un écart.'); return false; }
-            return quantites;
-        },
-    }).then(function (result) {
-        if (!result.isConfirmed) return;
-
-        const btn = document.getElementById('dgaBtnConfirmerReceptionInvest');
-        if (btn) btn.disabled = true;
-
-        $.ajax({
-            url: EB_CONTROLLER_URL,
-            method: 'POST',
-            data: JSON.stringify({ option: 19, token: dga_tokenDetailEbiCourant, quantites: result.value }),
-            contentType: 'application/json',
-            dataType: 'json',
-        }).done(function (res) {
-            if (res.status === 'success') {
-                const modalInstance = bootstrap.Modal.getInstance(document.getElementById('modalDetailEBI'));
-                if (modalInstance) modalInstance.hide();
-                Swal.fire({ title: 'Succès', text: res.message || 'Réception confirmée avec succès.', icon: 'success', confirmButtonColor: '#1a7a5e' });
-                chargerExpressionsInvest();
-            } else {
-                if (btn) btn.disabled = false;
-                Swal.fire('Erreur', res.message || 'Une erreur est survenue.', 'error');
-            }
-        }).fail(function (xhr) {
-            if (btn) btn.disabled = false;
-            Swal.fire('Erreur', dga_ajaxErrorMessage(xhr), 'error');
-        });
-    });
-}
-
-function dga_onEcartChangeInvest(input) {
-    const id = input.dataset.id;
-    const max = parseFloat(input.dataset.max) || 0;
-    let ecart = parseFloat(input.value) || 0;
-    if (ecart < 0) ecart = 0;
-    if (ecart > max) { ecart = max; input.value = String(max); }
-    const recue = document.querySelector('.dga-swal-qte-recue-invest[data-id="' + id + '"]');
-    if (recue) recue.value = String(Math.round((max - ecart) * 100) / 100);
-    const ligneComm = document.querySelector('.dga-swal-ligne-comm-invest[data-id="' + id + '"]');
-    if (ligneComm) ligneComm.style.display = ecart > 0 ? '' : 'none';
 }

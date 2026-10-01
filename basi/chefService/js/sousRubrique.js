@@ -162,8 +162,8 @@ var KTDatatablesServerSide = function () {
             ordering: false,
             initComplete: function () {
 
-                    document.documentElement.classList.remove('ld-booting');
-                    document.getElementById('lb-table')?.classList.add('lb-ready');
+                document.documentElement.classList.remove('ld-booting');
+                document.getElementById('lb-table')?.classList.add('lb-ready');
 
 
                 hideLoader();
@@ -361,10 +361,183 @@ submitButton1.addEventListener('click', function (e) {
 });
 
 
+// ─── SUGGESTIONS ANTI-DOUBLON ─────────────────────────────────────────────────
+// Pendant la saisie, affiche les sous-rubriques existantes qui correspondent
+// (insensible à la casse et aux accents), avec leur rubrique parente.
+// Un nom n'est un doublon que s'il existe déjà DANS LA RUBRIQUE CHOISIE :
+// dans ce cas, le bouton d'envoi est désactivé.
+
+function initSuggestionsSousRubrique(inputId, boxId, selectId, submitBtn, getExcludeTmp) {
+    const input = document.getElementById(inputId);
+    const box = document.getElementById(boxId);
+    const $select = $('#' + selectId);
+    if (!input || !box) return { reset: function () {} };
+
+    const MIN_CHARS = 2;
+    let timer = null;
+    let xhr = null;
+
+    function esc(s) {
+        return String(s).replace(/[&<>"']/g, function (c) {
+            return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c];
+        });
+    }
+
+    function sansAccents(s) {
+        return String(s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase();
+    }
+
+    // Met en surbrillance la partie du nom qui correspond à la saisie
+    function surligner(nom, q) {
+        const n = sansAccents(nom);
+        const qn = sansAccents(q.trim());
+        const i = n.indexOf(qn);
+        if (i === -1 || !qn || n.length !== nom.length) return esc(nom);
+        return esc(nom.slice(0, i)) + '<mark>' + esc(nom.slice(i, i + qn.length)) + '</mark>' + esc(nom.slice(i + qn.length));
+    }
+
+    function bloquerEnvoi(bloquer) {
+        if (!submitBtn) return;
+        // Ne pas toucher au bouton pendant un envoi en cours
+        if (submitBtn.getAttribute('data-kt-indicator') === 'on') return;
+        submitBtn.disabled = bloquer;
+    }
+
+    function reset() {
+        clearTimeout(timer);
+        if (xhr) { xhr.abort(); xhr = null; }
+        box.classList.remove('is-open');
+        box.innerHTML = '';
+        bloquerEnvoi(false);
+    }
+
+    function afficher(liste, q, rubriqueChoisie) {
+        if (!input.value.trim()) { reset(); return; }
+
+        const nomRubrique = rubriqueChoisie ? $select.find('option:selected').text().trim() : '';
+
+        if (liste.length === 0) {
+            box.innerHTML = '<div class="cat-suggest-msg ok">✓ Aucune sous-rubrique similaire — ce nom est disponible.</div>';
+            box.classList.add('is-open');
+            bloquerEnvoi(false);
+            return;
+        }
+
+        const exacte = liste.some(function (s) { return s.exact; });
+
+        let html = '<div class="cat-suggest-head">Sous-rubriques existantes correspondantes (' + liste.length + ')</div><ul>';
+        liste.forEach(function (s) {
+            let classe = s.exact ? 'is-exact' : (rubriqueChoisie && !s.memeRubrique ? 'is-other' : '');
+            let badge = '';
+            if (s.exact) {
+                badge = '<span class="cat-suggest-badge">Existe déjà</span>';
+            } else if (s.memeRubrique) {
+                badge = '<span class="cat-suggest-badge same">Même rubrique</span>';
+            }
+            html += '<li class="' + classe + '">' +
+                '<span>' + surligner(s.nom, q) +
+                '<span class="cat-suggest-cat">Rubrique : ' + esc(s.rubrique) + '</span></span>' +
+                badge +
+                '</li>';
+        });
+        html += '</ul>';
+
+        if (exacte) {
+            html += '<div class="cat-suggest-msg err">Cette sous-rubrique existe déjà dans la rubrique « ' + esc(nomRubrique) + ' ». Veuillez choisir un autre nom.</div>';
+        } else if (!rubriqueChoisie) {
+            html += '<div class="cat-suggest-msg info">Choisissez une rubrique pour vérifier si ce nom y est déjà utilisé.</div>';
+        } else {
+            html += '<div class="cat-suggest-msg info">Vérifiez que votre sous-rubrique ne figure pas déjà dans cette liste.</div>';
+        }
+
+        box.innerHTML = html;
+        box.classList.add('is-open');
+        bloquerEnvoi(exacte);
+    }
+
+    function rechercher() {
+        const q = input.value.trim();
+        const rubriqueId = $select.val() || '';
+
+        if (q.length < MIN_CHARS) { reset(); return; }
+
+        if (xhr) xhr.abort();
+
+        xhr = $.ajax({
+            type: 'POST',
+            url: '/personnel/chef_service_basi_controller',
+            data: {
+                option: 54,
+                q: q,
+                rubrique_id: rubriqueId,
+                tmp: getExcludeTmp ? getExcludeTmp() : ''
+            },
+            success: function (resp) {
+                let liste = resp;
+                if (typeof resp === 'string') {
+                    try { liste = JSON.parse(resp); } catch (e) { liste = null; }
+                }
+                // Ignore une réponse arrivée après une nouvelle frappe / un changement de rubrique
+                if (input.value.trim() !== q || ($select.val() || '') !== rubriqueId) return;
+                if (Array.isArray(liste)) {
+                    afficher(liste, q, rubriqueId !== '');
+                } else {
+                    reset(); // ex. "pasConnexion"
+                }
+            },
+            complete: function () { xhr = null; }
+        });
+    }
+
+    function planifier() {
+        clearTimeout(timer);
+        // Tant que la recherche n'a pas répondu, on ne bloque pas sur un ancien résultat
+        bloquerEnvoi(false);
+        timer = setTimeout(rechercher, 250);
+    }
+
+    input.addEventListener('input', planifier);
+
+    // Select2 déclenche des événements jQuery : on écoute avec jQuery
+    $select.on('change', function () {
+        if (input.value.trim().length >= MIN_CHARS) planifier();
+    });
+
+    input.addEventListener('keydown', function (e) {
+        if (e.key === 'Escape' && box.classList.contains('is-open')) {
+            e.stopPropagation(); // ferme la liste sans fermer le modal
+            box.classList.remove('is-open');
+        }
+    });
+
+    return { reset: reset };
+}
+
+const suggestAjout = initSuggestionsSousRubrique(
+    'nom_sous_rubrique',
+    'nom_sous_rubrique_suggest',
+    'rubrique',
+    document.getElementById('formSousRubrique_submit'),
+    null
+);
+
+const suggestModif = initSuggestionsSousRubrique(
+    'nom_sous_rubrique_up',
+    'nom_sous_rubrique_up_suggest',
+    'rubrique_up',
+    document.getElementById('formSousRubriqueUpdate_submit'),
+    function () { return document.getElementById('tmp').value; } // exclut la sous-rubrique éditée
+);
+
+$('#kt_modal_new_sous_rubrique').on('hidden.bs.modal', function () { suggestAjout.reset(); });
+$('#kt_modal_update_rubrique').on('hidden.bs.modal', function () { suggestModif.reset(); });
+
+
 function videSousRubrique() {
     document.getElementById("nom_sous_rubrique").value = "";
     $('#rubrique').val('').trigger('change');
     $("#formSousRubrique")[0].reset();
+    suggestAjout.reset();
 }
 
 function closeSousRubrique() {
@@ -380,6 +553,7 @@ function modifierSousRubrique(e1, e2, e3) {
     document.getElementById("nom_sous_rubrique_up").value = e2;
     document.getElementById("original_nom").value = e2;
     $('#rubrique_up').val(e3).trigger('change');
+    suggestModif.reset(); // pas de suggestions à l'ouverture, seulement à la saisie
 
     $("#kt_modal_update_rubrique").modal('show');
 }
@@ -566,6 +740,7 @@ function videSousRubriqueUpdate() {
     $('#rubrique_up').val('').trigger('change');
 
     $("#formSousRubriqueUpdate")[0].reset();
+    suggestModif.reset();
 }
 
 function closeSousRubriqueUpdate() {
