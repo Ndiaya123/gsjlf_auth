@@ -1,9 +1,15 @@
+<?php
+// Même convention que ligneBudgetInvestissement.php : l'ID du budget arrive
+// chiffré (token), jamais en clair — déchiffré côté serveur à chaque appel.
+$budgetToken = $_GET['budgetId'] ?? '';
+if (empty($budgetToken)) { header('Location: /responsable-financier-accueil'); exit; }
+?>
 <!DOCTYPE html>
 <html lang="fr">
 <head>
     <meta charset="UTF-8"/>
     <meta name="viewport" content="width=device-width,initial-scale=1.0"/>
-    <title>Vue d'exécution budgétaire — ENT GSJLF</title>
+    <title>Exécution budgétaire — ENT GSJLF</title>
     <link rel="shortcut icon" href="/personnel/ressources/dist_assets/media/logos/logo_gsjlf.png"/>
     <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Poppins:300,400,500,600,700"/>
     <link href="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.css" rel="stylesheet" type="text/css"/>
@@ -172,98 +178,101 @@
                                     <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
                                         <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/>
                                     </svg>
-                                    Vue d'exécution budgétaire
+                                    Exécution budgétaire — <span id="veb-nom-budget">…</span>
                                 </h1>
-                                <p>Fonctionnement et Investissement confondus — budgets validés par le DFC</p>
-                            </div>
-                            <div style="display:flex;gap:.6rem;flex-wrap:wrap;">
-                                <div class="veb-filtre">
-                                    <label for="veb-sel-annee">Année</label>
-                                    <select id="veb-sel-annee" style="min-width:90px;"></select>
-                                </div>
-                                <div class="veb-filtre">
-                                    <label for="veb-sel-direction">Direction</label>
-                                    <select id="veb-sel-direction">
-                                        <option value="">Toutes les directions</option>
-                                    </select>
-                                </div>
+                                <p id="veb-sous-titre-budget">Chargement…</p>
                             </div>
                         </div>
 
-                        <!-- ══ STATISTIQUES ══ -->
-                        <div class="veb-stats">
-                            <div class="veb-stat veb-stat-total">
-                                <div class="veb-stat-lbl">Budget total</div>
-                                <div class="veb-stat-val" id="veb-stat-total">—</div>
-                            </div>
-                            <div class="veb-stat veb-stat-cours">
-                                <div class="veb-stat-lbl">En cours d'exécution</div>
-                                <div class="veb-stat-val" id="veb-stat-cours">—</div>
-                            </div>
-                            <div class="veb-stat veb-stat-execute">
-                                <div class="veb-stat-lbl">Exécuté</div>
-                                <div class="veb-stat-val" id="veb-stat-execute">—</div>
-                            </div>
-                            <div class="veb-stat veb-stat-restant">
-                                <div class="veb-stat-lbl">Restant à exécuter</div>
-                                <div class="veb-stat-val" id="veb-stat-restant">—</div>
-                            </div>
-                            <div class="veb-stat veb-stat-taux">
-                                <div class="veb-stat-lbl">Taux global d'exécution</div>
-                                <div class="veb-stat-val" id="veb-stat-taux">—</div>
+                        <!-- ══ BUDGET NON VALIDÉ (masqué par défaut) ══ -->
+                        <div class="veb-card" id="veb-non-valide" style="display:none;">
+                            <div class="veb-card-body" style="text-align:center;padding:2.5rem 1.5rem;color:#6b7280;">
+                                <svg width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" style="margin-bottom:.75rem;opacity:.5;">
+                                    <circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12"/><line x1="12" y1="16" x2="12.01" y2="16"/>
+                                </svg>
+                                <p style="font-size:.9rem;font-weight:600;margin:0;">Ce budget n'est pas encore validé par le DFC.</p>
+                                <p style="font-size:.8rem;margin:.35rem 0 0;">Le suivi d'exécution ne sera disponible qu'une fois le budget accepté.</p>
                             </div>
                         </div>
 
-                        <!-- ══ GRAPHE MENSUEL ══ -->
-                        <div class="veb-card">
-                            <div class="veb-card-head">
+                        <!-- ══ CONTENU (masqué tant que la validité n'est pas confirmée) ══ -->
+                        <div id="veb-contenu-valide" style="display:none;">
+
+                            <!-- ══ STATISTIQUES ══ -->
+                            <div class="veb-stats">
+                                <div class="veb-stat veb-stat-total">
+                                    <div class="veb-stat-lbl">Budget total</div>
+                                    <div class="veb-stat-val" id="veb-stat-total">—</div>
+                                </div>
+                                <div class="veb-stat veb-stat-cours">
+                                    <div class="veb-stat-lbl">En cours d'exécution</div>
+                                    <div class="veb-stat-val" id="veb-stat-cours">—</div>
+                                </div>
+                                <div class="veb-stat veb-stat-execute">
+                                    <div class="veb-stat-lbl">Exécuté</div>
+                                    <div class="veb-stat-val" id="veb-stat-execute">—</div>
+                                </div>
+                                <div class="veb-stat veb-stat-restant">
+                                    <div class="veb-stat-lbl">Restant à exécuter</div>
+                                    <div class="veb-stat-val" id="veb-stat-restant">—</div>
+                                </div>
+                                <div class="veb-stat veb-stat-taux">
+                                    <div class="veb-stat-lbl">Taux global d'exécution</div>
+                                    <div class="veb-stat-val" id="veb-stat-taux">—</div>
+                                </div>
+                            </div>
+
+                            <!-- ══ GRAPHE MENSUEL ══ -->
+                            <div class="veb-card">
+                                <div class="veb-card-head">
                                 <span class="veb-card-title">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
                                     Exécution par ligne budgétaire (période prévue)
                                 </span>
-                                <div class="veb-legende">
-                                    <span><i style="background:#fecaca"></i> Non exécuté</span>
-                                    <span><i style="background:#fde68a"></i> Partiellement exécuté</span>
-                                    <span><i style="background:#6ee7b7"></i> Entièrement exécuté</span>
-                                    <span><i style="background:#059669"></i> Progression</span>
+                                    <div class="veb-legende">
+                                        <span><i style="background:#fecaca"></i> Non exécuté</span>
+                                        <span><i style="background:#fde68a"></i> Partiellement exécuté</span>
+                                        <span><i style="background:#6ee7b7"></i> Entièrement exécuté</span>
+                                        <span><i style="background:#059669"></i> Progression</span>
+                                    </div>
+                                </div>
+                                <div class="veb-card-body">
+                                    <div id="veb-chart-wrap"><canvas id="veb-chart"></canvas></div>
                                 </div>
                             </div>
-                            <div class="veb-card-body">
-                                <div id="veb-chart-wrap"><canvas id="veb-chart"></canvas></div>
-                            </div>
-                        </div>
 
-                        <!-- ══ TABLEAU DE SUIVI ══ -->
-                        <div class="veb-card">
-                            <div class="veb-card-head">
+                            <!-- ══ TABLEAU DE SUIVI ══ -->
+                            <div class="veb-card">
+                                <div class="veb-card-head">
                                 <span class="veb-card-title">
                                     <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><rect x="3" y="3" width="18" height="18" rx="2"/><line x1="3" y1="9" x2="21" y2="9"/><line x1="9" y1="21" x2="9" y2="9"/></svg>
                                     Tableau de suivi des lignes budgétaires
                                 </span>
+                                </div>
+                                <div class="veb-card-body" style="padding:0 1.35rem 1.35rem;">
+                                    <table id="veb-table" class="display veb-table" style="width:100%">
+                                        <thead>
+                                        <tr>
+                                            <th>Désignation</th>
+                                            <th>Type</th>
+                                            <th>Délai prévu</th>
+                                            <th>Montant prévu</th>
+                                            <th>Exécuté</th>
+                                            <th>En cours</th>
+                                            <th>Restant</th>
+                                            <th>Taux</th>
+                                            <th>Qté prévue</th>
+                                            <th>Qté commandée</th>
+                                            <th>Qté livrée</th>
+                                            <th>État</th>
+                                        </tr>
+                                        </thead>
+                                        <tbody></tbody>
+                                    </table>
+                                </div>
                             </div>
-                            <div class="veb-card-body" style="padding:0 1.35rem 1.35rem;">
-                                <table id="veb-table" class="display veb-table" style="width:100%">
-                                    <thead>
-                                    <tr>
-                                        <th>Désignation</th>
-                                        <th>Direction</th>
-                                        <th>Type</th>
-                                        <th>Délai prévu</th>
-                                        <th>Montant prévu</th>
-                                        <th>Exécuté</th>
-                                        <th>En cours</th>
-                                        <th>Restant</th>
-                                        <th>Taux</th>
-                                        <th>Qté prévue</th>
-                                        <th>Qté commandée</th>
-                                        <th>Qté livrée</th>
-                                        <th>État</th>
-                                    </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
-                        </div>
+
+                        </div><!-- /#veb-contenu-valide -->
 
                     </div>
                 </div>
@@ -298,7 +307,8 @@
 <script src="/personnel/ressources/dist_assets/js/scripts.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.js"></script>
 <script src="/personnel/scripts.bundle.gs.js"></script>
-<script src="/personnel/basi-scripts.bundle.41.js"></script>
+<script>window.COMPTA_BUDGET_TOKEN = <?php echo json_encode($budgetToken); ?>;</script>
+<script src="/personnel/basi-scripts.bundle.43.js"></script>
 
 </body>
 </html>

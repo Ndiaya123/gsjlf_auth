@@ -184,6 +184,9 @@ RewriteRule ^basi-scripts.bundle.30.js$ basi/chefService/js/liste_expression_bes
 RewriteRule ^chef_service_basi_liste_des_produits_investissement basi/chefService/listeProduitInvestissement.php [L]
 RewriteRule ^basi-scripts.bundle.37.js$ basi/chefService/js/listeProduitInvestissement.js [L]
 
+RewriteRule ^dfc_vue_execution_budgetaire/(.*)$ basi/chefService/vueExecutionBudgetaire.php?budgetId=$1 [L]
+RewriteRule ^basi-scripts.bundle.42.js$ basi/chefService/js/vueExecutionBudgetaire.js [L]
+
 
 
 #DFC
@@ -247,6 +250,9 @@ RewriteRule ^basi-scripts.bundle.35.js$ basi/comptable/js/add-lines-to-demandes.
 
 RewriteRule ^compta_basi_liste_des_produits_investissement$ basi/comptable/listeProduitInvestissement.php [L]
 RewriteRule ^basi-scripts.bundle.38.js$ basi/comptable/js/listeProduitInvestissement.js [L]
+
+RewriteRule ^compta_vue_execution_budgetaire/(.*)$ basi/comptable/vueExecutionBudgetaire.php?budgetId=$1 [L]
+RewriteRule ^basi-scripts.bundle.43.js$ basi/comptable/js/vueExecutionBudgetaire.js [L]
 
 
 

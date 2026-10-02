@@ -1,21 +1,21 @@
 /**
- * vueExecutionBudgetaire.js
- * Page DFC : statistiques globales, graphe mensuel (par mois de FIN du délai
- * prévu sur chaque ligne budgétaire) et tableau complet de toutes les
- * lignes budgétaires (Fonctionnement + Investissement confondus).
+ * executionBudgetChefService.js
+ * Page chef de service : statistiques, graphe Gantt et tableau d'exécution
+ * — scopés à UN SEUL budget (reçu en paramètre d'URL, chiffré), celui de sa
+ * propre direction. Mêmes calculs que la vue DFC (dfc_calculerExecutionLignes),
+ * simplement filtrés côté serveur sur ce budget précis au lieu de toutes les
+ * directions — voir cs_calculerExecutionLignesBudget() dans le contrôleur.
  *
- * Toutes les données viennent de dfc_calculerExecutionLignes() côté serveur
- * (options 24/25/26) — stats, graphe et tableau sont donc TOUJOURS cohérents
- * entre eux, et recalculés ensemble au changement de direction.
+ * N'affiche rien tant que le budget n'est pas confirmé "validé"
+ * (statut Accepter/Réajuster) par le serveur.
  */
 
-const VEB_API = '/personnel/dfc_basi_controller';
+const VEB_API = '/personnel/chef_service_basi_controller_1';
 const veb_api = {
-    stats: `${VEB_API}?option=24`,
-    lignes: `${VEB_API}?option=25`,
-    directions: `${VEB_API}?option=26`,
-    annees: `${VEB_API}?option=27`,
+    detail: `${VEB_API}?option=19`,
+    lignes: `${VEB_API}?option=20`,
 };
+const VEB_BUDGET_TOKEN = window.CS_BUDGET_TOKEN || '';
 
 const VEB_MOIS = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
 const VEB_MOIS_COURT = ['Jan','Fév','Mar','Avr','Mai','Juin','Juil','Août','Sep','Oct','Nov','Déc'];
@@ -29,8 +29,6 @@ const VEB_LIBELLES_ETAT = {
 
 let veb_chart = null;
 let veb_table = null;
-let veb_directionCourante = '';
-let veb_anneeCourante = '';
 
 /* ────────────────────────── Loader ────────────────────────── */
 function veb_showLoader(msg = 'Chargement…') {
@@ -71,68 +69,63 @@ function veb_ajaxErrorMessage(xhr) {
     return 'Impossible de contacter le serveur (code ' + xhr.status + ').';
 }
 
-/* ────────────────────────── Directions (filtre) ────────────────────────── */
-function veb_chargerDirections() {
-    $.ajax({ url: veb_api.directions, method: 'POST', dataType: 'json' }).done(function (res) {
-        if (res.status !== 'success') return;
-        const sel = document.getElementById('veb-sel-direction');
-        (res.data || []).forEach(d => {
-            sel.insertAdjacentHTML('beforeend', `<option value="${d.id}">${veb_escapeHtml(d.code_direction || d.nom_direction)}</option>`);
-        });
-    });
-}
-
 /* ────────────────────────── Chargement global ────────────────────────── */
-// Retourne une Promise : le premier chargement de la page doit attendre que
-// l'année en cours soit connue et sélectionnée avant de charger stats/tableau.
-function veb_chargerAnnees() {
-    return $.ajax({ url: veb_api.annees, method: 'POST', dataType: 'json' }).then(function (res) {
-        const sel = document.getElementById('veb-sel-annee');
-        if (res.status !== 'success') {
-            // Repli : année civile du navigateur, pour ne jamais bloquer la page.
-            veb_anneeCourante = String(new Date().getFullYear());
-            sel.innerHTML = `<option value="${veb_anneeCourante}">${veb_anneeCourante}</option>`;
-            return;
-        }
-        const anneeCourante = String(res.annee_courante);
-        sel.innerHTML = (res.data || []).map(a => `<option value="${a}">${a}</option>`).join('');
-        sel.value = anneeCourante; // sélectionnée ET affichée par défaut
-        veb_anneeCourante = sel.value || anneeCourante;
-    });
-}
-
 function veb_chargerTout() {
+    if (!VEB_BUDGET_TOKEN) {
+        Swal.fire('Erreur', 'Budget manquant dans le lien — impossible de charger la page.', 'error');
+        return;
+    }
     veb_showLoader('Chargement des données…');
-    const payload = {};
-    if (veb_anneeCourante) payload.annee = parseInt(veb_anneeCourante, 10);
-    if (veb_directionCourante) payload.direction_id = parseInt(veb_directionCourante, 10);
+    const payload = { budgetId: VEB_BUDGET_TOKEN };
 
     $.when(
-        $.ajax({ url: veb_api.stats, method: 'POST', contentType: 'application/json', data: JSON.stringify(payload), dataType: 'json' }),
+        $.ajax({ url: veb_api.detail, method: 'POST', contentType: 'application/json', data: JSON.stringify(payload), dataType: 'json' }),
         $.ajax({ url: veb_api.lignes, method: 'POST', contentType: 'application/json', data: JSON.stringify(payload), dataType: 'json' })
-    ).done(function (resStats, resLignes) {
+    ).done(function (resDetail, resLignes) {
         veb_hideLoader();
-        const statsData = resStats[0];
+        const detailData = resDetail[0];
         const lignesData = resLignes[0];
 
-        if (statsData.status === 'success') {
-            veb_afficherStats(statsData.stats);
-        } else {
-            Swal.fire('Erreur', statsData.message || 'Impossible de charger les statistiques.', 'error');
+        if (detailData.status === 'error') {
+            Swal.fire('Erreur', detailData.message || 'Impossible de charger ce budget.', 'error');
+            return;
         }
+
+        veb_afficherEnTeteBudget(detailData.budget);
+
+        if (detailData.status === 'non_valide') {
+            // Budget pas encore validé par le DFC : rien d'autre ne s'affiche.
+            document.getElementById('veb-non-valide').style.display = '';
+            document.getElementById('veb-contenu-valide').style.display = 'none';
+            return;
+        }
+
+        document.getElementById('veb-non-valide').style.display = 'none';
+        document.getElementById('veb-contenu-valide').style.display = '';
+
+        veb_afficherStats(detailData.stats);
 
         if (lignesData.status === 'success') {
             const lignes = lignesData.data || [];
             // Graphe ET tableau viennent des MÊMES lignes — jamais d'écart possible entre les deux.
             veb_afficherGantt(lignes);
             veb_afficherTableau(lignes);
-        } else {
+        } else if (lignesData.status !== 'non_valide') {
             Swal.fire('Erreur', lignesData.message || 'Impossible de charger le tableau.', 'error');
         }
     }).fail(function (xhr) {
         veb_hideLoader();
         Swal.fire('Erreur', veb_ajaxErrorMessage(xhr), 'error');
     });
+}
+
+/* ────────────────────────── En-tête du budget ────────────────────────── */
+function veb_afficherEnTeteBudget(budget) {
+    if (!budget) return;
+    const nom = `${budget.type_budget_nom || 'Budget'} ${budget.annee || ''}`.trim();
+    document.getElementById('veb-nom-budget').textContent = nom;
+    document.getElementById('veb-sous-titre-budget').textContent =
+        `${budget.nom_direction || budget.code_direction || ''} — statut : ${budget.statut}`;
 }
 
 /* ────────────────────────── Statistiques ────────────────────────── */
@@ -339,7 +332,6 @@ function veb_afficherTableau(lignes) {
         data: lignes,
         columns: [
             { data: 'designation' },
-            { data: null },
             { data: 'type_budget_nom' },
             { data: 'mois_fin_delai' },
             { data: 'montant_total' },
@@ -354,10 +346,9 @@ function veb_afficherTableau(lignes) {
         ],
         columnDefs: [
             { targets: 0, render: d => `<strong>${veb_escapeHtml(d || '—')}</strong>` },
-            { targets: 1, render: (d, t, row) => veb_escapeHtml(row.code_direction || row.nom_direction || '—') },
-            { targets: 2, render: d => veb_escapeHtml(d || '—') },
+            { targets: 1, render: d => veb_escapeHtml(d || '—') },
             {
-                targets: 3,
+                targets: 2,
                 render: (d, t, row) => {
                     if (!d) return '<span style="color:#9ca3af;font-style:italic;">Non précisé</span>';
                     const fin = String(d).trim();
@@ -368,22 +359,22 @@ function veb_afficherTableau(lignes) {
                         : veb_escapeHtml(fin);
                 },
             },
-            { targets: 4, render: d => veb_fmtMontant(d) },
-            { targets: 5, render: d => `<span class="veb-montant-execute">${veb_fmtMontant(d)}</span>` },
-            { targets: 6, render: d => parseFloat(d) > 0 ? veb_fmtMontant(d) : '<span style="color:#9ca3af;">—</span>' },
-            { targets: 7, render: d => `<span class="veb-montant-restant">${veb_fmtMontant(d)}</span>` },
+            { targets: 3, render: d => veb_fmtMontant(d) },
+            { targets: 4, render: d => `<span class="veb-montant-execute">${veb_fmtMontant(d)}</span>` },
+            { targets: 5, render: d => parseFloat(d) > 0 ? veb_fmtMontant(d) : '<span style="color:#9ca3af;">—</span>' },
+            { targets: 6, render: d => `<span class="veb-montant-restant">${veb_fmtMontant(d)}</span>` },
             {
-                targets: 8,
+                targets: 7,
                 render: d => {
                     const taux = Math.min(100, Math.max(0, parseFloat(d) || 0));
                     return `<span class="veb-barre-taux"><span class="veb-barre-taux-fill" style="width:${taux}%;"></span></span>${taux}%`;
                 },
             },
             // Quantités : uniquement pertinentes pour une ligne de type "Produit" — null (côté serveur) pour "Autre".
-            { targets: 9,  render: d => d === null ? '<span style="color:#d1d5db;">—</span>' : `<span class="veb-qte-cell">${veb_fmtNombre(d)}</span>` },
-            { targets: 10, render: d => d === null ? '<span style="color:#d1d5db;">—</span>' : `<span class="veb-qte-cell">${veb_fmtNombre(d)}</span>` },
+            { targets: 8, render: d => d === null ? '<span style="color:#d1d5db;">—</span>' : `<span class="veb-qte-cell">${veb_fmtNombre(d)}</span>` },
+            { targets: 9, render: d => d === null ? '<span style="color:#d1d5db;">—</span>' : `<span class="veb-qte-cell">${veb_fmtNombre(d)}</span>` },
             {
-                targets: 11,
+                targets: 10,
                 render: (d, t, row) => {
                     if (d === null) return '<span style="color:#d1d5db;">—</span>';
                     const commandee = parseFloat(row.quantite_commandee_totale) || 0;
@@ -393,11 +384,11 @@ function veb_afficherTableau(lignes) {
                 },
             },
             {
-                targets: 12,
+                targets: 11,
                 render: d => `<span class="veb-badge-etat veb-etat-${d}">${VEB_LIBELLES_ETAT[d] || d}</span>`,
             },
         ],
-        order: [[8, 'asc']], // les moins avancées en premier — utile à la décision
+        order: [[7, 'asc']], // les moins avancées en premier — utile à la décision
         language: {
             emptyTable: 'Aucune ligne budgétaire pour le moment.',
             zeroRecords: 'Aucun résultat.',
@@ -413,17 +404,5 @@ function veb_afficherTableau(lignes) {
 /* ────────────────────────── Init ────────────────────────── */
 document.addEventListener('DOMContentLoaded', function () {
     document.documentElement.classList.remove('ld-booting');
-    veb_chargerDirections();
-    // L'année en cours doit être connue et affichée AVANT le premier appel
-    // stats/tableau, pour que le filtre par défaut soit appliqué dès le départ.
-    veb_chargerAnnees().always(veb_chargerTout);
-
-    document.getElementById('veb-sel-direction')?.addEventListener('change', function () {
-        veb_directionCourante = this.value;
-        veb_chargerTout();
-    });
-    document.getElementById('veb-sel-annee')?.addEventListener('change', function () {
-        veb_anneeCourante = this.value;
-        veb_chargerTout();
-    });
+    veb_chargerTout();
 });

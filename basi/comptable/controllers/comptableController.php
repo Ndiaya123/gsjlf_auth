@@ -341,6 +341,207 @@ function insertHistoriqueProduit(
 //}
 
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   MODULE — Vue d'exécution budgétaire, scopée à UN SEUL budget (comptable).
+   Même logique de calcul que la vue DFC (dfcController.php) et que la vue
+   chef de service (chef_service_basi_controller.php, options 19/20) —
+   SANS restriction de direction : le comptable, comme le DFC, voit
+   n'importe quel budget (il n'y a pas de $sessionIdDirection dans ce
+   fichier, le rôle est global par nature).
+
+   Informations affichées UNIQUEMENT si le budget est validé, c'est-à-dire
+   b.statut IN ('Accepter', 'Réajuster'). Sinon, 'status' => 'non_valide'
+   (pas une erreur), que la page interprète pour afficher un message adapté.
+═══════════════════════════════════════════════════════════════════════════ */
+
+const COMPTA_MOIS_ORDRE = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+function compta_moisFinPeriode(?string $periode): ?string {
+    $periode = trim((string) $periode);
+    if ($periode === '') return null;
+    $parts = array_map('trim', explode('-', $periode));
+    $fin = end($parts);
+    return in_array($fin, COMPTA_MOIS_ORDRE, true) ? $fin : null;
+}
+
+function compta_moisDebutPeriode(?string $periode): ?string {
+    $periode = trim((string) $periode);
+    if ($periode === '') return null;
+    $parts = array_map('trim', explode('-', $periode));
+    $debut = $parts[0];
+    return in_array($debut, COMPTA_MOIS_ORDRE, true) ? $debut : null;
+}
+
+/** Charge l'en-tête du budget — aucune restriction de direction pour le comptable. */
+function compta_chargerBudget(PDO $bdBASI, int $idBudget): ?array {
+    $stmt = $bdBASI->prepare("
+        SELECT b.id, b.annee, b.direction_id, b.statut, b.plafond, tb.nom AS type_budget_nom,
+               d.nom_direction, d.code_direction
+        FROM budget b
+        JOIN typeBudget tb ON b.type_budget_id = tb.id
+        LEFT JOIN direction d ON b.direction_id = d.id
+        WHERE b.id = ?
+        LIMIT 1
+    ");
+    $stmt->execute([$idBudget]);
+    $budget = $stmt->fetch(PDO::FETCH_ASSOC);
+    return $budget ?: null;
+}
+
+/**
+ * Calcule, pour chaque ligne active d'UN budget, les mêmes montants que les
+ * autres vues d'exécution (prévu / exécuté / en cours / restant / taux /
+ * état / délai / quantités produit) — voir
+ * dfcController.php::dfc_calculerExecutionLignes pour le détail de chaque
+ * règle, identique ici.
+ */
+function compta_calculerExecutionLignesBudget(PDO $bdBASI, int $idBudget): array {
+    $sql = "
+        SELECT
+            lb.id AS idLigne, lb.designation, lb.montant_total, lb.periode_d_utilisation,
+            lb.id_type_budget_investissement, lb.service_id, lb.quantite AS quantite_prevue,
+            tbi.categorie AS nature_categorie,
+            COALESCE(SUM(
+                CASE
+                    WHEN p.idTypePAP = 1 AND papl.quantite_reelle > 0 AND papl.quantite_livree >= papl.quantite_reelle
+                        THEN papl.montant_total_ligne
+                    WHEN p.idTypePAP = 2 AND COALESCE(pp.paye_total, 0) > 0
+                        THEN papl.montant_total_ligne
+                    ELSE 0
+                END
+            ), 0) AS montant_execute,
+            COALESCE(SUM(papl.montant_total_ligne), 0) AS montant_engage,
+            COUNT(DISTINCT papl.idPAP) AS nombre_commandes,
+            COALESCE(SUM(papl.quantite_reelle), 0) AS quantite_commandee_totale,
+            COALESCE(SUM(papl.quantite_livree), 0) AS quantite_livree_totale
+        FROM ligneBudget lb
+        LEFT JOIN type_budget_investissement tbi ON lb.id_type_budget_investissement = tbi.id
+        LEFT JOIN demandes_ligne dl ON dl.idLB = lb.id
+        LEFT JOIN passer_achat_et_paiement_ligne papl ON papl.idDL = dl.idDL
+        LEFT JOIN passer_achat_et_paiement p ON papl.idPAP = p.id
+        LEFT JOIN (
+            SELECT idPAP, SUM(montant) AS paye_total FROM paiement_pap GROUP BY idPAP
+        ) pp ON pp.idPAP = p.id
+        WHERE lb.statut = 'Actif' AND lb.budget_id = ?
+        GROUP BY lb.id
+        ORDER BY lb.id ASC
+    ";
+    $stmt = $bdBASI->prepare($sql);
+    $stmt->execute([$idBudget]);
+    $lignes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($lignes as &$l) {
+        $total   = (float) $l['montant_total'];
+        $execute = (float) $l['montant_execute'];
+        $engage  = (float) $l['montant_engage'];
+        if ($execute > $total) $execute = $total;
+        $enCours = max(0.0, $engage - $execute);
+        $restant = max(0.0, $total - $engage);
+
+        $l['montant_execute']  = $execute; // toujours monétaire : suivi budgétaire réel
+        $l['montant_en_cours'] = $enCours;
+        $l['montant_restant']  = $restant;
+        $l['mois_fin_delai']   = compta_moisFinPeriode($l['periode_d_utilisation']);
+        $l['mois_debut_delai'] = compta_moisDebutPeriode($l['periode_d_utilisation']);
+
+        $estProduit     = ($l['nature_categorie'] === 'Produit');
+        $quantitePrevue = (float) $l['quantite_prevue'];
+        $quantiteLivree = (float) $l['quantite_livree_totale'];
+        $l['quantite_prevue']           = $estProduit ? $quantitePrevue : null;
+        $l['quantite_commandee_totale'] = $estProduit ? (float) $l['quantite_commandee_totale'] : null;
+        $l['quantite_livree_totale']    = $estProduit ? $quantiteLivree : null;
+
+        // Taux / état : pour "Produit", basés sur les QUANTITÉS (prévu vs
+        // livré) — le prix réellement commandé peut différer du prix
+        // budgété, ce qui fausserait un taux calculé en argent. Pour
+        // "Autre" (sans quantité), le taux reste monétaire.
+        if ($estProduit && $quantitePrevue > 0.001) {
+            $l['taux_execution'] = min(100.0, round(($quantiteLivree / $quantitePrevue) * 100, 1));
+            $l['etat_execution'] = $quantiteLivree <= 0.001
+                ? 'non_execute'
+                : ($quantiteLivree >= $quantitePrevue - 0.001 ? 'entierement_execute' : 'partiellement_execute');
+        } else {
+            $l['taux_execution'] = $total > 0 ? round(($execute / $total) * 100, 1) : 0.0;
+            $l['etat_execution'] = $execute <= 0.001
+                ? 'non_execute'
+                : ($execute >= $total - 0.001 ? 'entierement_execute' : 'partiellement_execute');
+        }
+    }
+    unset($l);
+
+    return $lignes;
+}
+
+/** OPTION 53 — En-tête du budget + statistiques globales. Body JSON : { "budgetId": "<token>" } */
+function compta_detailBudgetExecution(PDO $bdBASI, comptableController $basiController): void {
+    try {
+        $data = getJsonBody();
+        $token = trim((string) ($data['budgetId'] ?? ''));
+        if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Budget manquant.']); return; }
+        $idBudget = (int) $basiController->tokendecrypt($token);
+        if ($idBudget <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+
+        $budget = compta_chargerBudget($bdBASI, $idBudget);
+        if (!$budget) { echo json_encode(['status' => 'error', 'message' => 'Budget introuvable.']); return; }
+
+        if (!in_array($budget['statut'], ['Accepter', 'Réajuster'], true)) {
+            echo json_encode(['status' => 'non_valide', 'budget' => $budget]);
+            return;
+        }
+
+        $lignes = compta_calculerExecutionLignesBudget($bdBASI, $idBudget);
+        $budgetTotal = 0.0; $execute = 0.0; $enCours = 0.0; $restant = 0.0;
+        foreach ($lignes as $l) {
+            $budgetTotal += (float) $l['montant_total'];
+            $execute     += $l['montant_execute'];
+            $enCours     += $l['montant_en_cours'];
+            $restant     += $l['montant_restant'];
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'budget' => $budget,
+            'stats'  => [
+                'budget_total'     => $budgetTotal,
+                'montant_en_cours' => $enCours,
+                'montant_execute'  => $execute,
+                'montant_restant'  => $restant,
+                'taux_global'      => $budgetTotal > 0 ? round(($execute / $budgetTotal) * 100, 1) : 0.0,
+            ],
+        ]);
+    } catch (\Throwable $e) {
+        error_log('[Compta][compta_detailBudgetExecution] ' . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => "Impossible de charger l'exécution de ce budget."]);
+    }
+}
+
+/** OPTION 54 — Lignes du budget (graphe Gantt + tableau). Body JSON : { "budgetId": "<token>" } */
+function compta_listerLignesExecutionBudget(PDO $bdBASI, comptableController $basiController): void {
+    try {
+        $data = getJsonBody();
+        $token = trim((string) ($data['budgetId'] ?? ''));
+        if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Budget manquant.']); return; }
+        $idBudget = (int) $basiController->tokendecrypt($token);
+        if ($idBudget <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+
+        $budget = compta_chargerBudget($bdBASI, $idBudget);
+        if (!$budget) { echo json_encode(['status' => 'error', 'message' => 'Budget introuvable.']); return; }
+
+        if (!in_array($budget['statut'], ['Accepter', 'Réajuster'], true)) {
+            echo json_encode(['status' => 'non_valide', 'data' => []]);
+            return;
+        }
+
+        $lignes = compta_calculerExecutionLignesBudget($bdBASI, $idBudget);
+        echo json_encode(['status' => 'success', 'data' => $lignes, 'nombre_total' => count($lignes)]);
+    } catch (\Throwable $e) {
+        error_log('[Compta][compta_listerLignesExecutionBudget] ' . $e->getMessage());
+        http_response_code(500);
+        echo json_encode(['status' => 'error', 'message' => 'Impossible de charger les lignes de ce budget.']);
+    }
+}
+
 switch ($option) {
 
 // ─── CASE 1 : POST — liste des catégories actives (statut=1) ────────────────
@@ -2543,6 +2744,16 @@ switch ($option) {
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Impossible de charger le suivi de la demande.']);
         }
+        break;
+
+    case 53:
+        header('Content-Type: application/json; charset=utf-8');
+        compta_detailBudgetExecution($bdBASI, $basiController);
+        break;
+
+    case 54:
+        header('Content-Type: application/json; charset=utf-8');
+        compta_listerLignesExecutionBudget($bdBASI, $basiController);
         break;
 
     default:
