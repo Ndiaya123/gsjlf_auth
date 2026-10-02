@@ -192,8 +192,14 @@ RewriteRule ^dfc-liste_budget$ basi/dfc/listeBudget.php [L]
 RewriteRule ^basi-scripts.bundle.10.js$ basi/dfc/js/listeBudget.js [L]
 RewriteRule ^dfc-consultation-budget/(.*)$ basi/dfc/consulterBudget.php?budgetId=$1  [L]
 RewriteRule ^basi-scripts.bundle.11.js$ basi/dfc/js/consulterBudget.js [L]
-RewriteRule ^drh_commande_avis_favorable$ basi/dfc/avisfavorable_pap.php [L]
+RewriteRule ^dfc_commande_avis_favorable$ basi/dfc/avisfavorable_pap.php [L]
 RewriteRule ^basi-scripts.bundle.20.js$ basi/dfc/js/avisfavorable_pap.js [L]
+
+RewriteRule ^dfc_vue_execution_budgetaire$ basi/dfc/vueExecutionBudgetaire.php [L]
+RewriteRule ^basi-scripts.bundle.41.js$ basi/dfc/js/vueExecutionBudgetaire.js [L]
+
+
+
 
 
 
@@ -313,6 +319,9 @@ RewriteRule ^magasinier_basi_controller$ basi/magasinier/controllers/magasinierC
 RewriteRule ^magasinier_basi_inventaire$ basi/magasinier/produitAlivrer.php [L]
 RewriteRule ^basi-scripts.bundle.39.js$ basi/magasinier/js/produitAlivrer.js [L]
 
+
+
+# responsable achat
 
 
 

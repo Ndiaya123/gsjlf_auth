@@ -18,7 +18,7 @@ const lb_api = {
     createRub:    `${LB_API}?option=28`, // POST { nom }
     createSubRub: `${LB_API}?option=29`, // POST { nom, rubrique_id }
     unites:       `${LB_API}?option=30`, // POST {} → liste listeUnite
-    createProd:   `${LB_API}?option=31`, // POST { nomproduit, sous_rubrique_id }
+    produitsParSousRubrique: `${LB_API}?option=31`, // POST { sous_rubrique_id } → produits existants de cette sous-rubrique
     validerBudget:`${LB_API}?option=32`, // POST { budgetId }
 };
 
@@ -117,54 +117,6 @@ function lb_closeModal() {
     lb_applyNatureLayout(null);
 }
 
-// ─── Modale inline pour créer rubrique / sous-rubrique ───────────────
-// S'affiche À L'INTÉRIEUR de la modale principale (pas derrière)
-function lb_openInlineModal(title, onConfirm) {
-    // Créer dynamiquement si besoin
-    let overlay = document.getElementById('lb-inline-modal');
-    if (!overlay) {
-        overlay = document.createElement('div');
-        overlay.id = 'lb-inline-modal';
-        overlay.style.cssText =
-            'position:absolute;inset:0;z-index:10;background:rgba(15,23,42,.6);'
-            +'backdrop-filter:blur(3px);display:flex;align-items:center;justify-content:center;'
-            +'border-radius:16px;'; // border-radius du parent .lb-modal
-        overlay.innerHTML = `
-            <div style="background:#fff;border-radius:12px;padding:1.5rem;width:90%;max-width:360px;box-shadow:0 8px 32px rgba(0,0,0,.2);">
-                <h3 id="lb-inline-title" style="margin:0 0 1rem;font-size:.95rem;font-weight:700;color:#111827;"></h3>
-                <input id="lb-inline-input" type="text" class="lb-inp" placeholder="Saisir le nom..." style="margin-bottom:1rem;"/>
-                <div style="display:flex;gap:.5rem;justify-content:flex-end;">
-                    <button id="lb-inline-cancel" class="lb-btn lb-btn--ghost" style="padding:.5rem 1rem;">Annuler</button>
-                    <button id="lb-inline-confirm" class="lb-btn lb-btn--primary" style="padding:.5rem 1rem;">Créer</button>
-                </div>
-            </div>`;
-        // Attacher à .lb-modal (position:relative requis)
-        document.querySelector('.lb-modal').style.position = 'relative';
-        document.querySelector('.lb-modal').appendChild(overlay);
-    }
-    document.getElementById('lb-inline-title').textContent = title;
-    document.getElementById('lb-inline-input').value = '';
-    overlay.style.display = 'flex';
-    document.getElementById('lb-inline-input').focus();
-
-    // Handlers
-    const cancel = document.getElementById('lb-inline-cancel');
-    const confirm = document.getElementById('lb-inline-confirm');
-    const closeInline = () => { overlay.style.display='none'; };
-    cancel.onclick = closeInline;
-    confirm.onclick = () => {
-        const val = document.getElementById('lb-inline-input').value.trim();
-        if (!val) { document.getElementById('lb-inline-input').focus(); return; }
-        closeInline();
-        onConfirm(val);
-    };
-    document.getElementById('lb-inline-input').onkeydown = (e) => {
-        if (e.key==='Enter') confirm.click();
-        if (e.key==='Escape') closeInline();
-    };
-}
-
-
 async function lb_loadUnites(selectId='lb-unite') {
     const r = await lb_post(lb_api.unites, {});
     if (!r.ok) return;
@@ -179,21 +131,26 @@ async function lb_loadUnites(selectId='lb-unite') {
 }
 
 // ─── Layout selon nature sélectionnée ────────────────────────────────
-// categorie = 'Produit' → rubrique + sous-rubrique + quantité + prix unitaire
-// categorie = autre      → nombre + montant total (pas de rubrique/sous-rubrique)
+// categorie = 'Produit' → champ Produit (sélection parmi l'existant) + quantité + prix unitaire — PAS de désignation
+// categorie = autre      → désignation + nombre + montant total
 // null                   → tout masqué sauf nature
 function lb_applyNatureLayout(categorie) {
     lb_natureCategorie = categorie;
     const isProduit = categorie === 'Produit';
     const hasNature = categorie !== null;
 
-    // Blocs communs : visibles dès qu'une nature est choisie
-    ['lb-designation-block','lb-description-block','lb-periode-block'].forEach(id => {
+    // Désignation : visible pour "Autre" uniquement — jamais pour Produit,
+    // dont le nom vient du produit sélectionné.
+    document.getElementById('lb-designation-block')?.classList.toggle('lb-hidden', !hasNature || isProduit);
+
+    // Description + période : communs dès qu'une nature est choisie
+    ['lb-description-block','lb-periode-block'].forEach(id => {
         document.getElementById(id)?.classList.toggle('lb-hidden', !hasNature);
     });
 
-    // Rubrique + sous-rubrique + quantité + prix : uniquement Produit
+    // Rubrique/sous-rubrique (filtres) + produit + quantité + prix : uniquement Produit
     document.getElementById('lb-rub-block')?.classList.toggle('lb-hidden', !isProduit);
+    document.getElementById('lb-produit-select-block')?.classList.toggle('lb-hidden', !isProduit);
     document.getElementById('lb-qte-pu-row')?.classList.toggle('lb-hidden', !isProduit);
 
     // Nombre + montant total : uniquement Autre (non Produit)
@@ -247,31 +204,6 @@ async function lb_loadNatures(selectId='lb-nature', filterId=null) {
                 `<option value="${n.id}">${n.nom}</option>`));
         }
     }
-}
-
-async function lb_loadRubriques(selectId='lb-categorie') {
-    const r = await lb_post(lb_api.rubriques, {});
-    if (!r.ok) return;
-    const d = await lb_checkResp(r); if (!d) return;
-    const sel = document.getElementById(selectId);
-    if (!sel) return;
-    const cur = sel.value;
-    sel.innerHTML = '<option value="">Rubrique *</option>';
-    (d.data||[]).forEach(c => sel.insertAdjacentHTML('beforeend',
-        `<option value="${c.id}">${c.nom}</option>`));
-    if (cur) sel.value = cur;
-}
-
-async function lb_loadSousRubriques(categorieId, selectId='lb-sous-rubrique') {
-    const sel = document.getElementById(selectId);
-    if (!sel) return;
-    sel.innerHTML = '<option value="">Sous-rubrique *</option>';
-    if (!categorieId) return;
-    const r = await lb_post(lb_api.sousRub, {categorie_id: categorieId});
-    if (!r.ok) return;
-    const d = await lb_checkResp(r); if (!d) return;
-    (d.data||[]).forEach(s => sel.insertAdjacentHTML('beforeend',
-        `<option value="${s.id}">${s.nom}</option>`));
 }
 
 // ─── Compteurs + alertes ──────────────────────────────────────────────
@@ -556,8 +488,10 @@ async function lb_submitForm(e) {
         lb_showError('lb-nature','err-nature',"Le type d'investissement est requis.");
         hasError = true;
     }
+    // Désignation : requise seulement pour "Autre" — pour Produit, elle vient
+    // du produit sélectionné (le serveur la recalcule de toute façon).
     const designation = document.getElementById('lb-designation').value.trim();
-    if (natureId && !designation) {
+    if (natureId && categorie !== 'Produit' && !designation) {
         lb_showError('lb-designation','err-designation','La désignation est requise.');
         hasError = true;
     }
@@ -573,18 +507,23 @@ async function lb_submitForm(e) {
     if (isEdit) payload.lineId = parseInt(lineId);
 
     if (categorie === 'Produit') {
-        payload.categorie_id     = document.getElementById('lb-categorie').value;
-        payload.sous_rubrique_id = document.getElementById('lb-sous-rubrique').value;
+        const rubriqueVal = document.getElementById('lb-categorie').value;
+        const sousRubVal  = document.getElementById('lb-sous-rubrique').value;
+        payload.id_produit       = document.getElementById('lb-produit').value || null;
         payload.quantite         = document.getElementById('lb-qte').value !== '' ? parseFloat(document.getElementById('lb-qte').value) : null;
         payload.unite_id         = document.getElementById('lb-unite').value || null;
         payload.prix_unitaire    = parseFloat(document.getElementById('lb-prix').value)||0;
 
-        if (!payload.categorie_id) {
+        if (!rubriqueVal) {
             lb_showError('lb-categorie','err-categorie','La rubrique est requise.');
             hasError = true;
         }
-        if (!payload.sous_rubrique_id) {
+        if (!sousRubVal) {
             lb_showError('lb-sous-rubrique','err-sous-rubrique','La sous-rubrique est requise.');
+            hasError = true;
+        }
+        if (!payload.id_produit) {
+            lb_showError('lb-produit','err-produit','Le produit est requis.');
             hasError = true;
         }
         if (!payload.quantite || payload.quantite <= 0) {
@@ -715,12 +654,16 @@ async function lb_editLine(lineId) {
         document.getElementById('lb-categorie').value = l.rubrique_id||'';
 
         // b) Charger les sous-rubriques de la rubrique sélectionnée
-        //    → IMPORTANT : await ici garantit que le select est rempli avant de sélectionner
         if (l.rubrique_id) {
             await lb_loadSousRubriques(l.rubrique_id, 'lb-sous-rubrique');
         }
-        // c) Sélectionner la sous-rubrique maintenant que le select est rempli
         document.getElementById('lb-sous-rubrique').value = l.sous_rubrique_id||'';
+
+        // c) Charger les produits de cette sous-rubrique puis sélectionner le bon
+        if (l.sous_rubrique_id) {
+            await lb_loadProduitsParSousRubrique(l.sous_rubrique_id, 'lb-produit');
+        }
+        document.getElementById('lb-produit').value = l.id_produit||'';
 
         // d) Quantité, unité, prix
         document.getElementById('lb-qte').value  = l.quantite||'';
@@ -789,33 +732,55 @@ async function lb_validerBudget() {
     await lb_initTable();
 }
 
-// ─── Création rapide rubrique / sous-rubrique ─────────────────────────
-async function lb_createRubrique() {
-    lb_openInlineModal('Nouvelle rubrique', async (nom) => {
-        lb_showLoader('Création…');
-        const r = await lb_post(lb_api.createRub, {nom});
-        lb_hideLoader();
-        const d = await lb_checkResp(r); if (!d) return;
-        if (!d.success) { Swal.fire('Erreur',d.message,'error'); return; }
-        await lb_loadRubriques('lb-categorie');
-        document.getElementById('lb-categorie').value = d.new_id;
-        // Vider les sous-rubriques
-        document.getElementById('lb-sous-rubrique').innerHTML='<option value="">Sous-rubrique *</option>';
-    });
+// ─── Rubrique → sous-rubrique → produit ───────────────────────────────
+// Le produit n'est jamais créé ici : uniquement sélectionné dans le
+// catalogue existant, filtré par sous-rubrique (table product, via
+// id_sous_rubrique côté serveur).
+async function lb_loadRubriques(selectId='lb-categorie') {
+    const r = await lb_post(lb_api.rubriques, {});
+    if (!r.ok) return;
+    const d = await lb_checkResp(r); if (!d) return;
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    const cur = sel.value;
+    sel.innerHTML = '<option value="">Choisir une rubrique</option>';
+    (d.data||[]).forEach(c => sel.insertAdjacentHTML('beforeend',
+        `<option value="${c.id}">${c.nom}</option>`));
+    if (cur) sel.value = cur;
 }
 
-async function lb_createSousRubrique() {
-    const catId = document.getElementById('lb-categorie').value;
-    if (!catId) { Swal.fire('Info','Sélectionnez d\'abord une rubrique.','info'); return; }
-    lb_openInlineModal('Nouvelle sous-rubrique', async (nom) => {
-        lb_showLoader('Création…');
-        const r = await lb_post(lb_api.createSubRub, {nom, rubrique_id:parseInt(catId)});
-        lb_hideLoader();
-        const d = await lb_checkResp(r); if (!d) return;
-        if (!d.success) { Swal.fire('Erreur',d.message,'error'); return; }
-        await lb_loadSousRubriques(catId,'lb-sous-rubrique');
-        document.getElementById('lb-sous-rubrique').value = d.new_id;
-    });
+async function lb_loadSousRubriques(categorieId, selectId='lb-sous-rubrique') {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    sel.innerHTML = '<option value="">Choisir une sous-rubrique</option>';
+    lb_resetProduitSelect();
+    if (!categorieId) return;
+    const r = await lb_post(lb_api.sousRub, {categorie_id: categorieId});
+    if (!r.ok) return;
+    const d = await lb_checkResp(r); if (!d) return;
+    (d.data||[]).forEach(s => sel.insertAdjacentHTML('beforeend',
+        `<option value="${s.id}">${s.nom}</option>`));
+}
+
+function lb_resetProduitSelect(placeholder="Choisir d'abord une sous-rubrique") {
+    const sel = document.getElementById('lb-produit');
+    if (sel) sel.innerHTML = `<option value="">${placeholder}</option>`;
+}
+
+async function lb_loadProduitsParSousRubrique(sousRubId, selectId='lb-produit') {
+    const sel = document.getElementById(selectId);
+    if (!sel) return;
+    if (!sousRubId) { lb_resetProduitSelect(); return; }
+    sel.innerHTML = '<option value="">Chargement…</option>';
+    const r = await lb_post(lb_api.produitsParSousRubrique, {sous_rubrique_id: sousRubId});
+    if (!r.ok) return;
+    const d = await lb_checkResp(r); if (!d) return;
+    const produits = d.data || [];
+    sel.innerHTML = produits.length
+        ? '<option value="">Choisir un produit</option>'
+        : '<option value="">Aucun produit dans cette sous-rubrique</option>';
+    produits.forEach(p => sel.insertAdjacentHTML('beforeend',
+        `<option value="${p.idP}">${p.nomproduit}</option>`));
 }
 
 // ─── Initialisation ───────────────────────────────────────────────────
@@ -858,10 +823,10 @@ document.addEventListener('DOMContentLoaded', async () => {
         lb_applyNatureLayout(cat && cat!=='' ? cat : null);
 
         if (cat === 'Produit') {
-            // Produit : vider la désignation (le nom du produit est distinct du type)
-            const desig = document.getElementById('lb-designation');
-            if (desig) desig.value = '';
+            // Produit : pas de désignation libre, le nom vient du produit choisi
             lb_loadRubriques('lb-categorie');
+            document.getElementById('lb-sous-rubrique').innerHTML = '<option value="">Choisir une sous-rubrique</option>';
+            lb_resetProduitSelect();
             lb_loadUnites('lb-unite');
         } else if (cat) {
             // Autre type (Salaire, Vacation, Prestation…) :
@@ -871,17 +836,16 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     });
 
-    // Rubrique → sous-rubrique
+    // Rubrique → sous-rubrique → produit
     document.getElementById('lb-categorie')?.addEventListener('change', async function(){
         await lb_loadSousRubriques(this.value,'lb-sous-rubrique');
+    });
+    document.getElementById('lb-sous-rubrique')?.addEventListener('change', async function(){
+        await lb_loadProduitsParSousRubrique(this.value,'lb-produit');
     });
 
     // Filtres
     document.getElementById('lb-filter-nature')?.addEventListener('change', ()=>lb_initTable());
-
-    // Créations rapides
-    document.getElementById('lb-create-rub')?.addEventListener('click', lb_createRubrique);
-    document.getElementById('lb-create-subrub')?.addEventListener('click', lb_createSousRubrique);
 
     // Délégation actions table
     document.getElementById('lb-table')?.addEventListener('click', e=>{

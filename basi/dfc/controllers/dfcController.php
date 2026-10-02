@@ -756,6 +756,203 @@ function listerCommentairesDossier(PDO $bdBASI, dfcController $dfcController): v
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   MODULE — Vue d'exécution budgétaire (DFC)
+
+   Définitions (confirmées avec l'utilisateur) :
+   - Une ligne budgétaire est "exécutée" UNIQUEMENT quand elle est livrée
+     (achat : quantite_livree >= quantite_reelle) ou payée (paiement : un
+     paiement_pap au montant > 0 existe) — jamais simplement "commandée".
+   - "En cours d'exécution" = une commande (PAP) existe sur la ligne mais
+     n'est pas encore totalement livrée/payée.
+   - "Restant à exécuter" = montant_total de la ligne moins tout ce qui a
+     été engagé (exécuté + en cours) — ce qui n'a encore donné lieu à
+     aucune commande.
+   - Regroupement du graphe mensuel : par le MOIS DE FIN du délai prévu
+     (periode_d_utilisation, stocké "MoisDébut-MoisFin" ou juste "Mois").
+   - Périmètre : budgets Fonctionnement + Investissement confondus, au
+     statut 'Accepter' ou 'Réajuster' (budgets validés par le DFC et donc
+     réellement en exécution — 'Valider' seul n'est que l'étape direction,
+     pas encore actionnable).
+
+   Une même fonction de calcul par ligne (dfc_calculerExecutionLignes) est
+   réutilisée par les 3 options pour que stats, graphe et tableau restent
+   TOUJOURS cohérents entre eux.
+═══════════════════════════════════════════════════════════════════════════ */
+
+const DFC_MOIS_ORDRE = ['Janvier','Février','Mars','Avril','Mai','Juin','Juillet','Août','Septembre','Octobre','Novembre','Décembre'];
+
+/** Extrait le mois de FIN du délai prévu ("Mars-Juin" → "Juin", "Mars" → "Mars", vide → null). */
+function dfc_moisFinPeriode(?string $periode): ?string {
+    $periode = trim((string) $periode);
+    if ($periode === '') return null;
+    $parts = array_map('trim', explode('-', $periode));
+    $fin = end($parts);
+    return in_array($fin, DFC_MOIS_ORDRE, true) ? $fin : null;
+}
+
+/**
+ * Calcule, pour chaque ligne budgétaire active d'un budget accepté/réajusté
+ * (Fonctionnement + Investissement confondus), les montants prévu / exécuté /
+ * en cours / restant, le taux, l'état et le mois de fin du délai prévu.
+ *
+ * $directionId : null = toutes directions, sinon filtre sur budget.direction_id.
+ * Retourne un tableau de lignes brutes, PAS encore agrégées.
+ */
+function dfc_calculerExecutionLignes(PDO $bdBASI, ?int $directionId): array {
+    $sql = "
+        SELECT
+            lb.id AS idLigne, lb.designation, lb.montant_total, lb.periode_d_utilisation,
+            lb.id_type_budget_investissement, lb.service_id,
+            b.id AS idBudget, b.annee, b.direction_id, b.type_budget_id,
+            tb.nom AS type_budget_nom,
+            d.nom_direction, d.code_direction,
+            COALESCE(SUM(
+                CASE
+                    WHEN p.idTypePAP = 1 AND papl.quantite_reelle > 0 AND papl.quantite_livree >= papl.quantite_reelle
+                        THEN papl.montant_total_ligne
+                    WHEN p.idTypePAP = 2 AND COALESCE(pp.paye_total, 0) > 0
+                        THEN papl.montant_total_ligne
+                    ELSE 0
+                END
+            ), 0) AS montant_execute,
+            COALESCE(SUM(papl.montant_total_ligne), 0) AS montant_engage,
+            COUNT(DISTINCT papl.idPAP) AS nombre_commandes
+        FROM ligneBudget lb
+        JOIN budget b ON lb.budget_id = b.id
+        JOIN typeBudget tb ON b.type_budget_id = tb.id
+        LEFT JOIN direction d ON b.direction_id = d.id
+        LEFT JOIN demandes_ligne dl ON dl.idLB = lb.id
+        LEFT JOIN passer_achat_et_paiement_ligne papl ON papl.idDL = dl.idDL
+        LEFT JOIN passer_achat_et_paiement p ON papl.idPAP = p.id
+        LEFT JOIN (
+            SELECT idPAP, SUM(montant) AS paye_total FROM paiement_pap GROUP BY idPAP
+        ) pp ON pp.idPAP = p.id
+        WHERE lb.statut = 'Actif' AND b.statut IN ('Accepter', 'Réajuster')
+    ";
+    $params = [];
+    if ($directionId !== null) { $sql .= " AND b.direction_id = ?"; $params[] = $directionId; }
+    $sql .= " GROUP BY lb.id ORDER BY b.annee DESC, lb.id ASC";
+
+    $stmt = $bdBASI->prepare($sql);
+    $stmt->execute($params);
+    $lignes = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    foreach ($lignes as &$l) {
+        $total   = (float) $l['montant_total'];
+        $execute = (float) $l['montant_execute'];
+        $engage  = (float) $l['montant_engage'];
+        if ($execute > $total) $execute = $total; // sécurité : jamais plus exécuté que prévu dans les agrégats
+        $enCours = max(0.0, $engage - $execute);
+        $restant = max(0.0, $total - $engage);
+
+        $l['montant_execute']  = $execute;
+        $l['montant_en_cours'] = $enCours;
+        $l['montant_restant']  = $restant;
+        $l['taux_execution']   = $total > 0 ? round(($execute / $total) * 100, 1) : 0.0;
+        $l['etat_execution']   = $execute <= 0.001
+            ? 'non_execute'
+            : ($execute >= $total - 0.001 ? 'entierement_execute' : 'partiellement_execute');
+        $l['mois_fin_delai']   = dfc_moisFinPeriode($l['periode_d_utilisation']);
+    }
+    unset($l);
+
+    return $lignes;
+}
+
+/**
+ * OPTION 24 — Statistiques globales + données du graphe mensuel.
+ * Body JSON : { "direction_id"?: N }
+ */
+function dfc_statistiquesExecution(PDO $bdBASI, dfcController $dfcController): void {
+    try {
+        $data = getJsonBody();
+        $directionId = isset($data['direction_id']) && $data['direction_id'] !== '' ? (int) $data['direction_id'] : null;
+
+        $lignes = dfc_calculerExecutionLignes($bdBASI, $directionId);
+
+        $budgetTotal = 0.0; $execute = 0.0; $enCours = 0.0; $restant = 0.0;
+        $parMois = []; // mois => ['prevu'=>, 'execute'=>, 'en_cours'=>, 'restant'=>]
+        foreach (DFC_MOIS_ORDRE as $m) { $parMois[$m] = ['prevu' => 0.0, 'execute' => 0.0, 'en_cours' => 0.0, 'restant' => 0.0]; }
+
+        foreach ($lignes as $l) {
+            $budgetTotal += (float) $l['montant_total'];
+            $execute     += $l['montant_execute'];
+            $enCours     += $l['montant_en_cours'];
+            $restant     += $l['montant_restant'];
+
+            if ($l['mois_fin_delai'] !== null) {
+                $parMois[$l['mois_fin_delai']]['prevu']   += (float) $l['montant_total'];
+                $parMois[$l['mois_fin_delai']]['execute'] += $l['montant_execute'];
+                $parMois[$l['mois_fin_delai']]['en_cours']+= $l['montant_en_cours'];
+                $parMois[$l['mois_fin_delai']]['restant'] += $l['montant_restant'];
+            }
+        }
+
+        $graphe = [];
+        foreach (DFC_MOIS_ORDRE as $m) {
+            $v = $parMois[$m];
+            $taux = $v['prevu'] > 0 ? round(($v['execute'] / $v['prevu']) * 100, 1) : 0.0;
+            $etat = $v['prevu'] <= 0.001 ? 'aucune_ligne'
+                : ($v['execute'] <= 0.001 ? 'non_execute'
+                    : ($v['execute'] >= $v['prevu'] - 0.001 ? 'entierement_execute' : 'partiellement_execute'));
+            $graphe[] = [
+                'mois' => $m,
+                'montant_prevu' => $v['prevu'],
+                'montant_execute' => $v['execute'],
+                'montant_en_cours' => $v['en_cours'],
+                'montant_restant' => $v['restant'],
+                'taux_execution' => $taux,
+                'etat_execution' => $etat,
+            ];
+        }
+
+        echo json_encode([
+            'status' => 'success',
+            'stats' => [
+                'budget_total'    => $budgetTotal,
+                'montant_en_cours'=> $enCours,
+                'montant_execute' => $execute,
+                'montant_restant' => $restant,
+                'taux_global'     => $budgetTotal > 0 ? round(($execute / $budgetTotal) * 100, 1) : 0.0,
+            ],
+            'graphe' => $graphe,
+        ]);
+    } catch (\Throwable $e) {
+        error_log('[DFC][dfc_statistiquesExecution] ' . $e->getMessage());
+        erreurSqlDfc("Impossible de charger les statistiques d'exécution.");
+    }
+}
+
+/**
+ * OPTION 25 — Tableau complet des lignes budgétaires (toutes directions ou filtré).
+ * Body JSON : { "direction_id"?: N }
+ */
+function dfc_listerLignesExecution(PDO $bdBASI, dfcController $dfcController): void {
+    try {
+        $data = getJsonBody();
+        $directionId = isset($data['direction_id']) && $data['direction_id'] !== '' ? (int) $data['direction_id'] : null;
+
+        $lignes = dfc_calculerExecutionLignes($bdBASI, $directionId);
+
+        echo json_encode(['status' => 'success', 'data' => $lignes, 'nombre_total' => count($lignes)]);
+    } catch (\Throwable $e) {
+        error_log('[DFC][dfc_listerLignesExecution] ' . $e->getMessage());
+        erreurSqlDfc('Impossible de charger le tableau des lignes.');
+    }
+}
+
+/** OPTION 26 — Liste des directions, pour le filtre. */
+function dfc_listerDirections(PDO $bdBASI): void {
+    try {
+        $stmt = $bdBASI->query("SELECT id, nom_direction, code_direction FROM direction ORDER BY nom_direction ASC");
+        echo json_encode(['status' => 'success', 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
+    } catch (\Throwable $e) {
+        error_log('[DFC][dfc_listerDirections] ' . $e->getMessage());
+        erreurSqlDfc('Impossible de charger la liste des directions.');
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    ROUTAGE
    16 = listerDossiers    (passer_achat_et_paiement.idStatut = 2)
    17 = detailDossier     (facture définitive OU justificatif(s) de paiement)
@@ -765,6 +962,9 @@ function listerCommentairesDossier(PDO $bdBASI, dfcController $dfcController): v
    21 = annulerLignePAP               (les deux types)
    22 = envoyerRelanceResponsableAchats (+ enregistre un commentaire)
    23 = listerCommentairesDossier
+   24 = dfc_statistiquesExecution  (Vue d'exécution budgétaire : stats + graphe)
+   25 = dfc_listerLignesExecution  (Vue d'exécution budgétaire : tableau)
+   26 = dfc_listerDirections       (Vue d'exécution budgétaire : filtre)
 ═══════════════════════════════════════════════════════════════════════════ */
 switch ($option) {
 
@@ -1409,6 +1609,18 @@ switch ($option) {
 
     case 23:
         listerCommentairesDossier($bdBASI, $dfcController);
+        break;
+
+    case 24:
+        dfc_statistiquesExecution($bdBASI, $dfcController);
+        break;
+
+    case 25:
+        dfc_listerLignesExecution($bdBASI, $dfcController);
+        break;
+
+    case 26:
+        dfc_listerDirections($bdBASI);
         break;
 
 

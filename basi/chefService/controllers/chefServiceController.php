@@ -823,9 +823,11 @@ switch ($option) {
                 SELECT lb.*, lb.id_type_budget_investissement,
                        tn.nom AS nature_nom, tn.categorie AS nature_categorie,
                        lb.designation, lb.description, lb.periode_d_utilisation,
-                       lb.rubrique_id, lb.sous_rubrique_id
+                       lb.rubrique_id, lb.sous_rubrique_id,
+                       p.nomproduit AS produit_nom
                 FROM ligneBudget lb
                 LEFT JOIN type_budget_investissement tn ON lb.id_type_budget_investissement=tn.id
+                LEFT JOIN product p ON lb.id_produit = p.idP
                 WHERE lb.id=:line_id AND lb.statut!='Inactif'
             ");
             $stmt->bindValue(':line_id',$lineId,PDO::PARAM_INT);
@@ -844,14 +846,15 @@ switch ($option) {
             if ($_SERVER['REQUEST_METHOD']!=='POST') throw new Exception("Méthode non supportée. Utilisez POST.",405);
             $data=getJsonBody();
 
-            // Champs toujours requis
-            foreach (['budgetId','id_type_budget_investissement','designation'] as $f) {
+            // Champs toujours requis — désignation retirée d'ici : elle n'a de
+            // sens que pour le type "Autre", vérifiée plus bas selon la catégorie.
+            foreach (['budgetId','id_type_budget_investissement'] as $f) {
                 if (empty($data[$f])) throw new Exception("Champ requis manquant : $f");
             }
 
             $budgetId    = $basiController->tokendecrypt($data['budgetId']);
             $natureId    = (int)$data['id_type_budget_investissement'];
-            $designation = trim($data['designation']);
+            $designation = trim($data['designation'] ?? '');
             $description = !empty($data['description']) ? trim($data['description']) : null;
             $periode     = trim($data['periode_d_utilisation'] ?? '');
             $serviceId   = isset($data['service_id']) && $data['service_id'] !== '' ? (int)$data['service_id'] : null;
@@ -881,18 +884,34 @@ switch ($option) {
             $uniteId      = null;
             $prixUnitaire = null;
             $montantTotal = null;
-            $newIdP       = null;
+            $idProduit    = null;
 
             if ($natureCategorie === 'Produit') {
-                // ─ Cas 1 : Produit — tous ces champs sont obligatoires ─
-                if (empty($data['categorie_id']))     throw new Exception("La rubrique est requise pour un type Produit.");
-                if (empty($data['sous_rubrique_id'])) throw new Exception("La sous-rubrique est requise pour un type Produit.");
+                // ─ Cas 1 : Produit — sélectionné parmi l'existant, jamais créé ici ─
+                if (empty($data['id_produit'])) throw new Exception("Le produit est requis.");
                 if (!isset($data['quantite'])      || $data['quantite']      === '') throw new Exception("La quantité est requise.");
                 if (!isset($data['unite_id'])       || $data['unite_id']      === '') throw new Exception("L'unité est requise.");
                 if (!isset($data['prix_unitaire'])  || $data['prix_unitaire'] === '') throw new Exception("Le prix unitaire est requis.");
 
-                $rubriqueId   = (int)$data['categorie_id'];
-                $sousRubId    = (int)$data['sous_rubrique_id'];
+                $idProduit = (int)$data['id_produit'];
+
+                // Le produit doit exister et être un produit Investissement actif —
+                // rubrique/sous-rubrique de la ligne dérivées de SA fiche, jamais saisies.
+                $prodChk = $bdBASI->prepare("
+                    SELECT p.idP, p.nomproduit, p.id_sous_rubrique, sr.rubrique_id
+                    FROM product p
+                    LEFT JOIN sousRubrique sr ON p.id_sous_rubrique = sr.id
+                    WHERE p.idP = ? AND p.id_type_product = ? AND p.id_statut = 1
+                    LIMIT 1
+                ");
+                $prodChk->execute([$idProduit, TYPE_BUDGET_INVESTISSEMENT]);
+                $produit = $prodChk->fetch(PDO::FETCH_ASSOC);
+                if (!$produit) throw new Exception("Produit introuvable ou inactif.");
+
+                $designation = $produit['nomproduit']; // la désignation de la ligne = le nom du produit choisi
+                $sousRubId   = $produit['id_sous_rubrique'] ?: null;
+                $rubriqueId  = $produit['rubrique_id'] ?: null;
+
                 $quantite     = (int)$data['quantite'];     // int(11) en base
                 $uniteId      = (int)$data['unite_id'];
                 $prixUnitaire = (float)$data['prix_unitaire'];
@@ -904,6 +923,7 @@ switch ($option) {
             } else {
                 // ─ Cas 2 : Autre (Salaire, Vacation, Prestation…) ─
                 // rubrique_id, sous_rubrique_id, unite_id, prix_unitaire, id_produit → NULL
+                if (!$designation) throw new Exception("La désignation est requise.");
                 if (!isset($data['nombre'])        || $data['nombre']        === '') throw new Exception("Le nombre est requis.");
                 if (!isset($data['montant_total']) || $data['montant_total'] === '') throw new Exception("Le montant total est requis.");
 
@@ -918,41 +938,6 @@ switch ($option) {
             // ── Transaction ───────────────────────────────────────────────────
             $bdBASI->beginTransaction();
 
-            // 1) Si Produit → créer le produit dans product + historique_product
-            if ($natureCategorie === 'Produit') {
-                $lastP = $bdBASI->query("SELECT MAX(idP) FROM product")->fetchColumn();
-                $codeProduit = 'PRD-' . str_pad((int)$lastP + 1, 6, '0', STR_PAD_LEFT);
-                $dateProduit = date('Y-m-d H:i:s');
-
-                $stmtP = $bdBASI->prepare("
-                    INSERT INTO product
-                        (nomproduit, code_produit, id_Sous_categorie, Stock_actuel, Seuil_limite,
-                         Total, retrait, id_statut, id_type_product, date_creation)
-                    VALUES (?,?,?,0,5,0,0,1,?,?)
-                ");
-                $stmtP->execute([$designation, $codeProduit, NULL, TYPE_BUDGET_INVESTISSEMENT, $dateProduit]);
-                $newIdP = (int)$bdBASI->lastInsertId();
-
-                // Code produit final avec id réel
-                $realCode = 'PRD-' . str_pad($newIdP, 6, '0', STR_PAD_LEFT);
-                $bdBASI->prepare("UPDATE product SET code_produit=? WHERE idP=?")->execute([$realCode, $newIdP]);
-
-                // Historique produit (structure réelle : idP PK auto, product_id, pas de id_unite)
-                $bdBASI->prepare("
-                    INSERT INTO historique_product
-                        (product_id, nomproduit, code_produit, id_Sous_categorie,
-                         Stock_actuel, Seuil_limite, Total, retrait,
-                         id_statut, id_type_product, date_creation, motif, dateEnregistrement)
-                    VALUES (?,?,?,NULL,0,5,0,0,1,?,?,?,?)
-                ")->execute([$newIdP, $designation, $realCode,
-                    TYPE_BUDGET_INVESTISSEMENT, $dateProduit,
-                    "Insertion depuis budget investissement",date('Y-m-d H:i:s')]);
-            }
-
-
-
-            // 2) Insérer la ligne budget
-
             $dateCreation = date('Y-m-d H:i:s');
             $bdBASI->prepare("
                 INSERT INTO ligneBudget
@@ -964,11 +949,11 @@ switch ($option) {
             ")->execute([
                 $budgetId, $rubriqueId, $sousRubId, $natureId,
                 $designation, $description, $quantite, $uniteId, $prixUnitaire, $montantTotal,
-                $serviceId, $newIdP,$dateCreation, $periode,
+                $serviceId, $idProduit,$dateCreation, $periode,
             ]);
             $newId = (int)$bdBASI->lastInsertId();
 
-            // 3) Historique ligne budget (colonnes exactes de historique_ligneBudget)
+            // Historique ligne budget (colonnes exactes de historique_ligneBudget)
             $bdBASI->prepare("
                 INSERT INTO historique_ligneBudget
                     (ligne_budget_id, budget_id, rubrique_id, sous_rubrique_id,
@@ -981,28 +966,18 @@ switch ($option) {
                 $newId, $budgetId, $rubriqueId, $sousRubId,
                 $natureId, $designation, $description,
                 $quantite, $uniteId, $prixUnitaire, $montantTotal,
-                $serviceId, $newIdP, $dateCreation,$periode,date('Y-m-d H:i:s')
+                $serviceId, $idProduit, $dateCreation,$periode,date('Y-m-d H:i:s')
             ]);
-
-            // 4) Passer le budget en "Sauvegarder"
-            //  $bdBASI->prepare("UPDATE budget SET statut='Sauvegarder', idStatut=3 WHERE id=?")->execute([$budgetId]);
 
             $bdBASI->commit();
 
-            echo json_encode(['success'=>true,'new_id'=>$newId,'new_id_produit'=>$newIdP,'message'=>'Ligne créée avec succès.']);
+            echo json_encode(['success'=>true,'new_id'=>$newId,'message'=>'Ligne créée avec succès.']);
         } catch (PDOException $e) {
-
-            echo $e;
-            die;
-
             if ($bdBASI->inTransaction()) $bdBASI->rollBack();
             error_log("Case 21 PDO: ".$e->getMessage());
             http_response_code(500);
             echo json_encode(["success"=>false,"message"=>"Erreur base de données."]);
         } catch (Exception $e) {
-
-            echo $e;
-            die;
             if ($bdBASI->inTransaction()) $bdBASI->rollBack();
             error_log("Case 21: ".$e->getMessage());
             http_response_code($e->getCode()?:400);
@@ -1016,13 +991,11 @@ switch ($option) {
             if ($_SERVER['REQUEST_METHOD']!=='POST') throw new Exception("Méthode non supportée. Utilisez POST.",405);
             $data=getJsonBody();
             if (empty($data['lineId'])) throw new Exception("Champ requis manquant : lineId.");
-            foreach (['id_type_budget_investissement','designation'] as $f) {
-                if (empty($data[$f])) throw new Exception("Champ requis manquant : $f");
-            }
+            if (empty($data['id_type_budget_investissement'])) throw new Exception("Champ requis manquant : id_type_budget_investissement.");
 
             $lineId      = (int)$data['lineId'];
             $natureId    = (int)$data['id_type_budget_investissement'];
-            $designation = trim($data['designation']);
+            $designation = trim($data['designation'] ?? '');
             $description = !empty($data['description']) ? trim($data['description']) : null;
             $periode     = trim($data['periode_d_utilisation'] ?? '');
             $serviceId   = isset($data['service_id']) && $data['service_id'] !== '' ? (int)$data['service_id'] : null;
@@ -1063,18 +1036,32 @@ switch ($option) {
             $uniteId      = null;
             $prixUnitaire = null;
             $montantTotal = null;
-            $idProduit    = $lineRow['id_produit'] ?? null; // conserver le produit existant par défaut
+            $idProduit    = null;
 
             if ($natureCategorie === 'Produit') {
-                // ─ Cas 1 : Produit ─
-                if (empty($data['categorie_id']))      throw new Exception("La rubrique est requise pour un type Produit.");
-                if (empty($data['sous_rubrique_id']))  throw new Exception("La sous-rubrique est requise pour un type Produit.");
+                // ─ Cas 1 : Produit — sélectionné parmi l'existant, jamais créé ici ─
+                if (empty($data['id_produit'])) throw new Exception("Le produit est requis.");
                 if (!isset($data['quantite'])      || $data['quantite']      === '') throw new Exception("La quantité est requise.");
                 if (!isset($data['unite_id'])      || $data['unite_id']      === '') throw new Exception("L'unité est requise.");
                 if (!isset($data['prix_unitaire']) || $data['prix_unitaire'] === '') throw new Exception("Le prix unitaire est requis.");
 
-                $rubriqueId   = (int)$data['categorie_id'];
-                $sousRubId    = (int)$data['sous_rubrique_id'];
+                $idProduit = (int)$data['id_produit'];
+
+                $prodChk = $bdBASI->prepare("
+                    SELECT p.idP, p.nomproduit, p.id_sous_rubrique, sr.rubrique_id
+                    FROM product p
+                    LEFT JOIN sousRubrique sr ON p.id_sous_rubrique = sr.id
+                    WHERE p.idP = ? AND p.id_type_product = ? AND p.id_statut = 1
+                    LIMIT 1
+                ");
+                $prodChk->execute([$idProduit, TYPE_BUDGET_INVESTISSEMENT]);
+                $produit = $prodChk->fetch(PDO::FETCH_ASSOC);
+                if (!$produit) throw new Exception("Produit introuvable ou inactif.");
+
+                $designation = $produit['nomproduit'];
+                $sousRubId   = $produit['id_sous_rubrique'] ?: null;
+                $rubriqueId  = $produit['rubrique_id'] ?: null;
+
                 $quantite     = (int)$data['quantite'];
                 $uniteId      = (int)$data['unite_id'];
                 $prixUnitaire = (float)$data['prix_unitaire'];
@@ -1085,6 +1072,7 @@ switch ($option) {
 
             } else {
                 // ─ Cas 2 : Autre — rubrique_id, sous_rubrique_id, unite_id, prix_unitaire → NULL ─
+                if (!$designation) throw new Exception("La désignation est requise.");
                 if (!isset($data['nombre'])        || $data['nombre']        === '') throw new Exception("Le nombre est requis.");
                 if (!isset($data['montant_total']) || $data['montant_total'] === '') throw new Exception("Le montant total est requis.");
 
@@ -1094,45 +1082,9 @@ switch ($option) {
                 if ($quantite <= 0)     throw new Exception("Le nombre doit être supérieur à 0.");
                 if ($montantTotal <= 0) throw new Exception("Le montant total doit être supérieur à 0.");
                 // rubriqueId, sousRubId, uniteId, prixUnitaire, idProduit restent NULL
-                $idProduit = null;
             }
 
             $bdBASI->beginTransaction();
-
-            // ── Si type devient Produit et qu'aucun produit n'existait encore → créer ──
-            if ($natureCategorie === 'Produit' && empty($idProduit)) {
-                $lastP = $bdBASI->query("SELECT MAX(idP) FROM product")->fetchColumn();
-                $codeProduit = 'PRD-' . str_pad((int)$lastP + 1, 6, '0', STR_PAD_LEFT);
-                $dateProduit = date('Y-m-d H:i:s');
-
-                $bdBASI->prepare("
-                    INSERT INTO product
-                        (nomproduit, code_produit, id_Sous_categorie, Stock_actuel, Seuil_limite,
-                         Total, retrait, id_statut, id_type_product, date_creation)
-                    VALUES (?,?,?,0,0,0,0,1,?,?)
-                ")->execute([$designation, $codeProduit, $sousRubId, TYPE_BUDGET_INVESTISSEMENT, $dateProduit]);
-
-                $idProduit = (int)$bdBASI->lastInsertId();
-
-                // code_produit définitif avec l'id réel
-                $realCode = 'PRD-' . str_pad($idProduit, 6, '0', STR_PAD_LEFT);
-                $bdBASI->prepare("UPDATE product SET code_produit=? WHERE idP=?")->execute([$realCode, $idProduit]);
-
-                // Historique produit
-                insertHistoriqueProduit($bdBASI, [
-                    'idP'               => $idProduit,
-                    'nomproduit'        => $designation,
-                    'id_Sous_categorie' => $sousRubId,
-                    'Stock_actuel'      => 0,
-                    'Seuil_limite'      => 0,
-                    'Total'             => 0,
-                    'retrait'           => 0,
-                    'id_statut'         => 1,
-                    'id_type_product'   => TYPE_BUDGET_INVESTISSEMENT,
-                    'code_produit'      => $realCode,
-                    'date_creation'     => $dateProduit,
-                ], "Création produit lors de la modification de la ligne $lineId");
-            }
             $dateCreation = date('Y-m-d H:i:s');
 
             // UPDATE ligneBudget — inclut id_produit mis à jour
@@ -1172,17 +1124,11 @@ switch ($option) {
 
             echo json_encode(['success'=>true,'message'=>'Ligne modifiée avec succès.','id_produit'=>$idProduit]);
         } catch (PDOException $e) {
-
-            echo $e;
-            die;
             if ($bdBASI->inTransaction()) $bdBASI->rollBack();
             error_log("Case 22 PDO: ".$e->getMessage());
             http_response_code(500);
             echo json_encode(["success"=>false,"message"=>"Erreur base de données."]);
         } catch (Exception $e) {
-
-            echo $e;
-            die;
             if ($bdBASI->inTransaction()) $bdBASI->rollBack();
             error_log("Case 22: ".$e->getMessage());
             http_response_code($e->getCode()?:400);
@@ -1353,62 +1299,27 @@ switch ($option) {
         exit;
 
 
-// ─── CASE 31 : POST — créer un produit (investissement type Produit) ──────────
-// Body JSON : { "nomproduit": "Chaise Bureau", "sous_rubrique_id": 5 }
+// ─── CASE 31 : POST — produits d'une sous-rubrique (investissement type Produit) ──
+// Body JSON : { "sous_rubrique_id": 5 } — le produit est SÉLECTIONNÉ, jamais créé ici.
     case 31:
         header('Content-Type: application/json; charset=utf-8');
         try {
             if ($_SERVER['REQUEST_METHOD']!=='POST') throw new Exception("Méthode non supportée. Utilisez POST.",405);
-            $data         = getJsonBody();
-            $nomproduit   = trim($data['nomproduit']       ?? '');
-            $sousRubId    = isset($data['sous_rubrique_id']) ? (int)$data['sous_rubrique_id'] : null;
-            $typeBudgetId = TYPE_BUDGET_INVESTISSEMENT; // toujours fixé côté serveur
+            $data = getJsonBody();
+            $sousRubId = isset($data['sous_rubrique_id']) ? (int)$data['sous_rubrique_id'] : 0;
+            if (!$sousRubId) throw new Exception("sous_rubrique_id requis.");
 
-            if (!$nomproduit) throw new Exception("Le nom du produit est requis.");
-            if (!$sousRubId)  throw new Exception("sous_rubrique_id requis.");
-
-            // Vérifier unicité
-            $chk = $bdBASI->prepare("SELECT COUNT(*) FROM product WHERE nomproduit=? AND id_Sous_categorie=?");
-            $chk->execute([$nomproduit, $sousRubId]);
-            if ($chk->fetchColumn() > 0) throw new Exception("Ce produit existe déjà dans cette sous-rubrique.");
-
-            $date = (new DateTime())->format('Y-m-d H:i:s');
-            $bdBASI->beginTransaction();
-            $s = $bdBASI->prepare("
-                INSERT INTO product (nomproduit, id_Sous_categorie, Stock_actuel, Seuil_limite,
-                                     Total, retrait, id_statut, id_type_product, date_creation)
-                VALUES (?,?,0,0,0,0,1,?,?)
+            $stmt = $bdBASI->prepare("
+                SELECT p.idP, p.nomproduit
+                FROM product p
+                WHERE p.id_type_product = ? AND p.id_statut = 1 AND p.id_sous_rubrique = ?
+                ORDER BY p.nomproduit ASC
             ");
-            $s->execute([$nomproduit, $sousRubId, $typeBudgetId, $date]);
-            $newId = (int)$bdBASI->lastInsertId();
-
-            // code_produit
-            $codeProduit = 'PRD-'.str_pad($newId, 6, '0', STR_PAD_LEFT);
-            $bdBASI->prepare("UPDATE product SET code_produit=? WHERE idP=?")->execute([$codeProduit, $newId]);
-
-            // Historique produit (snapshot complet)
-            insertHistoriqueProduit($bdBASI, [
-                'idP'               => $newId,
-                'nomproduit'        => $nomproduit,
-                'id_Sous_categorie' => $sousRubId,
-                'Stock_actuel'      => 0,
-                'Seuil_limite'      => 0,
-                'Total'             => 0,
-                'retrait'           => 0,
-                'id_statut'         => 1,
-                'id_type_product'   => $typeBudgetId,
-                'code_produit'      => $codeProduit,
-                'id_unite'          => null,
-                'date_creation'     => $date,
-            ], 'Insertion');
-
-            $bdBASI->commit();
-            echo json_encode(['success' => true, 'new_id' => $newId]);
+            $stmt->execute([TYPE_BUDGET_INVESTISSEMENT, $sousRubId]);
+            echo json_encode(['success' => true, 'data' => $stmt->fetchAll(PDO::FETCH_ASSOC)]);
         } catch (PDOException $e) {
-            if ($bdBASI->inTransaction()) $bdBASI->rollBack();
             error_log("Case 31 PDO: ".$e->getMessage()); http_response_code(500); echo json_encode(["success"=>false,"message"=>"Erreur base de données."]);
         } catch (Exception $e) {
-            if ($bdBASI->inTransaction()) $bdBASI->rollBack();
             error_log("Case 31: ".$e->getMessage()); http_response_code($e->getCode()?:400); echo json_encode(["success"=>false,"message"=>$e->getMessage()]);
         }
         exit;
@@ -2757,23 +2668,13 @@ switch ($option) {
      *     si le contrôleur en a un (inputValue()/inputValueCompta(), etc.) —
      *     voir la note IMPORTANT ci-dessous.
      *
-     * ⚠️ IMPORTANT — lecture du corps JSON : ld_post() (JS) envoie toujours son
-     * corps en JSON brut (Content-Type: application/json), jamais en
-     * application/x-www-form-urlencoded. Vos options 34/36/38/39 fonctionnent
-     * déjà avec ld_post() : votre contrôleur possède donc TRÈS PROBABLEMENT DÉJÀ
-     * un helper dédié qui lit php://input. Si c'est le cas, UTILISEZ CE HELPER
-     * EXISTANT au lieu du file_get_contents('php://input') ci-dessous, pour
-     * rester cohérent et éviter toute double lecture du flux. Le code ci-dessous
-     * n'est qu'un repli autonome, à adapter.
-     *
-     * ⚠️ Ce fichier est un EXTRAIT (bloc `case 52: ... break;`) destiné à être
-     * collé à l'intérieur d'un `switch` existant — il n'est pas exécutable seul.
      */
 
     case 52:
+        header('Content-Type: application/json; charset=utf-8');
         try {
-            $bodyJson52 = json_decode(file_get_contents('php://input'), true) ?: [];
-            $demandeId = (int)($bodyJson52['demandeId'] ?? $_POST['demandeId'] ?? $_GET['demandeId'] ?? 0);
+            $data = getJsonBody();
+            $demandeId = (int)($data['demandeId'] ?? 0);
             if ($demandeId <= 0) {
                 echo json_encode(['success' => false, 'message' => 'Identifiant de demande manquant.']);
                 break;
@@ -2796,27 +2697,32 @@ switch ($option) {
             }
 
             // ── Lignes de la demande ─────────────────────────────────────
+            // Investissement : la rubrique du produit vient de
+            // product.id_sous_rubrique → sousRubrique → rubrique (PAS
+            // id_Sous_categorie → souscategorie → categorie, qui est le
+            // chemin Fonctionnement — les deux colonnes sont NULL par défaut
+            // et spécifiques à leur propre module).
             $stmtLignes = $bdBASI->prepare("
-            SELECT 
-    dl.idDL,
-    lb.designation,
-    c.nom_categorie,
-    dl.quantite,
-    lt.unite
-FROM demandes_ligne dl
-JOIN ligneBudget lb 
-    ON dl.idLB = lb.id
-LEFT JOIN product p 
-    ON lb.id_produit = p.idP
-LEFT JOIN souscategorie sc 
-    ON p.id_Sous_categorie = sc.id
-LEFT JOIN categorie c 
-    ON sc.categorie_id = c.id
-LEFT JOIN listeUnites lt 
-    ON lt.id = dl.unite_id
-WHERE dl.idD = ?
-ORDER BY dl.idDL ASC;
-                ");
+                SELECT
+                    dl.idDL,
+                    lb.designation,
+                    r.nom_rubrique,
+                    dl.quantite,
+                    lt.unite
+                FROM demandes_ligne dl
+                JOIN ligneBudget lb
+                    ON dl.idLB = lb.id
+                LEFT JOIN product p
+                    ON lb.id_produit = p.idP
+                LEFT JOIN sousRubrique sr
+                    ON p.id_sous_rubrique = sr.id
+                LEFT JOIN rubrique r
+                    ON sr.rubrique_id = r.id
+                LEFT JOIN listeUnites lt
+                    ON lt.id = dl.unite_id
+                WHERE dl.idD = ?
+                ORDER BY dl.idDL ASC
+            ");
             $stmtLignes->execute([$demandeId]);
             $lignes = $stmtLignes->fetchAll(PDO::FETCH_ASSOC);
 
@@ -2895,9 +2801,6 @@ ORDER BY dl.idDL ASC;
                 ],
             ]);
         } catch (\Throwable $e) {
-
-            echo $ê;
-            die;
             error_log('[Compta][case52] ' . $e->getMessage());
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Impossible de charger le suivi de la demande.']);

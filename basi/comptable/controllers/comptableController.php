@@ -2401,122 +2401,23 @@ switch ($option) {
 
 
     /**
-     * case52-voir-suivi-demande.php
-     * Bloc à insérer dans compta_basi_controller.php (routage : ajouter
-     * `case 52: voirSuiviDemande($bdBASI, $basiController); break;`).
+     * Vue complète d'une demande (Fonctionnement) : en-tête, lignes, et pour
+     * chaque commande (passer_achat_et_paiement) issue de cette demande —
+     * paiements en caisse, livraisons, et historique.
      *
-     * ⚠️ Hypothèses de schéma confirmées par l'utilisateur :
-     *   - `demandes` (PK idD) : en-tête de la demande.
-     *   - `demandes_ligne` (PK idDL) : demandes_ligne.idD → demandes.idD
-     *     (lien confirmé). Jointure vers ligneBudget déjà en place ailleurs
-     *     dans le projet (via idLB), réutilisée ici telle quelle.
-     *   - Le pont vers les commandes (passer_achat_et_paiement) se fait via
-     *     passer_achat_et_paiement_ligne.idDL = demandes_ligne.idDL (lien déjà
-     *     établi et utilisé ailleurs dans le projet — cf. options 17-25 du
-     *     module Liste des opérations).
-     *   - `paiement_pap` / `livraison` / `livraison_produit` / `product` /
-     *     `historique_passer_achat_et_paiement` : tables déjà établies et
-     *     utilisées ailleurs dans le projet, réutilisées SANS modification.
-     *   - ⚠️ "Bénéficiaire" (demandé pour la livraison) : aucune colonne dédiée
-     *     n'existe dans `livraison_produit` à ma connaissance. Par défaut,
-     *     j'utilise le demandeur de la `demandes` (idUtilisateur) comme
-     *     bénéficiaire — À CONFIRMER / ajuster si une autre colonne existe
-     *     réellement (ex. livraison_produit.beneficiaire ou équivalent).
-     *   - Réponses au format `success`/`message`/`data`, cohérent avec le reste
-     *     de ce module (ld_post() côté JS lit `d.success`).
-     */
-
-    /**
-     * Vue complète d'une demande : en-tête, lignes, et pour chaque commande
-     * (passer_achat_et_paiement) issue de cette demande — paiements en caisse,
-     * livraisons (avec détail produit/quantité/bénéficiaire), et historique.
+     * Fonctionnement : la catégorie du produit vient de
+     * product.id_Sous_categorie → souscategorie → categorie (PAS
+     * id_sous_rubrique → sousRubrique → rubrique, qui est le chemin
+     * Investissement — les deux colonnes sont NULL par défaut et propres à
+     * leur module).
      *
      * Paramètre attendu : demandeId (entier, id de `demandes`)
      */
-
-
-
-        /**
-         * case52-voir-suivi-demande.php
-         * Code du `case 52` à coller DIRECTEMENT dans le switch de routage de
-         * compta_basi_controller.php — pas de fonction séparée, tout est inline.
-         *
-         * ⚠️ Hypothèses de schéma confirmées par l'utilisateur :
-         *   - `demandes` (PK idD) : en-tête de la demande.
-         *   - `demandes_ligne` (PK idDL) : demandes_ligne.idD → demandes.idD
-         *     (lien confirmé). Jointure vers ligneBudget déjà en place ailleurs
-         *     dans le projet (via idLB) — reconstituée ici par déduction du JS ;
-         *     à remplacer par la requête réelle de votre case 38 si elle diffère.
-         *   - Le pont vers les commandes (passer_achat_et_paiement) se fait via
-         *     passer_achat_et_paiement_ligne.idDL = demandes_ligne.idDL (lien déjà
-         *     établi et utilisé ailleurs dans le projet).
-         *   - `paiement_pap` / `livraison` / `livraison_produit` / `product` /
-         *     `historique_passer_achat_et_paiement` : tables déjà établies et
-         *     utilisées ailleurs dans le projet, réutilisées SANS modification.
-         *   - ⚠️ "Bénéficiaire" (livraison) : pas de colonne dédiée connue —
-         *     repli sur le demandeur de `demandes` (idUtilisateur). À corriger si
-         *     une colonne dédiée existe réellement.
-         *   - $_POST['demandeId'] : à remplacer par votre propre helper de lecture
-         *     d'input si le contrôleur en a un (inputValueCompta(), etc.).
-         *
-         * ⚠️ Ce fichier est un EXTRAIT (bloc `case 52: ... break;`) destiné à être
-         * collé à l'intérieur d'un `switch` existant — il n'est pas exécutable seul.
-         *
-         * ⚠️ IMPORTANT — lecture du corps JSON : ld_post() (JS) envoie toujours son
-         * corps en JSON brut (Content-Type: application/json), jamais en
-         * application/x-www-form-urlencoded. Or vos options 34/36/38/39
-         * fonctionnent déjà avec ld_post() : votre contrôleur possède donc
-         * TRÈS PROBABLEMENT DÉJÀ un helper dédié (type inputValue()/inputValueCompta())
-         * qui lit php://input. Si c'est le cas, UTILISEZ CE HELPER EXISTANT au lieu
-         * du file_get_contents('php://input') ci-dessous, pour rester cohérent et
-         * éviter toute double lecture du flux. Le code ci-dessous n'est qu'un repli
-         * autonome, à adapter.
-         */
-
-/**
- * case52-voir-suivi-demande.php
- * Code du `case 52` à coller DIRECTEMENT dans le switch de routage de
- * compta_basi_controller.php — pas de fonction séparée, tout est inline.
- *
- * ⚠️ Hypothèses de schéma confirmées par l'utilisateur :
- *   - `demandes` (PK idD) : en-tête de la demande. Colonne de statut réelle
- *     confirmée : `etat_demande` (aliasée `AS statut` dans la requête, pour
- *     rester compatible avec le JS existant qui lit `demande.statut`).
- *   - `demandes_ligne` (PK idDL) : demandes_ligne.idD → demandes.idD
- *     (lien confirmé). Jointure vers ligneBudget déjà en place ailleurs
- *     dans le projet (via idLB) — reconstituée ici par déduction du JS ;
- *     à remplacer par la requête réelle de votre case 38 si elle diffère.
- *   - Le pont vers les commandes (passer_achat_et_paiement) se fait via
- *     passer_achat_et_paiement_ligne.idDL = demandes_ligne.idDL (lien déjà
- *     établi et utilisé ailleurs dans le projet).
- *   - `paiement_pap` / `livraison` / `livraison_produit` / `product` /
- *     `historique_passer_achat_et_paiement` : tables déjà établies et
- *     utilisées ailleurs dans le projet, réutilisées SANS modification.
- *   - ⚠️ "Bénéficiaire" (livraison) : pas de colonne dédiée connue —
- *     repli sur le demandeur de `demandes` (idUtilisateur). À corriger si
- *     une colonne dédiée existe réellement.
- *   - $_POST['demandeId'] : à remplacer par votre propre helper de lecture
- *     d'input si le contrôleur en a un (inputValueCompta(), etc.).
- *
- * ⚠️ Ce fichier est un EXTRAIT (bloc `case 52: ... break;`) destiné à être
- * collé à l'intérieur d'un `switch` existant — il n'est pas exécutable seul.
- *
- * ⚠️ IMPORTANT — lecture du corps JSON : ld_post() (JS) envoie toujours son
- * corps en JSON brut (Content-Type: application/json), jamais en
- * application/x-www-form-urlencoded. Or vos options 34/36/38/39
- * fonctionnent déjà avec ld_post() : votre contrôleur possède donc
- * TRÈS PROBABLEMENT DÉJÀ un helper dédié (type inputValue()/inputValueCompta())
- * qui lit php://input. Si c'est le cas, UTILISEZ CE HELPER EXISTANT au lieu
- * du file_get_contents('php://input') ci-dessous, pour rester cohérent et
- * éviter toute double lecture du flux. Le code ci-dessous n'est qu'un repli
- * autonome, à adapter.
- */
-
-
     case 52:
+        header('Content-Type: application/json; charset=utf-8');
         try {
-            $bodyJson52 = json_decode(file_get_contents('php://input'), true) ?: [];
-            $demandeId = (int)($bodyJson52['demandeId'] ?? $_POST['demandeId'] ?? $_GET['demandeId'] ?? 0);
+            $data = getJsonBody();
+            $demandeId = (int)($data['demandeId'] ?? 0);
             if ($demandeId <= 0) {
                 echo json_encode(['success' => false, 'message' => 'Identifiant de demande manquant.']);
                 break;
@@ -2540,26 +2441,26 @@ switch ($option) {
 
             // ── Lignes de la demande ─────────────────────────────────────
             $stmtLignes = $bdBASI->prepare("
-            SELECT 
-    dl.idDL,
-    lb.designation,
-    c.nom_categorie,
-    dl.quantite,
-    lt.unite
-FROM demandes_ligne dl
-JOIN ligneBudget lb 
-    ON dl.idLB = lb.id
-LEFT JOIN product p 
-    ON lb.id_produit = p.idP
-LEFT JOIN souscategorie sc 
-    ON p.id_Sous_categorie = sc.id
-LEFT JOIN categorie c 
-    ON sc.categorie_id = c.id
-LEFT JOIN listeUnites lt 
-    ON lt.id = dl.unite_id
-WHERE dl.idD = ?
-ORDER BY dl.idDL ASC;
-                ");
+                SELECT
+                    dl.idDL,
+                    lb.designation,
+                    c.nom_categorie,
+                    dl.quantite,
+                    lt.unite
+                FROM demandes_ligne dl
+                JOIN ligneBudget lb
+                    ON dl.idLB = lb.id
+                LEFT JOIN product p
+                    ON lb.id_produit = p.idP
+                LEFT JOIN souscategorie sc
+                    ON p.id_Sous_categorie = sc.id
+                LEFT JOIN categorie c
+                    ON sc.categorie_id = c.id
+                LEFT JOIN listeUnites lt
+                    ON lt.id = dl.unite_id
+                WHERE dl.idD = ?
+                ORDER BY dl.idDL ASC
+            ");
             $stmtLignes->execute([$demandeId]);
             $lignes = $stmtLignes->fetchAll(PDO::FETCH_ASSOC);
 
@@ -2638,17 +2539,11 @@ ORDER BY dl.idDL ASC;
                 ],
             ]);
         } catch (\Throwable $e) {
-
-            echo $ê;
-            die;
             error_log('[Compta][case52] ' . $e->getMessage());
             http_response_code(500);
             echo json_encode(['success' => false, 'message' => 'Impossible de charger le suivi de la demande.']);
         }
         break;
-
-
-
 
     default:
         header('Content-Type: application/json; charset=utf-8');

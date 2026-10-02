@@ -253,24 +253,20 @@ if (empty($budgetToken)) { header('Location: /responsable-financier-accueil'); e
                 <div class="lb-grid-2 lb-hidden" id="lb-rub-block">
                     <div>
                         <label class="lb-lbl" for="lb-categorie">Rubrique <span style="color:#ef4444;">*</span></label>
-                        <div style="display:flex;gap:.4rem;">
-                            <select id="lb-categorie" class="lb-inp" style="flex:1;"><option value="">Choisir une rubrique</option></select>
-                            <button type="button" id="lb-create-rub" class="lb-btn lb-btn--ghost" style="padding:.5rem .65rem;flex-shrink:0;min-width:36px;" title="Nouvelle rubrique">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            </button>
-                        </div>
+                        <select id="lb-categorie" class="lb-inp"><option value="">Choisir une rubrique</option></select>
                         <p class="lb-err-msg" id="err-categorie"></p>
                     </div>
                     <div>
                         <label class="lb-lbl" for="lb-sous-rubrique">Sous-rubrique <span style="color:#ef4444;">*</span></label>
-                        <div style="display:flex;gap:.4rem;">
-                            <select id="lb-sous-rubrique" class="lb-inp" style="flex:1;"><option value="">Choisir une sous-rubrique</option></select>
-                            <button type="button" id="lb-create-subrub" class="lb-btn lb-btn--ghost" style="padding:.5rem .65rem;flex-shrink:0;min-width:36px;" title="Nouvelle sous-rubrique">
-                                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
-                            </button>
-                        </div>
+                        <select id="lb-sous-rubrique" class="lb-inp"><option value="">Choisir une sous-rubrique</option></select>
                         <p class="lb-err-msg" id="err-sous-rubrique"></p>
                     </div>
+                </div>
+
+                <div class="lb-field lb-hidden" id="lb-produit-select-block">
+                    <label class="lb-lbl" for="lb-produit">Produit <span style="color:#ef4444;">*</span></label>
+                    <select id="lb-produit" class="lb-inp"><option value="">Choisir d'abord une sous-rubrique</option></select>
+                    <p class="lb-err-msg" id="err-produit"></p>
                 </div>
 
                 <div class="lb-hidden" id="lb-qte-pu-row">

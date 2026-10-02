@@ -6,7 +6,7 @@
 // • Actions DFC selon statut (Valider/Rejeter/Réajuster)
 // ════════════════════════════════════════════════════════════════════════
 
-const DFC_API = '/dfc_basi_controller'; // dfcController.php
+const DFC_API = '/personnel/dfc_basi_controller'; // dfcController.php
 
 const cb = {
     budget    : `${DFC_API}?option=12`,  // détails budget (token chiffré)
