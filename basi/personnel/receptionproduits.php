@@ -12,61 +12,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
     <link href="/personnel/ressources/dist_assets/css/style_basi_36.css" rel="stylesheet" type="text/css"/>
 
-    <style>
-        /* Page entièrement autonome — classes absentes ou incomplètes dans
-           style_basi_36.css, vérifiées une par une plutôt que supposées. */
-        #dga-loader{position:fixed;inset:0;z-index:9999;pointer-events:all}
-        @keyframes dga-spin{to{transform:rotate(360deg)}}
-        @keyframes dga-dash{0%{stroke-dashoffset:80}50%{stroke-dashoffset:20}100%{stroke-dashoffset:80}}
-        #dga-loader .dga-loader-bg{position:absolute;inset:0;background:rgba(10,40,25,.45);backdrop-filter:blur(4px)}
-        #dga-loader .dga-loader-box{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;padding:2rem 2.5rem;display:flex;flex-direction:column;align-items:center;gap:.9rem;box-shadow:0 20px 60px rgba(0,0,0,.18);min-width:190px}
-        #dga-loader .dga-loader-box p{margin:0;font-size:.82rem;font-weight:700;color:#1a7a5e}
-        #dga-loader .dga-loader-spin{width:40px;height:40px;animation:dga-spin .85s linear infinite}
-        #dga-loader .dga-loader-spin circle{stroke:#1a7a5e;stroke-dasharray:80;stroke-dashoffset:55;stroke-linecap:round;fill:none;animation:dga-dash 1.4s ease-in-out infinite}
-
-        .dga-hero{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
-        .dga-hero-title h1{font-size:1.35rem;font-weight:800;color:#111827;margin:0;display:flex;align-items:center;gap:.55rem}
-        .dga-hero-title h1 svg{background:#d1fae5;color:#065f46;border-radius:9px;padding:.4rem;width:20px !important;height:20px !important;box-sizing:content-box}
-        .dga-hero-title p{font-size:.8rem;color:#9ca3af;margin:.2rem 0 0}
-
-        .dga-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden}
-        .dga-card-head{padding:.9rem 1.35rem;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
-        .dga-card-title{font-size:.88rem;font-weight:700;color:#111827;display:flex;align-items:center;gap:.45rem}
-        .dga-card-title svg{color:#1a7a5e}
-
-        .dga-stat-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;padding:1.15rem 1.3rem;display:flex;align-items:center;gap:1rem;position:relative;overflow:hidden;margin-bottom:1.25rem;max-width:320px}
-        .dga-stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#1a7a5e}
-        .dga-stat-icon{width:42px;height:42px;border-radius:12px;background:#d1fae5;color:#065f46;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .dga-stat-lbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;margin-bottom:.3rem}
-        .dga-stat-val{font-size:1.4rem;font-weight:900;color:#111827;font-variant-numeric:tabular-nums}
-
-        .dga-badge-type{display:inline-flex;padding:.2rem .55rem;border-radius:99px;font-size:.68rem;font-weight:700}
-        .dga-badge-type-f{background:#dbeafe;color:#1e40af}
-        .dga-badge-type-i{background:#ede9fe;color:#5b21b6}
-
-        .dga-btn-avis{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .95rem;border-radius:8px;font-size:.78rem;font-weight:700;background:#1a7a5e;color:#fff;border:none;cursor:pointer;transition:all .18s}
-        .dga-btn-avis:hover{background:#145f49}
-
-        .dga-modal .modal-dialog{max-width:620px}
-        .dga-modal .modal-content{border-radius:16px !important;border:none !important;box-shadow:0 24px 64px rgba(0,0,0,.18) !important;overflow:hidden}
-        .dga-modal .modal-header{background:linear-gradient(135deg,#064e3b,#1a7a5e) !important;border:none !important;padding:1.25rem 1.5rem !important}
-        .dga-modal .modal-header h2{color:#fff !important;font-size:1rem !important;font-weight:800 !important;margin:0 !important}
-        .dga-modal .modal-body{padding:1.35rem 1.5rem !important;max-height:70vh;overflow-y:auto}
-        .dga-actions{display:flex;justify-content:flex-end;gap:.6rem;padding:1rem 1.35rem;border-top:1px solid #f3f4f6;background:#fafafa}
-        .dga-cancel{padding:.55rem 1.15rem;border-radius:8px;font-size:.82rem;font-weight:600;background:#fff;color:#6b7280;border:1.5px solid #e5e7eb;cursor:pointer}
-        .dga-cancel:hover{border-color:#9ca3af;color:#374151}
-        .dga-submit{display:inline-flex;align-items:center;gap:.4rem;padding:.55rem 1.35rem;border-radius:8px;font-size:.82rem;font-weight:700;background:#1a7a5e;color:#fff;border:none;cursor:pointer;min-width:170px;justify-content:center}
-        .dga-submit:disabled{opacity:.6;cursor:not-allowed}
-        .dga-spinner{animation:dga-spin 1s linear infinite}
-        .hidden{display:none}
-        .dga-erreur-generale{background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:9px;padding:.65rem .9rem;font-size:.82rem;margin-bottom:1rem}
-
-        table.dga-table-produits{width:100%;border-collapse:collapse;font-size:.83rem;margin-bottom:.5rem}
-        table.dga-table-produits thead th{background:#f8f9fa;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;padding:.6rem .75rem;text-align:left;border-bottom:2px solid #e9ecef}
-        table.dga-table-produits tbody td{padding:.55rem .75rem;border-bottom:1px solid #f3f4f6;color:#374151}
-        .dga-qte-fixe{font-weight:800;color:#1a7a5e;font-variant-numeric:tabular-nums}
-    </style>
-
     <script>document.documentElement.classList.add('ld-booting');</script>
 </head>
 

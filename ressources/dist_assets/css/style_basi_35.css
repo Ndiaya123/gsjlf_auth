@@ -160,3 +160,34 @@ html, body                    { height: 100%; }
        jusqu'à l'initialisation de DataTables ─────────────────────────── */
 #ld-table          { visibility: hidden; }
 #ld-table.ld-ready { visibility: visible; }
+
+
+/* Absente de style_basi_35.css — même règle que style_basi_36.css
+         (page listeProduitInvestissement.php). */
+.dga-switch-type{display:inline-flex;background:#f3f4f6;border-radius:99px;padding:.25rem;gap:.15rem;margin-bottom:1.25rem}
+.dga-switch-btn{background:none;border:none;padding:.45rem 1.1rem;border-radius:99px;font-size:.8rem;font-weight:600;color:#6b7280;cursor:pointer;transition:all .15s}
+.dga-switch-btn:hover{color:#111827}
+.dga-switch-active{background:#fff;color:#1a7a5e;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+/* Badges des statuts 7 (Livrée) et 8 (Clôturée) du circuit livraison/réception. */
+.dga-statut-7{background:#dbeafe;color:#1e40af}
+.dga-statut-8{background:#d1fae5;color:#065f46}
+/* Circuit livraison/réception : statuts 7-10, clôture du solde, écarts */
+.dga-statut-7{background:#dbeafe;color:#1e40af}
+.dga-statut-8{background:#d1fae5;color:#065f46}
+.dga-statut-9{background:#e0e7ff;color:#3730a3}
+.dga-statut-10{background:#f3f4f6;color:#6b7280}
+.dga-btn-avis{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .95rem;border-radius:8px;font-size:.78rem;font-weight:700;background:#1a7a5e;color:#fff;border:none;cursor:pointer;transition:all .18s}
+.dga-btn-avis:hover{background:#145f49}
+.dga-btn-cloturer{background:#fff7ed;color:#9a3412;border:1.5px solid #fed7aa;border-radius:7px;padding:.35rem .7rem;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:.35rem}
+.dga-btn-cloturer:hover{background:#9a3412;color:#fff}
+.dga-btn-ecarts{display:inline-flex;align-items:center;gap:.4rem;background:#fef2f2;color:#991b1b;border:1.5px solid #fecaca;border-radius:9px;padding:.5rem .9rem;font-size:.78rem;font-weight:700;cursor:pointer}
+.dga-btn-ecarts:hover{background:#991b1b;color:#fff}
+.dga-btn-ecarts .dga-ecarts-count{background:#991b1b;color:#fff;border-radius:99px;padding:.05rem .45rem;font-size:.7rem}
+.dga-btn-ecarts:hover .dga-ecarts-count{background:#fff;color:#991b1b}
+.dga-ligne-ecart{background:#fee2e2;color:#991b1b}
+table.dga-table-ecarts{width:100%;border-collapse:collapse;font-size:.82rem}
+table.dga-table-ecarts thead th{background:#f8f9fa;font-size:.66rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;padding:.55rem .6rem;text-align:left;border-bottom:2px solid #e9ecef}
+table.dga-table-ecarts tbody td{padding:.6rem;border-bottom:1px solid #f3f4f6;color:#374151;vertical-align:top}
+.dga-ecart-motif{font-size:.75rem;color:#6b7280;margin-top:.15rem}
+.dga-ecart-actions{display:flex;flex-direction:column;gap:.35rem;min-width:230px}
+.dga-ecart-actions select,.dga-ecart-actions input{border:1.5px solid #e5e7eb;border-radius:7px;padding:.35rem .5rem;font-size:.78rem;width:100%}

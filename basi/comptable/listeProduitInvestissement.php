@@ -12,69 +12,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
     <link href="/personnel/ressources/dist_assets/css/style_basi_37.css" rel="stylesheet" type="text/css"/>
 
-    <style>
-        /* Absentes de style_basi_35.css — page rendue autonome (ne dépend
-           plus de la feuille externe pour ces classes de base, communes à
-           tout le module Investissement). */
-        #dga-loader{position:fixed;inset:0;z-index:9999;pointer-events:all}
-        @keyframes dga-spin{to{transform:rotate(360deg)}}
-        @keyframes dga-dash{0%{stroke-dashoffset:80}50%{stroke-dashoffset:20}100%{stroke-dashoffset:80}}
-        #dga-loader .dga-loader-bg{position:absolute;inset:0;background:rgba(10,40,25,.45);backdrop-filter:blur(4px)}
-        #dga-loader .dga-loader-box{position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);background:#fff;border-radius:16px;padding:2rem 2.5rem;display:flex;flex-direction:column;align-items:center;gap:.9rem;box-shadow:0 20px 60px rgba(0,0,0,.18);min-width:190px}
-        #dga-loader .dga-loader-box p{margin:0;font-size:.82rem;font-weight:700;color:#1a7a5e}
-        #dga-loader .dga-loader-spin{width:40px;height:40px;animation:dga-spin .85s linear infinite}
-        #dga-loader .dga-loader-spin circle{stroke:#1a7a5e;stroke-dasharray:80;stroke-dashoffset:55;stroke-linecap:round;fill:none;animation:dga-dash 1.4s ease-in-out infinite}
 
-        .dga-hero{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;flex-wrap:wrap;gap:.75rem}
-        .dga-hero-title h1{font-size:1.35rem;font-weight:800;color:#111827;margin:0;display:flex;align-items:center;gap:.55rem}
-        .dga-hero-title h1 svg{background:#d1fae5;color:#065f46;border-radius:9px;padding:.4rem;width:20px !important;height:20px !important;box-sizing:content-box}
-        .dga-hero-title p{font-size:.8rem;color:#9ca3af;margin:.2rem 0 0}
-
-        .dga-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;box-shadow:0 1px 4px rgba(0,0,0,.05);overflow:hidden}
-        .dga-card-head{padding:.9rem 1.35rem;border-bottom:1px solid #f3f4f6;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.5rem}
-        .dga-card-title{font-size:.88rem;font-weight:700;color:#111827;display:flex;align-items:center;gap:.45rem}
-        .dga-card-title svg{color:#1a7a5e}
-
-        .dga-stats-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:.85rem;margin-bottom:1.25rem}
-        @media (max-width:992px){.dga-stats-grid{grid-template-columns:1fr 1fr}}
-        @media (max-width:576px){.dga-stats-grid{grid-template-columns:1fr}}
-        .dga-stat-card{background:#fff;border-radius:14px;border:1px solid #e9ecef;padding:1.15rem 1.3rem;display:flex;align-items:center;gap:1rem;position:relative;overflow:hidden}
-        .dga-stat-card::before{content:'';position:absolute;top:0;left:0;right:0;height:3px;background:#1a7a5e}
-        .dga-stat-icon{width:42px;height:42px;border-radius:12px;background:#d1fae5;color:#065f46;display:flex;align-items:center;justify-content:center;flex-shrink:0}
-        .dga-stat-lbl{font-size:.7rem;font-weight:700;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;margin-bottom:.3rem}
-        .dga-stat-val{font-size:1.4rem;font-weight:900;color:#111827;font-variant-numeric:tabular-nums}
-        .dga-sc-a-sortir::before{background:#dc2626}
-        .dga-sc-a-sortir .dga-stat-icon{background:#fee2e2;color:#991b1b}
-        .dga-sc-terminee::before{background:#10b981}
-        .dga-sc-terminee .dga-stat-icon{background:#d1fae5;color:#047857}
-
-        .dga-badge-statut{display:inline-flex;align-items:center;padding:.25rem .65rem;border-radius:99px;font-size:.68rem;font-weight:800;text-transform:uppercase}
-
-        .dga-modal .modal-dialog{max-width:720px}
-        .dga-modal .modal-content{border-radius:16px !important;border:none !important;box-shadow:0 24px 64px rgba(0,0,0,.18) !important;overflow:hidden}
-        .dga-modal .modal-header{background:linear-gradient(135deg,#064e3b,#1a7a5e) !important;border:none !important;padding:1.25rem 1.5rem !important}
-        .dga-modal .modal-header h2{color:#fff !important;font-size:1rem !important;font-weight:800 !important;margin:0 !important}
-        .dga-modal .modal-body{padding:1.35rem 1.5rem !important;max-height:70vh;overflow-y:auto}
-        .dga-actions{display:flex;justify-content:flex-end;gap:.6rem;padding:1rem 1.35rem;border-top:1px solid #f3f4f6;background:#fafafa}
-        .dga-cancel{padding:.55rem 1.15rem;border-radius:8px;font-size:.82rem;font-weight:600;background:#fff;color:#6b7280;border:1.5px solid #e5e7eb;cursor:pointer}
-        .dga-cancel:hover{border-color:#9ca3af;color:#374151}
-
-        .dga-pill-rubrique{display:inline-flex;padding:.2rem .55rem;border-radius:99px;font-size:.7rem;font-weight:600;background:#f3f4f6;color:#6b7280}
-        .dga-cell-muted{color:#9ca3af}
-        .dga-qte-recue{font-weight:700;color:#374151}
-        .dga-qte-sortie{color:#6b7280}
-        .dga-qte-reservee{color:#b45309}
-        .dga-qte-dispo{font-weight:800;color:#1a7a5e;font-variant-numeric:tabular-nums}
-        .dga-btn-detail-produit{background:#eff6ff;color:#1d4ed8;border:1.5px solid #dbeafe;border-radius:7px;padding:.35rem .7rem;font-size:.72rem;font-weight:700;cursor:pointer}
-        .dga-btn-detail-produit:hover{background:#1d4ed8;color:#fff}
-        table.dga-table-produits{width:100%;border-collapse:collapse;font-size:.83rem;margin-bottom:.5rem}
-        table.dga-table-produits thead th{background:#f8f9fa;font-size:.68rem;font-weight:800;text-transform:uppercase;letter-spacing:.05em;color:#9ca3af;padding:.6rem .75rem;text-align:left;border-bottom:2px solid #e9ecef}
-        table.dga-table-produits tbody td{padding:.55rem .75rem;border-bottom:1px solid #f3f4f6;color:#374151}
-        .dga-search{position:relative}
-        .dga-search svg{position:absolute;left:.9rem;top:50%;transform:translateY(-50%);color:#9ca3af;pointer-events:none}
-        .dga-search input{border:1.5px solid #e5e7eb !important;border-radius:9px !important;padding:.55rem .9rem .55rem 2.4rem !important;font-size:.83rem !important;color:#374151 !important;min-width:230px;background:#fff !important;box-shadow:none !important}
-        .dga-search input:focus{outline:none;border-color:#1a7a5e !important;box-shadow:0 0 0 3px rgba(26,122,94,.1) !important}
-    </style>
 
     <script>document.documentElement.classList.add('ld-booting');</script>
 </head>

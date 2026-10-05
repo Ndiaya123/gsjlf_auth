@@ -13,17 +13,6 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
     <link href="/personnel/ressources/dist_assets/css/style_basi_27.css" rel="stylesheet" type="text/css"/>
 
-    <style>
-        /* Absentes de style_basi_27.css — signalement des modifications DFC
-           sur une ligne, dans la modale Détail. */
-        .dga-badge-ligne{display:inline-flex;padding:.15rem .5rem;border-radius:99px;font-size:.66rem;font-weight:800;text-transform:uppercase;vertical-align:middle}
-        .dga-badge-ligne-modifiee{background:#fef3c7;color:#92400e}
-        .dga-badge-ligne-annulee{background:#fee2e2;color:#991b1b}
-        .dga-ligne-annulee-drh{opacity:.55;text-decoration:line-through}
-        .dga-valeur-initiale{font-size:.75rem;color:#92400e;margin-top:.15rem;background:#fffbeb;border-left:3px solid #f59e0b;padding:.25rem .5rem;border-radius:0 6px 6px 0}
-        .dga-valeur-initiale-date{color:#b45309;font-weight:400}
-    </style>
-
     <script>document.documentElement.classList.add('ld-booting');</script>
 
 

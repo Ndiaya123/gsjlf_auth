@@ -30,6 +30,8 @@ let lb_budgetStatut   = null; // statut actuel du budget
 let lb_natureCategorie = null; // 'Produit' ou autre selon la nature sélectionnée
 let lb_table          = null;
 let lb_totalAmount    = 0;
+let lb_budgetAnnee    = null; // année du budget (en-tête de l'export Excel)
+let lb_budgetDirection = ''; // nom de la direction (en-tête de l'export Excel)
 
 // ─── Helpers statut budget ────────────────────────────────────────────
 // Un seul endroit pour décider si le budget est encore modifiable
@@ -47,6 +49,17 @@ function lb_isBudgetVerrouille() {
 // Une ligne est « active » si actif = 1 (ou si le champ n'est pas renvoyé)
 function lb_isLigneActive(l) {
     return l.actif === undefined || l.actif === null || parseInt(l.actif) === 1;
+}
+// Une ligne est-elle verrouillée (ni modifiable ni supprimable) ?
+//  • Valider / Accepter : toutes les lignes actives le sont.
+//  • Réajuster : le verrouillage posé à l'acceptation est levé — seule une demande déjà
+//    effectuée sur la ligne la protège encore (nb_demandes, calculé par le serveur).
+//  • Autres statuts : champ « verrouiller » de la ligne.
+// Le serveur applique la même règle et fait foi ; ceci ne sert qu'à l'affichage.
+function lb_isLigneVerrouillee(l) {
+    if (lb_isBudgetVerrouille()) return lb_isLigneActive(l);
+    if (lb_budgetStatut === 'Réajuster') return (parseInt(l.nb_demandes, 10) || 0) > 0;
+    return parseInt(l.verrouiller, 10) === 1;
 }
 
 // ─── Réseau ───────────────────────────────────────────────────────────
@@ -221,7 +234,7 @@ function lb_updateCounters(donnees) {
     //const lockedCount   = lb_isBudgetVerrouille() ? lignesActives.length : 0;
 
     const lockedCount = lb_isBudgetVerrouille() ? lignesActives.length
-        : donnees.filter(l => parseInt(l.verrouiller, 10) === 1).length;
+        : donnees.filter(lb_isLigneVerrouillee).length;
     const editableCount = donnees.length - lockedCount;
     const avgPerLine    = donnees.length > 0 ? lb_totalAmount / donnees.length : 0;
 
@@ -293,16 +306,23 @@ function lb_buildColumns() {
     const fmt = n => Number(n).toLocaleString('fr-FR',{minimumFractionDigits:2,maximumFractionDigits:2})+' FCFA';
     const actions = d => {
         const budgetEditable = lb_isBudgetEditable();
-        // Budget verrouillé (Valider / Accepter) → toutes les lignes actives sont verrouillées
-        const lineVerrouille = lb_isBudgetVerrouille()
-            ? lb_isLigneActive(d)
-            : parseInt(d.verrouiller) === 1;
+        // Budget verrouillé (Valider / Accepter) → toutes les lignes actives sont verrouillées ;
+        // budget « Réajuster » → verrouillée seulement si une demande a déjà été effectuée.
+        const lineVerrouille = lb_isLigneVerrouillee(d);
 
         // Budget verrouillé globalement OU ligne individuellement verrouillée
         if (!budgetEditable || lineVerrouille) {
-            return `<span style="display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;color:#7c3aed;font-weight:600;background:#ede9fe;padding:.2rem .6rem;border-radius:20px;">
-                <svg width="10" height="10" viewBox="0 0 24 24" fill="#7c3aed"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
-                Verrouillé
+            // Budget « Réajuster » : la ligne n'est bloquée QUE par une demande déjà effectuée
+            const parDemande = budgetEditable && lb_budgetStatut === 'Réajuster';
+            const couleur = parDemande ? '#92400e' : '#7c3aed';
+            const fond    = parDemande ? '#fef3c7' : '#ede9fe';
+            const libelle = parDemande ? 'Demande effectuée' : 'Verrouillé';
+            const infobulle = parDemande
+                ? 'Une demande a déjà été effectuée sur cette ligne : elle ne peut plus être modifiée ni supprimée.'
+                : '';
+            return `<span title="${infobulle}" style="display:inline-flex;align-items:center;gap:.3rem;font-size:.72rem;color:${couleur};font-weight:600;background:${fond};padding:.2rem .6rem;border-radius:20px;">
+                <svg width="10" height="10" viewBox="0 0 24 24" fill="${couleur}"><path d="M18 8h-1V6c0-2.76-2.24-5-5-5S7 3.24 7 6v2H6c-1.1 0-2 .9-2 2v10c0 1.1.9 2 2 2h12c1.1 0 2-.9 2-2V10c0-1.1-.9-2-2-2zm-6 9c-1.1 0-2-.9-2-2s.9-2 2-2 2 .9 2 2-.9 2-2 2zm3.1-9H8.9V6c0-1.71 1.39-3.1 3.1-3.1 1.71 0 3.1 1.39 3.1 3.1v2z"/></svg>
+                ${libelle}
             </span>`;
         }
         return `<div class="lb-actions">
@@ -407,6 +427,8 @@ async function lb_loadBudgetInfo() {
         lb_budgetType   = parseInt(b.type_budget_id);
         lb_budgetCeil   = parseFloat(b.plafond)||0;
         lb_budgetStatut = b.statut;
+        lb_budgetAnnee     = b.annee;
+        lb_budgetDirection = b.nom_direction || '';
 
         // Afficher les infos budget
         const ceil = document.getElementById('lb-stat-ceiling');
@@ -601,10 +623,14 @@ async function lb_editLine(lineId) {
         Swal.fire('Budget verrouillé',`Le budget est au statut « ${lb_budgetStatut} » : les lignes ne peuvent plus être modifiées.`,'info');
         return;
     }
-    // Vérification verrouiller côté client
+    // Vérification côté client (le serveur re-vérifie et fait foi)
     const row = lb_table ? lb_table.rows().data().toArray().find(d => String(d.id)===String(lineId)) : null;
-    if (row && parseInt(row.verrouiller) === 1) {
-        Swal.fire('Ligne verrouillée','Cette ligne est verrouillée et ne peut pas être modifiée.','info');
+    if (row && lb_isLigneVerrouillee(row)) {
+        if (lb_budgetStatut === 'Réajuster') {
+            Swal.fire('Demande effectuée','Une demande a déjà été effectuée sur cette ligne : elle ne peut plus être modifiée.','info');
+        } else {
+            Swal.fire('Ligne verrouillée','Cette ligne est verrouillée et ne peut pas être modifiée.','info');
+        }
         return;
     }
     lb_showLoader('Chargement…');
@@ -687,10 +713,14 @@ async function lb_deleteLine(lineId) {
         Swal.fire('Budget verrouillé',`Le budget est au statut « ${lb_budgetStatut} » : les lignes ne peuvent plus être supprimées.`,'info');
         return;
     }
-    // Vérifier verrouiller côté client (double sécurité — le serveur vérifie aussi)
+    // Vérification côté client (double sécurité — le serveur vérifie aussi et fait foi)
     const row = lb_table ? lb_table.rows().data().toArray().find(d => String(d.id)===String(lineId)) : null;
-    if (row && parseInt(row.verrouiller) === 1) {
-        Swal.fire('Ligne verrouillée','Cette ligne est verrouillée et ne peut pas être supprimée.','info');
+    if (row && lb_isLigneVerrouillee(row)) {
+        if (lb_budgetStatut === 'Réajuster') {
+            Swal.fire('Demande effectuée','Une demande a déjà été effectuée sur cette ligne : elle ne peut plus être supprimée.','info');
+        } else {
+            Swal.fire('Ligne verrouillée','Cette ligne est verrouillée et ne peut pas être supprimée.','info');
+        }
         return;
     }
     const conf = await Swal.fire({
@@ -784,6 +814,147 @@ async function lb_loadProduitsParSousRubrique(sousRubId, selectId='lb-produit') 
 }
 
 // ─── Initialisation ───────────────────────────────────────────────────
+// ─── Export Excel ─────────────────────────────────────────────────────
+// Exporte les lignes ACTUELLEMENT AFFICHÉES : filtre « type d'investissement » et recherche du
+// tableau appliqués, toutes pages confondues. Génération 100 % dans le navigateur (bibliothèque
+// xlsx-js-style, chargée par la page) : aucune donnée n'est envoyée ailleurs que dans le fichier.
+function lb_num(v) {
+    const n = parseFloat(v);
+    return Number.isFinite(n) && n !== 0 ? n : null; // 0 / vide → cellule vide (comme le « — » du tableau)
+}
+
+const LB_EXPORT_COLONNES = [
+    { titre: "Type d'investissement", largeur: 24, valeur: l => l.nature_nom },
+    { titre: 'Rubrique',              largeur: 22, valeur: l => l.categorie_nom },
+    { titre: 'Sous-rubrique',         largeur: 22, valeur: l => l.sous_categorie_nom },
+    { titre: 'Service',               largeur: 20, valeur: l => l.service_nom },
+    { titre: 'Désignation',           largeur: 32, valeur: l => l.designation },
+    { titre: 'Description',           largeur: 36, valeur: l => l.description },
+    { titre: 'Période',               largeur: 16, valeur: l => l.periode_d_utilisation },
+    { titre: 'Quantité / Nombre',     largeur: 16, valeur: l => lb_num(l.quantite),       format: '#,##0' },
+    { titre: 'Unité',                 largeur: 10, valeur: l => l.unite },
+    { titre: 'Prix unitaire (FCFA)',  largeur: 20, valeur: l => lb_num(l.prix_unitaire),  format: '#,##0' },
+    { titre: 'Total (FCFA)',          largeur: 20, valeur: l => lb_num(l.montant_total),  format: '#,##0', total: true },
+];
+
+// Construit le classeur à partir des lignes — fonction pure (XL = bibliothèque XLSX injectée).
+function lb_construireClasseur(XL, lignes, meta) {
+    const cols = LB_EXPORT_COLONNES;
+    const nbCol = cols.length;
+    const LIGNE_ENTETE = 3;                       // 0-based : titre (0), sous-titre (1), vide (2), en-têtes (3)
+    const premiere = LIGNE_ENTETE + 1;            // 1re ligne de données (0-based)
+    const derniere = premiere + lignes.length - 1;
+    const ligneTotal = derniere + 1;
+
+    const aoa = [[meta.titre], [meta.sousTitre], [], cols.map(c => c.titre)];
+    lignes.forEach(l => aoa.push(cols.map(c => {
+        const v = c.valeur(l);
+        return v === undefined || v === null || v === '' ? null : v;
+    })));
+    const ws = XL.utils.aoa_to_sheet(aoa);
+
+    const addr = (r, c) => XL.utils.encode_cell({ r, c });
+    const trait = { style: 'thin', color: { rgb: 'D1D5DB' } };
+    const bordures = { top: trait, bottom: trait, left: trait, right: trait };
+    const idxTotal = cols.findIndex(c => c.total);
+
+    // Titre + sous-titre
+    ws[addr(0, 0)].s = { font: { bold: true, sz: 14, color: { rgb: '1A7A5E' } }, alignment: { vertical: 'center' } };
+    ws[addr(1, 0)].s = { font: { sz: 10, color: { rgb: '6B7280' } }, alignment: { vertical: 'center', wrapText: true } };
+
+    // En-têtes
+    cols.forEach((c, j) => {
+        ws[addr(LIGNE_ENTETE, j)].s = {
+            font: { bold: true, color: { rgb: 'FFFFFF' } },
+            fill: { patternType: 'solid', fgColor: { rgb: '1A7A5E' } },
+            alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
+            border: bordures,
+        };
+    });
+
+    // Données (les cellules vides sont créées pour porter la bordure)
+    for (let r = premiere; r <= derniere; r++) {
+        cols.forEach((c, j) => {
+            const a = addr(r, j);
+            if (!ws[a]) ws[a] = { t: 's', v: '' };
+            const style = { border: bordures, alignment: { vertical: 'top', wrapText: !c.format } };
+            if (c.format) { ws[a].z = c.format; style.alignment.horizontal = 'right'; }
+            ws[a].s = style;
+        });
+    }
+
+    // Ligne de total (formule SUM + valeur calculée, pour les lecteurs qui n'évaluent pas les formules)
+    const lettre = XL.utils.encode_col(idxTotal);
+    const somme = lignes.reduce((s, l) => s + (lb_num(l.montant_total) || 0), 0);
+    const styleTotal = {
+        font: { bold: true },
+        fill: { patternType: 'solid', fgColor: { rgb: 'ECFDF5' } },
+        border: bordures,
+        alignment: { horizontal: 'right', vertical: 'center' },
+    };
+    cols.forEach((c, j) => { ws[addr(ligneTotal, j)] = { t: 's', v: '', s: styleTotal }; });
+    ws[addr(ligneTotal, idxTotal - 1)] = { t: 's', v: 'TOTAL', s: styleTotal };
+    ws[addr(ligneTotal, idxTotal)] = {
+        t: 'n', v: somme, f: `SUM(${lettre}${premiere + 1}:${lettre}${derniere + 1})`, z: '#,##0', s: styleTotal,
+    };
+
+    ws['!ref'] = XL.utils.encode_range({ s: { r: 0, c: 0 }, e: { r: ligneTotal, c: nbCol - 1 } });
+    ws['!cols'] = cols.map(c => ({ wch: c.largeur }));
+    ws['!rows'] = [{ hpt: 26 }, { hpt: 30 }, {}, { hpt: 32 }];
+    ws['!merges'] = [
+        { s: { r: 0, c: 0 }, e: { r: 0, c: nbCol - 1 } },
+        { s: { r: 1, c: 0 }, e: { r: 1, c: nbCol - 1 } },
+    ];
+    ws['!autofilter'] = { ref: `A${LIGNE_ENTETE + 1}:${XL.utils.encode_col(nbCol - 1)}${derniere + 1}` };
+
+    const wb = XL.utils.book_new();
+    XL.utils.book_append_sheet(wb, ws, 'Lignes budget');
+    return wb;
+}
+
+function lb_exportExcel() {
+    if (typeof XLSX === 'undefined') {
+        Swal.fire('Export indisponible',
+            "La bibliothèque d'export Excel n'a pas pu être chargée (accès à cdn.jsdelivr.net bloqué ?). "
+            + "Rechargez la page ; si le problème persiste, contactez le support.", 'error');
+        return;
+    }
+    const lignes = lb_table ? lb_table.rows({ search: 'applied', order: 'applied' }).data().toArray() : [];
+    if (!lignes.length) {
+        Swal.fire('Aucune ligne', "Il n'y a aucune ligne à exporter avec les filtres actuels.", 'info');
+        return;
+    }
+
+    const fmtN = n => (parseFloat(n) || 0).toLocaleString('fr-FR', { maximumFractionDigits: 0 });
+    const natFlt = document.getElementById('lb-filter-nature');
+    const typeFiltre = natFlt && natFlt.value ? natFlt.options[natFlt.selectedIndex].text : '';
+    const recherche = lb_table.search();
+
+    const morceaux = [];
+    if (lb_budgetDirection) morceaux.push(`Direction : ${lb_budgetDirection}`);
+    morceaux.push(`Statut du budget : ${lb_budgetStatut}`);
+    if (lb_budgetCeil > 0) morceaux.push(`Plafond : ${fmtN(lb_budgetCeil)} FCFA`);
+    if (typeFiltre) morceaux.push(`Type : ${typeFiltre}`);
+    if (recherche) morceaux.push(`Recherche : « ${recherche} »`);
+    morceaux.push(`${lignes.length} ligne${lignes.length > 1 ? 's' : ''}`);
+    morceaux.push(`Exporté le ${new Date().toLocaleString('fr-FR')}`);
+
+    const meta = {
+        titre: `Lignes budgétaires — Budget d'investissement${lb_budgetAnnee ? ' ' + lb_budgetAnnee : ''}`,
+        sousTitre: morceaux.join('   •   '),
+    };
+
+    try {
+        const wb = lb_construireClasseur(XLSX, lignes, meta);
+        const d = new Date();
+        const stamp = `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, '0')}${String(d.getDate()).padStart(2, '0')}`;
+        XLSX.writeFile(wb, `lignes-budget-investissement${lb_budgetAnnee ? '-' + lb_budgetAnnee : ''}-${stamp}.xlsx`);
+    } catch (err) {
+        console.error('[Export Excel]', err);
+        Swal.fire('Erreur', "Impossible de générer le fichier Excel.", 'error');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
     lb_budgetId = (typeof window.LB_BUDGET_TOKEN!=='undefined' && window.LB_BUDGET_TOKEN)
         ? window.LB_BUDGET_TOKEN : null;
@@ -812,6 +983,7 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     // Bouton Valider le budget
     document.getElementById('lb-validate-btn')?.addEventListener('click', lb_validerBudget);
+    document.getElementById('lb-export-btn')?.addEventListener('click', lb_exportExcel);
 
     // Formulaire
     document.getElementById('lb-form')?.addEventListener('submit', lb_submitForm);

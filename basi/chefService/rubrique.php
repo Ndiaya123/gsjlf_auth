@@ -23,25 +23,6 @@ header("Expires: 0");
     <link href="/personnel/ressources/dist_assets/css/style_basi_8.css" rel="stylesheet" type="text/css"/>
 
     <script>document.documentElement.classList.add('ld-booting');</script>
-    <style>
-        /* ── Suggestions anti-doublon ── */
-        .cat-suggest{display:none;margin-top:.5rem;border:1px solid #e5e7eb;border-radius:10px;background:#fff;overflow:hidden;font-size:.85rem}
-        .cat-suggest.is-open{display:block}
-        .cat-suggest-head{padding:.45rem .75rem;background:#f9fafb;color:#6b7280;font-weight:600;font-size:.75rem;text-transform:uppercase;letter-spacing:.03em;border-bottom:1px solid #f1f1f1}
-        .cat-suggest ul{list-style:none;margin:0;padding:0;max-height:220px;overflow-y:auto}
-        .cat-suggest li{display:flex;align-items:center;justify-content:space-between;gap:.5rem;padding:.45rem .75rem;color:#111827;border-bottom:1px solid #f5f5f5}
-        .cat-suggest li:last-child{border-bottom:none}
-        .cat-suggest li mark{background:#d1fae5;color:#113B26;padding:0 1px;border-radius:3px;font-weight:700}
-        .cat-suggest li.is-exact{background:#fef2f2}
-        .cat-suggest li.is-other{color:#6b7280}
-        .cat-suggest-cat{display:block;font-size:.72rem;color:#9ca3af;font-weight:500;margin-top:1px}
-        .cat-suggest-badge{flex-shrink:0;font-size:.7rem;font-weight:700;color:#b91c1c;background:#fee2e2;border-radius:999px;padding:.1rem .5rem}
-        .cat-suggest-badge.same{color:#113B26;background:#d1fae5}
-        .cat-suggest-msg{padding:.5rem .75rem;font-weight:600}
-        .cat-suggest-msg.ok{color:#113B26;background:#f0fdf4}
-        .cat-suggest-msg.err{color:#b91c1c;background:#fef2f2;border-top:1px solid #fee2e2}
-        .cat-suggest-msg.info{color:#6b7280}
-    </style>
 
 
 </head>

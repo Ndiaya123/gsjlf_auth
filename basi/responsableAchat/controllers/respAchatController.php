@@ -26,7 +26,7 @@ $sessionDirection = (int)$_SESSION['tmpIdDirection'];
 $sessionMatricule = trim($_SESSION['tmpMatricule']);
 
 // ─── Classe contrôleur ────────────────────────────────────────────────────────
-class drhController extends BDBASI
+class respAchatController extends BDBASI
 {
     function tokenencrypt($data) {
         $key = hash('sha256','U@hbENTDRI@TCRI@T2022');
@@ -52,7 +52,7 @@ class drhController extends BDBASI
 try {
     $BDBASI         = new BDBASI();
     $bdBASI         = $BDBASI->connect(); // Instance PDO
-    $basiController = new drhController();
+    $basiController = new respAchatController();
 } catch (\Throwable $e) {
     error_log('[Fournisseur][Connexion] ' . $e->getMessage());
     header('Content-Type: application/json; charset=utf-8');
@@ -444,7 +444,7 @@ function sqlDemandeEpuisee(string $d = 'd'): string {
  *   - afficherEpuisees : '0' (défaut) | '1' — quand absent/faux, seules les
  *                        demandes "en cours" (non épuisées) sont renvoyées.
  */
-function listerDemandes(PDO $bdBASI, drhController $basiController): void {
+function listerDemandes(PDO $bdBASI, respAchatController $basiController): void {
     try {
         $type = strtolower(trim((string)inputValue('type', 'toutes')));
         if (!in_array($type, ['toutes', 'demande_achat', 'demande_paiement'], true)) $type = 'toutes';
@@ -537,7 +537,7 @@ function listerDemandes(PDO $bdBASI, drhController $basiController): void {
  * (Facture pro forma / Passer commande / Passer au paiement sur
  * /drh_basi_controller1, options 3/4/5) qui attendent cette forme.
  */
-function voirDemande(PDO $bdBASI, drhController $basiController): void {
+function voirDemande(PDO $bdBASI, respAchatController $basiController): void {
     try {
         $token = trim((string) inputValue('token', ''));
         if ($token === '') {
@@ -651,7 +651,7 @@ function voirDemande(PDO $bdBASI, drhController $basiController): void {
  * "Demande de facture" n'a pas cette contrainte (demande_proforma n'a pas
  * de colonne idD), donc aucune restriction n'est nécessaire pour cette action.
  */
-function listerToutesLignesAchat(PDO $bdBASI, drhController $basiController): void {
+function listerToutesLignesAchat(PDO $bdBASI, respAchatController $basiController): void {
     try {
         $stmt = $bdBASI->query("
             SELECT
@@ -705,7 +705,7 @@ function listerToutesLignesAchat(PDO $bdBASI, drhController $basiController): vo
  * (un paiement peut désormais regrouper des lignes de plusieurs demandes
  * de paiement différentes).
  */
-function listerToutesLignesPaiement(PDO $bdBASI, drhController $basiController): void {
+function listerToutesLignesPaiement(PDO $bdBASI, respAchatController $basiController): void {
     try {
         $stmt = $bdBASI->query("
             SELECT
@@ -1446,7 +1446,7 @@ function passerPaiement(PDO $bdBASI, int $sessionUserId, string $sessionMatricul
  * Liste des dossiers modifiables : passer_achat_et_paiement.idStatut = 5
  * (Rejetée), toutes provenances confondues (idTypePAP distingue achat/paiement).
  */
-function listerDossiersAModifier(PDO $bdBASI, drhController $basiController): void {
+function listerDossiersAModifier(PDO $bdBASI, respAchatController $basiController): void {
     try {
         $stmt = $bdBASI->query("
             SELECT
@@ -1486,7 +1486,7 @@ function listerDossiersAModifier(PDO $bdBASI, drhController $basiController): vo
  *
  * Paramètre : token (chiffré de idPAP)
  */
-function detailDossierAModifier(PDO $bdBASI, drhController $basiController): void {
+function detailDossierAModifier(PDO $bdBASI, respAchatController $basiController): void {
     try {
         $token = trim((string) inputValue('token', ''));
         if ($token === '') {
@@ -2210,7 +2210,7 @@ function modifierPaiement(PDO $bdBASI, int $sessionUserId, string $sessionMatric
  *
  * Paramètre : statut (0 ou absent = toutes les demandes)
  */
-function listerToutesOperations(PDO $bdBASI, drhController $basiController): void {
+function listerToutesOperations(PDO $bdBASI, respAchatController $basiController): void {
     try {
         $statutFiltre = (int) inputValue('statut', 0);
 
@@ -2285,7 +2285,7 @@ function listerToutesOperations(PDO $bdBASI, drhController $basiController): voi
  *
  * Paramètre : token (chiffré de idPAP)
  */
-function detailOperation(PDO $bdBASI, drhController $basiController): void {
+function detailOperation(PDO $bdBASI, respAchatController $basiController): void {
     try {
         $token = trim((string) inputValue('token', ''));
         if ($token === '') {
@@ -2389,7 +2389,7 @@ function detailOperation(PDO $bdBASI, drhController $basiController): void {
  *
  * Paramètre : token (chiffré de idPAP)
  */
-function suiviOperation(PDO $bdBASI, drhController $basiController): void {
+function suiviOperation(PDO $bdBASI, respAchatController $basiController): void {
     try {
         $token = trim((string) inputValue('token', ''));
         if ($token === '') {
@@ -2429,7 +2429,7 @@ function suiviOperation(PDO $bdBASI, drhController $basiController): void {
  *
  * Paramètre : token (chiffré de idPAP)
  */
-function detailDossierComplet(PDO $bdBASI, drhController $basiController): void {
+function detailDossierComplet(PDO $bdBASI, respAchatController $basiController): void {
     try {
         $token = trim((string) inputValue('token', ''));
         if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
@@ -2559,7 +2559,7 @@ function detailDossierComplet(PDO $bdBASI, drhController $basiController): void 
  *
  * Paramètre : token (chiffré de idPAP)
  */
-function envoyerCaisse(PDO $bdBASI, drhController $basiController, int $sessionUserId, string $sessionMatricule): void {
+function envoyerCaisse(PDO $bdBASI, respAchatController $basiController, int $sessionUserId, string $sessionMatricule): void {
     try {
         $token = trim((string) inputValue('token', ''));
         if ($token === '') {
@@ -2638,7 +2638,7 @@ function envoyerCaisse(PDO $bdBASI, drhController $basiController, int $sessionU
  * Requête multipart/form-data (upload de fichier).
  * Champs attendus : token (chiffré de idPAP), bc (fichier PDF)
  */
-function uploaderBC(PDO $bdBASI, drhController $basiController, int $sessionUserId, string $sessionMatricule): void {
+function uploaderBC(PDO $bdBASI, respAchatController $basiController, int $sessionUserId, string $sessionMatricule): void {
     try {
         $token = trim((string)($_POST['token'] ?? ''));
         if ($token === '') {

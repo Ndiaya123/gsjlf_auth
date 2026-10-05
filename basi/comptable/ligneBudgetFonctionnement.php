@@ -1,4 +1,3 @@
-
 <?php
 $budgetToken = $_GET['budgetId'] ?? '';
 if (empty($budgetToken)) { header('Location: /comptable-accueil'); exit; }
@@ -14,6 +13,8 @@ if (empty($budgetToken)) { header('Location: /comptable-accueil'); exit; }
     <link href="/personnel/ressources/dist_assets/css/style.bundle.css" rel="stylesheet"/>
     <link href="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
+    <!-- Export Excel : SheetJS avec styles, exécuté dans le navigateur. À héberger en local si le CDN est bloqué en production. -->
+    <script defer src="https://cdn.jsdelivr.net/npm/xlsx-js-style@1.2.0/dist/xlsx.bundle.js"></script>
     <link href="/personnel/ressources/dist_assets/css/style_basi_14.css" rel="stylesheet" type="text/css"/>
     <script>document.documentElement.classList.add('ld-booting');</script>
 
@@ -201,6 +202,10 @@ if (empty($budgetToken)) { header('Location: /comptable-accueil'); exit; }
                                         <select id="lb-filter-sous-categorie" class="lb-inp" style="min-width:190px;padding:.45rem .85rem;font-size:.82rem;">
                                             <option value="">Toutes les sous-catégories</option>
                                         </select>
+                                        <button type="button" id="lb-export-btn" class="lb-btn lb-btn--ghost" style="padding:.45rem .85rem;font-size:.82rem;display:inline-flex;align-items:center;gap:.4rem;" title="Exporter les lignes affichées au format Excel">
+                                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.3"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+                                            Exporter Excel
+                                        </button>
                                     </div>
                                 </div>
                             </div>

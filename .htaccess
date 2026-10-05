@@ -260,22 +260,22 @@ RewriteRule ^basi-scripts.bundle.43.js$ basi/comptable/js/vueExecutionBudgetaire
 
 #DRH
 
-RewriteRule ^drh_basi_controller$ basi/drh/controllers/drhController.php [L]
-RewriteRule ^drh_basi_controller1$ basi/drh/controllers/drh_basi_controller.php [L]
-RewriteRule ^drh_liste_des_fournisseurs$ basi/drh/listeFournisseur.php [L]
-RewriteRule ^basi-scripts.bundle.14.js$ basi/drh/js/listeFournisseur.js [L]
-RewriteRule ^drh_liste_des_demandes$ basi/drh/listeDemande.php [L]
-RewriteRule ^basi-scripts.bundle.15.js$ basi/drh/js/listeDemande.js [L]
-RewriteRule ^drh_demande_voir_lignes/(.*)$ basi/drh/listeDemandeLigne.php?token=$1 [L]
-RewriteRule ^basi-scripts.bundle.16.js$ basi/drh/js/listeDemandeLigne.js [L]
-RewriteRule ^drh_demande_facture_proforma$ basi/drh/demandeFactureProforma.php [L]
-RewriteRule ^drh_toutes_les_lignes_de_demandes_d_achat$ basi/drh/toutesLignesDemandesAchat.php [L]
-RewriteRule ^basi-scripts.bundle.17.js$ basi/drh/js/toutesLignesDemandesAchat.js [L]
-RewriteRule ^drh_toutes_les_lignes_de_demandes_de_paiement$ basi/drh/toutesLignesDemandesPaiement.php [L]
-RewriteRule ^basi-scripts.bundle.18.js$ basi/drh/js/toutesLignesDemandesPaiement.js [L]
-RewriteRule ^drh_liste_commandes$ basi/drh/listeCommandes.php [L]
-RewriteRule ^basi-scripts.bundle.22.js$ basi/drh/js/listeCommandes.js [L]
-RewriteRule ^drh_facture/(.*)$ basi/drh/facture_pap.php?token=$1  [L]
+RewriteRule ^resp_achat_basi_controller$ basi/responsableAchat/controllers/respAchatController.php [L]
+RewriteRule ^resp_achat_basi_controller1$ basi/responsableAchat/controllers/resp_achat_basi_controller.php [L]
+RewriteRule ^resp_achat_liste_des_fournisseurs$ basi/responsableAchat/listeFournisseur.php [L]
+RewriteRule ^basi-scripts.bundle.14.js$ basi/responsableAchat/js/listeFournisseur.js [L]
+RewriteRule ^resp_achat_liste_des_demandes$ basi/responsableAchat/listeDemande.php [L]
+RewriteRule ^basi-scripts.bundle.15.js$ basi/responsableAchat/js/listeDemande.js [L]
+RewriteRule ^resp_achat_demande_voir_lignes/(.*)$ basi/responsableAchat/listeDemandeLigne.php?token=$1 [L]
+RewriteRule ^basi-scripts.bundle.16.js$ basi/responsableAchat/js/listeDemandeLigne.js [L]
+RewriteRule ^resp_achat_demande_facture_proforma$ basi/responsableAchat/demandeFactureProforma.php [L]
+RewriteRule ^resp_achat_toutes_les_lignes_de_demandes_d_achat$ basi/responsableAchat/toutesLignesDemandesAchat.php [L]
+RewriteRule ^basi-scripts.bundle.17.js$ basi/responsableAchat/js/toutesLignesDemandesAchat.js [L]
+RewriteRule ^resp_achat_toutes_les_lignes_de_demandes_de_paiement$ basi/responsableAchat/toutesLignesDemandesPaiement.php [L]
+RewriteRule ^basi-scripts.bundle.18.js$ basi/responsableAchat/js/toutesLignesDemandesPaiement.js [L]
+RewriteRule ^resp_achat_liste_commandes$ basi/responsableAchat/listeCommandes.php [L]
+RewriteRule ^basi-scripts.bundle.22.js$ basi/responsableAchat/js/listeCommandes.js [L]
+RewriteRule ^resp_achat_facture/(.*)$ basi/responsableAchat/facture_pap.php?token=$1  [L]
 
 
 # DGA

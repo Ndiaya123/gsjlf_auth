@@ -146,6 +146,18 @@ function insertHistoriqueLigneBudget(PDO $pdo, array $ligne, $statut, $idStatut,
 }
 
 // INSERT historique_product (snapshot complet du produit)
+/**
+ * Une demande a-t-elle déjà été effectuée sur cette ligne budgétaire ?
+ * Une ligne de demande est "active" tant que son statut est 'crée' ; une
+ * ligne retirée de sa demande passe à 'supprimer' (voir comptableController)
+ * et ne protège donc plus la ligne budgétaire.
+ */
+function ligneADemandeActive(PDO $pdo, int $lineId): bool {
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM demandes_ligne WHERE idLB = ? AND statut = 'crée'");
+    $stmt->execute([$lineId]);
+    return (int) $stmt->fetchColumn() > 0;
+}
+
 function insertHistoriqueProduit(PDO $pdo, array $produit, string $motif): void {
     // Colonnes produit + product_id + motif + dateEnregistrement
     $pdo->prepare("
@@ -791,7 +803,8 @@ switch ($option) {
                          r.nom_rubrique AS categorie_nom, sr.nom_sous_rubrique AS sous_categorie_nom,
                          s.nom_services AS service_nom,
                          lb.designation, lb.description, lb.periode_d_utilisation,
-                         lb.quantite, lb.prix_unitaire, lb.montant_total, lu.unite, lb.statut,lb.verrouiller
+                         lb.quantite, lb.prix_unitaire, lb.montant_total, lu.unite, lb.statut,lb.verrouiller,
+                         (SELECT COUNT(*) FROM demandes_ligne dl WHERE dl.idLB = lb.id AND dl.statut = 'crée') AS nb_demandes
                   FROM ligneBudget lb
                   LEFT JOIN type_budget_investissement tn ON lb.id_type_budget_investissement=tn.id
                   LEFT JOIN rubrique     r  ON lb.rubrique_id     =r.id
@@ -1000,24 +1013,31 @@ switch ($option) {
             $periode     = trim($data['periode_d_utilisation'] ?? '');
             $serviceId   = isset($data['service_id']) && $data['service_id'] !== '' ? (int)$data['service_id'] : null;
 
-            // Vérifier existence + verrouillage de la ligne
+            // Vérifier existence de la ligne (une ligne déjà supprimée = Inactif n'existe plus)
             $chkLine=$bdBASI->prepare("SELECT * FROM ligneBudget WHERE id=? AND statut!='Supprimer'");
             $chkLine->execute([$lineId]);
             $lineRow=$chkLine->fetch(PDO::FETCH_ASSOC);
-            if (!$lineRow) throw new Exception("Ligne non trouvée.",404);
+            if (!$lineRow || $lineRow['statut']==='Inactif') throw new Exception("Ligne non trouvée.",404);
 
-            // verrouiller = 1 → interdit
-            if ((int)$lineRow['verrouiller'] === 1)
-                throw new Exception("Impossible de modifier une ligne verrouillée.",403);
-
-            // Vérifier que le budget est modifiable
+            // Vérifier appartenance (direction + type) et que le budget est modifiable
             $chkBudget=$bdBASI->prepare("SELECT statut FROM budget WHERE id=? AND direction_id=? AND type_budget_id=? AND statut!='Supprimer'");
             $chkBudget->execute([$lineRow['budget_id'],(int)$sessionDirection,TYPE_BUDGET_INVESTISSEMENT]);
             $bRow=$chkBudget->fetch(PDO::FETCH_ASSOC);
             if (!$bRow) throw new Exception("Accès non autorisé.",403);
             if (in_array($bRow['statut'],['Valider','Accepter','Terminer'],true))
                 throw new Exception("Impossible de modifier une ligne d'un budget au statut '{$bRow['statut']}'.");
-            // 'Réajuster' (idStatut=9) autorise la modification de lignes
+
+            // Verrouillage de la ligne — dépend du statut du budget :
+            //  • « Réajuster » : le verrouillage posé à l'acceptation est levé ; seule une demande
+            //    déjà effectuée sur la ligne la protège encore.
+            //  • autres statuts : verrouiller = 1 → modification interdite.
+            $budgetReajuste = ($bRow['statut'] === 'Réajuster');
+            if ($budgetReajuste) {
+                if (ligneADemandeActive($bdBASI, $lineId))
+                    throw new Exception("Impossible de modifier cette ligne : une demande a déjà été effectuée dessus.",403);
+            } elseif ((int)$lineRow['verrouiller'] === 1) {
+                throw new Exception("Impossible de modifier une ligne verrouillée.",403);
+            }
 
             // Récupérer la catégorie de la nature
             $natChk=$bdBASI->prepare("SELECT categorie FROM type_budget_investissement WHERE id=? AND statut='Actif'");
@@ -1119,7 +1139,11 @@ switch ($option) {
                 $periode,date('Y-m-d H:i:s')
             ]);
 
-            $bdBASI->prepare("UPDATE budget SET statut='Sauvegarder', idStatut=3 WHERE id=?")->execute([$lineRow['budget_id']]);
+            // Un budget « Réajuster » garde son statut (sinon, dès la 1re modification, les autres
+            // lignes redeviendraient verrouillées) ; les autres repassent à « Sauvegarder ».
+            if (!$budgetReajuste) {
+                $bdBASI->prepare("UPDATE budget SET statut='Sauvegarder', idStatut=3 WHERE id=?")->execute([$lineRow['budget_id']]);
+            }
             $bdBASI->commit();
 
             echo json_encode(['success'=>true,'message'=>'Ligne modifiée avec succès.','id_produit'=>$idProduit]);
@@ -1149,15 +1173,26 @@ switch ($option) {
             $chkLine=$bdBASI->prepare("SELECT * FROM ligneBudget WHERE id=? AND statut!='Supprimer'");
             $chkLine->execute([$lineId]);
             $lineRow=$chkLine->fetch(PDO::FETCH_ASSOC);
-            if (!$lineRow) throw new Exception("Ligne non trouvée.",404);
+            if (!$lineRow || $lineRow['statut']==='Inactif') throw new Exception("Ligne non trouvée.",404);
 
-            // Vérifier que la ligne n'est pas verrouillée
-            if (!empty($lineRow['verrouiller']) && (int)$lineRow['verrouiller'] === 1)
-                throw new Exception("Impossible de supprimer une ligne verrouillée.",403);
-
-            $chkBudget=$bdBASI->prepare("SELECT id FROM budget WHERE id=? AND direction_id=? AND type_budget_id=? AND statut!='Supprimer'");
+            // Appartenance (direction + type) et statut du budget
+            $chkBudget=$bdBASI->prepare("SELECT statut FROM budget WHERE id=? AND direction_id=? AND type_budget_id=? AND statut!='Supprimer'");
             $chkBudget->execute([$lineRow['budget_id'],(int)$sessionDirection,TYPE_BUDGET_INVESTISSEMENT]);
-            if (!$chkBudget->fetch()) throw new Exception("Accès non autorisé.",403);
+            $bRow=$chkBudget->fetch(PDO::FETCH_ASSOC);
+            if (!$bRow) throw new Exception("Accès non autorisé.",403);
+            if (in_array($bRow['statut'],['Valider','Accepter','Terminer'],true))
+                throw new Exception("Impossible de supprimer une ligne d'un budget au statut '{$bRow['statut']}'.",403);
+
+            // Verrouillage — même règle que la modification (case 22) :
+            //  • « Réajuster » : seule une demande déjà effectuée sur la ligne empêche la suppression.
+            //  • autres statuts : verrouiller = 1 → suppression interdite.
+            $budgetReajuste = ($bRow['statut'] === 'Réajuster');
+            if ($budgetReajuste) {
+                if (ligneADemandeActive($bdBASI, $lineId))
+                    throw new Exception("Impossible de supprimer cette ligne : une demande a déjà été effectuée dessus.",403);
+            } elseif ((int)$lineRow['verrouiller'] === 1) {
+                throw new Exception("Impossible de supprimer une ligne verrouillée.",403);
+            }
 
             // Snapshot de la ligne avant suppression (déjà récupéré dans $lineRow)
             $ligneSnap = $lineRow;
@@ -1170,11 +1205,21 @@ switch ($option) {
                 insertHistoriqueLigneBudget($bdBASI, $ligneSnap,  'Inactif',2, 'Suppression');
             }
 
-            $bdBASI->prepare("UPDATE budget SET statut='Sauvegarder', idStatut=3 WHERE id=?")->execute([$lineRow['budget_id']]);
+            // Un budget « Réajuster » garde son statut ; les autres repassent à « Sauvegarder ».
+            if (!$budgetReajuste) {
+                $bdBASI->prepare("UPDATE budget SET statut='Sauvegarder', idStatut=3 WHERE id=?")->execute([$lineRow['budget_id']]);
+            }
             $bdBASI->commit();
             echo json_encode(['success'=>true,'message'=>'Ligne supprimée avec succès.']);
-        } catch (PDOException $e) { echo $e; die;$bdBASI->rollBack(); error_log("Case 23 PDO: ".$e->getMessage()); http_response_code(500); echo json_encode(["success"=>false,"message"=>"Erreur base de données."]); }
-        catch (Exception    $e) { echo $e; die; if($bdBASI->inTransaction())$bdBASI->rollBack(); error_log("Case 23: ".$e->getMessage()); http_response_code($e->getCode()?:400); echo json_encode(["success"=>false,"message"=>$e->getMessage()]); }
+        } catch (PDOException $e) {
+            if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+            error_log("Case 23 PDO: ".$e->getMessage()); http_response_code(500);
+            echo json_encode(["success"=>false,"message"=>"Erreur base de données."]);
+        } catch (Exception $e) {
+            if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+            error_log("Case 23: ".$e->getMessage()); http_response_code($e->getCode()?:400);
+            echo json_encode(["success"=>false,"message"=>$e->getMessage()]);
+        }
         exit;
 
 // ─── CASE 24 : POST — rubriques (investissement) ─────────────────────────────

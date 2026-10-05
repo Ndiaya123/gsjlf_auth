@@ -12,48 +12,7 @@
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
     <link href="/personnel/ressources/dist_assets/css/style_basi_36.css" rel="stylesheet" type="text/css"/>
 
-    <style>
-        /* Absentes de style_basi_36.css — vérifiées manquantes. */
-        .dga-btn-primary{display:inline-flex;align-items:center;gap:.4rem;background:#1a7a5e;color:#fff;border:none;border-radius:9px;padding:.6rem 1.1rem;font-size:.85rem;font-weight:700;cursor:pointer;white-space:nowrap}
-        /* .dga-inp n'était en fait JAMAIS définie — seules des variantes
-           composées (.dga-inp-annee, .dga-inp-qte-sortie) existent. Sans
-           cette règle, un <select class="dga-inp"> retombe sur l'apparence
-           native du navigateur (fond grisé, flèche système), d'où le
-           décalage visuel avec le champ texte juste au-dessus. */
-        .dga-inp{width:100%;border:1.5px solid #e5e7eb;border-radius:8px;padding:.55rem .85rem;font-size:.85rem;color:#374151;background:#fff;box-sizing:border-box;font-family:inherit}
-        .dga-inp:focus{outline:none;border-color:#1a7a5e;box-shadow:0 0 0 3px rgba(26,122,94,.1)}
-        .dga-inp:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed}
-        select.dga-inp{appearance:none;-webkit-appearance:none;-moz-appearance:none;background-image:url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%236b7280' stroke-width='2.5'%3E%3Cpolyline points='6 9 12 15 18 9'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right .75rem center;background-size:16px;padding-right:2.4rem;cursor:pointer}
-        select.dga-inp:disabled{cursor:not-allowed}
-        .dga-btn-primary:hover{background:#145f49}
-        .dga-cell-muted{color:#9ca3af}
-        .dga-field{margin-bottom:1rem}
-        .dga-lbl{display:block;font-size:.78rem;font-weight:700;color:#374151;margin-bottom:.35rem}
 
-        .dga-badge-createur{display:inline-flex;padding:.2rem .55rem;border-radius:99px;font-size:.7rem;font-weight:600}
-        .dga-badge-createur-moi{background:#ecfdf5;color:#059669}
-        .dga-badge-createur-autre{background:#f3f4f6;color:#6b7280}
-        .dga-btn-detail-produit{background:#ede9fe;color:#5b21b6;border:1.5px solid #ddd6fe;border-radius:7px;padding:.35rem .7rem;font-size:.72rem;font-weight:700;cursor:pointer;margin-right:.35rem}
-        .dga-btn-detail-produit:hover{background:#5b21b6;color:#fff}
-        .dga-btn-modifier-produit{background:#eff6ff;color:#1d4ed8;border:1.5px solid #dbeafe;border-radius:7px;padding:.35rem .7rem;font-size:.72rem;font-weight:700;cursor:pointer}
-        .dga-btn-modifier-produit:hover{background:#1d4ed8;color:#fff}
-        .dga-btn-toggle-produit{border-radius:7px;padding:.35rem .7rem;font-size:.72rem;font-weight:700;cursor:pointer;margin-left:.4rem;border:1.5px solid}
-        .dga-btn-activer{background:#ecfdf5;color:#059669;border-color:#d1fae5}
-        .dga-btn-activer:hover{background:#059669;color:#fff}
-        .dga-btn-desactiver{background:#fef2f2;color:#991b1b;border-color:#fee2e2}
-        .dga-btn-desactiver:hover{background:#991b1b;color:#fff}
-
-        /* ── Autocomplétion (recherche-suggestion à la saisie) ────────────── */
-        .dga-autocomplete-wrap{position:relative}
-        .dga-autocomplete-liste{position:absolute;top:100%;left:0;right:0;z-index:60;background:#fff;border:1.5px solid #e5e7eb;border-top:none;border-radius:0 0 10px 10px;box-shadow:0 12px 24px rgba(0,0,0,.1);max-height:220px;overflow-y:auto;display:none}
-        .dga-autocomplete-liste.dga-visible{display:block}
-        .dga-autocomplete-item{padding:.6rem .85rem;font-size:.82rem;cursor:pointer;border-bottom:1px solid #f3f4f6}
-        .dga-autocomplete-item:last-child{border-bottom:none}
-        .dga-autocomplete-item:hover{background:#f9fafb}
-        .dga-autocomplete-item-nom{font-weight:700;color:#111827}
-        .dga-autocomplete-item-meta{font-size:.72rem;color:#9ca3af;margin-top:.1rem}
-        .dga-autocomplete-vide{padding:.6rem .85rem;font-size:.78rem;color:#9ca3af;font-style:italic}
-    </style>
 
     <script>document.documentElement.classList.add('ld-booting');</script>
 </head>
