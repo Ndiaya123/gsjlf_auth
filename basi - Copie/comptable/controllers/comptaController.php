@@ -72,7 +72,7 @@ class comptaController extends BDBASI
 $BDBASI = new BDBASI();
 $bdBASI = $BDBASI->connect();
 
-$basiController = new comptaController();
+$basiController = new respAchatController();
 
 
 function valid_donnees($donnees)

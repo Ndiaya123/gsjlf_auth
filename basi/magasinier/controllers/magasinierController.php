@@ -1232,10 +1232,147 @@ function confirmerLivraisonBonInvestissement(PDO $bdBASI, magasinierController $
 }
 
 /* ═══════════════════════════════════════════════════════════════════════════
+   HISTORIQUE DES PRODUITS LIVRÉS (options 7 et 8)
+═══════════════════════════════════════════════════════════════════════════ */
+
+/** Valide une date AAAA-MM-JJ ; retourne null si vide, false si invalide. */
+function magasinier_dateFiltre($valeur) {
+    $valeur = trim((string) $valeur);
+    if ($valeur === '') return null;
+    $d = DateTime::createFromFormat('Y-m-d', $valeur);
+    return ($d && $d->format('Y-m-d') === $valeur) ? $valeur : false;
+}
+
+/**
+ * Statut de réception d'une ligne livrée, déduit de ses quantités :
+ *   ecart    : le demandeur a signalé moins que "livré"
+ *   recu     : tout est reçu (confirmé par le demandeur)
+ *   presumee : tout est reçu par présomption (cron, sans réponse du demandeur)
+ *   clos_ecart : écart régularisé (perte)
+ *   partiel  : une partie seulement est reçue
+ *   attente  : rien n'est encore reçu
+ */
+function magasinier_statutReception(array $l): string {
+    $livree = (float) $l['quantite_livree'];
+    $recue  = (float) $l['quantite_recue'];
+    $ecart  = (float) $l['quantite_ecart'];
+    $perdue = (float) $l['quantite_perdue'];
+    if ($ecart > 0.001) return 'ecart';
+    if ($recue + $perdue >= $livree - 0.001) {
+        if ($perdue > 0.001) return 'clos_ecart';
+        return (stripos((string) ($l['motif_reception'] ?? ''), 'présumée') !== false) ? 'presumee' : 'recu';
+    }
+    if ($recue + $perdue > 0.001) return 'partiel';
+    return 'attente';
+}
+
+/**
+ * Liste des produits LIVRÉS par le magasinier (une ligne = un produit d'un
+ * bon), avec l'état de réception côté demandeur.
+ * Filtres : date_debut (facultative), date_fin (par défaut le 31/12 de
+ * l'année en cours). Sans date_debut, la période commence le 1er janvier de
+ * l'année de date_fin : par défaut, les produits livrés dans l'année en
+ * cours. tout=1 retourne tout l'historique jusqu'à date_fin.
+ * Visible pour TOUT magasinier (comme la liste "à livrer").
+ */
+function listerProduitsLivres(PDO $bdBASI, string $type): void {
+    try {
+        date_default_timezone_set('Africa/Dakar');
+        $debut = magasinier_dateFiltre(inputValueMagasinier('date_debut', ''));
+        $fin   = magasinier_dateFiltre(inputValueMagasinier('date_fin', ''));
+        if ($debut === false || $fin === false) {
+            echo json_encode(['status' => 'error', 'message' => 'Date invalide (format attendu : AAAA-MM-JJ).']);
+            return;
+        }
+        $tout = in_array((string) inputValueMagasinier('tout', '0'), ['1', 'true'], true);
+        if ($fin === null) $fin = date('Y') . '-12-31';
+        if ($debut === null && !$tout) $debut = substr($fin, 0, 4) . '-01-01';
+        if ($debut !== null && $debut > $fin) {
+            echo json_encode(['status' => 'error', 'message' => "La date de début doit être antérieure ou égale à la date de fin."]);
+            return;
+        }
+
+        if ($type === 'invest') {
+            $select = "
+                SELECT bl.id AS idBSL, bs.numero_bon, ebi.nom_expression,
+                       NULL AS demandeur, d.code_direction, d.nom_direction,
+                       p.nomproduit AS produit";
+            $from = "
+                FROM bon_sortie_ebi_ligne bl
+                JOIN bon_sortie_ebi bs ON bs.id = bl.idBS
+                JOIN expression_besoin_investissement ebi ON ebi.id = bs.idEBI
+                LEFT JOIN direction d ON d.id = ebi.idDirection
+                JOIN product p ON p.idP = bl.id_produit
+                LEFT JOIN historique_bon_sortie_ebi_ligne h
+                       ON h.id = (SELECT MAX(h2.id) FROM historique_bon_sortie_ebi_ligne h2
+                                  WHERE h2.idBSL = bl.id AND h2.motif LIKE 'Réception%')";
+        } else {
+            $select = "
+                SELECT bl.id AS idBSL, bs.numero_bon, eb.nom_expression,
+                       CONCAT(u.prenom, ' ', u.nom) AS demandeur, NULL AS code_direction, NULL AS nom_direction,
+                       p.nomproduit AS produit";
+            $from = "
+                FROM bon_sortie_eb_ligne bl
+                JOIN bon_sortie_eb bs ON bs.id = bl.idBS
+                JOIN expression_besoin eb ON eb.id = bs.idEB
+                LEFT JOIN utilisateurs u ON u.id = eb.idUtilisateur
+                JOIN product p ON p.idP = bl.idP
+                LEFT JOIN historique_bon_sortie_eb_ligne h
+                       ON h.id = (SELECT MAX(h2.id) FROM historique_bon_sortie_eb_ligne h2
+                                  WHERE h2.idBSL = bl.id AND h2.motif LIKE 'Réception%')";
+        }
+        $select .= ",
+                       bl.quantite_sortie, bl.quantite_livree, bl.quantite_recue, bl.quantite_ecart, bl.quantite_perdue,
+                       bl.date_derniere_livraison AS date_livraison,
+                       h.motif AS motif_reception, h.dateEnregistrement AS date_reception,
+                       CONCAT(ur.prenom, ' ', ur.nom) AS recu_par,
+                       DATEDIFF(NOW(), bl.date_derniere_livraison) AS jours_depuis_livraison";
+        $from .= "
+                LEFT JOIN utilisateurs ur ON ur.id = h.idUtilisateur";
+
+        $where  = " WHERE bl.quantite_livree > 0 AND bl.date_derniere_livraison IS NOT NULL AND bl.date_derniere_livraison <= ?";
+        $params = [$fin . ' 23:59:59'];
+        if ($debut !== null) {
+            $where .= " AND bl.date_derniere_livraison >= ?";
+            $params[] = $debut . ' 00:00:00';
+        }
+
+        $stmt = $bdBASI->prepare($select . $from . $where . " ORDER BY bl.date_derniere_livraison DESC, bl.id DESC");
+        $stmt->execute($params);
+        $rows = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+        $stats = ['lignes' => 0, 'recu' => 0, 'attente' => 0, 'ecart' => 0, 'quantite_livree' => 0.0];
+        foreach ($rows as &$r) {
+            $r['statut_reception'] = magasinier_statutReception($r);
+            $stats['lignes']++;
+            $stats['quantite_livree'] += (float) $r['quantite_livree'];
+            switch ($r['statut_reception']) {
+                case 'recu': case 'presumee': case 'clos_ecart': $stats['recu']++; break;
+                case 'ecart':                                    $stats['ecart']++; break;
+                default:                                         $stats['attente']++; // attente + partiel
+            }
+            // La date/personne de réception n'a de sens que si quelque chose a été reçu.
+            if ((float) $r['quantite_recue'] <= 0.001) { $r['date_reception'] = null; $r['recu_par'] = null; }
+        }
+        unset($r);
+
+        echo json_encode([
+            'status' => 'success', 'data' => $rows, 'stats' => $stats,
+            'date_debut' => $debut, 'date_fin' => $fin, 'tout' => $tout,
+        ]);
+    } catch (\Throwable $e) {
+        error_log('[Magasinier][listerProduitsLivres] ' . $e->getMessage());
+        erreurSqlMagasinier("Impossible de charger l'historique des produits livrés.");
+    }
+}
+
+/* ═══════════════════════════════════════════════════════════════════════════
    ROUTAGE
    1 = listerBonsALivrer
    2 = detailBonMagasinier
    3 = confirmerLivraisonBon
+   4-6 = idem, circuit Investissement
+   7 = listerProduitsLivres (Fonctionnement) | 8 = idem Investissement
 ═══════════════════════════════════════════════════════════════════════════ */
 try {
     switch ($option) {
@@ -1261,6 +1398,14 @@ try {
 
         case 6:
             confirmerLivraisonBonInvestissement($bdBASI, $basiController, $sessionUserId, $sessionMatricule);
+            break;
+
+        case 7:
+            listerProduitsLivres($bdBASI, 'fonct');
+            break;
+
+        case 8:
+            listerProduitsLivres($bdBASI, 'invest');
             break;
 
         default:

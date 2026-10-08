@@ -125,8 +125,8 @@ $option = (int)$option;
 
 header('Content-Type: application/json; charset=utf-8');
 
-define('UPLOAD_DIR_FACTURES_DEFINITIVES', __DIR__ . '/../../documents/commandes/factures_definitives'); // ← ajuster
-define('UPLOAD_URL_FACTURES_DEFINITIVES', 'http://localhost/personnel/basi/documents/factures_definitives');                  // ← ajuster
+define('UPLOAD_DIR_FACTURES_DEFINITIVES', __DIR__ . '/../../documents/commandes'); // ← ajuster
+define('UPLOAD_URL_FACTURES_DEFINITIVES', 'http://localhost/personnel/basi/documents');                  // ← ajuster
 
 /* ═══════════════════════════════════════════════════════════════════════════
    ACTIONS

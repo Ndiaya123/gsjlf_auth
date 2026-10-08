@@ -134,8 +134,8 @@ header('Content-Type: application/json; charset=utf-8');
 // considéré comme "Cas 2" (Chèque/Virement/etc. — Banque + Numéro requis).
 define('MODES_SOLDE_JOURNALIER', [1, 4, 5]); // Liquide, Wave, Orange Money
 
-define('UPLOAD_DIR_RECUS_PAIEMENT', __DIR__ . '/../../documents/preuve_paiement'); // ← ajuster
-define('UPLOAD_URL_RECUS_PAIEMENT', 'http://localhost/personnel/basi/documents/preuve_paiement');
+define('UPLOAD_DIR_RECUS_PAIEMENT', __DIR__ . '/../../documents'); // ← ajuster
+define('UPLOAD_URL_RECUS_PAIEMENT', 'http://localhost/personnel/basi/documents');
 
 
 /* ═══════════════════════════════════════════════════════════════════════════
@@ -659,7 +659,7 @@ function effectuerPaiement(PDO $bdBASI, caisseCaissierController $basiController
         }
 
         $stmt = $bdBASI->prepare("
-            SELECT id, montant_total, montant_paye, id_mode_reglement, id_mode_paiement, idStatut, idTypePAP, livraison
+            SELECT id, nom_commande,montant_total, montant_paye, id_mode_reglement, id_mode_paiement, idStatut, idTypePAP, livraison
             FROM passer_achat_et_paiement
             WHERE id = ? AND idStatut = 6
             LIMIT 1
@@ -728,12 +728,16 @@ function effectuerPaiement(PDO $bdBASI, caisseCaissierController $basiController
                 echo json_encode(['status' => 'error', 'message' => 'Le reçu doit être un PDF, JPG ou PNG.']);
                 return;
             }
+            $tmp_dossier = UPLOAD_DIR_RECUS_PAIEMENT .'/'. $commande['nom_commande'];
+            if (!is_dir($tmp_dossier)) mkdir($tmp_dossier, 0755, true);
+
+
             $nomFichier   = 'recu_' . $idPAP . '_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $extensionParMime[$mimeType];
-            $cheminAbsolu = UPLOAD_DIR_RECUS_PAIEMENT . '/' . $nomFichier;
+            $cheminAbsolu = $tmp_dossier . '/' . $nomFichier;
             if (!move_uploaded_file($_FILES['recu']['tmp_name'], $cheminAbsolu)) {
                 throw new \RuntimeException("Échec de l'enregistrement du reçu.");
             }
-            $cheminRecu = UPLOAD_URL_RECUS_PAIEMENT . '/' . $nomFichier;
+            $cheminRecu = UPLOAD_URL_RECUS_PAIEMENT .'/'.$commande['nom_commande']. '/' . $nomFichier;
         }
 
         date_default_timezone_set('Africa/Dakar');

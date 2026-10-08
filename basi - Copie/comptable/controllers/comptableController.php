@@ -52,7 +52,7 @@ class comptableController extends BDBASI
 // ─── Connexion DB ─────────────────────────────────────────────────────────────
 $BDBASI         = new BDBASI();
 $bdBASI         = $BDBASI->connect();
-$basiController = new comptableController();
+$basiController = new respAchatController();
 
 if (!$bdBASI) {
     header('Content-Type: application/json; charset=utf-8');

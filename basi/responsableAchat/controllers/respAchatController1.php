@@ -14,7 +14,7 @@ if (empty($_SESSION['tmpIdBASI'])) {
     // die;
 }
 
-class comptaController extends BDBASI
+class respAchatController1 extends BDBASI
 {
 
     function tokenencrypt($data)
@@ -72,7 +72,7 @@ class comptaController extends BDBASI
 $BDBASI = new BDBASI();
 $bdBASI = $BDBASI->connect();
 
-$basiController = new respAchatController();
+$basiController = new respAchatController1();
 
 
 function valid_donnees($donnees)

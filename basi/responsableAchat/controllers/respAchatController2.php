@@ -27,7 +27,7 @@ $sessionUserId    = (int)$_SESSION['tmpIdBASI'];
 $sessionMatricule = trim($_SESSION['tmpMatricule']);
 
 // ─── Classe contrôleur ────────────────────────────────────────────────────────
-class comptableController extends BDBASI
+class respAchatController2 extends BDBASI
 {
     function tokenencrypt($data) {
         $key = hash('sha256','U@hbENTDRI@TCRI@T2022');
@@ -52,7 +52,7 @@ class comptableController extends BDBASI
 // ─── Connexion DB ─────────────────────────────────────────────────────────────
 $BDBASI         = new BDBASI();
 $bdBASI         = $BDBASI->connect();
-$basiController = new respAchatController();
+$basiController = new respAchatController2();
 
 if (!$bdBASI) {
     header('Content-Type: application/json; charset=utf-8');
@@ -485,7 +485,7 @@ function compta_calculerExecutionLignesBudget(PDO $bdBASI, int $idBudget): array
 }
 
 /** OPTION 53 — En-tête du budget + statistiques globales. Body JSON : { "budgetId": "<token>" } */
-function compta_detailBudgetExecution(PDO $bdBASI, respAchatController $basiController): void {
+function compta_detailBudgetExecution(PDO $bdBASI, respAchatController2 $basiController): void {
     try {
         $data = getJsonBody();
         $token = trim((string) ($data['budgetId'] ?? ''));
@@ -529,7 +529,7 @@ function compta_detailBudgetExecution(PDO $bdBASI, respAchatController $basiCont
 }
 
 /** OPTION 54 — Lignes du budget (graphe Gantt + tableau). Body JSON : { "budgetId": "<token>" } */
-function compta_listerLignesExecutionBudget(PDO $bdBASI, respAchatController $basiController): void {
+function compta_listerLignesExecutionBudget(PDO $bdBASI, respAchatController2 $basiController): void {
     try {
         $data = getJsonBody();
         $token = trim((string) ($data['budgetId'] ?? ''));

@@ -779,8 +779,8 @@ function listerToutesLignesPaiement(PDO $bdBASI, respAchatController $basiContro
      stocké dans `documents_pap.doc`).
 ═══════════════════════════════════════════════════════════════════════════ */
 
-define('UPLOAD_DIR_COMMANDES', __DIR__ . '/../../documents/commandes'); // ← ajuster selon l'arborescence réelle
-define('UPLOAD_URL_COMMANDES', 'http://localhost/personnel/basi/documents/commandes');          // ← chemin public correspondant
+define('UPLOAD_DIR_COMMANDES', __DIR__ . '/../../documents'); // ← ajuster selon l'arborescence réelle
+define('UPLOAD_URL_COMMANDES', 'http://localhost/personnel/basi/documents');          // ← chemin public correspondant
 
 function listerModesReglement(PDO $bdBASI): void {
     try {
@@ -983,9 +983,7 @@ function passerCommande(PDO $bdBASI, int $sessionUserId, string $sessionMatricul
             return;
         }
 
-        if (!is_dir(UPLOAD_DIR_COMMANDES)) {
-            mkdir(UPLOAD_DIR_COMMANDES, 0755, true);
-        }
+
 
         // ── Transaction ──────────────────────────────────────────────────────────
         $bdBASI->beginTransaction();
@@ -995,6 +993,12 @@ function passerCommande(PDO $bdBASI, int $sessionUserId, string $sessionMatricul
 
         $nomCommande  = 'commande_' . date('Ymd_His');
         $dateCreation = $dateEnregistrement;
+
+
+        $tmp_dossier = UPLOAD_DIR_COMMANDES . '/'. $nomCommande;
+        if (!is_dir($tmp_dossier)) {
+            mkdir($tmp_dossier, 0755, true);
+        }
 
         // montant_total NULL à cette étape : le prix n'est pas encore saisi.
         // idD retiré : une commande peut regrouper des lignes de plusieurs
@@ -1059,12 +1063,12 @@ function passerCommande(PDO $bdBASI, int $sessionUserId, string $sessionMatricul
         ");
         foreach ($prosforma as $pf) {
             $nomFichier   = 'proforma_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.pdf';
-            $cheminAbsolu = UPLOAD_DIR_COMMANDES . '/' . $nomFichier;
+            $cheminAbsolu = $tmp_dossier . '/' . $nomFichier;
 
             if (!move_uploaded_file($pf['fichier']['tmp_name'], $cheminAbsolu)) {
                 throw new \RuntimeException("Échec de l'enregistrement d'un fichier pro forma.");
             }
-            $cheminPublic = UPLOAD_URL_COMMANDES . '/' . $nomFichier;
+            $cheminPublic = UPLOAD_URL_COMMANDES .'/'.$nomCommande. '/' . $nomFichier;
 
             $stmtInsertDoc->execute([$idPAP, $cheminPublic, $pf['id_fournisseur'], $dateEnregistrement]);
         }
@@ -1135,8 +1139,8 @@ function passerCommande(PDO $bdBASI, int $sessionUserId, string $sessionMatricul
      reçu de paiement est souvent une photo/scan, pas nécessairement un PDF.
 ═══════════════════════════════════════════════════════════════════════════ */
 
-define('UPLOAD_DIR_JUSTIFICATIFS', __DIR__ . '/../../documents/justificatifs'); // ← ajuster si besoin
-define('UPLOAD_URL_JUSTIFICATIFS', 'http://localhost/personnel//basi/documents/justificatifs');
+define('UPLOAD_DIR_JUSTIFICATIFS', __DIR__ . '/../../documents'); // ← ajuster si besoin
+define('UPLOAD_URL_JUSTIFICATIFS', 'http://localhost/personnel//basi/documents');
 
 /**
  * Enregistre un paiement (passer_achat_et_paiement + ses lignes) pour une ou
@@ -1285,9 +1289,7 @@ function passerPaiement(PDO $bdBASI, int $sessionUserId, string $sessionMatricul
             return;
         }
 
-        if (!is_dir(UPLOAD_DIR_JUSTIFICATIFS)) {
-            mkdir(UPLOAD_DIR_JUSTIFICATIFS, 0755, true);
-        }
+
 
         // ── Transaction ──────────────────────────────────────────────────────────
         $bdBASI->beginTransaction();
@@ -1297,6 +1299,14 @@ function passerPaiement(PDO $bdBASI, int $sessionUserId, string $sessionMatricul
 
         $nomPaiement  = 'paiement_' . date('Ymd_His');
         $dateCreation = $dateEnregistrement;
+
+
+
+        $tmp_dossier = UPLOAD_DIR_JUSTIFICATIFS.'/'.$nomPaiement;
+
+        if (!is_dir($tmp_dossier)) {
+            mkdir($tmp_dossier, 0755, true);
+        }
 
         // idTypePAP = 2 (Passer au paiement) — distingue le TYPE de dossier ;
         // idStatut redevient un pur statut de cycle de vie, uniforme avec
@@ -1398,12 +1408,12 @@ function passerPaiement(PDO $bdBASI, int $sessionUserId, string $sessionMatricul
         foreach ($justificatifs as $j) {
             $ext        = $extensionParMime[$j['mime']] ?? 'bin';
             $nomFichier = 'justificatif_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
-            $cheminAbsolu = UPLOAD_DIR_JUSTIFICATIFS . '/' . $nomFichier;
+            $cheminAbsolu = $tmp_dossier . '/' . $nomFichier;
 
             if (!move_uploaded_file($j['tmp_name'], $cheminAbsolu)) {
                 throw new \RuntimeException("Échec de l'enregistrement d'un justificatif de paiement.");
             }
-            $cheminPublic = UPLOAD_URL_JUSTIFICATIFS . '/' . $nomFichier;
+            $cheminPublic = UPLOAD_URL_JUSTIFICATIFS.'/'.$nomPaiement . '/' . $nomFichier;
             $stmtInsertJustif->execute([$idPAP, $cheminPublic, $dateEnregistrement]);
         }
 

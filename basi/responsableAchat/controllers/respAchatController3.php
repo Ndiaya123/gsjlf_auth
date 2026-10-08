@@ -1,6 +1,6 @@
 <?php
 /**
- * caisseController.php
+ * respAchatController3.php
  * Module Comptabilité : gestion des alimentations de caisse.
  *
  * ⚠️ Hypothèses de schéma (à confirmer / ajuster) :
@@ -66,7 +66,7 @@ $sessionUserId    = (int)$_SESSION['tmpIdBASI'];
 $sessionMatricule = trim($_SESSION['tmpMatricule']);
 
 // ─── Classe contrôleur ────────────────────────────────────────────────────────
-class caisseController extends BDBASI
+class respAchatController3 extends BDBASI
 {
     function tokenencrypt($data) {
         $key = hash('sha256','U@hbENTDRI@TCRI@T2022');
@@ -84,7 +84,7 @@ class caisseController extends BDBASI
 try {
     $BDBASI           = new BDBASI();
     $bdBASI           = $BDBASI->connect();
-    $basiController   = new caisseController();
+    $basiController   = new respAchatController3();
 } catch (\Throwable $e) {
     error_log('[Caisse][Connexion] ' . $e->getMessage());
     header('Content-Type: application/json; charset=utf-8');
@@ -145,7 +145,7 @@ function erreurSqlCaisse(string $message = "Erreur lors de l'accès à la base d
    LOGIQUE PARTAGÉE DU CIRCUIT "Expression de besoin" (Fonctionnement) :
    bons de sortie, écarts, clôture de solde et calcul central des statuts.
    Fusionnée directement ici (plus d'include_once vers un fichier séparé) —
-   ce bloc est IDENTIQUE dans caisseController.php, magasinierController.php
+   ce bloc est IDENTIQUE dans respAchatController3.php, magasinierController.php
    et personnelController.php : toute correction doit être reportée dans les
    TROIS fichiers pour rester cohérente.
    cronReceptionPresumee.php contient sa propre copie de ce même bloc (script
@@ -549,7 +549,7 @@ function ebw_receptionPresumee(PDO $bd, int $delaiJours, string $date): int {
    clôture de solde) — miroir exact du bloc ebw_* (Fonctionnement) ci-dessus,
    adapté au schéma Investissement : pas de quantite_reelle (quantite_demandee
    en tient lieu, il n'y a pas d'étape Validée/Rejetée), pas de idDL.
-   Identique dans caisseController.php, magasinierController.php et
+   Identique dans respAchatController3.php, magasinierController.php et
    personnelController.php : toute correction doit être reportée dans les
    TROIS fichiers pour rester cohérente.
 
@@ -946,7 +946,7 @@ function alimentationInitialeExiste(PDO $bdBASI, int $idCaissier, string $dateAl
  *   - anneeDebut, anneeFin : intervalle d'années (défaut : année en cours pour les deux)
  *   - statut : '' (tous, défaut) | '1' | '2' | '3'
  */
-function listerAlimentations(PDO $bdBASI, caisseController $basiController): void {
+function listerAlimentations(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $anneeCourante = (int) date('Y');
         $anneeFin   = (int) inputValueCaisse('anneeFin', $anneeCourante);
@@ -1040,7 +1040,7 @@ function listerCaissiers(PDO $bdBASI): void {
  * Détail d'une alimentation, pour pré-remplir le formulaire de modification.
  * Paramètre : token (chiffré de caisse_alimentation.id)
  */
-function detailAlimentation(PDO $bdBASI, caisseController $basiController): void {
+function detailAlimentation(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') {
@@ -1210,7 +1210,7 @@ function creerAlimentation(PDO $bdBASI, int $sessionUserId, string $sessionMatri
  * Champs attendus : token, idCaissier, dateAlimentation, idTypeAC,
  * commentaire, montantLiquide, montantOM, montantWave
  */
-function modifierAlimentation(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void {
+function modifierAlimentation(PDO $bdBASI, respAchatController3 $basiController, int $sessionUserId, string $sessionMatricule): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') { echo json_encode(['status'=>'error','message'=>'Token manquant.']); return; }
@@ -1370,7 +1370,7 @@ function modifierAlimentation(PDO $bdBASI, caisseController $basiController, int
  * Liste des paiements (paiement_pap), filtrable par intervalle de dates.
  * Par défaut : paiements du jour (dateDebut vide → dateFin seule).
  */
-function listerPaiements(PDO $bdBASI, caisseController $basiController): void {
+function listerPaiements(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $dateFin = trim((string) inputValueCaisse('dateFin', ''));
         if ($dateFin === '') $dateFin = date('Y-m-d');
@@ -1450,7 +1450,7 @@ function listerPaiements(PDO $bdBASI, caisseController $basiController): void {
  * Règle tranches : une tranche ne peut être annulée que si aucune tranche
  * suivante (ordre supérieur) n'a déjà été réglée.
  */
-function modifierPaiement(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void {
+function modifierPaiement(PDO $bdBASI, respAchatController3 $basiController, int $sessionUserId, string $sessionMatricule): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
@@ -1589,7 +1589,7 @@ function modifierPaiement(PDO $bdBASI, caisseController $basiController, int $se
  * Liste de toutes les opérations (passer_achat_et_paiement), tous statuts,
  * avec statistiques par statut (non affectées par le filtre).
  */
-function listerToutesOperationsComptable(PDO $bdBASI, caisseController $basiController): void {
+function listerToutesOperationsComptable(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $statutFiltre = (int) inputValueCaisse('statut', 0);
 
@@ -1654,7 +1654,7 @@ function listerToutesOperationsComptable(PDO $bdBASI, caisseController $basiCont
  * Détail complet d'une opération, quel que soit son statut.
  * Paramètre : token (chiffré de idPAP)
  */
-function detailOperationComptable(PDO $bdBASI, caisseController $basiController): void {
+function detailOperationComptable(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') {
@@ -1745,7 +1745,7 @@ function detailOperationComptable(PDO $bdBASI, caisseController $basiController)
  * Historique / suivi d'une opération.
  * Paramètre : token (chiffré de idPAP)
  */
-function suiviOperationComptable(PDO $bdBASI, caisseController $basiController): void {
+function suiviOperationComptable(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') {
@@ -1814,7 +1814,7 @@ function suiviOperationComptable(PDO $bdBASI, caisseController $basiController):
  * Liste des livraisons, filtrable par intervalle d'années (Début vide par
  * défaut, Fin = année en cours par défaut), années de 2026 à l'année en cours.
  */
-function listerLivraisons(PDO $bdBASI, caisseController $basiController): void {
+function listerLivraisons(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $anneeCourante = (int) date('Y');
         $anneeFin = (int) inputValueCaisse('anneeFin', $anneeCourante);
@@ -1854,7 +1854,7 @@ function listerLivraisons(PDO $bdBASI, caisseController $basiController): void {
  * Liste des commandes d'achat livrables : idTypePAP = 1, idStatut = 6,
  * livraison = 0 — pour le menu déroulant du formulaire de création.
  */
-function listerCommandesLivrables(PDO $bdBASI, caisseController $basiController): void {
+function listerCommandesLivrables(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $stmt = $bdBASI->query("
             SELECT id, id as numero, nom_commande
@@ -1879,7 +1879,7 @@ function listerCommandesLivrables(PDO $bdBASI, caisseController $basiController)
  * Lignes d'une commande d'achat sélectionnée, avec quantité restant à
  * livrer (quantite_reelle - quantite_livree). Paramètre : token (idPAP).
  */
-function detailCommandeLivraison(PDO $bdBASI, caisseController $basiController): void {
+function detailCommandeLivraison(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
@@ -1929,7 +1929,7 @@ function detailCommandeLivraison(PDO $bdBASI, caisseController $basiController):
  * Détail d'une livraison déjà enregistrée (action "Consulter").
  * Paramètre : token (chiffré de livraison.id)
  */
-function detailLivraison(PDO $bdBASI, caisseController $basiController): void {
+function detailLivraison(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
@@ -2004,7 +2004,7 @@ function detailLivraison(PDO $bdBASI, caisseController $basiController): void {
  *
  * Paramètre : token (chiffré de idPAP)
  */
-function detailDossierComplet(PDO $bdBASI, caisseController $basiController): void {
+function detailDossierComplet(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
@@ -2139,7 +2139,7 @@ function detailDossierComplet(PDO $bdBASI, caisseController $basiController): vo
  * projet, à confirmer).
  */
 
-function creerLivraison(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void {
+function creerLivraison(PDO $bdBASI, respAchatController3 $basiController, int $sessionUserId, string $sessionMatricule): void {
     try {
         $token = trim((string)($_POST['token'] ?? ''));
         if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
@@ -2183,7 +2183,10 @@ function creerLivraison(PDO $bdBASI, caisseController $basiController, int $sess
             return;
         }
 
-        if (!is_dir(UPLOAD_DIR_BON_LIVRAISON)) mkdir(UPLOAD_DIR_BON_LIVRAISON, 0755, true);
+
+        $tmp_dossier = UPLOAD_DIR_BON_LIVRAISON .'/'.$stmtC['nom_commande'];
+
+        if (!is_dir($tmp_dossier)) mkdir($tmp_dossier, 0755, true);
         $finfo    = new finfo(FILEINFO_MIME_TYPE);
         $mimeType = $finfo->file($_FILES['fichier_bon_livraison']['tmp_name']);
         $extensionParMime = ['application/pdf' => 'pdf', 'image/jpeg' => 'jpg', 'image/png' => 'png'];
@@ -2192,11 +2195,11 @@ function creerLivraison(PDO $bdBASI, caisseController $basiController, int $sess
             return;
         }
         $nomFichier   = 'bon_livraison_' . $idPAP . '_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $extensionParMime[$mimeType];
-        $cheminAbsolu = UPLOAD_DIR_BON_LIVRAISON . '/' . $nomFichier;
+        $cheminAbsolu = $tmp_dossier . '/' . $nomFichier;
         if (!move_uploaded_file($_FILES['fichier_bon_livraison']['tmp_name'], $cheminAbsolu)) {
             throw new \RuntimeException("Échec de l'enregistrement du bon de livraison.");
         }
-        $cheminBonLivraison = UPLOAD_URL_BON_LIVRAISON . '/' . $nomFichier;
+        $cheminBonLivraison = UPLOAD_URL_BON_LIVRAISON . '/' .$stmtC['nom_commande']. '/' . $nomFichier;
 
         date_default_timezone_set('Africa/Dakar');
         $dateEnregistrement = date('Y-m-d H:i:s');
@@ -2438,7 +2441,7 @@ const MSG_INVENTAIRE_RETOUR = "Un inventaire est en cours : aucun retour en stoc
  * entièrement servies (au moins une ligne active avec quantite_reelle >
  * quantite_sortie).
  */
-//function listerExpressionsBesoinSortie(PDO $bdBASI, caisseController $basiController): void {
+//function listerExpressionsBesoinSortie(PDO $bdBASI, respAchatController3 $basiController): void {
 //    try {
 //        $stmt = $bdBASI->query("
 //            SELECT eb.id, eb.nom_expression, eb.date_creation, eb.idDirection,
@@ -2471,7 +2474,7 @@ const MSG_INVENTAIRE_RETOUR = "Un inventaire est en cours : aucun retour en stoc
  * ligne active, quantité restant à sortir, stock disponible, et quantité
  * qui SERA effectivement sortie (MIN des deux — jamais modifiable).
  */
-//function detailSortieExpressionBesoin(PDO $bdBASI, caisseController $basiController): void {
+//function detailSortieExpressionBesoin(PDO $bdBASI, respAchatController3 $basiController): void {
 //    try {
 //        $token = trim((string) inputValueCaisse('token', ''));
 //        if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
@@ -2546,7 +2549,7 @@ const MSG_INVENTAIRE_RETOUR = "Un inventaire est en cours : aucun retour en stoc
  *
  * Champs attendus : token, quantites: [{ idEBP, quantite }, ...]
  */
-//function effectuerSortieExpressionBesoin(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void {
+//function effectuerSortieExpressionBesoin(PDO $bdBASI, respAchatController3 $basiController, int $sessionUserId, string $sessionMatricule): void {
 //    try {
 //        $token = trim((string) inputValueCaisse('token', ''));
 //        if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
@@ -2709,10 +2712,10 @@ const MSG_INVENTAIRE_RETOUR = "Un inventaire est en cours : aucun retour en stoc
 
 /**
  * fonctions-modifiees-sortie.php
- * Extrait des 3 fonctions de caisseController.php modifiées pour le
+ * Extrait des 3 fonctions de respAchatController3.php modifiées pour le
  * module Sortie de produits (statuts 3=À sortir, 5=Partiellement livré,
  * 6=Terminé) — à coller telles quelles à la place des versions existantes
- * dans caisseController.php (mêmes noms de fonction, remplacement direct).
+ * dans respAchatController3.php (mêmes noms de fonction, remplacement direct).
  *
  * Routage concerné (déjà en place, inchangé) :
  *   option 26 = listerExpressionsBesoinSortie
@@ -2726,7 +2729,7 @@ const MSG_INVENTAIRE_RETOUR = "Un inventaire est en cours : aucun retour en stoc
  * ligne active, quantité restant à sortir, stock disponible, et quantité
  * qui SERA effectivement sortie (MIN des deux — jamais modifiable).
  */
-function detailSortieExpressionBesoin(PDO $bdBASI, caisseController $basiController): void
+function detailSortieExpressionBesoin(PDO $bdBASI, respAchatController3 $basiController): void
 {
     try {
         $token = trim((string)inputValueCaisse('token', ''));
@@ -2808,7 +2811,7 @@ function detailSortieExpressionBesoin(PDO $bdBASI, caisseController $basiControl
  *
  * Champs attendus : token, quantites: [{ idEBP, quantite }, ...]
  */
-function effectuerSortieExpressionBesoin(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void
+function effectuerSortieExpressionBesoin(PDO $bdBASI, respAchatController3 $basiController, int $sessionUserId, string $sessionMatricule): void
 {
     try {
         $token = trim((string)inputValueCaisse('token', ''));
@@ -2978,7 +2981,7 @@ function effectuerSortieExpressionBesoin(PDO $bdBASI, caisseController $basiCont
    2=Soumise, 3=Partiellement sorti, 4=Terminé.
 ═══════════════════════════════════════════════════════════════════════════ */
 
-function listerExpressionsBesoinSortieInvestissement(PDO $bdBASI, caisseController $basiController): void {
+function listerExpressionsBesoinSortieInvestissement(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         // Filtre par défaut "2,3" (Soumise + Partiellement sorti). "4" (Terminé)
         // regroupe désormais 4 à 8 : tout ce qui est entièrement sorti, quel que
@@ -3040,7 +3043,7 @@ function listerExpressionsBesoinSortieInvestissement(PDO $bdBASI, caisseControll
     }
 }
 
-function detailSortieExpressionBesoinInvestissement(PDO $bdBASI, caisseController $basiController): void {
+function detailSortieExpressionBesoinInvestissement(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
@@ -3109,7 +3112,7 @@ function detailSortieExpressionBesoinInvestissement(PDO $bdBASI, caisseControlle
  *
  * Champs attendus : token, quantites: [{ idEBIP, quantite }, ...]
  */
-function effectuerSortieExpressionBesoinInvestissement(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void {
+function effectuerSortieExpressionBesoinInvestissement(PDO $bdBASI, respAchatController3 $basiController, int $sessionUserId, string $sessionMatricule): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
@@ -3488,7 +3491,7 @@ function regulariserEcartBonSortie(PDO $bdBASI, int $sessionUserId, string $sess
  * OPTION 45 — Clôture le solde d'une demande (renonce à sortir le reste).
  * Champs attendus : token, commentaire (motif obligatoire)
  */
-function cloturerSoldeExpressionBesoin(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void {
+function cloturerSoldeExpressionBesoin(PDO $bdBASI, respAchatController3 $basiController, int $sessionUserId, string $sessionMatricule): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         $commentaire = trim((string) inputValueCaisse('commentaire', ''));
@@ -3589,7 +3592,7 @@ function regulariserEcartBonSortieInvestissement(PDO $bdBASI, int $sessionUserId
  * OPTION 48 — Clôture le solde d'une demande Investissement.
  * Champs attendus : token, commentaire (motif obligatoire)
  */
-function cloturerSoldeExpressionBesoinInvestissement(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void {
+function cloturerSoldeExpressionBesoinInvestissement(PDO $bdBASI, respAchatController3 $basiController, int $sessionUserId, string $sessionMatricule): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         $commentaire = trim((string) inputValueCaisse('commentaire', ''));
@@ -3712,7 +3715,7 @@ function sqlLignesInventaireBase(): string {
  * tous les produits id_type_product = 1 (quantite_systeme = Stock_actuel
  * au moment de la création).
  */
-function creerInventaire(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void {
+function creerInventaire(PDO $bdBASI, respAchatController3 $basiController, int $sessionUserId, string $sessionMatricule): void {
     try {
         $stmtActif = $bdBASI->query("SELECT id FROM inventaire WHERE etat = 1 LIMIT 1");
         if ($stmtActif && $stmtActif->fetch()) {
@@ -3761,7 +3764,7 @@ function creerInventaire(PDO $bdBASI, caisseController $basiController, int $ses
 /**
  * Liste de tous les inventaires (en cours et terminés).
  */
-function listerInventaires(PDO $bdBASI, caisseController $basiController): void {
+function listerInventaires(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $stmt = $bdBASI->query("
             SELECT i.id, i.reference, i.etat, i.idStatut, i.dateDebut, i.dateFin, i.dateSoumission,
@@ -3793,7 +3796,7 @@ function listerInventaires(PDO $bdBASI, caisseController $basiController): void 
  * Détail complet d'un inventaire (en-tête + lignes), pour l'écran de
  * validation (idStatut = 3) ou la consultation en mode Détail (idStatut = 4).
  */
-function detailInventaire(PDO $bdBASI, caisseController $basiController): void {
+function detailInventaire(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
@@ -3855,7 +3858,7 @@ function detailInventaire(PDO $bdBASI, caisseController $basiController): void {
  * Champs attendus : token, lignes: [{ idIP, quantite_valide }, ...],
  * observation_comptable (optionnelle)
  */
-function validerInventaire(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void {
+function validerInventaire(PDO $bdBASI, respAchatController3 $basiController, int $sessionUserId, string $sessionMatricule): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
@@ -3941,7 +3944,7 @@ function validerInventaire(PDO $bdBASI, caisseController $basiController, int $s
     }
 }
 
-function uploaderFD(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void {
+function uploaderFD(PDO $bdBASI, respAchatController3 $basiController, int $sessionUserId, string $sessionMatricule): void {
     try {
         $token = trim((string)($_POST['token'] ?? ''));
         if ($token === '') {
@@ -3954,7 +3957,7 @@ function uploaderFD(PDO $bdBASI, caisseController $basiController, int $sessionU
             return;
         }
 
-        $stmtC = $bdBASI->prepare("SELECT id,nom_commande FROM passer_achat_et_paiement WHERE id = ? AND idStatut = 4 AND idTypePAP = 1 LIMIT 1");
+        $stmtC = $bdBASI->prepare("SELECT id FROM passer_achat_et_paiement WHERE id = ? AND idStatut = 4 AND idTypePAP = 1 LIMIT 1");
         $stmtC->execute([$idPAP]);
         if (!$stmtC->fetch()) {
             echo json_encode(['status' => 'error', 'message' => 'Dossier introuvable ou non éligible (doit être une commande Acceptée).']);
@@ -3980,20 +3983,19 @@ function uploaderFD(PDO $bdBASI, caisseController $basiController, int $sessionU
             return;
         }
 
-        $tmp_dossier = UPLOAD_DIR_COMMANDES.'/'.$stmtC['nom_commande'];
-        if (!is_dir($tmp_dossier)) {
-            mkdir($tmp_dossier, 0755, true);
+        if (!is_dir(UPLOAD_DIR_COMMANDES)) {
+            mkdir(UPLOAD_DIR_COMMANDES, 0755, true);
         }
 
         date_default_timezone_set('Africa/Dakar');
         $dateEnregistrement = date('Y-m-d H:i:s');
 
         $nomFichier   = 'facture_difitive_' . $idPAP . '_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.pdf';
-        $cheminAbsolu = $tmp_dossier . '/' . $nomFichier;
+        $cheminAbsolu = UPLOAD_DIR_COMMANDES . '/' . $nomFichier;
         if (!move_uploaded_file($_FILES['bc']['tmp_name'], $cheminAbsolu)) {
             throw new \RuntimeException("Échec de l'enregistrement du bon de commande.");
         }
-        $cheminPublic = UPLOAD_URL_COMMANDES .'/'.$stmtC['nom_commande'].'/' . $nomFichier;
+        $cheminPublic = UPLOAD_URL_COMMANDES . '/' . $nomFichier;
 
         $bdBASI->beginTransaction();
 
@@ -4031,7 +4033,7 @@ function uploaderFD(PDO $bdBASI, caisseController $basiController, int $sessionU
 }
 
 
-function envoyerCaisse(PDO $bdBASI, caisseController $basiController, int $sessionUserId, string $sessionMatricule): void {
+function envoyerCaisse(PDO $bdBASI, respAchatController3 $basiController, int $sessionUserId, string $sessionMatricule): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') {
@@ -4101,15 +4103,15 @@ function envoyerCaisse(PDO $bdBASI, caisseController $basiController, int $sessi
 
 
 /**
- * caisseController-diff-sortie.php
- * Parties de caisseController.php modifiées/ajoutées pour la dernière
+ * respAchatController3-diff-sortie.php
+ * Parties de respAchatController3.php modifiées/ajoutées pour la dernière
  * demande (filtre combiné + boutons Voir/Consulter sortie).
  *
  * ── 1) listerExpressionsBesoinSortie (option 26) — MODIFIÉE ──
  * Remplace intégralement la fonction existante du même nom.
  */
 
-function listerExpressionsBesoinSortie(PDO $bdBASI, caisseController $basiController): void {
+function listerExpressionsBesoinSortie(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         // Filtre : liste de statuts séparés par virgule. Par défaut "3,5"
         // (À sortir + Partiellement livré combinés) pour que le comptable ne
@@ -4179,7 +4181,7 @@ function listerExpressionsBesoinSortie(PDO $bdBASI, caisseController $basiContro
 
 
 
-function voirExpressionBesoinCaisse(PDO $bdBASI, caisseController $basiController): void {
+function voirExpressionBesoinCaisse(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
@@ -4273,7 +4275,7 @@ function voirExpressionBesoinCaisse(PDO $bdBASI, caisseController $basiControlle
  * que "Informations sur les sorties" côté chef de direction, sans
  * restriction de direction.
  */
-function consulterSortiesExpressionBesoinCaisse(PDO $bdBASI, caisseController $basiController): void {
+function consulterSortiesExpressionBesoinCaisse(PDO $bdBASI, respAchatController3 $basiController): void {
     try {
         $token = trim((string) inputValueCaisse('token', ''));
         if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }

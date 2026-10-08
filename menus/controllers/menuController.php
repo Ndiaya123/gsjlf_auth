@@ -186,6 +186,125 @@ class menuController extends BDP
     /**
      * Rend une section du menu (groupe de tâches potentiellement regroupées par application + sous-menu)
      */
+//    function renderSection(array $taches, ?string $labelSection, string $url_page): string
+//    {
+//        if (empty($taches)) return '';
+//
+//        $html = '';
+//
+//        // ── Regrouper par application (idAppli) ──────────────
+//        $parApplication = [];
+//        foreach ($taches as $t) {
+//            $key = $t->idAppli ?? '__sans_appli__';
+//            $parApplication[$key][] = $t;
+//        }
+//
+//        foreach ($parApplication as $idAppli => $tachesAppli) {
+//
+//            // Nom de l'application pour le menu-section
+//            $nomAppli = $tachesAppli[0]->nomApplication ?? null;
+//
+//            // ── Entête de section (nomApplication ou label fourni) ────────────
+////            $titreSection = $nomAppli ?? $labelSection;
+//            $titreSection =  $labelSection ?? $nomAppli;
+//
+//            if ($titreSection) {
+//                $html .= <<<HTML
+//            <div class="menu-item">
+//                <div class="menu-content pb-2">
+//                    <span class="menu-section text-muted text-uppercase fs-8 ls-1">{$titreSection}</span>
+//                </div>
+//            </div>
+//            HTML;
+//            }
+//
+//            // ── Séparer : tâches Accueil/Dashboard vs reste ───────────────────
+//            $accueilItems = array_filter($tachesAppli, fn($t) => $t->statut == 1);
+//            $autresItems = array_filter($tachesAppli, fn($t) => $t->statut == 0);
+//
+//            // ── Tâches Accueil/Dashboard EN HAUT (liens directs, pas d'accordion) ─
+//            foreach ($accueilItems as $t) {
+//                $isActive = $this->isUrlActive($t->url, $url_page) ? 'active' : '';
+//                $iconHtml = $this->buildIcon($t->icon ?? null);
+//                $html .= <<<HTML
+//            <div class="menu-item">
+//                <a class="menu-link {$isActive}" href="{$t->url}">
+//                    {$iconHtml}
+//                    <span class="menu-title">{$t->nom}</span>
+//                </a>
+//            </div>
+//            HTML;
+//            }
+//
+//            // ── Regrouper le reste par sousMenu ───────────────────────────────
+//            $parSousMenu = [];
+//            foreach ($autresItems as $t) {
+//                $key = $t->sousMenu ?? '__sans_sous_menu__';
+//                $parSousMenu[$key][] = $t;
+//            }
+//
+//            foreach ($parSousMenu as $nomSousMenu => $tachesDuSousMenu) {
+//
+//                if ($nomSousMenu === '__sans_sous_menu__') {
+//                    // ── Liens directs (pas de sous-menu) ──────────────────────
+//                    foreach ($tachesDuSousMenu as $t) {
+//                        $isActive = $this->isUrlActive($t->url, $url_page) ? 'active' : '';
+//                        $iconHtml = $this->buildIcon($t->icon ?? null);
+//                        $html .= <<<HTML
+//                    <div class="menu-item">
+//                        <a class="menu-link {$isActive}" href="{$t->url}">
+//                            {$iconHtml}
+//                            <span class="menu-title">{$t->nom}</span>
+//                        </a>
+//                    </div>
+//                    HTML;
+//                    }
+//                } else {
+//                    // ── Accordion sous-menu ────────────────────────────────────
+//                    $sousMenuActif = array_reduce(
+//                        $tachesDuSousMenu,
+//                        fn($carry, $t) => $carry || $this->isUrlActive($t->url, $url_page),
+//                        false
+//                    );
+//                    $showClass = $sousMenuActif ? 'show' : '';
+//                    $iconSousMenu = $this->buildIcon($tachesDuSousMenu[0]->icon ?? null);
+//
+//                    $html .= <<<HTML
+//                <div data-kt-menu-trigger="click" class="menu-item menu-accordion {$showClass}">
+//                    <span class="menu-link">
+//                        {$iconSousMenu}
+//                        <span class="menu-title">{$nomSousMenu}</span>
+//                        <span class="menu-arrow"></span>
+//                    </span>
+//                    <div class="menu-sub menu-sub-accordion menu-active-bg">
+//                HTML;
+//
+//                    foreach ($tachesDuSousMenu as $t) {
+//                        $isActive = $this->isUrlActive($t->url, $url_page) ? 'active' : '';
+//                        $html .= <<<HTML
+//                        <div class="menu-item">
+//                            <a class="menu-link {$isActive}" href="{$t->url}">
+//                                <span class="menu-bullet">
+//                                    <span class="bullet bullet-dot"></span>
+//                                </span>
+//                                <span class="menu-title">{$t->nom}</span>
+//                            </a>
+//                        </div>
+//                    HTML;
+//                    }
+//
+//                    $html .= <<<HTML
+//                    </div>
+//                </div>
+//                HTML;
+//                }
+//            }
+//        }
+//
+//        return $html;
+//    }
+
+
     function renderSection(array $taches, ?string $labelSection, string $url_page): string
     {
         if (empty($taches)) return '';
@@ -205,8 +324,7 @@ class menuController extends BDP
             $nomAppli = $tachesAppli[0]->nomApplication ?? null;
 
             // ── Entête de section (nomApplication ou label fourni) ────────────
-//            $titreSection = $nomAppli ?? $labelSection;
-            $titreSection =  $labelSection ?? $nomAppli;
+            $titreSection = $labelSection ?? $nomAppli;
 
             if ($titreSection) {
                 $html .= <<<HTML
@@ -236,21 +354,57 @@ class menuController extends BDP
             HTML;
             }
 
-            // ── Regrouper le reste par sousMenu ───────────────────────────────
-            $parSousMenu = [];
+            // ──────────────────────────────────────────────────────────────
+            // Regrouper le reste : LISTE ORDONNÉE de groupes (et non plus un
+            // tableau associatif clé=nom du sous-menu), pour préserver
+            // l'entrelacement exact tâches libres / rubriques renvoyé par le
+            // tri SQL (ordre). Chaque tâche libre = son propre groupe.
+            // Chaque sous-menu = un seul groupe, créé à la position de sa
+            // première tâche, les suivantes s'y ajoutant sans le déplacer.
+            // ──────────────────────────────────────────────────────────────
+            $groupes = [];
+
             foreach ($autresItems as $t) {
-                $key = $t->sousMenu ?? '__sans_sous_menu__';
-                $parSousMenu[$key][] = $t;
+                $nomSousMenu = $t->sousMenu ?? null;
+
+                if ($nomSousMenu === null || $nomSousMenu === '') {
+                    // Tâche libre : toujours un nouveau groupe indépendant
+                    $groupes[] = [
+                        'type'   => 'tache',
+                        'taches' => [$t],
+                    ];
+                    continue;
+                }
+
+                // Chercher si ce sous-menu a déjà un groupe ouvert
+                $indexExistant = null;
+                foreach ($groupes as $idx => $g) {
+                    if ($g['type'] === 'sousMenu' && $g['nom'] === $nomSousMenu) {
+                        $indexExistant = $idx;
+                        break;
+                    }
+                }
+
+                if ($indexExistant !== null) {
+                    $groupes[$indexExistant]['taches'][] = $t;
+                } else {
+                    $groupes[] = [
+                        'type'   => 'sousMenu',
+                        'nom'    => $nomSousMenu,
+                        'taches' => [$t],
+                    ];
+                }
             }
 
-            foreach ($parSousMenu as $nomSousMenu => $tachesDuSousMenu) {
+            // ── Rendu, dans l'ordre exact de $groupes ─────────────────────────
+            foreach ($groupes as $groupe) {
 
-                if ($nomSousMenu === '__sans_sous_menu__') {
-                    // ── Liens directs (pas de sous-menu) ──────────────────────
-                    foreach ($tachesDuSousMenu as $t) {
-                        $isActive = $this->isUrlActive($t->url, $url_page) ? 'active' : '';
-                        $iconHtml = $this->buildIcon($t->icon ?? null);
-                        $html .= <<<HTML
+                if ($groupe['type'] === 'tache') {
+                    // ── Lien direct (pas de sous-menu) ────────────────────────
+                    $t = $groupe['taches'][0];
+                    $isActive = $this->isUrlActive($t->url, $url_page) ? 'active' : '';
+                    $iconHtml = $this->buildIcon($t->icon ?? null);
+                    $html .= <<<HTML
                     <div class="menu-item">
                         <a class="menu-link {$isActive}" href="{$t->url}">
                             {$iconHtml}
@@ -258,18 +412,22 @@ class menuController extends BDP
                         </a>
                     </div>
                     HTML;
-                    }
-                } else {
-                    // ── Accordion sous-menu ────────────────────────────────────
-                    $sousMenuActif = array_reduce(
-                        $tachesDuSousMenu,
-                        fn($carry, $t) => $carry || $this->isUrlActive($t->url, $url_page),
-                        false
-                    );
-                    $showClass = $sousMenuActif ? 'show' : '';
-                    $iconSousMenu = $this->buildIcon($tachesDuSousMenu[0]->icon ?? null);
+                    continue;
+                }
 
-                    $html .= <<<HTML
+                // ── Accordion sous-menu ────────────────────────────────────
+                $tachesDuSousMenu = $groupe['taches'];
+                $nomSousMenu = $groupe['nom'];
+
+                $sousMenuActif = array_reduce(
+                    $tachesDuSousMenu,
+                    fn($carry, $t) => $carry || $this->isUrlActive($t->url, $url_page),
+                    false
+                );
+                $showClass = $sousMenuActif ? 'show' : '';
+                $iconSousMenu = $this->buildIcon($tachesDuSousMenu[0]->icon ?? null);
+
+                $html .= <<<HTML
                 <div data-kt-menu-trigger="click" class="menu-item menu-accordion {$showClass}">
                     <span class="menu-link">
                         {$iconSousMenu}
@@ -279,9 +437,9 @@ class menuController extends BDP
                     <div class="menu-sub menu-sub-accordion menu-active-bg">
                 HTML;
 
-                    foreach ($tachesDuSousMenu as $t) {
-                        $isActive = $this->isUrlActive($t->url, $url_page) ? 'active' : '';
-                        $html .= <<<HTML
+                foreach ($tachesDuSousMenu as $t) {
+                    $isActive = $this->isUrlActive($t->url, $url_page) ? 'active' : '';
+                    $html .= <<<HTML
                         <div class="menu-item">
                             <a class="menu-link {$isActive}" href="{$t->url}">
                                 <span class="menu-bullet">
@@ -291,19 +449,20 @@ class menuController extends BDP
                             </a>
                         </div>
                     HTML;
-                    }
+                }
 
-                    $html .= <<<HTML
+                $html .= <<<HTML
                     </div>
                 </div>
                 HTML;
-                }
             }
         }
 
         return $html;
     }
 
+    // Stubs pour que ce fichier isolé soit syntaxiquement validable seul ;
+    // dans votre classe menuController réelle, ces méthodes existent déjà.
 
     /**
      * Vérifie si une URL de tâche correspond à la page active

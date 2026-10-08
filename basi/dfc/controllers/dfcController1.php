@@ -720,6 +720,244 @@ function listerCommentairesDossier(PDO $bdBASI, dfcController $dfcController): v
     }
 }
 
+
+
+/**
+ * Crée un nouvel inventaire — impossible si un inventaire etat = 1 existe
+ * déjà. Génère automatiquement les lignes inventaire_produit à partir de
+ * tous les produits id_type_product = 1 (quantite_systeme = Stock_actuel
+ * au moment de la création).
+ */
+function creerInventaire(PDO $bdBASI, dfcController $dfcController, int $sessionUserId, string $sessionMatricule): void {
+    try {
+        $stmtActif = $bdBASI->query("SELECT id FROM inventaire WHERE etat = 1 LIMIT 1");
+        if ($stmtActif && $stmtActif->fetch()) {
+            echo json_encode(['status' => 'error', 'message' => 'Un inventaire est déjà en cours : impossible d\'en créer un nouveau.']);
+            return;
+        }
+
+        date_default_timezone_set('Africa/Dakar');
+        $dateEnregistrement = date('Y-m-d H:i:s');
+        $reference = 'inventaire_' . date('Ymd_His');
+
+        $bdBASI->beginTransaction();
+
+        $bdBASI->prepare("
+            INSERT INTO inventaire
+                (reference, etat, idStatut, dateDebut, dateFin, dateSoumission, observation_operateur, observation_comptable, idUtilisateur, dateEnregistrement)
+            VALUES (?, 1, 1, ?, NULL, NULL, NULL, NULL, ?, ?)
+        ")->execute([$reference, $dateEnregistrement, $sessionUserId, $dateEnregistrement]);
+        $idI = (int) $bdBASI->lastInsertId();
+
+        insererHistoriqueInventaire($bdBASI, $idI, "Création de l'inventaire (par $sessionMatricule)", $dateEnregistrement);
+
+        $stmtProduits = $bdBASI->query("SELECT idP, Stock_actuel FROM product WHERE id_type_product = 1");
+        $produits = $stmtProduits ? $stmtProduits->fetchAll(PDO::FETCH_ASSOC) : [];
+
+        $stmtInsertLigne = $bdBASI->prepare("
+            INSERT INTO inventaire_produit (idI, idP, quantite_systeme, quantite_operateur, quantite_valide, dateEnregistrement)
+            VALUES (?, ?, ?, NULL, NULL, ?)
+        ");
+        foreach ($produits as $p) {
+            $stmtInsertLigne->execute([$idI, (int) $p['idP'], (float) $p['Stock_actuel'], $dateEnregistrement]);
+            $idIP = (int) $bdBASI->lastInsertId();
+            insererHistoriqueInventaireProduit($bdBASI, $idIP, "Création de la ligne d'inventaire (par $sessionMatricule)", $dateEnregistrement);
+        }
+
+        $bdBASI->commit();
+
+        echo json_encode(['status' => 'success', 'message' => 'Inventaire créé avec succès.', 'reference' => $reference, 'nombreProduits' => count($produits)]);
+    } catch (\Throwable $e) {
+        if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+        error_log('[Inventaire][creerInventaire] ' . $e->getMessage());
+        erreurSqlCaisse("Impossible de créer l'inventaire.");
+    }
+}
+
+/**
+ * Liste de tous les inventaires (en cours et terminés).
+ */
+function listerInventaires(PDO $bdBASI, dfcController $dfcController): void {
+    try {
+        $stmt = $bdBASI->query("
+            SELECT i.id, i.reference, i.etat, i.idStatut, i.dateDebut, i.dateFin, i.dateSoumission,
+                   CONCAT(u.prenom, ' ', u.nom) AS createur,
+                   (SELECT COUNT(*) FROM inventaire_produit ip WHERE ip.idI = i.id) AS nombre_produits
+            FROM inventaire i
+            JOIN utilisateurs u ON i.idUtilisateur = u.id
+            ORDER BY i.dateDebut DESC, i.id DESC
+        ");
+        $rows = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
+        foreach ($rows as &$r) {
+            $r['tmp'] = $dfcController->tokenencrypt($r['id']);
+        }
+        unset($r);
+
+        $inventaireActif = null;
+        foreach ($rows as $r) {
+            if ((int) $r['etat'] === 1) { $inventaireActif = $r; break; }
+        }
+
+        echo json_encode(['status' => 'success', 'data' => $rows, 'inventaireActif' => $inventaireActif]);
+    } catch (\Throwable $e) {
+        error_log('[Inventaire][listerInventaires] ' . $e->getMessage());
+        erreurSqlCaisse('Impossible de charger la liste des inventaires.');
+    }
+}
+
+/**
+ * Détail complet d'un inventaire (en-tête + lignes), pour l'écran de
+ * validation (idStatut = 3) ou la consultation en mode Détail (idStatut = 4).
+ */
+function detailInventaire(PDO $bdBASI, dfcController $dfcController): void {
+    try {
+        $token = trim((string) inputValueCaisse('token', ''));
+        if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
+        $idI = (int) $dfcController->tokendecrypt($token);
+        if ($idI <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+
+        $stmtI = $bdBASI->prepare("
+            SELECT i.id, i.reference, i.etat, i.idStatut, i.dateDebut, i.dateFin, i.dateSoumission,
+                   i.observation_operateur, i.observation_comptable, i.dateEnregistrement,
+                   CONCAT(u.prenom, ' ', u.nom) AS createur
+            FROM inventaire i
+            JOIN utilisateurs u ON i.idUtilisateur = u.id
+            WHERE i.id = ?
+            LIMIT 1
+        ");
+        $stmtI->execute([$idI]);
+        $inventaire = $stmtI->fetch(PDO::FETCH_ASSOC);
+        if (!$inventaire) {
+            echo json_encode(['status' => 'error', 'message' => 'Inventaire introuvable.']);
+            return;
+        }
+
+        $stmtLignes = $bdBASI->prepare(sqlLignesInventaireBase());
+        $stmtLignes->execute([$idI]);
+        $lignes = $stmtLignes->fetchAll(PDO::FETCH_ASSOC);
+
+        // Constat (Conforme / Excédent / Déficitaire), pertinent en mode Détail
+        // (idStatut = 4, quantite_valide renseignée).
+        foreach ($lignes as &$l) {
+            if ($l['quantite_valide'] !== null) {
+                $systeme = (float) $l['quantite_systeme'];
+                $valide  = (float) $l['quantite_valide'];
+                if (abs($systeme - $valide) < 0.001) {
+                    $l['constat'] = 'Conforme';
+                } elseif ($valide > $systeme) {
+                    $l['constat'] = 'Excédent';
+                } else {
+                    $l['constat'] = 'Déficitaire';
+                }
+            } else {
+                $l['constat'] = null;
+            }
+        }
+        unset($l);
+
+        $inventaire['lignes'] = $lignes;
+        echo json_encode(['status' => 'success', 'inventaire' => $inventaire]);
+    } catch (\Throwable $e) {
+        error_log('[Inventaire][detailInventaire] ' . $e->getMessage());
+        erreurSqlCaisse("Impossible de charger le détail de l'inventaire.");
+    }
+}
+
+/**
+ * Validation par le comptable (idStatut 3 → 4) : enregistre quantite_valide
+ * par ligne, met à jour Stock_actuel de chaque produit, et clôture
+ * l'inventaire (etat 1 → 0).
+ *
+ * Champs attendus : token, lignes: [{ idIP, quantite_valide }, ...],
+ * observation_comptable (optionnelle)
+ */
+function validerInventaire(PDO $bdBASI, dfcController $dfcController, int $sessionUserId, string $sessionMatricule): void {
+    try {
+        $token = trim((string) inputValueCaisse('token', ''));
+        if ($token === '') { echo json_encode(['status' => 'error', 'message' => 'Token manquant.']); return; }
+        $idI = (int) $dfcController->tokendecrypt($token);
+        if ($idI <= 0) { echo json_encode(['status' => 'error', 'message' => 'Token invalide.']); return; }
+
+        $observationComptable = trim((string) inputValueCaisse('observation_comptable', ''));
+        if ($observationComptable === '') {
+            echo json_encode(['status' => 'error', 'message' => "L'observation est obligatoire pour valider l'inventaire."]);
+            return;
+        }
+        $lignesEnvoyees = inputValueCaisse('lignes', []);
+        if (!is_array($lignesEnvoyees)) $lignesEnvoyees = [];
+
+        $stmtI = $bdBASI->prepare("SELECT id, idStatut FROM inventaire WHERE id = ? LIMIT 1");
+        $stmtI->execute([$idI]);
+        $inventaire = $stmtI->fetch(PDO::FETCH_ASSOC);
+        if (!$inventaire) {
+            echo json_encode(['status' => 'error', 'message' => 'Inventaire introuvable.']);
+            return;
+        }
+        if ((int) $inventaire['idStatut'] !== 3) {
+            echo json_encode(['status' => 'error', 'message' => 'Seul un inventaire Soumis peut être validé.']);
+            return;
+        }
+
+        $stmtLignesActives = $bdBASI->prepare("SELECT id, idP, quantite_operateur, quantite_systeme FROM inventaire_produit WHERE idI = ?");
+        $stmtLignesActives->execute([$idI]);
+        $lignesActives = [];
+        foreach ($stmtLignesActives->fetchAll(PDO::FETCH_ASSOC) as $row) {
+            $lignesActives[(int)$row['id']] = $row;
+        }
+
+        // Quantité validée : OBLIGATOIREMENT renseignée par le comptable pour
+        // chaque ligne — aucun repli silencieux, aucune valeur NULL tolérée.
+        $quantitesValidees = [];
+        foreach ($lignesEnvoyees as $l) {
+            $idIP = (int) ($l['idIP'] ?? 0);
+            if (!isset($lignesActives[$idIP])) continue;
+            $qv = $l['quantite_valide'] ?? null;
+            if ($qv === null || $qv === '') continue;
+            $quantitesValidees[$idIP] = (float) $qv;
+        }
+        $idsManquants = array_diff(array_keys($lignesActives), array_keys($quantitesValidees));
+        if (!empty($idsManquants)) {
+            echo json_encode([
+                'status'  => 'error',
+                'message' => 'Impossible de valider : ' . count($idsManquants) . " produit(s) n'ont pas de quantité validée renseignée.",
+            ]);
+            return;
+        }
+
+        date_default_timezone_set('Africa/Dakar');
+        $dateEnregistrement = date('Y-m-d H:i:s');
+        $motif = "Validation par le comptable (par $sessionMatricule)";
+
+        $bdBASI->beginTransaction();
+
+        $stmtUpdateLigne = $bdBASI->prepare("UPDATE inventaire_produit SET quantite_valide = ?, dateEnregistrement = ? WHERE id = ?");
+        $stmtUpdateStock = $bdBASI->prepare("UPDATE product SET Stock_actuel = ? WHERE idP = ?");
+        foreach ($quantitesValidees as $idIP => $quantiteValide) {
+            $stmtUpdateLigne->execute([$quantiteValide, $dateEnregistrement, $idIP]);
+            insererHistoriqueInventaireProduit($bdBASI, $idIP, $motif, $dateEnregistrement);
+
+            $idProduit = (int) $lignesActives[$idIP]['idP'];
+            $stmtUpdateStock->execute([$quantiteValide, $idProduit]);
+        }
+
+        $bdBASI->prepare("
+            UPDATE inventaire
+            SET idStatut = 4, etat = 0, dateFin = ?, observation_comptable = ?
+            WHERE id = ?
+        ")->execute([$dateEnregistrement, $observationComptable, $idI]);
+        insererHistoriqueInventaire($bdBASI, $idI, $motif, $dateEnregistrement);
+
+        $bdBASI->commit();
+
+        echo json_encode(['status' => 'success', 'message' => 'Inventaire validé avec succès : le stock a été mis à jour.']);
+    } catch (\Throwable $e) {
+        if ($bdBASI->inTransaction()) $bdBASI->rollBack();
+        error_log('[Inventaire][validerInventaire] ' . $e->getMessage());
+        erreurSqlCaisse("Impossible de valider l'inventaire.");
+    }
+}
+
+
 /* ═══════════════════════════════════════════════════════════════════════════
    ROUTAGE
    16 = listerDossiers    (passer_achat_et_paiement.idStatut = 2)
@@ -1375,6 +1613,24 @@ switch ($option) {
     case 23:
         listerCommentairesDossier($bdBASI, $dfcController);
         break;
+
+    case 24:
+        creerInventaire($bdBASI, $dfcController, $sessionUserId, $sessionMatricule);
+        break;
+
+    case 25:
+        listerInventaires($bdBASI, $dfcController);
+        break;
+
+    case 26:
+        detailInventaire($bdBASI, $dfcController);
+        break;
+
+    case 27:
+        validerInventaire($bdBASI, $dfcController, $sessionUserId, $sessionMatricule);
+        break;
+
+
 
 
 
