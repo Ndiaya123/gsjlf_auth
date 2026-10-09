@@ -40,6 +40,9 @@ document.addEventListener('DOMContentLoaded', function () {
             plv_charger();
         });
     });
+    document.getElementById('plv-recherche').addEventListener('input', function () {
+        if (plv_table) plv_table.search(this.value).draw();
+    });
     document.getElementById('plv-btn-filtrer').addEventListener('click', function () { plv_tout = false; plv_charger(); });
     document.getElementById('plv-btn-annee').addEventListener('click', function () { plv_reinitialiserFiltres(); plv_charger(); });
     document.getElementById('plv-btn-tout').addEventListener('click', function () {
@@ -147,6 +150,9 @@ function plv_renderTable(lignes) {
             paginate: { previous: 'Précédent', next: 'Suivant' },
         },
         initComplete: function () {
+            // conserve la recherche en cours quand le tableau est rechargé (filtres, onglet)
+            const rech = document.getElementById('plv-recherche');
+            if (rech && rech.value) this.api().search(rech.value).draw();
             document.documentElement.classList.remove('ld-booting');
         },
     });

@@ -1,3 +1,4 @@
+
 <!DOCTYPE html>
 <html lang="fr">
 <head>
@@ -12,9 +13,7 @@
     <link href="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
     <link href="/personnel/ressources/dist_assets/css/style_basi_27.css" rel="stylesheet" type="text/css"/>
-
     <script>document.documentElement.classList.add('ld-booting');</script>
-
 
 </head>
 
@@ -139,6 +138,7 @@
                 </div>
             </div>
 
+            <!-- CONTENU -->
             <!-- CONTENU -->
             <div class="content d-flex flex-column flex-column-fluid" id="kt_content">
                 <div class="toolbar" id="kt_toolbar">
@@ -527,7 +527,6 @@
                     </div>
                 </div>
             </div>
-
             <!-- FOOTER -->
             <div class="footer py-4 d-flex flex-lg-column" id="kt_footer">
                 <div class="container-fluid d-flex flex-column flex-md-row align-items-center justify-content-between">
@@ -538,7 +537,6 @@
                 </div>
             </div>
         </div>
-
     </div>
 </div>
 
@@ -555,9 +553,7 @@
     <style>html.ld-booting body > .d-flex.flex-column.flex-root { visibility: visible !important; }</style>
 </noscript>
 
-
 <!-- Scripts Metronic (jQuery + DataTables + SweetAlert2 déjà inclus) -->
-<script src="/personnel/scripts.bundle.gs.js"></script>
 <script src="/personnel/ressources/dist_assets/plugins/global/plugins.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/js/scripts.bundle.js"></script>
 <script src="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.js"></script>

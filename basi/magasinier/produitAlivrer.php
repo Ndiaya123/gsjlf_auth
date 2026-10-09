@@ -10,7 +10,31 @@
     <link href="/personnel/ressources/dist_assets/css/style.bundle.css" rel="stylesheet" type="text/css"/>
     <link href="/personnel/ressources/dist_assets/plugins/custom/datatables/datatables.bundle.css" rel="stylesheet" type="text/css"/>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/sweetalert2@11/dist/sweetalert2.min.css"/>
-    <link href="/personnel/ressources/dist_assets/css/style_basi_38.css" rel="stylesheet" type="text/css"/>
+    <?php
+    // Numéro de version = date de dernière modification du CSS : le navigateur recharge
+    // le fichier dès qu'il change (sinon il garde l'ancienne copie en cache).
+    $cssFichier = ($_SERVER['DOCUMENT_ROOT'] ?? '') . '/personnel/ressources/dist_assets/css/style_basi_38.css';
+    $cssVersion = is_file($cssFichier) ? filemtime($cssFichier) : '38';
+    ?>
+    <link href="/personnel/ressources/dist_assets/css/style_basi_38.css?v=<?php echo $cssVersion; ?>" rel="stylesheet" type="text/css"/>
+
+    <style>
+        /* Styles propres à cette page — filet de sécurité : identiques à ceux de
+           style_basi_38.css, répétés ici pour que la page reste correcte même si
+           ce fichier est ancien, en cache ou incomplet sur le serveur. */
+        #dga-stat-card-livraison{margin-bottom:1.25rem;max-width:320px}
+        #dga-stat-card-livraison-invest{margin-bottom:1.25rem;max-width:320px}
+        .dga-switch-type{display:inline-flex;background:#f3f4f6;border-radius:99px;padding:.25rem;gap:.15rem;margin-bottom:1.25rem}
+        .dga-switch-btn{background:none;border:none;padding:.45rem 1.1rem;border-radius:99px;font-size:.8rem;font-weight:600;color:#6b7280;cursor:pointer;transition:all .15s}
+        .dga-switch-btn:hover{color:#111827}
+        .dga-switch-active{background:#fff;color:#1a7a5e;box-shadow:0 1px 3px rgba(0,0,0,.08)}
+        .dga-btn-avis{display:inline-flex;align-items:center;gap:.4rem;padding:.45rem .95rem;border-radius:8px;font-size:.78rem;font-weight:700;background:#1a7a5e;color:#fff;border:none;cursor:pointer;transition:all .18s}
+        .dga-btn-avis:hover{background:#145f49}
+        .dga-inp-qte-livraison{width:100px;border:1.5px solid #e5e7eb;border-radius:6px;padding:.35rem .5rem;font-size:.82rem}
+        .dga-inp-qte-livraison:focus{outline:none;border-color:#1a7a5e}
+        .dga-inp-qte-livraison:disabled{background:#f3f4f6;color:#9ca3af;cursor:not-allowed}
+        .dga-badge-livree{background:#ecfdf5;color:#059669;font-size:.72rem;font-weight:700;padding:.2rem .55rem;border-radius:99px}
+    </style>
 
     <script>document.documentElement.classList.add('ld-booting');</script>
 </head>

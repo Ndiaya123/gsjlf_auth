@@ -5,7 +5,7 @@
  * consultation et accès au bon de livraison.
  */
 
-const CAISSE_CONTROLLER_URL = '/personnel/cpt_caisse_basi_controller'; // ← ajuster selon le chemin réel
+const CAISSE_CONTROLLER_URL = '/personnel/resp_achat_basi_controller_3'; // ← ajuster selon le chemin réel
 const ANNEE_MIN_LIVRAISON = 2026;
 
 let dga_table = null;

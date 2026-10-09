@@ -324,12 +324,12 @@ RewriteRule ^operateur_basi_inventaire-pdf-vierge/(.*)$ basi/operateur/inventair
 
 # magasinier
 RewriteRule ^magasinier_basi_controller$ basi/magasinier/controllers/magasinierController.php [L]
-RewriteRule ^magasinier_basi_inventaire$ basi/magasinier/produitAlivrer.php [L]
+RewriteRule ^magasinier_basi_produits_a_livrer$ basi/magasinier/produitAlivrer.php [L]
 RewriteRule ^basi-scripts.bundle.39.js$ basi/magasinier/js/produitAlivrer.js [L]
 
 
-RewriteRule ^magasinier_basi_liste_produits_livrer$ basi/magasinier/listeProduitsALivrer.php [L]
-RewriteRule ^basi-scripts.bundle.44.js$ basi/magasinier/js/listeProduitsALivrer.js [L]
+RewriteRule ^magasinier_basi_liste_produits_livres$ basi/magasinier/listeProduitsLivres.php [L]
+RewriteRule ^basi-scripts.bundle.44.js$ basi/magasinier/js/listeProduitsLivres.js [L]
 
 
 

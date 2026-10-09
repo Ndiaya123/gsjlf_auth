@@ -35,6 +35,11 @@ function dga_activerPanneauLivraison(nom) {
     document.querySelectorAll('#dga-switch-type-livraison .dga-switch-btn').forEach(function (btn) {
         btn.classList.toggle('dga-switch-active', btn.dataset.cible === nom);
     });
+    // Un DataTable initialisé dans un panneau masqué (display:none) calcule ses
+    // largeurs de colonnes à 0 : en-têtes écrasés, mise en forme « cassée ».
+    // On recalcule dès que le panneau devient visible.
+    const tableVisible = estFonctionnement ? dga_table : dga_tableInvest;
+    if (tableVisible) { try { tableVisible.columns.adjust(); } catch (e) {} }
 }
 
 /* ────────────────────────── CHARGEMENT LISTE ─────────────────────── */
@@ -148,6 +153,9 @@ function dga_renderTableInvest(bons) {
             info: 'Affichage de _START_ à _END_ sur _TOTAL_ entrées',
             infoEmpty: 'Aucune entrée',
             paginate: { previous: 'Précédent', next: 'Suivant' },
+        },
+        initComplete: function () {
+            document.documentElement.classList.remove('ld-booting'); // ne reste jamais masquée
         },
     });
 }
